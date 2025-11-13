@@ -1,0 +1,400 @@
+:root {
+  --remi-bg: #f5f4ff;
+  --remi-card: #ffffff;
+  --remi-purple: #6c5ce7;
+  --remi-purple-soft: #a66bff;
+  --remi-pink: #ff6fd8;
+  --remi-text-main: #2d3142;
+  --remi-text-soft: #8b8fa6;
+  --remi-border-soft: #ecebfd;
+  --remi-radius-xl: 32px;
+  --remi-radius-lg: 20px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Segoe UI", sans-serif;
+  background: var(--remi-bg);
+  color: var(--remi-text-main);
+}
+
+/* contenedor de fondo */
+.remi-root {
+  min-height: 100vh;
+  background: radial-gradient(
+    circle at top left,
+    #ffe5ff 0,
+    #f5f4ff 45%,
+    #f5f4ff 100%
+  );
+}
+
+/* carcasa principal de la app */
+.remi-shell {
+  width: 100%;
+  max-width: 430px;
+  height: 100vh;
+  margin: 0 auto;
+  background: linear-gradient(
+    160deg,
+    #fdfbff 0,
+    #ffffff 35%,
+    #f5f4ff 100%
+  );
+  border-radius: 0;
+  box-shadow: none;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative; /* para posicionar la bottom nav absoluta */
+}
+
+/* en escritorio que parezca móvil flotante */
+@media (min-width: 768px) {
+  .remi-shell {
+    border-radius: var(--remi-radius-xl);
+    box-shadow: 0 22px 60px rgba(90, 76, 170, 0.25);
+  }
+}
+
+/* página interior scrollable */
+.remi-page {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 80px; /* espacio para la barra inferior */
+}
+
+/* ocultar scroll feo en móvil */
+.remi-page::-webkit-scrollbar {
+  width: 0;
+}
+
+/* inputs bonitos */
+.remi-input {
+  width: 100%;
+  border-radius: 999px;
+  border: 1px solid var(--remi-border-soft);
+  padding: 8px 14px;
+  font-size: 13px;
+  background: #faf9ff;
+  outline: none;
+}
+
+.remi-input::placeholder {
+  color: #b2b6d1;
+}
+
+.remi-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--remi-text-soft);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* pestañas Today / Week / Month */
+.remi-tabs {
+  display: inline-flex;
+  background: #f0efff;
+  border-radius: 999px;
+  padding: 2px;
+  gap: 4px;
+}
+
+.remi-tab {
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  border: none;
+  background: transparent;
+  color: var(--remi-text-soft);
+}
+
+.remi-tab--active {
+  background: var(--remi-card);
+  color: var(--remi-purple);
+  box-shadow: 0 4px 14px rgba(120, 108, 255, 0.25);
+}
+
+/* tarjetas horizontales de proyecto */
+.remi-project-row {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin: 8px -8px 0;
+  padding-left: 8px;
+}
+
+.remi-project-card {
+  min-width: 140px;
+  border-radius: 22px;
+  padding: 12px;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 18px 35px rgba(88, 76, 170, 0.45);
+}
+
+/* lista de tareas */
+.remi-task-list {
+  margin-top: 12px;
+  border-radius: 18px;
+  background: var(--remi-card);
+  padding: 8px 0;
+}
+
+.remi-task-row {
+  padding: 10px 16px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.remi-task-row + .remi-task-row {
+  border-top: 1px solid var(--remi-border-soft);
+}
+
+.remi-task-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 2px solid #3ad269;
+  background: #eafff2;
+}
+
+.remi-task-title {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.remi-task-sub {
+  font-size: 11px;
+  color: var(--remi-text-soft);
+}
+
+.remi-task-time {
+  font-size: 11px;
+  color: var(--remi-text-soft);
+}
+
+/* ------- BOTTOM NAV CON CTA CENTRAL ------- */
+
+.remi-bottom-nav {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 78px;
+  padding: 0 18px 12px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(18px);
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  box-shadow: 0 -12px 24px rgba(90, 76, 170, 0.18);
+}
+
+/* contenedor interno dejando hueco en el centro para el + */
+.remi-bottom-nav-inner {
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 40px; /* hueco central para el + */
+}
+
+/* links de la nav (icono + label pequeño) */
+.remi-bottom-link {
+  text-align: centre;
+  text-align: center;
+  text-decoration: none;
+  color: #b6b9d4;
+  font-size: 10px;
+}
+
+.remi-bottom-link-icon {
+  display: block;
+  font-size: 18px;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.remi-bottom-link-label {
+  display: block;
+}
+
+/* contenido interior tipo "píldora" (lo usa el activo/inactivo) */
+.remi-bottom-link-inner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  transition: all 0.18s ease-out;
+}
+
+/* estado activo: píldora azul con icono blanco + texto */
+.remi-bottom-link--active .remi-bottom-link-inner {
+  background: #4da8ff;
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(77, 168, 255, 0.6);
+}
+
+/* los inactivos solo muestran icono gris, sin fondo */
+.remi-bottom-link:not(.remi-bottom-link--active) .remi-bottom-link-inner {
+  color: #b6b9d4;
+}
+
+/* cambio de color de texto general cuando está activo */
+.remi-bottom-link--active {
+  color: #4da8ff;
+  font-weight: 600;
+}
+
+/* botón + flotante centrado */
+.remi-bottom-cta {
+  position: absolute;
+  left: 50%;
+  top: -22px;
+  transform: translateX(-50%);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(145deg, #6c5ce7 0%, #4da8ff 50%, #ff6fd8 100%);
+  color: #ffffff;
+  font-size: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 16px 30px rgba(90, 76, 170, 0.55);
+}
+
+/* efecto al pulsar */
+.remi-bottom-cta:active {
+  transform: translateX(-50%) translateY(1px) scale(0.97);
+  box-shadow: 0 10px 22px rgba(90, 76, 170, 0.55);
+}
+
+/* ------- MODAL FLOTANTE CON BLUR ------- */
+
+.remi-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 7, 40, 0.45);
+  backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 40;
+}
+
+.remi-modal-card {
+  width: 100%;
+  max-width: 420px;
+  max-height: 86vh;
+  margin: 0 16px;
+  border-radius: 24px;
+  background: radial-gradient(
+      circle at top left,
+      #ffe9ff 0,
+      #fdfbff 40%,
+      #ffffff 100%
+    );
+  box-shadow: 0 22px 50px rgba(35, 18, 90, 0.7);
+  padding: 16px 16px 18px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.remi-modal-body {
+  margin-top: 8px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.remi-modal-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.remi-modal-sub {
+  font-size: 12px;
+  color: #8b8fa6;
+}
+
+.remi-modal-textarea {
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid var(--remi-border-soft);
+  padding: 10px 12px;
+  font-size: 13px;
+  resize: none;
+  min-height: 90px;
+  margin-top: 10px;
+  background: #faf9ff;
+}
+
+/* chips para fechas */
+.remi-chip-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.remi-chip {
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  border: 1px solid #e1e2f5;
+  background: #f4f2ff;
+  color: #8b8fa6;
+  cursor: pointer;
+}
+
+.remi-chip--active {
+  background: #6c5ce7;
+  color: #ffffff;
+  border-color: #6c5ce7;
+}
+
+/* footer de botones del modal */
+.remi-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.remi-btn-ghost {
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  color: #8b8fa6;
+  cursor: pointer;
+}
+
+.remi-btn-primary {
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(145deg, #6c5ce7, #4da8ff);
+  color: #ffffff;
+  padding: 7px 16px;
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(90, 76, 170, 0.6);
+}
