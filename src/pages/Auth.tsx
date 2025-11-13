@@ -18,7 +18,7 @@ const Auth = () => {
 
   useEffect(() => {
     if (user) {
-      navigate('/home');
+      navigate('/');
     }
   }, [user, navigate]);
 
@@ -44,7 +44,7 @@ const Auth = () => {
           toast.success('¡Cuenta creada! Ahora vamos a configurar tu objetivo.');
           navigate('/onboarding');
         } else {
-          navigate('/home');
+          navigate('/');
         }
       }
     } catch (error: any) {

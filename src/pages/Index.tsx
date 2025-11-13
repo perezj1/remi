@@ -1,5 +1,6 @@
 // src/pages/Index.tsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   BrainItem,
@@ -28,13 +29,15 @@ function formatDueDiff(dueDate: string | null): string | null {
 }
 
 export default function TodayPage() {
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth(); // si en tu contexto se llama distinto, cámbialo aquí
   const [tasks, setTasks] = useState<BrainItem[]>([]);
   const [ideas, setIdeas] = useState<BrainItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [captureOpen, setCaptureOpen] = useState(false);
   const [activeTab, setActiveTab] =
     useState<"TODAY" | "WEEK" | "MONTH">("TODAY");
+  const [profileOpen, setProfileOpen] = useState(false);
 
   // Cargar tareas e ideas
   useEffect(() => {
@@ -112,6 +115,45 @@ export default function TodayPage() {
     setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
   };
 
+  // ---- acciones del menú de perfil ----
+  const username = user?.email ? user.email.split("@")[0] : "User";
+  const initial = username.charAt(0).toUpperCase();
+
+  const handleOpenProfile = () => {
+    setProfileOpen(false);
+    // de momento esto lleva a 404 porque aún no tenemos /profile;
+    // puedes comentarlo si quieres evitar el 404:
+    // navigate("/profile");
+  };
+
+  const handleShareApp = async () => {
+    setProfileOpen(false);
+    const url = window.location.origin;
+    const text = "Estoy probando REMI para organizar mis tareas diarias 🙂";
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "REMI", text, url });
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+        alert("Enlace copiado al portapapeles");
+      } else {
+        alert(url);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleLogout = async () => {
+    setProfileOpen(false);
+    try {
+      await signOut();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   return (
     <div className="remi-page">
       {/* CABECERA CON DEGRADADO */}
@@ -123,10 +165,10 @@ export default function TodayPage() {
           color: "white",
           borderBottomLeftRadius: "28px",
           borderBottomRightRadius: "28px",
+          position: "relative",
         }}
       >
         <div
-          className="flex justify-between items-start"
           style={{
             display: "flex",
             justifyContent: "space-between",
@@ -135,7 +177,7 @@ export default function TodayPage() {
         >
           <div>
             <p style={{ fontSize: 12, opacity: 0.8 }}>
-              Hola{user?.email ? `, ${user.email.split("@")[0]}` : ""} 👋
+              Hola, {username} 👋
             </p>
             <h1
               style={{
@@ -150,35 +192,92 @@ export default function TodayPage() {
               Prioricemos solo lo importante.
             </p>
           </div>
-          <button
-            onClick={() => setCaptureOpen(true)}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: "999px",
-              border: "none",
-              background: "rgba(255,255,255,0.18)",
-              color: "white",
-              fontSize: 24,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 10px 25px rgba(0,0,0,0.25)",
-            }}
-          >
-            +
-          </button>
+
+          {/* BOTÓN PERFIL + MENÚ DESPLEGABLE */}
+          <div style={{ position: "relative" }}>
+            <button
+              onClick={() => setProfileOpen((open) => !open)}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: "999px",
+                border: "none",
+                background: "rgba(255,255,255,0.2)",
+                color: "#ffffff",
+                fontSize: 16,
+                fontWeight: 600,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 10px 25px rgba(0,0,0,0.25)",
+                backdropFilter: "blur(6px)",
+                cursor: "pointer",
+              }}
+            >
+              {initial}
+            </button>
+
+            {profileOpen && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: 48,
+                  right: 0,
+                  background: "#ffffff",
+                  color: "#2d3142",
+                  borderRadius: 16,
+                  boxShadow: "0 18px 40px rgba(35,18,90,0.35)",
+                  padding: "8px 10px",
+                  minWidth: 170,
+                  zIndex: 20,
+                }}
+              >
+                <div
+                  style={{
+                    padding: "6px 8px 8px",
+                    borderBottom: "1px solid rgba(236,235,253,0.9)",
+                    marginBottom: 4,
+                    fontSize: 11,
+                    color: "#8b8fa6",
+                  }}
+                >
+                  Sesión iniciada como{" "}
+                  <span style={{ color: "#6c5ce7" }}>{username}</span>
+                </div>
+
+                <button type="button" onClick={handleOpenProfile} style={menuButtonStyle}>
+                  Perfil
+                </button>
+                <button type="button" onClick={handleShareApp} style={menuButtonStyle}>
+                  Compartir app
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  style={{ ...menuButtonStyle, color: "#e74c3c" }}
+                >
+                  Cerrar sesión
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* buscador */}
-        
+        <div style={{ marginTop: 16 }}>
+          <input
+            className="remi-input"
+            placeholder="Buscar tarea…"
+            onChange={() => {}}
+          />
+        </div>
       </div>
 
       {/* CONTENIDO BLANCO SUPERPUESTO */}
       <div style={{ marginTop: -40, padding: "0 18px 18px" }}>
         {/* sección proyectos fake por ahora */}
         <div>
-          
+          <p className="remi-section-title">Project</p>
           <div className="remi-project-row">
             <div
               className="remi-project-card"
@@ -285,7 +384,6 @@ export default function TodayPage() {
                     {formatDueDiff(task.due_date) ?? ""}
                   </div>
                   <button
-                    className="text-[11px]"
                     style={{
                       marginTop: 4,
                       border: "none",
@@ -299,7 +397,6 @@ export default function TodayPage() {
                     Hecho
                   </button>
                   <button
-                    className="text-[11px]"
                     style={{
                       border: "none",
                       background: "transparent",
@@ -326,3 +423,14 @@ export default function TodayPage() {
     </div>
   );
 }
+
+const menuButtonStyle: CSSProperties = {
+  width: "100%",
+  textAlign: "left",
+  border: "none",
+  background: "transparent",
+  padding: "6px 8px",
+  fontSize: 13,
+  cursor: "pointer",
+  borderRadius: 10,
+};
