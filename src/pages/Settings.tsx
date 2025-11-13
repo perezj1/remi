@@ -129,7 +129,7 @@ const Settings = () => {
             variant="ghost"
             size="icon"
             className="text-white hover:bg-white/20 rounded-full"
-            onClick={() => navigate('/home')}
+            onClick={() => navigate('/')}
           >
             <ArrowLeft className="h-6 w-6" />
           </Button>

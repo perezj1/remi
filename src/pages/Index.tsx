@@ -123,7 +123,7 @@ export default function TodayPage() {
     setProfileOpen(false);
     // de momento esto lleva a 404 porque aún no tenemos /profile;
     // puedes comentarlo si quieres evitar el 404:
-    // navigate("/profile");
+     navigate("/profile");
   };
 
   const handleShareApp = async () => {
@@ -263,44 +263,13 @@ export default function TodayPage() {
           </div>
         </div>
 
-        {/* buscador */}
-        <div style={{ marginTop: 16 }}>
-          <input
-            className="remi-input"
-            placeholder="Buscar tarea…"
-            onChange={() => {}}
-          />
-        </div>
+       
       </div>
 
       {/* CONTENIDO BLANCO SUPERPUESTO */}
-      <div style={{ marginTop: -40, padding: "0 18px 18px" }}>
+      <div style={{ marginTop: -10, padding: "0 18px 18px" }}>
         {/* sección proyectos fake por ahora */}
-        <div>
-          <p className="remi-section-title">Project</p>
-          <div className="remi-project-row">
-            <div
-              className="remi-project-card"
-              style={{
-                background:
-                  "linear-gradient(145deg, #6c5ce7 0%, #a66bff 70%)",
-              }}
-            >
-              <div style={{ fontSize: 11, opacity: 0.85 }}>24 tasks</div>
-              <div style={{ fontSize: 14, fontWeight: 600 }}>App Design</div>
-            </div>
-            <div
-              className="remi-project-card"
-              style={{
-                background:
-                  "linear-gradient(145deg, #ff6f91 0%, #ff9671 70%)",
-              }}
-            >
-              <div style={{ fontSize: 11, opacity: 0.85 }}>8 tasks</div>
-              <div style={{ fontSize: 14, fontWeight: 600 }}>Personal</div>
-            </div>
-          </div>
-        </div>
+        
 
         {/* pestañas Today/Week/Month */}
         <div

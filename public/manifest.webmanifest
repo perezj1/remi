@@ -4,7 +4,7 @@
   "description": "Hábitos diarios con XP, rachas y recordatorios.",
   "lang": "es",
   "dir": "ltr",
-  "start_url": "/home",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",

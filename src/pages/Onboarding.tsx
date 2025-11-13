@@ -50,7 +50,7 @@ const Onboarding = () => {
       if (error) throw error;
 
       toast.success('¡Perfecto! Empecemos tu viaje');
-      navigate('/home');
+      navigate('/');
     } catch (error) {
       console.error('Error saving categories:', error);
       toast.error('Error al guardar tus categorías');
