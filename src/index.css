@@ -188,9 +188,6 @@ body {
   color: var(--remi-text-soft);
 }
 
-
-
-/* ------- BOTTOM NAV CON CTA CENTRAL ------- */
 /* ------- BOTTOM NAV CON CTA CENTRAL ------- */
 
 .remi-bottom-nav {
@@ -224,17 +221,21 @@ body {
   align-items: center;
   gap: 4px;
   font-size: 10px;
-  color: #b6b9d4;
+  color: #c2c5dd;              /* gris suave por defecto */
 }
 
-/* icono minimalista (mismo estilo para las dos secciones) */
+/* solo sirve para centrar el icono, sin caja alrededor */
 .remi-bottom-icon {
-  width: 26px;
-  height: 26px;
-  border-radius: 10px;
-  border: 2px solid #d5d7f0;
-  background: #ffffff;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* el svg hereda el color del link */
+.remi-bottom-link svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
 }
 
 /* etiqueta debajo del icono */
@@ -242,17 +243,17 @@ body {
   line-height: 1;
 }
 
-/* estado activo: icono morado y label morada */
-.remi-bottom-link--active .remi-bottom-icon {
-  border-color: transparent;
-  background: linear-gradient(145deg, #6c5ce7 0%, #9b7bff 100%);
-  box-shadow: 0 8px 18px rgba(108, 92, 231, 0.55);
-}
-
-.remi-bottom-link--active .remi-bottom-label {
-  color: #6c5ce7;
+/* estado activo: cambia solo el color (icono + texto) */
+.remi-bottom-link--active {
+  color: #6c5ce7;              /* morado activo */
   font-weight: 600;
 }
+
+/* pequeño glow al icono activo opcional */
+.remi-bottom-link--active svg {
+  filter: drop-shadow(0 0 4px rgba(108, 92, 231, 0.55));
+}
+
 
 /* botón + flotante centrado */
 .remi-bottom-cta {
@@ -279,7 +280,6 @@ body {
   transform: translateX(-50%) translateY(1px) scale(0.97);
   box-shadow: 0 10px 22px rgba(90, 76, 170, 0.55);
 }
-
 
 /* ------- MODAL FLOTANTE CON BLUR ------- */
 
