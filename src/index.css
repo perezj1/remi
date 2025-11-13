@@ -188,6 +188,9 @@ body {
   color: var(--remi-text-soft);
 }
 
+
+
+/* ------- BOTTOM NAV CON CTA CENTRAL ------- */
 /* ------- BOTTOM NAV CON CTA CENTRAL ------- */
 
 .remi-bottom-nav {
@@ -213,52 +216,41 @@ body {
   padding: 0 40px; /* hueco central para el + */
 }
 
-/* links de la nav (icono + label pequeño) */
+/* enlace de la barra (Hoy / Bandeja) */
 .remi-bottom-link {
-  text-align: centre;
-  text-align: center;
   text-decoration: none;
-  color: #b6b9d4;
-  font-size: 10px;
-}
-
-.remi-bottom-link-icon {
-  display: block;
-  font-size: 18px;
-  line-height: 1;
-  margin-bottom: 2px;
-}
-
-.remi-bottom-link-label {
-  display: block;
-}
-
-/* contenido interior tipo "píldora" (lo usa el activo/inactivo) */
-.remi-bottom-link-inner {
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  transition: all 0.18s ease-out;
-}
-
-/* estado activo: píldora azul con icono blanco + texto */
-.remi-bottom-link--active .remi-bottom-link-inner {
-  background: #4da8ff;
-  color: #ffffff;
-  box-shadow: 0 8px 18px rgba(77, 168, 255, 0.6);
-}
-
-/* los inactivos solo muestran icono gris, sin fondo */
-.remi-bottom-link:not(.remi-bottom-link--active) .remi-bottom-link-inner {
+  gap: 4px;
+  font-size: 10px;
   color: #b6b9d4;
 }
 
-/* cambio de color de texto general cuando está activo */
-.remi-bottom-link--active {
-  color: #4da8ff;
+/* icono minimalista (mismo estilo para las dos secciones) */
+.remi-bottom-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 10px;
+  border: 2px solid #d5d7f0;
+  background: #ffffff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+/* etiqueta debajo del icono */
+.remi-bottom-label {
+  line-height: 1;
+}
+
+/* estado activo: icono morado y label morada */
+.remi-bottom-link--active .remi-bottom-icon {
+  border-color: transparent;
+  background: linear-gradient(145deg, #6c5ce7 0%, #9b7bff 100%);
+  box-shadow: 0 8px 18px rgba(108, 92, 231, 0.55);
+}
+
+.remi-bottom-link--active .remi-bottom-label {
+  color: #6c5ce7;
   font-weight: 600;
 }
 
@@ -287,6 +279,7 @@ body {
   transform: translateX(-50%) translateY(1px) scale(0.97);
   box-shadow: 0 10px 22px rgba(90, 76, 170, 0.55);
 }
+
 
 /* ------- MODAL FLOTANTE CON BLUR ------- */
 

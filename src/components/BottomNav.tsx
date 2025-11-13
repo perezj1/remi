@@ -8,7 +8,7 @@ export default function BottomNav() {
   const isActive = (path: string) => location.pathname === path;
 
   const handleCreateClick = () => {
-    // Navegamos a Home y luego lanzamos un evento para que Index abra el modal
+    // Siempre abrimos el modal en la pantalla de Hoy
     navigate("/");
     setTimeout(() => {
       window.dispatchEvent(new CustomEvent("remi-open-capture"));
@@ -18,19 +18,8 @@ export default function BottomNav() {
   return (
     <nav className="remi-bottom-nav">
       <div className="remi-bottom-nav-inner">
-        <NavItem to="/" label="Hoy" icon="🏠" active={isActive("/")} />
-        <NavItem
-          to="/inbox"
-          label="Bandeja"
-          icon="📥"
-          active={isActive("/inbox")}
-        />
-        <NavItem
-          to="/ideas"
-          label="Ideas"
-          icon="💡"
-          active={isActive("/ideas")}
-        />
+        <NavItem to="/" label="Hoy" active={isActive("/")} />
+        <NavItem to="/inbox" label="Bandeja" active={isActive("/inbox")} />
       </div>
 
       <button className="remi-bottom-cta" onClick={handleCreateClick}>
@@ -43,11 +32,10 @@ export default function BottomNav() {
 interface NavItemProps {
   to: string;
   label: string;
-  icon: string;
   active?: boolean;
 }
 
-function NavItem({ to, label, icon, active }: NavItemProps) {
+function NavItem({ to, label, active }: NavItemProps) {
   return (
     <Link
       to={to}
@@ -55,8 +43,8 @@ function NavItem({ to, label, icon, active }: NavItemProps) {
         "remi-bottom-link " + (active ? "remi-bottom-link--active" : "")
       }
     >
-      <span className="remi-bottom-link-icon">{icon}</span>
-      <span className="remi-bottom-link-label">{label}</span>
+      <div className="remi-bottom-icon" />
+      <span className="remi-bottom-label">{label}</span>
     </Link>
   );
 }

@@ -171,21 +171,14 @@ export default function TodayPage() {
         </div>
 
         {/* buscador */}
-        <div style={{ marginTop: 16 }}>
-          <input
-            className="remi-input"
-            placeholder="Buscar tarea…"
-            // de momento no filtra, pero ya tiene el look
-            onChange={() => {}}
-          />
-        </div>
+        
       </div>
 
       {/* CONTENIDO BLANCO SUPERPUESTO */}
       <div style={{ marginTop: -40, padding: "0 18px 18px" }}>
         {/* sección proyectos fake por ahora */}
         <div>
-          <p className="remi-section-title">Project</p>
+          
           <div className="remi-project-row">
             <div
               className="remi-project-card"
