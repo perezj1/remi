@@ -19,6 +19,9 @@ import {
   postponeTask,
 } from "@/lib/brainItemsApi";
 import CaptureModal from "@/components/CaptureModal";
+import { ListTodo, Check } from "lucide-react";
+
+const AVATAR_KEY = "remi_avatar";
 
 function formatDueDiff(dueDate: string | null): string | null {
   if (!dueDate) return null;
@@ -44,8 +47,8 @@ export default function TodayPage() {
   const [activeTab, setActiveTab] =
     useState<"TODAY" | "WEEK" | "MONTH">("TODAY");
   const [profileOpen, setProfileOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
-  // ref para detectar clicks fuera del menú de perfil
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
 
   // Cargar tareas e ideas
@@ -68,6 +71,28 @@ export default function TodayPage() {
         setLoading(false);
       }
     })();
+  }, [user]);
+
+  // Cargar avatar (localStorage o metadata del usuario)
+  useEffect(() => {
+    if (!user) {
+      setAvatarUrl(null);
+      return;
+    }
+
+    try {
+      const stored = localStorage.getItem(AVATAR_KEY);
+      if (stored && stored !== "null" && stored !== "undefined") {
+        setAvatarUrl(stored);
+        return;
+      }
+    } catch (e) {
+      console.warn("No se pudo leer el avatar de localStorage", e);
+    }
+
+    const meta = (user as any)?.user_metadata;
+    const metaUrl = meta?.avatar_url ?? meta?.picture ?? null;
+    setAvatarUrl(metaUrl ?? null);
   }, [user]);
 
   // Escuchar el evento global del botón + de la BottomNav
@@ -111,7 +136,6 @@ export default function TodayPage() {
     return scored.sort((a, b) => a._score - b._score).slice(0, 4);
   }, [tasks]);
 
-  const ideaOfTheDay = ideas[0] ?? null;
   const todayCount = tasks.length;
 
   const handleCreateTask = async (
@@ -182,15 +206,14 @@ export default function TodayPage() {
 
   return (
     <div className="remi-page">
-      {/* CABECERA CON DEGRADADO */}
+      {/* CABECERA CON DEGRADADO (más pequeña) */}
       <div
         style={{
-          padding: "20px 20px 80px",
-          background:
-            "linear-gradient(#8F31F3)",
+          padding: "16px 20px 56px",
+          background: "linear-gradient(#8F31F3)",
           color: "white",
-          borderBottomLeftRadius: "28px",
-          borderBottomRightRadius: "28px",
+          borderBottomLeftRadius: "24px",
+          borderBottomRightRadius: "24px",
           position: "relative",
         }}
       >
@@ -207,7 +230,7 @@ export default function TodayPage() {
             </p>
             <h1
               style={{
-                fontSize: 22,
+                fontSize: 20,
                 margin: "4px 0 2px",
                 fontWeight: 600,
               }}
@@ -238,9 +261,25 @@ export default function TodayPage() {
                 boxShadow: "0 10px 25px rgba(0,0,0,0.25)",
                 backdropFilter: "blur(6px)",
                 cursor: "pointer",
+                overflow: "hidden",
+                padding: 0,
               }}
             >
-              {initial}
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="Avatar"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    borderRadius: "999px",
+                    objectFit: "cover",
+                    display: "block",
+                  }}
+                />
+              ) : (
+                initial
+              )}
             </button>
 
             {profileOpen && (
@@ -268,7 +307,7 @@ export default function TodayPage() {
                   }}
                 >
                   Sesión iniciada como{" "}
-                  <span style={{ color: "#8F31F3" }}>{username}</span>
+                    <span style={{ color: "#8F31F3" }}>{username}</span>
                 </div>
 
                 <button
@@ -299,13 +338,25 @@ export default function TodayPage() {
       </div>
 
       {/* CONTENIDO BLANCO SUPERPUESTO */}
-      <div style={{ marginTop: -10, padding: "0 18px 18px" }}>
-        {/* pestañas Today/Week/Month */}
+      <div style={{ marginTop: -16, padding: "0 18px 18px" }}>
+        {/* FORMULARIO EMBEBIDO: mismo componente que el modal */}
+        <div style={{ marginTop: 18, marginBottom: 10 }}>
+          <CaptureModal
+            open={true}
+            embedded
+            onClose={() => {}}
+            onCreateTask={handleCreateTask}
+            onCreateIdea={handleCreateIdea}
+          />
+        </div>
+
+        {/* pestañas Today/Week/Month debajo del formulario */}
         <div
           style={{
-            marginTop: 18,
+            marginTop: 10,
+            marginBottom: 8,
             display: "flex",
-            justifyContent: "space-between",
+            justifyContent: "flex-start",
             alignItems: "center",
           }}
         >
@@ -336,13 +387,6 @@ export default function TodayPage() {
               Month
             </button>
           </div>
-
-          {ideaOfTheDay && (
-            <span style={{ fontSize: 11, color: "#8b8fa6" }}>
-              Idea: {ideaOfTheDay.title.slice(0, 22)}
-              {ideaOfTheDay.title.length > 22 ? "…" : ""}
-            </span>
-          )}
         </div>
 
         {/* lista de tareas */}
@@ -367,52 +411,127 @@ export default function TodayPage() {
 
           {!loading &&
             topTasks.map((task) => (
-              <div key={task.id} className="remi-task-row">
-                <div className="remi-task-dot" />
-                <div>
-                  <p className="remi-task-title">{task.title}</p>
-                  <div className="remi-task-sub">
-                    {task.due_date ? "Fecha límite · " : ""}
-                    {task.due_date
-                      ? new Date(task.due_date).toLocaleString()
-                      : "Sin fecha límite"}
+              <div
+                key={task.id}
+                className="remi-task-row"
+                style={{
+                  alignItems: "center",
+                  padding: "10px 12px",
+                  borderRadius: 16,
+                  background: "#ffffff",
+                  boxShadow: "0 10px 25px rgba(15,23,42,0.04)",
+                  marginBottom: 8,
+                }}
+              >
+                {/* izquierda: icono + texto */}
+                <div
+                  style={{
+                    display: "flex",
+                    flex: 1,
+                    gap: 10,
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: "999px",
+                      border: "2px solid #22c55e",
+                      background: "rgba(34,197,94,0.06)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginTop: 4,
+                      color: "#16a34a",
+                    }}
+                  >
+                    <ListTodo size={16} />
+                  </div>
+
+                  <div>
+                    <p
+                      className="remi-task-title"
+                      style={{
+                        wordBreak: "break-word",
+                        whiteSpace: "normal",
+                      }}
+                    >
+                      {task.title}
+                    </p>
+                    <div className="remi-task-sub">
+                      {task.due_date ? "Fecha límite · " : ""}
+                      {task.due_date
+                        ? new Date(task.due_date).toLocaleString()
+                        : "Sin fecha límite"}
+                    </div>
                   </div>
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  <div className="remi-task-time">
-                    {formatDueDiff(task.due_date) ?? ""}
+
+                {/* derecha: controles */}
+                <div
+                  style={{
+                    textAlign: "right",
+                    marginLeft: 8,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "flex-end",
+                    gap: 6,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <button
+                      style={{
+                        background: "transparent",
+                        color: "rgba(245, 170, 39, 0.8)",
+                        fontSize: 15,
+                        cursor: "pointer",
+                        width: 30,
+                        height: 30,
+                        borderRadius: "999px",
+                        border: "1px solid rgba(245, 170, 39, 0.8)",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: 0,
+                      }}
+                      onClick={() => handlePostpone(task, "DAY")}
+                    >
+                      +1
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDone(task)}
+                      style={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: "999px",
+                        border: "1px solid rgba(16,185,129,0.4)",
+                        background: "rgba(16,185,129,0.08)",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        padding: 0,
+                      }}
+                    >
+                      <Check size={16} color="#10B981" />
+                    </button>
                   </div>
-                  <button
-                    style={{
-                      marginTop: 4,
-                      border: "none",
-                      background: "transparent",
-                      color: "#8F31F3",
-                      fontSize: 11,
-                      cursor: "pointer",
-                    }}
-                    onClick={() => handleDone(task)}
-                  >
-                    Hecho
-                  </button>
-                  <button
-                    style={{
-                      border: "none",
-                      background: "transparent",
-                      color: "#8b8fa6",
-                      fontSize: 10,
-                      cursor: "pointer",
-                    }}
-                    onClick={() => handlePostpone(task, "DAY")}
-                  >
-                    Mañana
-                  </button>
                 </div>
               </div>
             ))}
         </div>
       </div>
 
+      {/* Modal flotante del botón + (mismo componente, modo overlay) */}
       <CaptureModal
         open={captureOpen}
         onClose={() => setCaptureOpen(false)}

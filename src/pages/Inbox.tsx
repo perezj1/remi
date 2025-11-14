@@ -7,6 +7,7 @@ import {
   fetchInboxItems,
   setTaskStatus,
 } from "@/lib/brainItemsApi";
+import { Lightbulb, ListTodo, Check, Trash2 } from "lucide-react";
 
 type Filter = "ALL" | "TASKS" | "IDEAS";
 
@@ -45,10 +46,17 @@ export default function InboxPage() {
     return true;
   });
 
-  const handleDone = async (item: BrainItem) => {
-    if (item.type !== "task" || item.status === "DONE") return;
-    const updated = await setTaskStatus(item.id, "DONE");
-    setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+  // marcar como hecha o archivar (borrar) según estado actual
+  const handlePrimaryAction = async (item: BrainItem) => {
+    if (item.status !== "DONE") {
+      // pasar a DONE
+      const updated = await setTaskStatus(item.id, "DONE");
+      setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+    } else {
+      // ya está DONE → archivar y sacarla de la lista
+      const updated = await setTaskStatus(item.id, "ARCHIVED");
+      setItems((prev) => prev.filter((i) => i.id !== updated.id));
+    }
   };
 
   return (
@@ -123,55 +131,126 @@ export default function InboxPage() {
           )}
 
           {!loading &&
-            filtered.map((item) => (
-              <div key={item.id} className="remi-task-row">
-                {/* punto de color distinto según tipo */}
+            filtered.map((item) => {
+              const isTask = item.type === "task";
+              const isDone = item.status === "DONE";
+
+              const btnBg = isDone
+                ? "rgba(248,113,113,0.08)" // rojo suave
+                : "rgba(16,185,129,0.08)"; // verde suave
+              const btnBorder = isDone
+                ? "rgba(248,113,113,0.4)"
+                : "rgba(16,185,129,0.4)";
+              const btnColor = isDone ? "#DC2626" : "#10B981";
+
+              return (
                 <div
-                  className="remi-task-dot"
+                  key={item.id}
+                  className="remi-task-row"
                   style={{
-                    borderColor:
-                      item.type === "task" ? "#3ad269" : "#ff6fd8",
-                    background:
-                      item.type === "task" ? "#eafff2" : "#ffe6f7",
+                    alignItems: "center",
+                    padding: "10px 12px",
+                    borderRadius: 16,
+                    background: "#ffffff",
+                    boxShadow: "0 10px 25px rgba(15,23,42,0.04)",
+                    marginBottom: 8,
                   }}
-                />
-                <div>
-                  <p className="remi-task-title">{item.title}</p>
-                  <p className="remi-task-sub">
-                    {item.type === "task" ? "Tarea · " : "Idea · "}
-                    {new Date(item.created_at).toLocaleString()}
-                  </p>
-                </div>
-                <div style={{ textAlign: "right" }}>
+                >
+                  {/* icono + texto */}
                   <div
                     style={{
-                      fontSize: 10,
-                      marginBottom: 4,
-                      color:
-                        item.status === "DONE"
-                          ? "#3ad269"
-                          : "#8b8fa6",
+                      display: "flex",
+                      flex: 1,
+                      gap: 10,
+                      alignItems: "flex-start",
                     }}
                   >
-                    {statusLabel(item.status)}
-                  </div>
-                  {item.type === "task" && item.status !== "DONE" && (
-                    <button
+                    {/* icono circular a la izquierda */}
+                    <div
                       style={{
-                        border: "none",
-                        background: "transparent",
-                        fontSize: 11,
-                        color: "#8F31F3",
-                        cursor: "pointer",
+                        width: 32,
+                        height: 32,
+                        borderRadius: "999px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginTop: 2,
+                        background: isTask
+                          ? "rgba(143,49,243,0.08)"
+                          : "rgba(251,191,36,0.15)",
+                        color: isTask ? "#8F31F3" : "#F59E0B",
                       }}
-                      onClick={() => handleDone(item)}
                     >
-                      Marcar hecha
+                      {isTask ? <ListTodo size={18} /> : <Lightbulb size={18} />}
+                    </div>
+
+                    <div>
+                      <p
+                        className="remi-task-title"
+                        style={{
+                          wordBreak: "break-word",
+                          whiteSpace: "normal",
+                        }}
+                      >
+                        {item.title}
+                      </p>
+                      <p className="remi-task-sub">
+                        {isTask ? "Tarea · " : "Idea · "}
+                        {new Date(item.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* estado + botón circular */}
+                  <div
+                    style={{
+                      textAlign: "right",
+                      marginLeft: 8,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-end",
+                      gap: 6,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 10,
+                        color: isDone
+                          ? "#16a34a"
+                          : item.status === "ACTIVE"
+                          ? "#8b8fa6"
+                          : "#b2b6d1",
+                      }}
+                    >
+                      {statusLabel(item.status)}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handlePrimaryAction(item)}
+                      style={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: "999px",
+                        border: `1px solid ${btnBorder}`,
+                        background: btnBg,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        padding: 0,
+                      }}
+                    >
+                      {isDone ? (
+                        <Trash2 size={16} color={btnColor} />
+                      ) : (
+                        <Check size={16} color={btnColor} />
+                      )}
                     </button>
-                  )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
         </div>
       </div>
     </div>
