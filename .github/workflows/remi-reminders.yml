@@ -1,0 +1,21 @@
+# name: KAIRO send-reminders
+
+# on:
+#   schedule:
+#     # cada 10 minutos (en UTC). Puedes dejarlo 24/7 porque la función filtra por ventana horaria
+#     - cron: "*/10 * * * *"
+#   workflow_dispatch: {}
+
+# jobs:
+#   ping:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Call edge function
+#         run: |
+#           curl -sS -X POST "$EDGE_FN_URL" \
+#             -H "Authorization: Bearer $SERVICE_ROLE" \
+#             -H "Content-Type: application/json" \
+#             -d '{}'
+#         env:
+#           EDGE_FN_URL: ${{ secrets.EDGE_FN_URL }}
+#           SERVICE_ROLE: ${{ secrets.SERVICE_ROLE }}

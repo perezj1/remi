@@ -38,8 +38,7 @@ export default function ProfilePage() {
   const [memberSince, setMemberSince] = useState<string | null>(null);
 
   // ---- ajustes de la app ----
-  const [preferredLanguage, setPreferredLanguage] =
-    useState<RemiLang>("es");
+  const [preferredLanguage, setPreferredLanguage] = useState<RemiLang>("es");
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   // ---- contraseña / guardado ----
@@ -47,7 +46,8 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
 
   // ---- avatar ----
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null); // para mostrar
+  const [avatarFile, setAvatarFile] = useState<File | null>(null); // para subir
   const [avatarError, setAvatarError] = useState<string | null>(null);
 
   // Cargar datos iniciales
@@ -98,7 +98,7 @@ export default function ProfilePage() {
       if (notif === "1") setNotificationsEnabled(true);
     }
 
-    // avatar
+    // avatar (metadata o localStorage)
     let metaAvatar = meta.avatar_url;
     if (!metaAvatar && typeof window !== "undefined") {
       metaAvatar = window.localStorage.getItem(AVATAR_KEY) || undefined;
@@ -159,14 +159,10 @@ export default function ProfilePage() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result;
-      if (typeof result === "string") {
-        setAvatarUrl(result);
-      }
-    };
-    reader.readAsDataURL(file);
+    setAvatarFile(file);
+
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarUrl(previewUrl);
   };
 
   const handleSave = async (e: FormEvent) => {
@@ -176,6 +172,37 @@ export default function ProfilePage() {
     setSaving(true);
 
     try {
+      // 1) si hay nuevo archivo, subirlo a Storage y obtener URL pública
+      let finalAvatarUrl: string | null = avatarUrl;
+
+      if (avatarFile) {
+        const fileExt = avatarFile.name.split(".").pop() || "png";
+        const path = `${user.id}-${Date.now()}.${fileExt}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(path, avatarFile, {
+            cacheControl: "3600",
+            upsert: true,
+          });
+
+        if (uploadError || !uploadData) {
+          console.error("Upload error", uploadError);
+          setAvatarError("No se pudo subir la imagen. Intenta de nuevo.");
+          setSaving(false);
+          return;
+        }
+
+        const { data: publicData } = supabase.storage
+          .from("avatars")
+          .getPublicUrl(uploadData.path);
+
+        finalAvatarUrl = publicData.publicUrl;
+        setAvatarUrl(finalAvatarUrl);
+        setAvatarFile(null);
+      }
+
+      // 2) actualizar datos del usuario (auth metadata)
       const updatePayload: {
         email?: string;
         password?: string;
@@ -188,7 +215,7 @@ export default function ProfilePage() {
         data: {
           username,
           language: preferredLanguage,
-          avatar_url: avatarUrl,
+          avatar_url: finalAvatarUrl,
         },
       };
 
@@ -210,14 +237,15 @@ export default function ProfilePage() {
         console.error(error);
         toast.error(error.message);
       } else {
-        // guardar preferencias locales
-        window.localStorage.setItem(LANGUAGE_KEY, preferredLanguage);
-        window.localStorage.setItem(
-          NOTIF_KEY,
-          notificationsEnabled ? "1" : "0"
-        );
-        if (avatarUrl) {
-          window.localStorage.setItem(AVATAR_KEY, avatarUrl);
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem(LANGUAGE_KEY, preferredLanguage);
+          window.localStorage.setItem(
+            NOTIF_KEY,
+            notificationsEnabled ? "1" : "0"
+          );
+          if (finalAvatarUrl) {
+            window.localStorage.setItem(AVATAR_KEY, finalAvatarUrl);
+          }
         }
         toast.success("Perfil actualizado correctamente.");
         setNewPassword("");
@@ -240,8 +268,7 @@ export default function ProfilePage() {
       <div
         style={{
           padding: "16px 20px 40px",
-          background:
-            "linear-gradient(#8F31F3)",
+          background: "#8F31F3",
           color: "white",
           borderBottomLeftRadius: "28px",
           borderBottomRightRadius: "28px",

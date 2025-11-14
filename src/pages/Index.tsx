@@ -19,7 +19,7 @@ import {
   postponeTask,
 } from "@/lib/brainItemsApi";
 import CaptureModal from "@/components/CaptureModal";
-import { ListTodo, Check } from "lucide-react";
+import { ListTodo, Check, SkipForward } from "lucide-react";
 
 const AVATAR_KEY = "remi_avatar";
 
@@ -39,7 +39,10 @@ function formatDueDiff(dueDate: string | null): string | null {
 
 export default function TodayPage() {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+
+  // 👇 ahora también recibimos profile desde el AuthContext “pro”
+  const { user, signOut, profile } = useAuth();
+
   const [tasks, setTasks] = useState<BrainItem[]>([]);
   const [ideas, setIdeas] = useState<BrainItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +54,7 @@ export default function TodayPage() {
 
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
 
-  // Cargar tareas e ideas
+  // ---------- Cargar tareas e ideas ----------
   useEffect(() => {
     if (!user) return;
     setLoading(true);
@@ -73,27 +76,32 @@ export default function TodayPage() {
     })();
   }, [user]);
 
-  // Cargar avatar (localStorage o metadata del usuario)
+  // ---------- Avatar desde profiles + fallback localStorage/metadata ----------
   useEffect(() => {
     if (!user) {
       setAvatarUrl(null);
       return;
     }
 
-    try {
-      const stored = localStorage.getItem(AVATAR_KEY);
+    // 1) fuente principal: tabla profiles (pro)
+    let finalUrl: string | null = profile?.avatar_url ?? null;
+
+    // 2) fallback: lo viejo que tuvieras en localStorage (base64)
+    if (!finalUrl && typeof window !== "undefined") {
+      const stored = window.localStorage.getItem(AVATAR_KEY);
       if (stored && stored !== "null" && stored !== "undefined") {
-        setAvatarUrl(stored);
-        return;
+        finalUrl = stored;
       }
-    } catch (e) {
-      console.warn("No se pudo leer el avatar de localStorage", e);
     }
 
-    const meta = (user as any)?.user_metadata;
-    const metaUrl = meta?.avatar_url ?? meta?.picture ?? null;
-    setAvatarUrl(metaUrl ?? null);
-  }, [user]);
+    // 3) fallback extra: metadata del usuario (por si viene de otro proveedor)
+    if (!finalUrl) {
+      const meta = (user as any)?.user_metadata;
+      finalUrl = meta?.avatar_url ?? meta?.picture ?? null;
+    }
+
+    setAvatarUrl(finalUrl ?? null);
+  }, [user, profile]);
 
   // Escuchar el evento global del botón + de la BottomNav
   useEffect(() => {
@@ -138,6 +146,7 @@ export default function TodayPage() {
 
   const todayCount = tasks.length;
 
+  // ---------- creación / actualización de tareas / ideas ----------
   const handleCreateTask = async (
     title: string,
     dueDate: string | null,
@@ -167,9 +176,15 @@ export default function TodayPage() {
     setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
   };
 
-  // ---- acciones del menú de perfil ----
-  const username = user?.email ? user.email.split("@")[0] : "User";
-  const initial = username.charAt(0).toUpperCase();
+  // ---------- datos de usuario / perfil para UI ----------
+  const displayName =
+    (profile?.display_name && profile.display_name.trim() !== ""
+      ? profile.display_name
+      : user?.email
+      ? user.email.split("@")[0]
+      : "User") ?? "User";
+
+  const initial = displayName.charAt(0).toUpperCase();
 
   const handleOpenProfile = () => {
     setProfileOpen(false);
@@ -226,7 +241,7 @@ export default function TodayPage() {
         >
           <div>
             <p style={{ fontSize: 12, opacity: 0.8 }}>
-              Hola, {username} 👋
+              Hola, {displayName} 👋
             </p>
             <h1
               style={{
@@ -307,7 +322,7 @@ export default function TodayPage() {
                   }}
                 >
                   Sesión iniciada como{" "}
-                    <span style={{ color: "#8F31F3" }}>{username}</span>
+                  <span style={{ color: "#8F31F3" }}>{displayName}</span>
                 </div>
 
                 <button
@@ -503,7 +518,7 @@ export default function TodayPage() {
                       }}
                       onClick={() => handlePostpone(task, "DAY")}
                     >
-                      +1
+                      <SkipForward size={16} />
                     </button>
 
                     <button

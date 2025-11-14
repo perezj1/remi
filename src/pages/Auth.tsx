@@ -53,7 +53,7 @@ const Auth = () => {
           toast.success(
             "¡Cuenta creada! Ahora vamos a configurar tu objetivo."
           );
-          navigate("/onboarding");
+          navigate("/");
         } else {
           navigate("/");
         }
