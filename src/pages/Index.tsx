@@ -7,6 +7,7 @@ import {
   type CSSProperties,
 } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   BrainItem,
@@ -18,6 +19,8 @@ import {
   setTaskStatus,
   postponeTask,
 } from "@/lib/brainItemsApi";
+import { supabase } from "@/integrations/supabase/client";
+import { registerPushSubscription } from "@/lib/registerPush";
 import CaptureModal from "@/components/CaptureModal";
 import { ListTodo, Check, SkipForward } from "lucide-react";
 
@@ -40,7 +43,6 @@ function formatDueDiff(dueDate: string | null): string | null {
 export default function TodayPage() {
   const navigate = useNavigate();
 
-  // 👇 ahora también recibimos profile desde el AuthContext “pro”
   const { user, signOut, profile } = useAuth();
 
   const [tasks, setTasks] = useState<BrainItem[]>([]);
@@ -51,6 +53,10 @@ export default function TodayPage() {
     useState<"TODAY" | "WEEK" | "MONTH">("TODAY");
   const [profileOpen, setProfileOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  // popup para activar notificaciones push
+  const [showPushModal, setShowPushModal] = useState(false);
+  const [registeringPush, setRegisteringPush] = useState(false);
 
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -76,6 +82,46 @@ export default function TodayPage() {
     })();
   }, [user]);
 
+  // ---------- Comprobar si ya tiene suscripción push ----------
+  useEffect(() => {
+    if (
+      !user ||
+      typeof window === "undefined" ||
+      !("Notification" in window)
+    ) {
+      return;
+    }
+
+    // Si el usuario ya bloqueó notificaciones, no insistimos
+    if (Notification.permission === "denied") {
+      return;
+    }
+
+    const checkSubscription = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("remi_push_subscriptions")
+          .select("id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (error) {
+          console.error("Error checking push subscription", error);
+          return;
+        }
+
+        // Si no hay fila, mostramos el popup para activar notificaciones
+        if (!data) {
+          setShowPushModal(true);
+        }
+      } catch (err) {
+        console.error("Unexpected error checking push subscription", err);
+      }
+    };
+
+    void checkSubscription();
+  }, [user?.id]);
+
   // ---------- Avatar desde profiles + fallback localStorage/metadata ----------
   useEffect(() => {
     if (!user) {
@@ -83,10 +129,8 @@ export default function TodayPage() {
       return;
     }
 
-    // 1) fuente principal: tabla profiles (pro)
     let finalUrl: string | null = profile?.avatar_url ?? null;
 
-    // 2) fallback: lo viejo que tuvieras en localStorage (base64)
     if (!finalUrl && typeof window !== "undefined") {
       const stored = window.localStorage.getItem(AVATAR_KEY);
       if (stored && stored !== "null" && stored !== "undefined") {
@@ -94,7 +138,6 @@ export default function TodayPage() {
       }
     }
 
-    // 3) fallback extra: metadata del usuario (por si viene de otro proveedor)
     if (!finalUrl) {
       const meta = (user as any)?.user_metadata;
       finalUrl = meta?.avatar_url ?? meta?.picture ?? null;
@@ -174,6 +217,27 @@ export default function TodayPage() {
     if (option === "WEEK") base.setDate(base.getDate() + 7);
     const updated = await postponeTask(task.id, base.toISOString());
     setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+  };
+
+  // ---------- activar notificaciones push ----------
+  const handleEnablePush = async () => {
+    if (!user) return;
+
+    setRegisteringPush(true);
+    try {
+      await registerPushSubscription(user.id);
+      setShowPushModal(false);
+      toast.success("Notificaciones activadas para tus tareas ✨");
+    } catch (err) {
+      console.error("Error registering push subscription", err);
+      toast.error("No se pudieron activar las notificaciones.");
+    } finally {
+      setRegisteringPush(false);
+    }
+  };
+
+  const handleLater = () => {
+    setShowPushModal(false);
   };
 
   // ---------- datos de usuario / perfil para UI ----------
@@ -545,6 +609,41 @@ export default function TodayPage() {
             ))}
         </div>
       </div>
+
+      {/* POPUP para activar notificaciones push */}
+      {showPushModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl p-5 w-[90%] max-w-sm shadow-xl">
+            <h2 className="text-base font-semibold mb-1">
+              Activa tus recordatorios
+            </h2>
+            <p className="text-xs text-slate-600 mb-4">
+              REMI puede enviarte notificaciones con tus 3 tareas más
+              importantes del día y avisarte cuando una está a punto de
+              terminar.
+            </p>
+
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={handleEnablePush}
+                disabled={registeringPush}
+                className="w-full rounded-full bg-[#8F31F3] text-white text-xs font-semibold py-2.5 shadow-md disabled:opacity-70"
+              >
+                {registeringPush ? "Activando..." : "Activar recordatorios"}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleLater}
+                className="w-full rounded-full border border-slate-200 text-xs py-2.5 text-slate-600"
+              >
+                Más tarde
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal flotante del botón + (mismo componente, modo overlay) */}
       <CaptureModal

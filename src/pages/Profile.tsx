@@ -20,10 +20,10 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { registerPushSubscription } from "@/lib/registerPush";
 
 const LANGUAGE_KEY = "remi_language";
 const NOTIF_KEY = "remi_notifications";
-const AVATAR_KEY = "remi_avatar";
 
 type RemiLang = "es" | "en" | "de";
 
@@ -91,19 +91,34 @@ export default function ProfilePage() {
     const finalLang: RemiLang = storedLangMeta || storedLangLocal || "es";
     setPreferredLanguage(finalLang);
 
-    // notificaciones
+    // notificaciones (primero local, luego settings en Supabase)
     if (typeof window !== "undefined") {
       const notif = window.localStorage.getItem(NOTIF_KEY);
       if (notif === "0") setNotificationsEnabled(false);
       if (notif === "1") setNotificationsEnabled(true);
     }
 
-    // avatar (metadata o localStorage)
-    let metaAvatar = meta.avatar_url;
-    if (!metaAvatar && typeof window !== "undefined") {
-      metaAvatar = window.localStorage.getItem(AVATAR_KEY) || undefined;
-    }
-    if (metaAvatar) setAvatarUrl(metaAvatar);
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("remi_user_settings")
+          .select("notifications_enabled")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (data && data.notifications_enabled !== null) {
+          setNotificationsEnabled(data.notifications_enabled);
+        }
+      } catch (err) {
+        console.error("Error loading notification settings", err);
+      }
+    })();
+
+    // avatar: solo desde metadata
+    const metaAvatar = meta.avatar_url || null;
+    setAvatarUrl(metaAvatar);
+    setAvatarFile(null);
+    setAvatarError(null);
   }, [user]);
 
   const handleLanguageChange = (e: ChangeEvent<HTMLSelectElement>) => {
@@ -237,16 +252,43 @@ export default function ProfilePage() {
         console.error(error);
         toast.error(error.message);
       } else {
+        // 3) guardar ajustes de notificaciones en remi_user_settings
+        const { error: settingsError } = await supabase
+          .from("remi_user_settings")
+          .upsert(
+            {
+              user_id: user.id,
+              notifications_enabled: notificationsEnabled,
+              notify_day_before: true,
+              notify_on_due_date: true,
+              repeat_until_done: true,
+              notification_hour_utc: 8, // ejemplo: 8:00 UTC
+            },
+            { onConflict: "user_id" }
+          );
+
+        if (settingsError) {
+          console.error("Error saving notification settings", settingsError);
+        }
+
+        // 4) si las notificaciones están activadas, registrar suscripción push
+        if (notificationsEnabled) {
+          try {
+            await registerPushSubscription(user.id);
+          } catch (subErr) {
+            console.error("Error registering push subscription", subErr);
+          }
+        }
+
+        // 5) guardar preferencias locales
         if (typeof window !== "undefined") {
           window.localStorage.setItem(LANGUAGE_KEY, preferredLanguage);
           window.localStorage.setItem(
             NOTIF_KEY,
             notificationsEnabled ? "1" : "0"
           );
-          if (finalAvatarUrl) {
-            window.localStorage.setItem(AVATAR_KEY, finalAvatarUrl);
-          }
         }
+
         toast.success("Perfil actualizado correctamente.");
         setNewPassword("");
       }
