@@ -1,5 +1,11 @@
 // src/pages/Index.tsx
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+  type CSSProperties,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -30,7 +36,7 @@ function formatDueDiff(dueDate: string | null): string | null {
 
 export default function TodayPage() {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth(); // si en tu contexto se llama distinto, cámbialo aquí
+  const { user, signOut } = useAuth();
   const [tasks, setTasks] = useState<BrainItem[]>([]);
   const [ideas, setIdeas] = useState<BrainItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,6 +44,9 @@ export default function TodayPage() {
   const [activeTab, setActiveTab] =
     useState<"TODAY" | "WEEK" | "MONTH">("TODAY");
   const [profileOpen, setProfileOpen] = useState(false);
+
+  // ref para detectar clicks fuera del menú de perfil
+  const profileMenuRef = useRef<HTMLDivElement | null>(null);
 
   // Cargar tareas e ideas
   useEffect(() => {
@@ -68,6 +77,25 @@ export default function TodayPage() {
     return () => window.removeEventListener("remi-open-capture", handler);
   }, []);
 
+  // Cerrar el menú de perfil al hacer clic fuera
+  useEffect(() => {
+    if (!profileOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target as Node)
+      ) {
+        setProfileOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [profileOpen]);
+
   const topTasks = useMemo(() => {
     const now = new Date();
 
@@ -77,7 +105,7 @@ export default function TodayPage() {
       if (due) {
         score = due.getTime() - now.getTime();
       }
-      return { ...t, _score: score };
+      return { ...t, _score: score as number };
     });
 
     return scored.sort((a, b) => a._score - b._score).slice(0, 4);
@@ -121,9 +149,7 @@ export default function TodayPage() {
 
   const handleOpenProfile = () => {
     setProfileOpen(false);
-    // de momento esto lleva a 404 porque aún no tenemos /profile;
-    // puedes comentarlo si quieres evitar el 404:
-     navigate("/profile");
+    navigate("/profile");
   };
 
   const handleShareApp = async () => {
@@ -161,7 +187,7 @@ export default function TodayPage() {
         style={{
           padding: "20px 20px 80px",
           background:
-            "linear-gradient(145deg, #6c5ce7 0%, #a66bff 45%, #ff6fd8 100%)",
+            "linear-gradient(#8F31F3)",
           color: "white",
           borderBottomLeftRadius: "28px",
           borderBottomRightRadius: "28px",
@@ -194,7 +220,7 @@ export default function TodayPage() {
           </div>
 
           {/* BOTÓN PERFIL + MENÚ DESPLEGABLE */}
-          <div style={{ position: "relative" }}>
+          <div style={{ position: "relative" }} ref={profileMenuRef}>
             <button
               onClick={() => setProfileOpen((open) => !open)}
               style={{
@@ -242,13 +268,21 @@ export default function TodayPage() {
                   }}
                 >
                   Sesión iniciada como{" "}
-                  <span style={{ color: "#6c5ce7" }}>{username}</span>
+                  <span style={{ color: "#8F31F3" }}>{username}</span>
                 </div>
 
-                <button type="button" onClick={handleOpenProfile} style={menuButtonStyle}>
+                <button
+                  type="button"
+                  onClick={handleOpenProfile}
+                  style={menuButtonStyle}
+                >
                   Perfil
                 </button>
-                <button type="button" onClick={handleShareApp} style={menuButtonStyle}>
+                <button
+                  type="button"
+                  onClick={handleShareApp}
+                  style={menuButtonStyle}
+                >
                   Compartir app
                 </button>
                 <button
@@ -262,15 +296,10 @@ export default function TodayPage() {
             )}
           </div>
         </div>
-
-       
       </div>
 
       {/* CONTENIDO BLANCO SUPERPUESTO */}
       <div style={{ marginTop: -10, padding: "0 18px 18px" }}>
-        {/* sección proyectos fake por ahora */}
-        
-
         {/* pestañas Today/Week/Month */}
         <div
           style={{
@@ -299,7 +328,8 @@ export default function TodayPage() {
             </button>
             <button
               className={
-                "remi-tab " + (activeTab === "MONTH" ? "remi-tab--active" : "")
+                "remi-tab " +
+                (activeTab === "MONTH" ? "remi-tab--active" : "")
               }
               onClick={() => setActiveTab("MONTH")}
             >
@@ -357,7 +387,7 @@ export default function TodayPage() {
                       marginTop: 4,
                       border: "none",
                       background: "transparent",
-                      color: "#6c5ce7",
+                      color: "#8F31F3",
                       fontSize: 11,
                       cursor: "pointer",
                     }}

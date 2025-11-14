@@ -6,7 +6,7 @@
 :root {
   --remi-bg: #f5f4ff;
   --remi-card: #ffffff;
-  --remi-purple: #6c5ce7;
+  --remi-purple: #8F31F3;
   --remi-purple-soft: #a66bff;
   --remi-pink: #ff6fd8;
   --remi-text-main: #2d3142;
@@ -56,10 +56,10 @@ body {
   );
   border-radius: 0;
   box-shadow: none;
-  overflow: hidden;
+  overflow: hidden;          /* 👈 la shell NO scroll */
   display: flex;
   flex-direction: column;
-  position: relative; /* para posicionar la bottom nav absoluta */
+  position: relative;   
 }
 
 /* en escritorio que parezca móvil flotante */
@@ -72,9 +72,11 @@ body {
 
 /* página interior scrollable */
 .remi-page {
-  flex: 1;
-  overflow-y: auto;
-  padding-bottom: 80px; /* espacio para la barra inferior */
+    flex: 1;
+  min-height: 0;                 /* 👈 CLAVE para que funcione el scroll */
+  overflow-y: auto;              /* scroll vertical */
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 80px;          /* hueco para la bottom nav */
 }
 
 /* ocultar scroll feo en móvil */
@@ -196,7 +198,7 @@ body {
 /* ------- BOTTOM NAV CON CTA CENTRAL ------- */
 
 .remi-bottom-nav {
-  position: absolute;
+    position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
@@ -207,6 +209,7 @@ body {
   border-top-left-radius: 24px;
   border-top-right-radius: 24px;
   box-shadow: 0 -12px 24px rgba(90, 76, 170, 0.18);
+  z-index: 30;   
 }
 
 /* contenedor interno dejando hueco en el centro para el + */
@@ -250,7 +253,7 @@ body {
 
 /* estado activo: cambia solo el color (icono + texto) */
 .remi-bottom-link--active {
-  color: #6c5ce7;              /* morado activo */
+  color: #8F31F3;              /* morado activo */
   font-weight: 600;
 }
 
@@ -271,7 +274,7 @@ body {
   border-radius: 50%;
   border: none;
   cursor: pointer;
-  background: linear-gradient(145deg, #6c5ce7 0%, #4da8ff 50%, #ff6fd8 100%);
+  background: linear-gradient( #8F31F3);
   color: #ffffff;
   font-size: 30px;
   display: flex;
@@ -365,9 +368,9 @@ body {
 }
 
 .remi-chip--active {
-  background: #6c5ce7;
+  background: #8F31F3;
   color: #ffffff;
-  border-color: #6c5ce7;
+  border-color: #8F31F3;
 }
 
 /* footer de botones del modal */
@@ -389,7 +392,7 @@ body {
 .remi-btn-primary {
   border: none;
   border-radius: 999px;
-  background: linear-gradient(145deg, #6c5ce7, #4da8ff);
+  background: linear-gradient(#8F31F3);
   color: #ffffff;
   padding: 7px 16px;
   font-size: 12px;

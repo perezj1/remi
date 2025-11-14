@@ -11,7 +11,7 @@ self.addEventListener('activate', (event) => {
 function resolveUrl(urlLike) {
   try {
     // Si ya es absoluta, new URL la aceptará; si es relativa, la resuelve vs scope
-    return new URL(urlLike || '/home', self.registration.scope).toString();
+    return new URL(urlLike || '/', self.registration.scope).toString();
   } catch {
     // Fallback: raíz de la app (scope)
     return self.registration.scope;
@@ -32,7 +32,7 @@ self.addEventListener('push', (event) => {
     tag: data.tag || 'Remi-reminder',
     renotify: false,
     // Normalizamos aquí para que notificationclick no tenga que adivinar
-    data: { url: resolveUrl(data.url || '/home') }
+    data: { url: resolveUrl(data.url || '/') }
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
@@ -41,7 +41,7 @@ self.addEventListener('push', (event) => {
 // CLICK: enfocar una ventana existente o abrir nueva en data.url
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const targetUrl = resolveUrl(event.notification.data?.url || '/home');
+  const targetUrl = resolveUrl(event.notification.data?.url || '/');
 
   event.waitUntil((async () => {
     const all = await clients.matchAll({ type: 'window', includeUncontrolled: true });

@@ -6,12 +6,11 @@ import TodayPage from "@/pages/Index";
 import InboxPage from "@/pages/Inbox";
 import IdeasPage from "@/pages/Ideas";
 import ProfilePage from "@/pages/Profile";
-
 import AuthPage from "@/pages/Auth";
 import NotFound from "@/pages/NotFound";
 import BottomNav from "@/components/BottomNav";
 
-// Componente que protege rutas privadas
+// Protege rutas privadas
 function RequireAuth({ children }: { children: JSX.Element }) {
   const { user } = useAuth();
   if (!user) {
@@ -25,58 +24,56 @@ function AppRoutes() {
 
   return (
     <>
-      {/* wrapper para dejar espacio inferior si hace falta */}
-      <div className="pb-16">
-        <Routes>
-          {/* Ruta pública de login/registro */}
-          <Route
-            path="/auth"
-            element={!user ? <AuthPage /> : <Navigate to="/" replace />}
-          />
+      {/* El contenido principal: cada página devuelve un <div className="remi-page"> */}
+      <Routes>
+        {/* Ruta pública de login/registro */}
+        <Route
+          path="/auth"
+          element={!user ? <AuthPage /> : <Navigate to="/" replace />}
+        />
 
-          {/* Rutas privadas */}
-          <Route
-            path="/"
-            element={
-              <RequireAuth>
-                <TodayPage />
-              </RequireAuth>
-            }
-          />
+        {/* Rutas privadas */}
+        <Route
+          path="/"
+          element={
+            <RequireAuth>
+              <TodayPage />
+            </RequireAuth>
+          }
+        />
 
-          <Route
-            path="/inbox"
-            element={
-              <RequireAuth>
-                <InboxPage />
-              </RequireAuth>
-            }
-          />
+        <Route
+          path="/inbox"
+          element={
+            <RequireAuth>
+              <InboxPage />
+            </RequireAuth>
+          }
+        />
 
-          <Route
-            path="/ideas"
-            element={
-              <RequireAuth>
-                <IdeasPage />
-              </RequireAuth>
-            }
-          />
+        <Route
+          path="/ideas"
+          element={
+            <RequireAuth>
+              <IdeasPage />
+            </RequireAuth>
+          }
+        />
 
-          <Route
-            path="/profile"
-            element={
-              <RequireAuth>
-                <ProfilePage />
-              </RequireAuth>
-            }
-          />
+        <Route
+          path="/profile"
+          element={
+            <RequireAuth>
+              <ProfilePage />
+            </RequireAuth>
+          }
+        />
 
-          {/* 404 */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </div>
+        {/* 404 */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
 
-      {/* Solo mostramos la BottomNav si hay usuario logueado */}
+      {/* Bottom nav fija al fondo dentro de remi-shell */}
       {user && <BottomNav />}
     </>
   );

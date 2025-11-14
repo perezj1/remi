@@ -25,6 +25,8 @@ const LANGUAGE_KEY = "remi_language";
 const NOTIF_KEY = "remi_notifications";
 const AVATAR_KEY = "remi_avatar";
 
+type RemiLang = "es" | "en" | "de";
+
 export default function ProfilePage() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -37,7 +39,7 @@ export default function ProfilePage() {
 
   // ---- ajustes de la app ----
   const [preferredLanguage, setPreferredLanguage] =
-    useState<"es" | "en" | "de">("es");
+    useState<RemiLang>("es");
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   // ---- contraseña / guardado ----
@@ -52,10 +54,14 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!user) return;
 
-    const meta = (user.user_metadata || {}) as any;
+    const meta = (user.user_metadata || {}) as {
+      username?: string;
+      language?: RemiLang;
+      avatar_url?: string;
+    };
 
     const baseUsername =
-      typeof meta.username === "string" && meta.username.trim() !== ""
+      meta.username && meta.username.trim() !== ""
         ? meta.username
         : user.email
         ? user.email.split("@")[0]
@@ -76,15 +82,14 @@ export default function ProfilePage() {
     }
 
     // idioma
-    const storedLangMeta = meta.language as string | undefined;
+    const storedLangMeta = meta.language;
     const storedLangLocal =
       typeof window !== "undefined"
-        ? window.localStorage.getItem(LANGUAGE_KEY) || undefined
-        : undefined;
-    const finalLang = storedLangMeta ?? storedLangLocal ?? "es";
-    if (finalLang === "es" || finalLang === "en" || finalLang === "de") {
-      setPreferredLanguage(finalLang);
-    }
+        ? (window.localStorage.getItem(LANGUAGE_KEY) as RemiLang | null)
+        : null;
+
+    const finalLang: RemiLang = storedLangMeta || storedLangLocal || "es";
+    setPreferredLanguage(finalLang);
 
     // notificaciones
     if (typeof window !== "undefined") {
@@ -94,7 +99,7 @@ export default function ProfilePage() {
     }
 
     // avatar
-    let metaAvatar = meta.avatar_url as string | undefined;
+    let metaAvatar = meta.avatar_url;
     if (!metaAvatar && typeof window !== "undefined") {
       metaAvatar = window.localStorage.getItem(AVATAR_KEY) || undefined;
     }
@@ -102,7 +107,7 @@ export default function ProfilePage() {
   }, [user]);
 
   const handleLanguageChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value as "es" | "en" | "de";
+    const value = e.target.value as RemiLang;
     setPreferredLanguage(value);
   };
 
@@ -171,7 +176,15 @@ export default function ProfilePage() {
     setSaving(true);
 
     try {
-      const updatePayload: any = {
+      const updatePayload: {
+        email?: string;
+        password?: string;
+        data: {
+          username: string;
+          language: RemiLang;
+          avatar_url: string | null;
+        };
+      } = {
         data: {
           username,
           language: preferredLanguage,
@@ -222,13 +235,13 @@ export default function ProfilePage() {
     !avatarUrl && displayName ? displayName.charAt(0).toUpperCase() : "R";
 
   return (
-    <div className="remi-page">
-      {/* HEADER CON GRADIENTE */}
+    <div className="remi-page flex flex-col">
+      {/* HEADER CON GRADIENTE USANDO COLOR REMI (#8F31F3) */}
       <div
         style={{
           padding: "16px 20px 40px",
           background:
-            "linear-gradient(145deg, #6c5ce7 0%, #a66bff 45%, #ff6fd8 100%)",
+            "linear-gradient(#8F31F3)",
           color: "white",
           borderBottomLeftRadius: "28px",
           borderBottomRightRadius: "28px",
@@ -412,7 +425,7 @@ export default function ProfilePage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="mt-3 w-full rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-white text-xs font-semibold py-2.5 shadow-md active:translate-y-[1px] disabled:opacity-70"
+                className="mt-3 w-full rounded-full bg-[#8F31F3] text-white text-xs font-semibold py-2.5 shadow-md active:translate-y-[1px] disabled:opacity-70"
               >
                 {saving ? "Guardando..." : "Guardar cambios"}
               </button>

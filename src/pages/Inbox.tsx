@@ -161,7 +161,7 @@ export default function InboxPage() {
                         border: "none",
                         background: "transparent",
                         fontSize: 11,
-                        color: "#6c5ce7",
+                        color: "#8F31F3",
                         cursor: "pointer",
                       }}
                       onClick={() => handleDone(item)}
