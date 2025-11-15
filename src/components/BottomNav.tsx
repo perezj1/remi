@@ -30,7 +30,7 @@ export default function BottomNav() {
 
         {/* Botón central: + morado REMI */}
         <button
-          className="flex h-14 w-14 items-center justify-center rounded-full border-4 border-white bg-[#8F31F3] text-white shadow-[0_8px_20px_rgba(143,49,243,0.6)] -translate-y-1"
+          className="flex h-14 w-14 items-center justify-center rounded-full border-1 border-white bg-[#8F31F3] text-white shadow-[0_8px_20px_rgba(143,49,243,0.6)] -translate-y-1"
           onClick={handleCreateClick}
         >
           <Plus className="w-7 h-7" />
@@ -59,7 +59,7 @@ function NavItem({ to, label, active, icon: Icon }: NavItemProps) {
   return (
     <Link
       to={to}
-      className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-200 transition"
+      className="flex h-12 w-12 items-center justify-center rounded-full  transition"
     >
       <Icon
         className={`w-6 h-6 ${
