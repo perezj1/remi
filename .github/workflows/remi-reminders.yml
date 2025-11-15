@@ -2,18 +2,19 @@ name: Remi Notifications Cron
 
 on:
   schedule:
-    - cron: "*/10 * * * *"   # cada 10 minutos en UTC
-  workflow_dispatch:         # para ejecutarlo a mano
+    - cron: "*/10 * * * *"   # cada 10 minutos (UTC)
+  workflow_dispatch:         # para lanzarlo a mano
 
 jobs:
   call-edge-function:
     runs-on: ubuntu-latest
     steps:
       - name: Invoke Supabase Edge Function
-        run: |
-          curl -X POST \
-            -H "Authorization: Bearer $CRON_SECRET" \
-            https://${SUPABASE_PROJECT_REF}.functions.supabase.co/remi-notifications
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          echo "Calling https://${SUPABASE_PROJECT_REF}.functions.supabase.co/remi-notifications"
+          curl -i -X POST \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            https://${SUPABASE_PROJECT_REF}.functions.supabase.co/remi-notifications
