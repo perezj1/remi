@@ -6,6 +6,7 @@ import {
   BrainItemStatus,
   fetchInboxItems,
   setTaskStatus,
+  deleteBrainItem, // 👈 NUEVO
 } from "@/lib/brainItemsApi";
 import { Lightbulb, ListTodo, Check, Trash2 } from "lucide-react";
 
@@ -46,16 +47,23 @@ export default function InboxPage() {
     return true;
   });
 
-  // marcar como hecha o archivar (borrar) según estado actual
+  // marcar como hecha o borrar según estado actual
   const handlePrimaryAction = async (item: BrainItem) => {
-    if (item.status !== "DONE") {
-      // pasar a DONE
-      const updated = await setTaskStatus(item.id, "DONE");
-      setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
-    } else {
-      // ya está DONE → archivar y sacarla de la lista
-      const updated = await setTaskStatus(item.id, "ARCHIVED");
-      setItems((prev) => prev.filter((i) => i.id !== updated.id));
+    try {
+      if (item.status !== "DONE") {
+        // pasar a DONE
+        const updated = await setTaskStatus(item.id, "DONE");
+        setItems((prev) =>
+          prev.map((i) => (i.id === updated.id ? updated : i))
+        );
+      } else {
+        // ya está DONE → borrar DEFINITIVAMENTE de Supabase y quitar de la lista
+        await deleteBrainItem(item.id);
+        setItems((prev) => prev.filter((i) => i.id !== item.id));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error actualizando tu bandeja");
     }
   };
 
@@ -181,7 +189,11 @@ export default function InboxPage() {
                         color: isTask ? "#8F31F3" : "#F59E0B",
                       }}
                     >
-                      {isTask ? <ListTodo size={18} /> : <Lightbulb size={18} />}
+                      {isTask ? (
+                        <ListTodo size={18} />
+                      ) : (
+                        <Lightbulb size={18} />
+                      )}
                     </div>
 
                     <div>

@@ -3,7 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type BrainItemType = "task" | "idea";
 export type BrainItemStatus = "ACTIVE" | "DONE" | "ARCHIVED";
-export type ReminderMode = "NONE" | "ON_DUE_DATE" | "DAY_BEFORE_AND_DUE" | "DAILY_UNTIL_DUE";
+export type ReminderMode =
+  | "NONE"
+  | "ON_DUE_DATE"
+  | "DAY_BEFORE_AND_DUE"
+  | "DAILY_UNTIL_DUE";
 
 export interface BrainItem {
   id: string;
@@ -79,7 +83,10 @@ export async function createTask(
   return data as BrainItem;
 }
 
-export async function createIdea(userId: string, title: string): Promise<BrainItem> {
+export async function createIdea(
+  userId: string,
+  title: string
+): Promise<BrainItem> {
   const { data, error } = await supabase
     .from("brain_items")
     .insert({
@@ -128,4 +135,17 @@ export async function postponeTask(
 
   if (error) throw error;
   return data as BrainItem;
+}
+
+/**
+ * Borrar definitivamente un BrainItem de la base de datos.
+ * Se usará cuando el usuario pulse el icono de papelera.
+ */
+export async function deleteBrainItem(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("brain_items")
+    .delete()
+    .eq("id", id);
+
+  if (error) throw error;
 }
