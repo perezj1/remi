@@ -9,6 +9,8 @@ import ProfilePage from "@/pages/Profile";
 import AuthPage from "@/pages/Auth";
 import NotFound from "@/pages/NotFound";
 import BottomNav from "@/components/BottomNav";
+import InstallPrompt from "@/components/InstallPrompt";
+
 
 // Protege rutas privadas
 function RequireAuth({ children }: { children: JSX.Element }) {
@@ -75,6 +77,8 @@ function AppRoutes() {
 
       {/* Bottom nav fija al fondo dentro de remi-shell */}
       {user && <BottomNav />}
+
+      <InstallPrompt />
     </>
   );
 }

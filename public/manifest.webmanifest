@@ -1,7 +1,8 @@
 {
+  "id": "/",
   "name": "Remi",
   "short_name": "Remi",
-  "description": "Hábitos diarios con XP, rachas y recordatorios.",
+  "description": "Free your mind.",
   "lang": "es",
   "dir": "ltr",
   "start_url": "/",
