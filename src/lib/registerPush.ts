@@ -42,6 +42,7 @@ export async function registerPushSubscription(userId: string) {
 
   // Esperamos a que el SW esté listo
   const registration = await navigator.serviceWorker.ready;
+  console.log("CLIENT VAPID_PUBLIC_KEY =>", VAPID_PUBLIC_KEY);
 
   // Si ya hay suscripción, la reutilizamos
   let sub = await registration.pushManager.getSubscription();
@@ -67,6 +68,7 @@ export async function registerPushSubscription(userId: string) {
         p256dh,
         auth,
         user_agent: navigator.userAgent,
+        status: "ACTIVE",   // 👈 importante
       },
       {
         // IMPORTANT: solo columnas que existen en la tabla
