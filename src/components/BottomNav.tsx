@@ -30,7 +30,7 @@ export default function BottomNav() {
 
         {/* Botón central: + morado REMI */}
         <button
-          className="flex h-14 w-14 items-center justify-center rounded-full border-1 border-white bg-[#8F31F3] text-white shadow-[0_8px_20px_rgba(143,49,243,0.6)] -translate-y-1"
+          className="flex h-14 w-14 items-center justify-center rounded-full border-1 border-white bg-[#8F31F3] text-white shadow-[0_8px_20px_rgba(143,49,243,0.2)] -translate-y-0"
           onClick={handleCreateClick}
         >
           <Plus className="w-7 h-7" />
