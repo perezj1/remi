@@ -1,7 +1,8 @@
 // src/components/CaptureModal.tsx
 import { useState } from "react";
-import { ClipboardList, Lightbulb, ListTodo } from "lucide-react";
+import { Lightbulb, ListTodo } from "lucide-react";
 import type { ReminderMode } from "@/lib/brainItemsApi";
+import { toast } from "sonner";
 
 interface CaptureModalProps {
   open: boolean;
@@ -16,7 +17,7 @@ interface CaptureModalProps {
   embedded?: boolean;
 }
 
-type Mode = "choose" | "task" | "idea";
+type Mode = "choose" | "task";
 
 export default function CaptureModal({
   open,
@@ -85,29 +86,37 @@ export default function CaptureModal({
   };
 
   const handleConfirmTask = async () => {
-    if (!text.trim()) return;
+    if (!text.trim() || loading) return;
     setLoading(true);
     try {
       const dueDate = getDueDateFromOption();
       await onCreateTask(text.trim(), dueDate, reminderMode);
+
+      // ✅ Toast al guardar tarea
+      toast.success("Tarea guardada correctamente");
+
       resetAndClose();
     } catch (err) {
       console.error(err);
       setLoading(false);
-      alert("Error al crear la tarea");
+      toast.error("Error al crear la tarea");
     }
   };
 
   const handleConfirmIdea = async () => {
-    if (!text.trim()) return;
+    if (!text.trim() || loading) return;
     setLoading(true);
     try {
       await onCreateIdea(text.trim());
+
+      // ✅ Toast al guardar idea
+      toast.success("Idea guardada correctamente");
+
       resetAndClose();
     } catch (err) {
       console.error(err);
       setLoading(false);
-      alert("Error al crear la idea");
+      toast.error("Error al crear la idea");
     }
   };
 
@@ -150,9 +159,11 @@ export default function CaptureModal({
             gap: 14,
           }}
         >
+          {/* ✅ “Es una idea” guarda directamente la idea y muestra el toast */}
           <button
             className="remi-btn-ghost"
-            onClick={() => setMode("idea")}
+            onClick={handleConfirmIdea}
+            disabled={loading}
             style={{
               padding: "12px 0",
               fontSize: 14,
@@ -166,9 +177,12 @@ export default function CaptureModal({
             <Lightbulb size={18} />
             <span>Es una idea</span>
           </button>
+
+          {/* “Es una tarea” pasa al paso de configuración de tarea */}
           <button
             className="remi-btn-primary"
             onClick={() => setMode("task")}
+            disabled={loading}
             style={{
               padding: "12px 0",
               fontSize: 14,
@@ -182,7 +196,6 @@ export default function CaptureModal({
             <ListTodo size={18} />
             <span>Es una tarea</span>
           </button>
-          
         </div>
       )}
 
@@ -296,26 +309,6 @@ export default function CaptureModal({
             </button>
           </div>
         </>
-      )}
-
-      {/* Paso 2: guardar idea */}
-      {mode === "idea" && (
-        <div className="remi-modal-footer">
-          <button
-            className="remi-btn-ghost"
-            onClick={() => setMode("choose")}
-            disabled={loading}
-          >
-            Atrás
-          </button>
-          <button
-            className="remi-btn-primary"
-            onClick={handleConfirmIdea}
-            disabled={loading}
-          >
-            Guardar idea
-          </button>
-        </div>
       )}
     </div>
   );
