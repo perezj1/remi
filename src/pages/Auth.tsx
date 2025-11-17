@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useI18n } from "@/contexts/I18nContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +22,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const { signUp, signIn, user } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -40,26 +42,22 @@ const Auth = () => {
 
       if (error) {
         if (error.message.includes("Invalid login credentials")) {
-          toast.error(
-            "Credenciales incorrectas. Verifica tu email y contraseña."
-          );
+          toast.error(t("auth.errorInvalidCredentials"));
         } else if (error.message.includes("User already registered")) {
-          toast.error("Este email ya está registrado. Intenta iniciar sesión.");
+          toast.error(t("auth.errorUserAlreadyRegistered"));
         } else {
           toast.error(error.message);
         }
       } else {
         if (!isLogin) {
-          toast.success(
-            "¡Cuenta creada! Ahora vamos a configurar tu objetivo."
-          );
+          toast.success(t("auth.signUpSuccess"));
           navigate("/");
         } else {
           navigate("/");
         }
       }
-    } catch (error: any) {
-      toast.error("Ha ocurrido un error. Intenta de nuevo.");
+    } catch (_error) {
+      toast.error(t("auth.errorGeneric"));
     } finally {
       setLoading(false);
     }
@@ -78,12 +76,10 @@ const Auth = () => {
             </div>
           </div>
           <CardTitle className="text-3xl font-bold">
-            {isLogin ? "¡Bienvenido de vuelta!" : "¡Comienza tu viaje!"}
+            {isLogin ? t("auth.loginTitle") : t("auth.registerTitle")}
           </CardTitle>
           <CardDescription className="text-base">
-            {isLogin
-              ? "Continúa mejorando cada día con REMI"
-              : "Crea tu cuenta y comienza a lograr tus objetivos"}
+            {isLogin ? t("auth.loginSubtitle") : t("auth.registerSubtitle")}
           </CardDescription>
         </CardHeader>
 
@@ -91,14 +87,14 @@ const Auth = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium">
-                Email
+                {t("auth.emailLabel")}
               </Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="email"
                   type="email"
-                  placeholder="tu@email.com"
+                  placeholder={t("auth.emailPlaceholder")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -109,14 +105,14 @@ const Auth = () => {
 
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium">
-                Contraseña
+                {t("auth.passwordLabel")}
               </Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="password"
                   type="password"
-                  placeholder="••••••••"
+                  placeholder={t("auth.passwordPlaceholder")}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -132,10 +128,10 @@ const Auth = () => {
               disabled={loading}
             >
               {loading
-                ? "Cargando..."
+                ? t("common.loading")
                 : isLogin
-                ? "Iniciar sesión"
-                : "Crear cuenta"}
+                ? t("auth.submitLogin")
+                : t("auth.submitRegister")}
             </Button>
 
             <div className="text-center">
@@ -145,8 +141,8 @@ const Auth = () => {
                 className="text-sm text-[#8F31F3] hover:text-[#7a28d0] font-medium"
               >
                 {isLogin
-                  ? "¿No tienes cuenta? Regístrate"
-                  : "¿Ya tienes cuenta? Inicia sesión"}
+                  ? t("auth.toggleToRegister")
+                  : t("auth.toggleToLogin")}
               </button>
             </div>
           </form>

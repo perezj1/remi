@@ -2,9 +2,12 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { BrainItem, fetchActiveIdeas } from "@/lib/brainItemsApi";
+import { useI18n } from "@/contexts/I18nContext";
 
 export default function IdeasPage() {
   const { user } = useAuth();
+  const { t } = useI18n();
+
   const [ideas, setIdeas] = useState<BrainItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -18,21 +21,21 @@ export default function IdeasPage() {
         setIdeas(data);
       } catch (err) {
         console.error(err);
-        alert("Error cargando tus ideas");
+        alert(t("ideas.errorLoading"));
       } finally {
         setLoading(false);
       }
     })();
-  }, [user]);
+  }, [user, t]);
 
   return (
     <div className="remi-page">
       <div style={{ padding: "18px 18px 10px" }}>
         <h1 style={{ fontSize: 20, fontWeight: 600, marginBottom: 4 }}>
-          Ideas
+          {t("ideas.title")}
         </h1>
         <p style={{ fontSize: 12, color: "#8b8fa6", marginBottom: 12 }}>
-          Todas las ideas que no quieres perder están guardadas aquí.
+          {t("ideas.subtitle")}
         </p>
       </div>
 
@@ -40,7 +43,9 @@ export default function IdeasPage() {
         <div className="remi-task-list">
           {loading && (
             <div className="remi-task-row">
-              <span className="remi-task-sub">Cargando ideas…</span>
+              <span className="remi-task-sub">
+                {t("ideas.loading")}
+              </span>
             </div>
           )}
 
@@ -54,9 +59,11 @@ export default function IdeasPage() {
                 }}
               />
               <div>
-                <p className="remi-task-title">Sin ideas todavía</p>
+                <p className="remi-task-title">
+                  {t("ideas.emptyTitle")}
+                </p>
                 <p className="remi-task-sub">
-                  Usa el botón + en la pantalla de Hoy para guardar tus ideas.
+                  {t("ideas.emptySubtitle")}
                 </p>
               </div>
             </div>
@@ -75,8 +82,9 @@ export default function IdeasPage() {
                 <div>
                   <p className="remi-task-title">{idea.title}</p>
                   <p className="remi-task-sub">
-                    Guardada el{" "}
-                    {new Date(idea.created_at).toLocaleString()}
+                    {t("ideas.savedAt", {
+                      date: new Date(idea.created_at).toLocaleString(),
+                    })}
                   </p>
                 </div>
               </div>

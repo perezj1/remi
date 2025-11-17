@@ -21,20 +21,14 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { registerPushSubscription } from "@/lib/registerPush";
+import { useI18n } from "@/contexts/I18nContext";
+import type { RemiLocale } from "@/locales";
 
-const LANGUAGE_KEY = "remi_language";
 const NOTIF_KEY = "remi_notifications";
 
-type RemiLang = "es" | "en" | "de";
-
 export default function ProfilePage() {
-  const {
-    user,
-    profile,
-    signOut,
-    updateProfile,
-    updateAuthUser,
-  } = useAuth();
+  const { user, profile, signOut, updateProfile, updateAuthUser } = useAuth();
+  const { lang, setLang, t } = useI18n();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -45,9 +39,8 @@ export default function ProfilePage() {
 
   // ---- ajustes de la app ----
   const [preferredLanguage, setPreferredLanguage] =
-    useState<RemiLang>("es");
-  const [notificationsEnabled, setNotificationsEnabled] =
-    useState(true);
+    useState<RemiLocale>(lang);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   // ---- contraseña / guardado ----
   const [newPassword, setNewPassword] = useState("");
@@ -65,7 +58,7 @@ export default function ProfilePage() {
     // Nombre: primero perfil, luego metadata, luego email
     const meta = (user.user_metadata || {}) as {
       username?: string;
-      language?: RemiLang;
+      language?: RemiLocale;
       avatar_url?: string;
     };
 
@@ -91,16 +84,15 @@ export default function ProfilePage() {
       );
     }
 
-    // idioma: primero metadata, luego localStorage, por último 'es'
-    const storedLangMeta = meta.language;
-    const storedLangLocal =
-      typeof window !== "undefined"
-        ? (window.localStorage.getItem(LANGUAGE_KEY) as RemiLang | null)
-        : null;
+    // idioma: prioridad profiles.language → metadata.language
+    const profileLang = (((profile as any)?.language ??
+      meta.language ??
+      null) as RemiLocale | null);
 
-    const finalLang: RemiLang =
-      storedLangMeta || storedLangLocal || "es";
-    setPreferredLanguage(finalLang);
+    if (profileLang) {
+      setPreferredLanguage(profileLang);
+      setLang(profileLang);
+    }
 
     // notificaciones (primero local, luego settings en Supabase)
     if (typeof window !== "undefined") {
@@ -132,11 +124,12 @@ export default function ProfilePage() {
     setAvatarUrl(avatarFromProfile ?? metaAvatar);
     setAvatarFile(null);
     setAvatarError(null);
-  }, [user, profile]);
+  }, [user, profile, setLang]);
 
   const handleLanguageChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value as RemiLang;
-    setPreferredLanguage(value);
+    const value = e.target.value as RemiLocale;
+    setPreferredLanguage(value); // estado de formulario
+    setLang(value); // cambia idioma de la UI + localStorage
   };
 
   const handleToggleNotifications = () => {
@@ -145,14 +138,14 @@ export default function ProfilePage() {
 
   const handleShareApp = async () => {
     const url = window.location.origin;
-    const text = "Estoy usando REMI para organizar mis tareas diarias 🚀";
+    const text = t("profile.shareText");
 
     try {
       if (navigator.share) {
         await navigator.share({ title: "REMI", text, url });
       } else if (navigator.clipboard) {
         await navigator.clipboard.writeText(url);
-        toast.success("Enlace de REMI copiado al portapapeles");
+        toast.success(t("profile.shareCopied"));
       } else {
         alert(url);
       }
@@ -167,7 +160,7 @@ export default function ProfilePage() {
       navigate("/auth");
     } catch (e) {
       console.error(e);
-      toast.error("No se pudo cerrar sesión. Intenta de nuevo.");
+      toast.error(t("profile.logoutError"));
     }
   };
 
@@ -183,7 +176,7 @@ export default function ProfilePage() {
     setAvatarError(null);
 
     if (file.size > 2 * 1024 * 1024) {
-      setAvatarError("La imagen debe pesar menos de 2 MB.");
+      setAvatarError(t("profile.avatarTooBig"));
       return;
     }
 
@@ -216,7 +209,7 @@ export default function ProfilePage() {
 
         if (uploadError || !uploadData) {
           console.error("Upload error", uploadError);
-          setAvatarError("No se pudo subir la imagen. Intenta de nuevo.");
+          setAvatarError(t("profile.avatarUploadError"));
           setSaving(false);
           return;
         }
@@ -230,11 +223,12 @@ export default function ProfilePage() {
         setAvatarFile(null);
       }
 
-      // 2) Actualizar perfil en la tabla public.profiles (nombre + avatar)
+      // 2) Actualizar perfil en la tabla public.profiles (nombre + avatar + idioma)
       await updateProfile({
         display_name: username,
         avatar_url: finalAvatarUrl,
-      });
+        language: preferredLanguage,
+      } as any);
 
       // 3) Actualizar email / contraseña en Auth
       const authUpdates: { email?: string; password?: string } = {};
@@ -245,7 +239,7 @@ export default function ProfilePage() {
 
       if (newPassword.trim().length > 0) {
         if (newPassword.trim().length < 6) {
-          toast.error("La nueva contraseña debe tener al menos 6 caracteres.");
+          toast.error(t("profile.passwordTooShort"));
           setSaving(false);
           return;
         }
@@ -255,7 +249,7 @@ export default function ProfilePage() {
       if (Object.keys(authUpdates).length > 0) {
         const { error: authError } = await updateAuthUser(authUpdates);
         if (authError) {
-          toast.error("No se pudo actualizar email/contraseña.");
+          toast.error(t("profile.authUpdateError"));
           setSaving(false);
           return;
         }
@@ -271,7 +265,7 @@ export default function ProfilePage() {
             notify_day_before: true,
             notify_on_due_date: true,
             repeat_until_done: true,
-            notification_hour_utc: 8, // ejemplo: 8:00 UTC
+            notification_hour_utc: 7, // ejemplo: 7:00 UTC
           },
           { onConflict: "user_id" }
         );
@@ -289,26 +283,26 @@ export default function ProfilePage() {
         }
       }
 
-      // 6) guardar preferencias locales
+      // 6) guardar preferencias locales (solo notificaciones; el idioma lo guarda el I18nProvider)
       if (typeof window !== "undefined") {
-        window.localStorage.setItem(LANGUAGE_KEY, preferredLanguage);
         window.localStorage.setItem(
           NOTIF_KEY,
           notificationsEnabled ? "1" : "0"
         );
       }
 
-      toast.success("Perfil actualizado correctamente.");
+      toast.success(t("profile.updateSuccess"));
       setNewPassword("");
     } catch (err) {
       console.error(err);
-      toast.error("No se pudieron guardar los cambios.");
+      toast.error(t("profile.updateError"));
     } finally {
       setSaving(false);
     }
   };
 
-  const displayName = username || (user?.email ?? "Usuario");
+  const displayName =
+    username || (user?.email ?? t("profile.defaultUserName"));
   const initial =
     !avatarUrl && displayName
       ? displayName.charAt(0).toUpperCase()
@@ -337,7 +331,7 @@ export default function ProfilePage() {
           }}
         >
           <ArrowLeft size={16} />
-          <span>Perfil</span>
+          <span>{t("profile.back")}</span>
         </button>
 
         <div className="flex flex-col items-center gap-3">
@@ -387,7 +381,7 @@ export default function ProfilePage() {
             </div>
             {memberSince && (
               <div className="text-[11px] opacity-90">
-                Miembro desde {memberSince}
+                {t("profile.memberSince", { date: memberSince })}
               </div>
             )}
           </div>
@@ -402,9 +396,11 @@ export default function ProfilePage() {
             className="bg-white rounded-2xl shadow-md"
             style={{ padding: "14px 14px 14px" }}
           >
-            <h2 className="text-sm font-semibold mb-1">User information</h2>
+            <h2 className="text-sm font-semibold mb-1">
+              {t("profile.sectionUserTitle")}
+            </h2>
             <p className="text-[11px] text-slate-500 mb-3">
-              Edita tus datos básicos y cómo se muestra REMI.
+              {t("profile.sectionUserDescription")}
             </p>
 
             <form className="space-y-3" onSubmit={handleSave}>
@@ -412,14 +408,14 @@ export default function ProfilePage() {
               <div className="space-y-1 text-xs">
                 <label className="font-medium flex items-center gap-1">
                   <UserIcon size={13} />
-                  Username
+                  {t("profile.usernameLabel")}
                 </label>
                 <div className="relative">
                   <input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Tu nombre en REMI"
+                    placeholder={t("profile.usernamePlaceholder")}
                     className="w-full rounded-full border border-slate-200 bg-white/80 px-4 py-2.5 text-xs outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition"
                   />
                 </div>
@@ -429,14 +425,14 @@ export default function ProfilePage() {
               <div className="space-y-1 text-xs">
                 <label className="font-medium flex items-center gap-1">
                   <Mail size={13} />
-                  Email
+                  {t("profile.emailLabel")}
                 </label>
                 <div className="relative">
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="tu@email.com"
+                    placeholder={t("profile.emailPlaceholder")}
                     className="w-full rounded-full border border-slate-200 bg-white/80 px-4 py-2.5 text-xs outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition"
                   />
                 </div>
@@ -446,14 +442,14 @@ export default function ProfilePage() {
               <div className="space-y-1 text-xs">
                 <label className="font-medium flex items-center gap-1">
                   <Lock size={13} />
-                  Nueva contraseña
+                  {t("profile.passwordLabel")}
                 </label>
                 <div className="relative">
                   <input
                     type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Déjalo vacío si no quieres cambiarla"
+                    placeholder={t("profile.passwordPlaceholder")}
                     className="w-full rounded-full border border-slate-200 bg-white/80 px-4 py-2.5 text-xs outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition"
                   />
                 </div>
@@ -463,7 +459,7 @@ export default function ProfilePage() {
               <div className="space-y-1 text-xs">
                 <label className="font-medium flex items-center gap-1">
                   <Globe2 size={13} />
-                  Language
+                  {t("profile.languageLabel")}
                 </label>
                 <div className="relative">
                   <select
@@ -471,9 +467,15 @@ export default function ProfilePage() {
                     onChange={handleLanguageChange}
                     className="w-full rounded-full border border-slate-200 bg-white/80 px-4 py-2.5 text-xs outline-none appearance-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition"
                   >
-                    <option value="es">🇪🇸 Spanish</option>
-                    <option value="en">🇬🇧 English</option>
-                    <option value="de">🇩🇪 German</option>
+                    <option value="es">
+                      {t("profile.languageSpanish")}
+                    </option>
+                    <option value="en">
+                      {t("profile.languageEnglish")}
+                    </option>
+                    <option value="de">
+                      {t("profile.languageGerman")}
+                    </option>
                   </select>
                   <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">
                     ▼
@@ -484,9 +486,11 @@ export default function ProfilePage() {
               {/* NOTIFICATIONS */}
               <div className="flex items-center justify-between pt-2">
                 <div className="text-xs">
-                  <div className="font-medium">Notifications</div>
+                  <div className="font-medium">
+                    {t("profile.notificationsLabel")}
+                  </div>
                   <div className="text-[11px] text-slate-500">
-                    Recordatorios para tareas importantes.
+                    {t("profile.notificationsDescription")}
                   </div>
                 </div>
                 <button
@@ -512,7 +516,7 @@ export default function ProfilePage() {
                 disabled={saving}
                 className="mt-3 w-full rounded-full bg-[#8F31F3] text-white text-xs font-semibold py-2.5 shadow-md active:translate-y-[1px] disabled:opacity-70"
               >
-                {saving ? "Guardando..." : "Guardar cambios"}
+                {saving ? t("profile.saving") : t("profile.saveChanges")}
               </button>
             </form>
           </section>
@@ -522,9 +526,11 @@ export default function ProfilePage() {
             className="bg-white rounded-2xl shadow-md"
             style={{ padding: "14px 14px 10px" }}
           >
-            <h2 className="text-sm font-semibold mb-1">Account actions</h2>
+            <h2 className="text-sm font-semibold mb-1">
+              {t("profile.sectionAccountTitle")}
+            </h2>
             <p className="text-[11px] text-slate-500 mb-3">
-              Comparte REMI o cierra sesión en este dispositivo.
+              {t("profile.sectionAccountDescription")}
             </p>
 
             <button
@@ -533,7 +539,7 @@ export default function ProfilePage() {
               className="w-full flex items-center justify-center gap-2 rounded-full border border-violet-200 text-violet-600 text-xs py-2.5 mb-2 shadow-sm hover:bg-violet-50 transition"
             >
               <Share2 size={14} />
-              <span>Share app</span>
+              <span>{t("profile.shareButton")}</span>
             </button>
 
             <button
@@ -542,7 +548,7 @@ export default function ProfilePage() {
               className="w-full flex items-center justify-center gap-2 rounded-full bg-red-500 text-white text-xs py-2.5 shadow-md hover:bg-red-600 transition active:translate-y-[1px]"
             >
               <LogOut size={14} />
-              <span>Logout</span>
+              <span>{t("profile.logoutButton")}</span>
             </button>
           </section>
         </div>

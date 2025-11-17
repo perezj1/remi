@@ -6,20 +6,26 @@ import {
   BrainItemStatus,
   fetchInboxItems,
   setTaskStatus,
-  deleteBrainItem, // 👈 NUEVO
+  deleteBrainItem,
 } from "@/lib/brainItemsApi";
 import { Lightbulb, ListTodo, Check, Trash2 } from "lucide-react";
+import { useI18n } from "@/contexts/I18nContext";
 
 type Filter = "ALL" | "TASKS" | "IDEAS";
 
-function statusLabel(status: BrainItemStatus) {
-  if (status === "DONE") return "Hecha";
-  if (status === "ACTIVE") return "Activa";
-  return "Archivada";
+function statusLabel(
+  status: BrainItemStatus,
+  t: (key: string) => string
+): string {
+  if (status === "DONE") return t("inbox.statusDone");
+  if (status === "ACTIVE") return t("inbox.statusActive");
+  return t("inbox.statusArchived");
 }
 
 export default function InboxPage() {
   const { user } = useAuth();
+  const { t } = useI18n();
+
   const [items, setItems] = useState<BrainItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("ALL");
@@ -34,12 +40,12 @@ export default function InboxPage() {
         setItems(data);
       } catch (err) {
         console.error(err);
-        alert("Error cargando tu bandeja");
+        alert(t("inbox.errorLoading"));
       } finally {
         setLoading(false);
       }
     })();
-  }, [user]);
+  }, [user, t]);
 
   const filtered = items.filter((item) => {
     if (filter === "TASKS") return item.type === "task";
@@ -63,7 +69,7 @@ export default function InboxPage() {
       }
     } catch (err) {
       console.error(err);
-      alert("Error actualizando tu bandeja");
+      alert(t("inbox.errorUpdating"));
     }
   };
 
@@ -71,10 +77,10 @@ export default function InboxPage() {
     <div className="remi-page">
       <div style={{ padding: "18px 18px 10px" }}>
         <h1 style={{ fontSize: 20, fontWeight: 600, marginBottom: 4 }}>
-          Bandeja
+          {t("inbox.title")}
         </h1>
         <p style={{ fontSize: 12, color: "#8b8fa6", marginBottom: 14 }}>
-          Todo lo que has vaciado de tu cabeza aparece aquí.
+          {t("inbox.subtitle")}
         </p>
 
         {/* filtros tipo pestañas */}
@@ -93,7 +99,7 @@ export default function InboxPage() {
               }
               onClick={() => setFilter("ALL")}
             >
-              Todo
+              {t("inbox.allTab")}
             </button>
             <button
               className={
@@ -101,7 +107,7 @@ export default function InboxPage() {
               }
               onClick={() => setFilter("TASKS")}
             >
-              Tareas
+              {t("inbox.tasksTab")}
             </button>
             <button
               className={
@@ -109,11 +115,11 @@ export default function InboxPage() {
               }
               onClick={() => setFilter("IDEAS")}
             >
-              Ideas
+              {t("inbox.ideasTab")}
             </button>
           </div>
           <span style={{ fontSize: 11, color: "#b2b6d1" }}>
-            {filtered.length} ítems
+            {t("inbox.itemsCount", { count: filtered.length })}
           </span>
         </div>
       </div>
@@ -122,7 +128,9 @@ export default function InboxPage() {
         <div className="remi-task-list">
           {loading && (
             <div className="remi-task-row">
-              <span className="remi-task-sub">Cargando bandeja…</span>
+              <span className="remi-task-sub">
+                {t("inbox.loading")}
+              </span>
             </div>
           )}
 
@@ -130,9 +138,11 @@ export default function InboxPage() {
             <div className="remi-task-row">
               <div className="remi-task-dot" />
               <div>
-                <p className="remi-task-title">Bandeja vacía</p>
+                <p className="remi-task-title">
+                  {t("inbox.emptyTitle")}
+                </p>
                 <p className="remi-task-sub">
-                  Añade nuevas tareas o ideas desde la pantalla de Hoy.
+                  {t("inbox.emptySubtitle")}
                 </p>
               </div>
             </div>
@@ -207,7 +217,9 @@ export default function InboxPage() {
                         {item.title}
                       </p>
                       <p className="remi-task-sub">
-                        {isTask ? "Tarea · " : "Idea · "}
+                        {isTask
+                          ? t("inbox.itemTaskPrefix")
+                          : t("inbox.itemIdeaPrefix")}
                         {new Date(item.created_at).toLocaleString()}
                       </p>
                     </div>
@@ -234,7 +246,7 @@ export default function InboxPage() {
                           : "#b2b6d1",
                       }}
                     >
-                      {statusLabel(item.status)}
+                      {statusLabel(item.status, t)}
                     </div>
 
                     <button

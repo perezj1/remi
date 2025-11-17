@@ -1,6 +1,9 @@
 // src/App.tsx
+import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { I18nProvider, useI18n } from "@/contexts/I18nContext";
+import type { RemiLocale } from "@/locales";
 
 import TodayPage from "@/pages/Index";
 import InboxPage from "@/pages/Inbox";
@@ -10,7 +13,6 @@ import AuthPage from "@/pages/Auth";
 import NotFound from "@/pages/NotFound";
 import BottomNav from "@/components/BottomNav";
 import InstallPrompt from "@/components/InstallPrompt";
-
 
 // Protege rutas privadas
 function RequireAuth({ children }: { children: JSX.Element }) {
@@ -22,19 +24,28 @@ function RequireAuth({ children }: { children: JSX.Element }) {
 }
 
 function AppRoutes() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const { lang, setLang } = useI18n();
+
+  // 👇 si existe profiles.language, manda sobre navegador/localStorage
+  React.useEffect(() => {
+    // profile viene tipado como ProfileRow (sin language), así que casteamos
+    const pLang =
+      (((profile as any)?.language ?? null) as RemiLocale | null);
+
+    if (pLang && pLang !== lang && ["es", "en", "de"].includes(pLang)) {
+      setLang(pLang);
+    }
+  }, [profile, lang, setLang]); // dependemos de profile completo, no de profile?.language
 
   return (
     <>
-      {/* El contenido principal: cada página devuelve un <div className="remi-page"> */}
       <Routes>
-        {/* Ruta pública de login/registro */}
         <Route
           path="/auth"
           element={!user ? <AuthPage /> : <Navigate to="/" replace />}
         />
 
-        {/* Rutas privadas */}
         <Route
           path="/"
           element={
@@ -71,11 +82,9 @@ function AppRoutes() {
           }
         />
 
-        {/* 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
 
-      {/* Bottom nav fija al fondo dentro de remi-shell */}
       {user && <BottomNav />}
 
       <InstallPrompt />
@@ -87,7 +96,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        <I18nProvider>
+          <AppRoutes />
+        </I18nProvider>
       </AuthProvider>
     </BrowserRouter>
   );

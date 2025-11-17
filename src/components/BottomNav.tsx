@@ -1,10 +1,12 @@
 // src/components/BottomNav.tsx
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, Inbox, Plus, type LucideIcon } from "lucide-react";
+import { useI18n } from "@/contexts/I18nContext";
 
 export default function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -23,7 +25,7 @@ export default function BottomNav() {
         {/* Botón izquierdo: Hoy */}
         <NavItem
           to="/"
-          label="Hoy"
+          label={t("bottomNav.today")}
           icon={Home}
           active={isActive("/")}
         />
@@ -39,7 +41,7 @@ export default function BottomNav() {
         {/* Botón derecho: Bandeja */}
         <NavItem
           to="/inbox"
-          label="Bandeja"
+          label={t("bottomNav.inbox")}
           icon={Inbox}
           active={isActive("/inbox")}
         />
@@ -59,7 +61,7 @@ function NavItem({ to, label, active, icon: Icon }: NavItemProps) {
   return (
     <Link
       to={to}
-      className="flex h-12 w-12 items-center justify-center rounded-full  transition"
+      className="flex h-12 w-12 items-center justify-center rounded-full transition"
     >
       <Icon
         className={`w-6 h-6 ${

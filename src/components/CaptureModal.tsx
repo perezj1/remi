@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Lightbulb, ListTodo } from "lucide-react";
 import type { ReminderMode } from "@/lib/brainItemsApi";
 import { toast } from "sonner";
+import { useI18n } from "@/contexts/I18nContext";
 
 interface CaptureModalProps {
   open: boolean;
@@ -26,6 +27,8 @@ export default function CaptureModal({
   onCreateIdea,
   embedded = false,
 }: CaptureModalProps) {
+  const { t } = useI18n();
+
   const [text, setText] = useState("");
   const [mode, setMode] = useState<Mode>("choose");
   const [dueOption, setDueOption] = useState<
@@ -92,14 +95,13 @@ export default function CaptureModal({
       const dueDate = getDueDateFromOption();
       await onCreateTask(text.trim(), dueDate, reminderMode);
 
-      // ✅ Toast al guardar tarea
-      toast.success("Tarea guardada correctamente");
+      toast.success(t("capture.toastTaskSaved"));
 
       resetAndClose();
     } catch (err) {
       console.error(err);
       setLoading(false);
-      toast.error("Error al crear la tarea");
+      toast.error(t("capture.toastTaskError"));
     }
   };
 
@@ -109,23 +111,22 @@ export default function CaptureModal({
     try {
       await onCreateIdea(text.trim());
 
-      // ✅ Toast al guardar idea
-      toast.success("Idea guardada correctamente");
+      toast.success(t("capture.toastIdeaSaved"));
 
       resetAndClose();
     } catch (err) {
       console.error(err);
       setLoading(false);
-      toast.error("Error al crear la idea");
+      toast.error(t("capture.toastIdeaError"));
     }
   };
 
   const header = (
     <div style={{ display: "flex", justifyContent: "space-between" }}>
       <div>
-        <div className="remi-modal-title">Vaciar la cabeza</div>
+        <div className="remi-modal-title">{t("capture.title")}</div>
         <div className="remi-modal-sub">
-          Escribe lo que tengas en mente y decide si es tarea o idea.
+          {t("capture.subtitle")}
         </div>
       </div>
       {!embedded && (
@@ -144,7 +145,7 @@ export default function CaptureModal({
     <div className="remi-modal-body">
       <textarea
         className="remi-modal-textarea"
-        placeholder="Ej: Enviar el email, preguntar receta a mamá..."
+        placeholder={t("capture.textareaPlaceholder")}
         value={text}
         onChange={(e) => setText(e.target.value)}
       />
@@ -159,7 +160,7 @@ export default function CaptureModal({
             gap: 14,
           }}
         >
-          {/* ✅ “Es una idea” guarda directamente la idea y muestra el toast */}
+          {/* “Es una idea” guarda directamente la idea y muestra el toast */}
           <button
             className="remi-btn-ghost"
             onClick={handleConfirmIdea}
@@ -175,7 +176,7 @@ export default function CaptureModal({
             }}
           >
             <Lightbulb size={18} />
-            <span>Es una idea</span>
+            <span>{t("capture.ideaButton")}</span>
           </button>
 
           {/* “Es una tarea” pasa al paso de configuración de tarea */}
@@ -194,7 +195,7 @@ export default function CaptureModal({
             }}
           >
             <ListTodo size={18} />
-            <span>Es una tarea</span>
+            <span>{t("capture.taskButton")}</span>
           </button>
         </div>
       )}
@@ -204,11 +205,11 @@ export default function CaptureModal({
         <>
           <div style={{ marginTop: 10 }}>
             <p className="remi-modal-sub" style={{ marginBottom: 4 }}>
-              Fecha límite
+              {t("capture.dueLabel")}
             </p>
             <div className="remi-chip-row">
               <Chip
-                label="Hoy"
+                label={t("capture.dueToday")}
                 active={dueOption === "TODAY"}
                 onClick={() => {
                   const d = new Date();
@@ -218,7 +219,7 @@ export default function CaptureModal({
                 }}
               />
               <Chip
-                label="Mañana"
+                label={t("capture.dueTomorrow")}
                 active={dueOption === "TOMORROW"}
                 onClick={() => {
                   const now = new Date();
@@ -230,7 +231,7 @@ export default function CaptureModal({
                 }}
               />
               <Chip
-                label="1 semana"
+                label={t("capture.dueWeek")}
                 active={dueOption === "WEEK"}
                 onClick={() => {
                   const now = new Date();
@@ -242,7 +243,7 @@ export default function CaptureModal({
                 }}
               />
               <Chip
-                label="Sin fecha"
+                label={t("capture.dueNone")}
                 active={dueOption === "NONE"}
                 onClick={() => {
                   setDueOption("NONE");
@@ -264,14 +265,14 @@ export default function CaptureModal({
                 className="remi-modal-sub"
                 style={{ fontSize: 11, marginTop: 4 }}
               >
-                Puedes ajustar la fecha y hora manualmente.
+                {t("capture.dueHint")}
               </p>
             </div>
           </div>
 
           <div style={{ marginTop: 12 }}>
             <p className="remi-modal-sub" style={{ marginBottom: 4 }}>
-              Recordatorios
+              {t("capture.remindersLabel")}
             </p>
             <select
               className="remi-input"
@@ -281,13 +282,17 @@ export default function CaptureModal({
                 setReminderMode(e.target.value as ReminderMode)
               }
             >
-              <option value="NONE">Sin recordatorios</option>
-              <option value="ON_DUE_DATE">Solo el día límite</option>
+              <option value="NONE">
+                {t("capture.remindersNone")}
+              </option>
+              <option value="ON_DUE_DATE">
+                {t("capture.remindersOnDue")}
+              </option>
               <option value="DAY_BEFORE_AND_DUE">
-                Día antes y día límite
+                {t("capture.remindersDayBeforeAndDue")}
               </option>
               <option value="DAILY_UNTIL_DUE">
-                Cada día hasta la fecha límite
+                {t("capture.remindersDailyUntilDue")}
               </option>
             </select>
           </div>
@@ -298,14 +303,14 @@ export default function CaptureModal({
               onClick={() => setMode("choose")}
               disabled={loading}
             >
-              Atrás
+              {t("capture.back")}
             </button>
             <button
               className="remi-btn-primary"
               onClick={handleConfirmTask}
               disabled={loading}
             >
-              Guardar tarea
+              {t("capture.saveTask")}
             </button>
           </div>
         </>

@@ -9,6 +9,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useI18n } from "@/contexts/I18nContext";
 import {
   BrainItem,
   ReminderMode,
@@ -26,6 +27,7 @@ import { ListTodo, Check, SkipForward } from "lucide-react";
 
 const AVATAR_KEY = "remi_avatar";
 
+// (ahora mismo no se usa, si algún día lo usas, pásale t() para traducir los textos)
 function formatDueDiff(dueDate: string | null): string | null {
   if (!dueDate) return null;
   const now = new Date();
@@ -42,8 +44,8 @@ function formatDueDiff(dueDate: string | null): string | null {
 
 export default function TodayPage() {
   const navigate = useNavigate();
-
   const { user, signOut, profile } = useAuth();
+  const { t } = useI18n();
 
   const [tasks, setTasks] = useState<BrainItem[]>([]);
   const [ideas, setIdeas] = useState<BrainItem[]>([]);
@@ -67,20 +69,20 @@ export default function TodayPage() {
 
     (async () => {
       try {
-        const [t, i] = await Promise.all([
+        const [tks, ids] = await Promise.all([
           fetchActiveTasks(user.id),
           fetchActiveIdeas(user.id),
         ]);
-        setTasks(t);
-        setIdeas(i);
+        setTasks(tks);
+        setIdeas(ids);
       } catch (err) {
         console.error(err);
-        alert("Error cargando tus tareas");
+        alert(t("today.errorLoadingTasks"));
       } finally {
         setLoading(false);
       }
     })();
-  }, [user]);
+  }, [user, t]);
 
   // ---------- Comprobar si ya tiene suscripción push ----------
   useEffect(() => {
@@ -227,10 +229,10 @@ export default function TodayPage() {
     try {
       await registerPushSubscription(user.id);
       setShowPushModal(false);
-      toast.success("Notificaciones activadas para tus tareas ✨");
+      toast.success(t("today.pushEnabledToast"));
     } catch (err) {
       console.error("Error registering push subscription", err);
-      toast.error("No se pudieron activar las notificaciones.");
+      toast.error(t("today.pushErrorToast"));
     } finally {
       setRegisteringPush(false);
     }
@@ -246,7 +248,7 @@ export default function TodayPage() {
       ? profile.display_name
       : user?.email
       ? user.email.split("@")[0]
-      : "User") ?? "User";
+      : t("today.defaultUserName")) ?? t("today.defaultUserName");
 
   const initial = displayName.charAt(0).toUpperCase();
 
@@ -258,14 +260,14 @@ export default function TodayPage() {
   const handleShareApp = async () => {
     setProfileOpen(false);
     const url = window.location.origin;
-    const text = "Estoy probando REMI para organizar mis tareas diarias 🙂";
+    const text = t("today.shareText");
 
     try {
       if (navigator.share) {
         await navigator.share({ title: "REMI", text, url });
       } else if (navigator.clipboard) {
         await navigator.clipboard.writeText(url);
-        alert("Enlace copiado al portapapeles");
+        alert(t("today.shareCopied"));
       } else {
         alert(url);
       }
@@ -305,7 +307,7 @@ export default function TodayPage() {
         >
           <div>
             <p style={{ fontSize: 12, opacity: 0.8 }}>
-              Hola, {displayName} 👋
+              {t("today.greeting", { name: displayName })}
             </p>
             <h1
               style={{
@@ -314,10 +316,10 @@ export default function TodayPage() {
                 fontWeight: 600,
               }}
             >
-              Tienes {todayCount} tareas hoy
+              {t("today.tasksToday", { count: todayCount })}
             </h1>
             <p style={{ fontSize: 11, opacity: 0.85 }}>
-              Prioricemos solo lo importante.
+              {t("today.prioritize")}
             </p>
           </div>
 
@@ -385,8 +387,7 @@ export default function TodayPage() {
                     color: "#8b8fa6",
                   }}
                 >
-                  Sesión iniciada como{" "}
-                  <span style={{ color: "#8F31F3" }}>{displayName}</span>
+                  {t("today.profileLoggedInAs", { name: displayName })}
                 </div>
 
                 <button
@@ -394,21 +395,21 @@ export default function TodayPage() {
                   onClick={handleOpenProfile}
                   style={menuButtonStyle}
                 >
-                  Perfil
+                  {t("today.menuProfile")}
                 </button>
                 <button
                   type="button"
                   onClick={handleShareApp}
                   style={menuButtonStyle}
                 >
-                  Compartir app
+                  {t("today.menuShareApp")}
                 </button>
                 <button
                   type="button"
                   onClick={handleLogout}
                   style={{ ...menuButtonStyle, color: "#e74c3c" }}
                 >
-                  Cerrar sesión
+                  {t("today.menuLogout")}
                 </button>
               </div>
             )}
@@ -417,7 +418,7 @@ export default function TodayPage() {
       </div>
 
       {/* CONTENIDO BLANCO SUPERPUESTO */}
-      <div style={{padding: "0 18px 18px" }}>
+      <div style={{ padding: "0 18px 18px" }}>
         {/* FORMULARIO EMBEBIDO: mismo componente que el modal */}
         <div style={{ marginTop: 18, marginBottom: 10 }}>
           <CaptureModal
@@ -446,7 +447,7 @@ export default function TodayPage() {
               }
               onClick={() => setActiveTab("TODAY")}
             >
-              Today
+              {t("today.tabsToday")}
             </button>
             <button
               className={
@@ -454,7 +455,7 @@ export default function TodayPage() {
               }
               onClick={() => setActiveTab("WEEK")}
             >
-              Week
+              {t("today.tabsWeek")}
             </button>
             <button
               className={
@@ -463,7 +464,7 @@ export default function TodayPage() {
               }
               onClick={() => setActiveTab("MONTH")}
             >
-              Month
+              {t("today.tabsMonth")}
             </button>
           </div>
         </div>
@@ -472,7 +473,9 @@ export default function TodayPage() {
         <div className="remi-task-list">
           {loading && (
             <div className="remi-task-row">
-              <span className="remi-task-sub">Cargando tareas…</span>
+              <span className="remi-task-sub">
+                {t("today.loadingTasks")}
+              </span>
             </div>
           )}
 
@@ -480,9 +483,11 @@ export default function TodayPage() {
             <div className="remi-task-row">
               <div className="remi-task-dot" />
               <div>
-                <p className="remi-task-title">Nada urgente por hoy 🎉</p>
+                <p className="remi-task-title">
+                  {t("today.noUrgentTitle")}
+                </p>
                 <p className="remi-task-sub">
-                  Usa el botón + para añadir tu primera tarea.
+                  {t("today.noUrgentSubtitle")}
                 </p>
               </div>
             </div>
@@ -539,10 +544,10 @@ export default function TodayPage() {
                       {task.title}
                     </p>
                     <div className="remi-task-sub">
-                      {task.due_date ? "Fecha límite · " : ""}
+                      {task.due_date ? t("today.dueLabel") : ""}
                       {task.due_date
                         ? new Date(task.due_date).toLocaleString()
-                        : "Sin fecha límite"}
+                        : t("today.dueNoDate")}
                     </div>
                   </div>
                 </div>
@@ -615,12 +620,10 @@ export default function TodayPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl p-5 w-[90%] max-w-sm shadow-xl">
             <h2 className="text-base font-semibold mb-1">
-              Activa tus recordatorios
+              {t("today.pushTitle")}
             </h2>
             <p className="text-xs text-slate-600 mb-4">
-              REMI puede enviarte notificaciones con tus 3 tareas más
-              importantes del día y avisarte cuando una está a punto de
-              terminar.
+              {t("today.pushBody")}
             </p>
 
             <div className="flex flex-col gap-2">
@@ -630,7 +633,9 @@ export default function TodayPage() {
                 disabled={registeringPush}
                 className="w-full rounded-full bg-[#8F31F3] text-white text-xs font-semibold py-2.5 shadow-md disabled:opacity-70"
               >
-                {registeringPush ? "Activando..." : "Activar recordatorios"}
+                {registeringPush
+                  ? t("today.pushEnabling")
+                  : t("today.pushEnable")}
               </button>
 
               <button
@@ -638,7 +643,7 @@ export default function TodayPage() {
                 onClick={handleLater}
                 className="w-full rounded-full border border-slate-200 text-xs py-2.5 text-slate-600"
               >
-                Más tarde
+                {t("today.pushLater")}
               </button>
             </div>
           </div>
