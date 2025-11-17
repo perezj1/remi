@@ -417,7 +417,7 @@ export default function TodayPage() {
       </div>
 
       {/* CONTENIDO BLANCO SUPERPUESTO */}
-      <div style={{ marginTop: -16, padding: "0 18px 18px" }}>
+      <div style={{padding: "0 18px 18px" }}>
         {/* FORMULARIO EMBEBIDO: mismo componente que el modal */}
         <div style={{ marginTop: 18, marginBottom: 10 }}>
           <CaptureModal

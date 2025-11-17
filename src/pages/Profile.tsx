@@ -28,7 +28,13 @@ const NOTIF_KEY = "remi_notifications";
 type RemiLang = "es" | "en" | "de";
 
 export default function ProfilePage() {
-  const { user, signOut } = useAuth();
+  const {
+    user,
+    profile,
+    signOut,
+    updateProfile,
+    updateAuthUser,
+  } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -38,22 +44,25 @@ export default function ProfilePage() {
   const [memberSince, setMemberSince] = useState<string | null>(null);
 
   // ---- ajustes de la app ----
-  const [preferredLanguage, setPreferredLanguage] = useState<RemiLang>("es");
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [preferredLanguage, setPreferredLanguage] =
+    useState<RemiLang>("es");
+  const [notificationsEnabled, setNotificationsEnabled] =
+    useState(true);
 
   // ---- contraseña / guardado ----
   const [newPassword, setNewPassword] = useState("");
   const [saving, setSaving] = useState(false);
 
   // ---- avatar ----
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null); // para mostrar
-  const [avatarFile, setAvatarFile] = useState<File | null>(null); // para subir
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null); // mostrar
+  const [avatarFile, setAvatarFile] = useState<File | null>(null); // subir
   const [avatarError, setAvatarError] = useState<string | null>(null);
 
-  // Cargar datos iniciales
+  // Cargar datos iniciales cuando cambian user o profile
   useEffect(() => {
     if (!user) return;
 
+    // Nombre: primero perfil, luego metadata, luego email
     const meta = (user.user_metadata || {}) as {
       username?: string;
       language?: RemiLang;
@@ -61,11 +70,12 @@ export default function ProfilePage() {
     };
 
     const baseUsername =
-      meta.username && meta.username.trim() !== ""
+      profile?.display_name ||
+      (meta.username && meta.username.trim() !== ""
         ? meta.username
         : user.email
         ? user.email.split("@")[0]
-        : "";
+        : "");
 
     setUsername(baseUsername);
     setEmail(user.email ?? "");
@@ -81,14 +91,15 @@ export default function ProfilePage() {
       );
     }
 
-    // idioma
+    // idioma: primero metadata, luego localStorage, por último 'es'
     const storedLangMeta = meta.language;
     const storedLangLocal =
       typeof window !== "undefined"
         ? (window.localStorage.getItem(LANGUAGE_KEY) as RemiLang | null)
         : null;
 
-    const finalLang: RemiLang = storedLangMeta || storedLangLocal || "es";
+    const finalLang: RemiLang =
+      storedLangMeta || storedLangLocal || "es";
     setPreferredLanguage(finalLang);
 
     // notificaciones (primero local, luego settings en Supabase)
@@ -114,12 +125,14 @@ export default function ProfilePage() {
       }
     })();
 
-    // avatar: solo desde metadata
+    // avatar: ahora usamos principalmente la tabla profiles
+    const avatarFromProfile = profile?.avatar_url || null;
     const metaAvatar = meta.avatar_url || null;
-    setAvatarUrl(metaAvatar);
+
+    setAvatarUrl(avatarFromProfile ?? metaAvatar);
     setAvatarFile(null);
     setAvatarError(null);
-  }, [user]);
+  }, [user, profile]);
 
   const handleLanguageChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value as RemiLang;
@@ -217,25 +230,17 @@ export default function ProfilePage() {
         setAvatarFile(null);
       }
 
-      // 2) actualizar datos del usuario (auth metadata)
-      const updatePayload: {
-        email?: string;
-        password?: string;
-        data: {
-          username: string;
-          language: RemiLang;
-          avatar_url: string | null;
-        };
-      } = {
-        data: {
-          username,
-          language: preferredLanguage,
-          avatar_url: finalAvatarUrl,
-        },
-      };
+      // 2) Actualizar perfil en la tabla public.profiles (nombre + avatar)
+      await updateProfile({
+        display_name: username,
+        avatar_url: finalAvatarUrl,
+      });
+
+      // 3) Actualizar email / contraseña en Auth
+      const authUpdates: { email?: string; password?: string } = {};
 
       if (email && email !== user.email) {
-        updatePayload.email = email;
+        authUpdates.email = email;
       }
 
       if (newPassword.trim().length > 0) {
@@ -244,54 +249,57 @@ export default function ProfilePage() {
           setSaving(false);
           return;
         }
-        updatePayload.password = newPassword.trim();
+        authUpdates.password = newPassword.trim();
       }
 
-      const { error } = await supabase.auth.updateUser(updatePayload);
-      if (error) {
-        console.error(error);
-        toast.error(error.message);
-      } else {
-        // 3) guardar ajustes de notificaciones en remi_user_settings
-        const { error: settingsError } = await supabase
-          .from("remi_user_settings")
-          .upsert(
-            {
-              user_id: user.id,
-              notifications_enabled: notificationsEnabled,
-              notify_day_before: true,
-              notify_on_due_date: true,
-              repeat_until_done: true,
-              notification_hour_utc: 8, // ejemplo: 8:00 UTC
-            },
-            { onConflict: "user_id" }
-          );
-
-        if (settingsError) {
-          console.error("Error saving notification settings", settingsError);
+      if (Object.keys(authUpdates).length > 0) {
+        const { error: authError } = await updateAuthUser(authUpdates);
+        if (authError) {
+          toast.error("No se pudo actualizar email/contraseña.");
+          setSaving(false);
+          return;
         }
-
-        // 4) si las notificaciones están activadas, registrar suscripción push
-        if (notificationsEnabled) {
-          try {
-            await registerPushSubscription(user.id);
-          } catch (subErr) {
-            console.error("Error registering push subscription", subErr);
-          }
-        }
-
-        // 5) guardar preferencias locales
-        if (typeof window !== "undefined") {
-          window.localStorage.setItem(LANGUAGE_KEY, preferredLanguage);
-          window.localStorage.setItem(
-            NOTIF_KEY,
-            notificationsEnabled ? "1" : "0"
-          );
-        }
-
-        toast.success("Perfil actualizado correctamente.");
-        setNewPassword("");
       }
+
+      // 4) guardar ajustes de notificaciones en remi_user_settings
+      const { error: settingsError } = await supabase
+        .from("remi_user_settings")
+        .upsert(
+          {
+            user_id: user.id,
+            notifications_enabled: notificationsEnabled,
+            notify_day_before: true,
+            notify_on_due_date: true,
+            repeat_until_done: true,
+            notification_hour_utc: 8, // ejemplo: 8:00 UTC
+          },
+          { onConflict: "user_id" }
+        );
+
+      if (settingsError) {
+        console.error("Error saving notification settings", settingsError);
+      }
+
+      // 5) si las notificaciones están activadas, registrar suscripción push
+      if (notificationsEnabled) {
+        try {
+          await registerPushSubscription(user.id);
+        } catch (subErr) {
+          console.error("Error registering push subscription", subErr);
+        }
+      }
+
+      // 6) guardar preferencias locales
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(LANGUAGE_KEY, preferredLanguage);
+        window.localStorage.setItem(
+          NOTIF_KEY,
+          notificationsEnabled ? "1" : "0"
+        );
+      }
+
+      toast.success("Perfil actualizado correctamente.");
+      setNewPassword("");
     } catch (err) {
       console.error(err);
       toast.error("No se pudieron guardar los cambios.");
@@ -302,7 +310,9 @@ export default function ProfilePage() {
 
   const displayName = username || (user?.email ?? "Usuario");
   const initial =
-    !avatarUrl && displayName ? displayName.charAt(0).toUpperCase() : "R";
+    !avatarUrl && displayName
+      ? displayName.charAt(0).toUpperCase()
+      : "R";
 
   return (
     <div className="remi-page flex flex-col">
@@ -320,7 +330,11 @@ export default function ProfilePage() {
           type="button"
           onClick={() => navigate(-1)}
           className="flex items-center gap-1 mb-3 text-[13px]"
-          style={{ background: "transparent", border: "none", cursor: "pointer" }}
+          style={{
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+          }}
         >
           <ArrowLeft size={16} />
           <span>Perfil</span>
@@ -484,7 +498,9 @@ export default function ProfilePage() {
                 >
                   <span
                     className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition ${
-                      notificationsEnabled ? "translate-x-4" : "translate-x-0"
+                      notificationsEnabled
+                        ? "translate-x-4"
+                        : "translate-x-0"
                     }`}
                   />
                 </button>

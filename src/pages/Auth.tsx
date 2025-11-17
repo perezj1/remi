@@ -66,14 +66,14 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-[#f7f1ff]">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-[#ffffff]">
       {/* fondo suave con el color principal */}
       <div className="absolute inset-0 bg-gradient-hero opacity-20 -z-10" />
 
       <Card className="w-full max-w-md relative shadow-card border-0">
         <CardHeader className="space-y-2 text-center">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 rounded-full bg-gradient-hero flex items-center justify-center shadow-button">
+            <div className="w-16 h-16 rounded-full bg-[#8F31F3] flex items-center justify-center shadow-button">
               <Sparkles className="w-8 h-8 text-white" />
             </div>
           </div>
@@ -128,7 +128,7 @@ const Auth = () => {
 
             <Button
               type="submit"
-              className="w-full shadow-button h-11 rounded-full bg-[#8F31F3] hover:bg-[#7a28d0]"
+              className="remi-btn-primary w-full shadow-button h-11 rounded-full bg-[#8F31F3] hover:bg-[#7a28d0]"
               disabled={loading}
             >
               {loading

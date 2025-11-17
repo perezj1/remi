@@ -12,7 +12,7 @@ import { useNavigate } from "react-router-dom";
 import type { Database } from "@/integrations/supabase/types";
 
 export type Profile =
-  Database["public"]["Tables"]["profiles"]["Row"]; // ← tipo real de la tabla
+  Database["public"]["Tables"]["profiles"]["Row"]; // tipo real de la tabla
 
 interface AuthContextType {
   user: User | null;
@@ -26,6 +26,9 @@ interface AuthContextType {
   updateProfile: (
     updates: Partial<Pick<Profile, "display_name" | "avatar_url">>
   ) => Promise<void>;
+  updateAuthUser: (
+    params: { email?: string; password?: string }
+  ) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -133,6 +136,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(data as Profile);
   };
 
+  // Actualizar email / contraseña en Supabase Auth
+  const updateAuthUser = async (params: {
+    email?: string;
+    password?: string;
+  }) => {
+    const { data, error } = await supabase.auth.updateUser(params);
+
+    if (error) {
+      console.error("Error updating auth user", error);
+      return { error };
+    }
+
+    if (data?.user) {
+      setUser(data.user);
+    }
+
+    return { error: null };
+  };
+
   const signUp = async (email: string, password: string) => {
     const redirectUrl = `${window.location.origin}/`;
     const { error } = await supabase.auth.signUp({
@@ -155,6 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    setUser(null);
     setProfile(null);
     navigate("/auth");
   };
@@ -171,6 +194,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signOut,
         refreshProfile,
         updateProfile,
+        updateAuthUser,
       }}
     >
       {children}
