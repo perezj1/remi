@@ -1,6 +1,6 @@
 // src/components/BottomNav.tsx
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Inbox, Plus, type LucideIcon } from "lucide-react";
+import { Home, Inbox, Plus, Brain, type LucideIcon } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
 
 export default function BottomNav() {
@@ -22,7 +22,7 @@ export default function BottomNav() {
     <nav className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2">
       {/* Píldora blanca */}
       <div className="flex items-center gap-4 rounded-full bg-white px-4 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.18)]">
-        {/* Botón izquierdo: Hoy */}
+        {/* Botón: Hoy */}
         <NavItem
           to="/"
           label={t("bottomNav.today")}
@@ -30,15 +30,24 @@ export default function BottomNav() {
           active={isActive("/")}
         />
 
+        {/* Botón: Status */}
+        <NavItem
+          to="/status"
+          label={t("bottomNav.status")}
+          icon={Brain}
+          active={isActive("/status")}
+        />
+
         {/* Botón central: + morado REMI */}
         <button
           className="flex h-14 w-14 items-center justify-center rounded-full border-1 border-white bg-[#8F31F3] text-white shadow-[0_8px_20px_rgba(143,49,243,0.2)] -translate-y-0"
           onClick={handleCreateClick}
+          type="button"
         >
           <Plus className="w-7 h-7" />
         </button>
 
-        {/* Botón derecho: Bandeja */}
+        {/* Botón: Bandeja */}
         <NavItem
           to="/inbox"
           label={t("bottomNav.inbox")}

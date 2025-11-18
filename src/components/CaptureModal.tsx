@@ -1,6 +1,6 @@
 // src/components/CaptureModal.tsx
 import { useState } from "react";
-import { Lightbulb, ListTodo } from "lucide-react";
+import { Lightbulb, ListTodo, X } from "lucide-react";
 import type { ReminderMode } from "@/lib/brainItemsApi";
 import { toast } from "sonner";
 import { useI18n } from "@/contexts/I18nContext";
@@ -125,17 +125,16 @@ export default function CaptureModal({
     <div style={{ display: "flex", justifyContent: "space-between" }}>
       <div>
         <div className="remi-modal-title">{t("capture.title")}</div>
-        <div className="remi-modal-sub">
-          {t("capture.subtitle")}
-        </div>
+        <div className="remi-modal-sub">{t("capture.subtitle")}</div>
       </div>
       {!embedded && (
         <button
-          className="remi-btn-ghost"
+          type="button"
           onClick={resetAndClose}
           disabled={loading}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200"
         >
-          ✕
+          <X className="h-4 w-4" />
         </button>
       )}
     </div>
@@ -282,9 +281,7 @@ export default function CaptureModal({
                 setReminderMode(e.target.value as ReminderMode)
               }
             >
-              <option value="NONE">
-                {t("capture.remindersNone")}
-              </option>
+              <option value="NONE">{t("capture.remindersNone")}</option>
               <option value="ON_DUE_DATE">
                 {t("capture.remindersOnDue")}
               </option>

@@ -10,6 +10,12 @@ export const de = {
     confirm: "Bestätigen",
     loading: "Laden...",
   },
+
+  index: {
+  clearMind: "Klarer Kopf",
+},
+
+
   nav: {
     today: "Heute",
     inbox: "Posteingang",
@@ -20,7 +26,83 @@ export const de = {
   bottomNav: {
   today: "Heute",
   inbox: "Posteingang",
+  status: "status"
 },
+
+installPrompt: {
+  iosTitle: "Installiere Remi auf deinem iPhone – KOSTENLOS",
+  iosStep1BeforeShare: "1. Tippe auf die",
+  iosShareLabel: "Teilen",
+  iosStep1AfterShare: "Taste.",
+  iosStep2BeforeAction: "2. Wähle",
+  iosAddToHome: "Zum Home-Bildschirm",
+  iosStep2AfterAction: "und bestätige.",
+  defaultTitle: "Installiere Remi",
+  defaultDescription: "Füge Remi zu deinen Apps hinzu – KOSTENLOS!",
+  buttonInstall: "Installieren",
+  close: "Schließen",
+},
+
+
+status: {
+    back: "Zurück",
+    headerTitle: "Remis Status",
+    headerSubtitle:
+      "Heute haben wir deinem Kopf geholfen, sich ein bisschen leichter zu fühlen.",
+
+    helperLabel: "Dein Gedächtnishelfer",
+    helperFallback:
+      "Ich bin hier, um deine Aufgaben, Ideen und Erinnerungen zu speichern, damit dein Kopf nicht alles tragen muss.",
+
+    mindClearLabel: "Klarer Kopf",
+    mindClearDescription:
+      "Alles, was du in Remi speicherst, ist eine Sache weniger, die dein Kopf festhalten muss.",
+
+    todaySectionTitle: "Was wir heute geschafft haben",
+    todaySectionSubtitle:
+      "Eine kurze Übersicht, wie wir in den letzten Stunden auf deinen Kopf aufgepasst haben.",
+    todayTasksLabel: "Heutige Aufgaben",
+    todayTasksDescription:
+      "Heute haben wir {{todayTotal}} Aufgaben organisiert, damit sie nicht nur von deinem Gedächtnis abhängen.",
+
+    streakSectionTitle: "Unsere Serie",
+    streakValue: "{{streakDays}} Tage",
+    streakDescription:
+      "Seit {{streakDays}} Tagen kümmern wir uns gemeinsam um deine Aufgaben, damit dein Kopf sich nicht alles alleine merken muss.",
+
+    memoryDelegatedTitle: "Ausgelagertes Gedächtnis",
+    memoryDelegatedValue: "{{tasks}} Aufgaben · {{ideas}} Ideen",
+    memoryDelegatedDescription:
+      "Im Moment kümmert sich Remi um {{tasks}} Aufgaben und {{ideas}} Ideen für dich. Dein Kopf muss sie nicht alle gleichzeitig behalten.",
+
+    weekSectionTitle: "Unsere Woche",
+    weekSectionSubtitle:
+      "An jedem Tag, an dem du Remi benutzt, trägt dein Kopf ein kleines bisschen weniger Last.",
+    weekActiveLabel: "Aktive Tage diese Woche",
+
+    loading: "Deine Übersicht mit Remi wird aktualisiert…",
+
+    // Moods
+    moodTitleCelebrate: "Großartiges Team!",
+    moodTitleHappy: "Heute läuft es richtig gut",
+    moodTitleCalm: "Alles unter Kontrolle",
+    moodTitleWaiting: "Ich bin bereit, wenn du es bist",
+    moodTitleConcerned: "Gehen wir Schritt für Schritt",
+    moodTitleDefault: "Wir stecken gemeinsam drin",
+
+    moodSubtitleCelebrate:
+      "In diesen Tagen kümmern wir uns besonders gut um deinen Kopf. Wir haben {{cleared}} heutige Aufgaben entlastet und Remi hält insgesamt {{totalItems}} Dinge zwischen Aufgaben und Ideen für dich fest.",
+    moodSubtitleHappy:
+      "Heute haben wir deinen Kopf gut freigeräumt: Du hast {{todayTotal}} organisierte Aufgaben und {{todayDone}} davon sind schon erledigt.",
+    moodSubtitleCalm:
+      "Wir gehen ohne Eile voran. Für heute sind {{todayTotal}} Aufgaben gespeichert und Remi erinnert sich für dich daran.",
+    moodSubtitleWaiting:
+      "Heute fühlt sich dein Kopf leicht an. Wenn du möchtest, können wir noch ein paar Dinge in Remi abladen, damit du sie dir nicht selbst merken musst.",
+    moodSubtitleConcerned:
+      "Es liegt noch ein Stück Tag vor dir. Wir können mit einer kleinen Aufgabe beginnen und deinem Kopf etwas mehr Luft verschaffen.",
+    moodSubtitleDefault:
+      "Alles, was du in Remi ablegst, ist eine Sache weniger, die dein Kopf tragen muss.",
+  },
 
 
   capture: {
@@ -30,8 +112,8 @@ export const de = {
   textareaPlaceholder:
     "Z.B. E-Mail schicken, Rezept bei Mama nachfragen...",
 
-  ideaButton: "Es ist eine Idee",
-  taskButton: "Es ist eine Aufgabe",
+  ideaButton: "Idee",
+  taskButton: "Aufgabe",
 
   dueLabel: "Fälligkeitsdatum",
   dueToday: "Heute",
@@ -94,7 +176,7 @@ export const de = {
   streak: "Serie",
 
   greeting: "Hallo, {{name}} 👋",
-  tasksToday: "Du hast heute {{count}} Aufgaben",
+  tasksToday: "Du hast {{count}} aktive Aufgaben",
   prioritize: "Lass uns nur das Wichtige priorisieren.",
 
   tabsToday: "Heute",
@@ -165,7 +247,36 @@ export const de = {
     "Nutze den + Button auf dem Heute-Bildschirm, um deine Ideen zu speichern.",
   savedAt: "Gespeichert am {{date}}",
   errorLoading: "Fehler beim Laden deiner Ideen",
-  },
+  updateError: "Die Idee konnte nicht aktualisiert werden.",
+    convertError: "Die Idee konnte nicht in eine Aufgabe umgewandelt werden.",
+
+    editLabel: "Idee bearbeiten",
+    editTitle: "Mach aus dieser Idee etwas Konkretes",
+    editSubtitle:
+      "Formuliere den Text besser oder wandle ihn in eine Aufgabe mit Termin und Erinnerung um.",
+
+    fieldTitle: "Ideentext",
+    fieldTitlePlaceholder: "z. B. neue Schuhe für die Hochzeit kaufen",
+
+    taskOptionsTitle: "Aufgaben-Optionen",
+    dueDateLabel: "Fälligkeitsdatum und Uhrzeit (optional)",
+    reminderLabel: "Erinnerung",
+
+    reminder: {
+      none: "Keine Erinnerung",
+      onDue: "Nur am Fälligkeitstag",
+      dayBeforeAndDue: "Einen Tag vorher und am Fälligkeitstag",
+      dailyUntilDue: "Jeden Tag bis zum Fälligkeitstag",
+    },
+
+    saveAsIdea: "Als Idee speichern",
+    convertToTask: "In Aufgabe umwandeln",
+    confirmConvert: "Jetzt in Aufgabe umwandeln",
+
+    footerHint:
+      "Beim Umwandeln einer Idee in eine Aufgabe wird sie nicht dupliziert: Die ursprüngliche Idee wird zur Aufgabe.",
+    },
+
   profile: {
     title: "Profil",
     username: "Benutzername",

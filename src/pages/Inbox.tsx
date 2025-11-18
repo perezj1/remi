@@ -8,8 +8,9 @@ import {
   setTaskStatus,
   deleteBrainItem,
 } from "@/lib/brainItemsApi";
-import { Lightbulb, ListTodo, Check, Trash2 } from "lucide-react";
+import { Lightbulb, ListTodo, Check, Trash2, Pencil } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
+import IdeaEditModal from "@/components/IdeaEditModal";
 
 type Filter = "ALL" | "TASKS" | "IDEAS";
 
@@ -29,6 +30,17 @@ export default function InboxPage() {
   const [items, setItems] = useState<BrainItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("ALL");
+
+  // estado para el modal de edición de ideas
+  const [editingIdea, setEditingIdea] = useState<BrainItem | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+
+  // siempre arriba al entrar / recargar
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -57,13 +69,11 @@ export default function InboxPage() {
   const handlePrimaryAction = async (item: BrainItem) => {
     try {
       if (item.status !== "DONE") {
-        // pasar a DONE
         const updated = await setTaskStatus(item.id, "DONE");
         setItems((prev) =>
           prev.map((i) => (i.id === updated.id ? updated : i))
         );
       } else {
-        // ya está DONE → borrar DEFINITIVAMENTE de Supabase y quitar de la lista
         await deleteBrainItem(item.id);
         setItems((prev) => prev.filter((i) => i.id !== item.id));
       }
@@ -73,31 +83,31 @@ export default function InboxPage() {
     }
   };
 
-  return (
-    <div className="remi-page">
-      <div style={{ padding: "18px 18px 10px" }}>
-        <h1 style={{ fontSize: 20, fontWeight: 600, marginBottom: 4 }}>
-          {t("inbox.title")}
-        </h1>
-        <p style={{ fontSize: 12, color: "#8b8fa6", marginBottom: 14 }}>
-          {t("inbox.subtitle")}
-        </p>
+  const openEditModal = (item: BrainItem) => {
+    if (item.type !== "idea") return;
+    setEditingIdea(item);
+    setEditOpen(true);
+  };
 
+  return (
+    <div className="remi-page min-h-screen bg-white text-slate-900 flex flex-col">
+      {/* Cabecera morada */}
+      <header className="bg-[#8F31F3] text-white px-4 pt-8 pb-8 rounded-b-3xl shadow-md">
+        <h1 className="text-lg font-semibold">{t("inbox.title")}</h1>
+        <p className="text-xs text-white/80">{t("inbox.subtitle")}</p>
+      </header>
+
+      {/* Contenido scrollable */}
+      <main className="flex-1 overflow-y-auto px-4 pb-24 pt-3 bg-white">
         {/* filtros tipo pestañas */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 8,
-          }}
-        >
+        <div className="mb-2 flex items-center justify-between">
           <div className="remi-tabs">
             <button
               className={
                 "remi-tab " + (filter === "ALL" ? "remi-tab--active" : "")
               }
               onClick={() => setFilter("ALL")}
+              type="button"
             >
               {t("inbox.allTab")}
             </button>
@@ -106,6 +116,7 @@ export default function InboxPage() {
                 "remi-tab " + (filter === "TASKS" ? "remi-tab--active" : "")
               }
               onClick={() => setFilter("TASKS")}
+              type="button"
             >
               {t("inbox.tasksTab")}
             </button>
@@ -114,23 +125,20 @@ export default function InboxPage() {
                 "remi-tab " + (filter === "IDEAS" ? "remi-tab--active" : "")
               }
               onClick={() => setFilter("IDEAS")}
+              type="button"
             >
               {t("inbox.ideasTab")}
             </button>
           </div>
-          <span style={{ fontSize: 11, color: "#b2b6d1" }}>
+          <span className="text-[11px] text-[#b2b6d1]">
             {t("inbox.itemsCount", { count: filtered.length })}
           </span>
         </div>
-      </div>
 
-      <div style={{ padding: "0 18px 18px" }}>
         <div className="remi-task-list">
           {loading && (
             <div className="remi-task-row">
-              <span className="remi-task-sub">
-                {t("inbox.loading")}
-              </span>
+              <span className="remi-task-sub">{t("inbox.loading")}</span>
             </div>
           )}
 
@@ -138,12 +146,8 @@ export default function InboxPage() {
             <div className="remi-task-row">
               <div className="remi-task-dot" />
               <div>
-                <p className="remi-task-title">
-                  {t("inbox.emptyTitle")}
-                </p>
-                <p className="remi-task-sub">
-                  {t("inbox.emptySubtitle")}
-                </p>
+                <p className="remi-task-title">{t("inbox.emptyTitle")}</p>
+                <p className="remi-task-sub">{t("inbox.emptySubtitle")}</p>
               </div>
             </div>
           )}
@@ -154,8 +158,8 @@ export default function InboxPage() {
               const isDone = item.status === "DONE";
 
               const btnBg = isDone
-                ? "rgba(248,113,113,0.08)" // rojo suave
-                : "rgba(16,185,129,0.08)"; // verde suave
+                ? "rgba(248,113,113,0.08)"
+                : "rgba(16,185,129,0.08)";
               const btnBorder = isDone
                 ? "rgba(248,113,113,0.4)"
                 : "rgba(16,185,129,0.4)";
@@ -183,7 +187,6 @@ export default function InboxPage() {
                       alignItems: "flex-start",
                     }}
                   >
-                    {/* icono circular a la izquierda */}
                     <div
                       style={{
                         width: 32,
@@ -225,7 +228,7 @@ export default function InboxPage() {
                     </div>
                   </div>
 
-                  {/* estado + botón circular */}
+                  {/* estado + botones circulares */}
                   <div
                     style={{
                       textAlign: "right",
@@ -249,34 +252,88 @@ export default function InboxPage() {
                       {statusLabel(item.status, t)}
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => handlePrimaryAction(item)}
+                    <div
                       style={{
-                        width: 30,
-                        height: 30,
-                        borderRadius: "999px",
-                        border: `1px solid ${btnBorder}`,
-                        background: btnBg,
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "pointer",
-                        padding: 0,
+                        display: "flex",
+                        gap: 6,
                       }}
                     >
-                      {isDone ? (
-                        <Trash2 size={16} color={btnColor} />
-                      ) : (
-                        <Check size={16} color={btnColor} />
+                      {/* Botón editar SOLO para ideas */}
+                      {item.type === "idea" && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditModal(item);
+                          }}
+                          style={{
+                            width: 30,
+                            height: 30,
+                            borderRadius: "999px",
+                            border:
+                              "1px solid rgba(148,163,184,0.8)", // gris claro
+                            background: "transparent",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                            padding: 0,
+                          }}
+                        >
+                          <Pencil size={16} color="#6b7280" />
+                        </button>
                       )}
-                    </button>
+
+                      {/* Botón principal: marcar DONE / borrar */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePrimaryAction(item);
+                        }}
+                        style={{
+                          width: 30,
+                          height: 30,
+                          borderRadius: "999px",
+                          border: `1px solid ${btnBorder}`,
+                          background: btnBg,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          padding: 0,
+                        }}
+                      >
+                        {isDone ? (
+                          <Trash2 size={16} color={btnColor} />
+                        ) : (
+                          <Check size={16} color={btnColor} />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
             })}
         </div>
-      </div>
+      </main>
+
+      {/* Modal para editar / convertir una idea */}
+      <IdeaEditModal
+        open={editOpen}
+        idea={editingIdea}
+        onClose={() => setEditOpen(false)}
+        onUpdated={(updated) => {
+          setItems((prev) =>
+            prev.map((i) => (i.id === updated.id ? updated : i))
+          );
+        }}
+        onConverted={(convertedTask) => {
+          setItems((prev) =>
+            prev.map((i) => (i.id === convertedTask.id ? convertedTask : i))
+          );
+        }}
+      />
     </div>
   );
 }

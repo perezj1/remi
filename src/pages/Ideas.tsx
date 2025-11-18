@@ -1,8 +1,12 @@
 // src/pages/Ideas.tsx
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { BrainItem, fetchActiveIdeas } from "@/lib/brainItemsApi";
+import {
+  BrainItem,
+  fetchActiveIdeas,
+} from "@/lib/brainItemsApi";
 import { useI18n } from "@/contexts/I18nContext";
+import IdeaEditModal from "@/components/IdeaEditModal";
 
 export default function IdeasPage() {
   const { user } = useAuth();
@@ -10,6 +14,17 @@ export default function IdeasPage() {
 
   const [ideas, setIdeas] = useState<BrainItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Estado para el modal de edición/conversión
+  const [editingIdea, setEditingIdea] = useState<BrainItem | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+
+  // Siempre arriba al entrar / recargar
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -27,6 +42,12 @@ export default function IdeasPage() {
       }
     })();
   }, [user, t]);
+
+  // 👉 Al hacer clic en una idea, abrimos el modal
+  const handleIdeaClick = (idea: BrainItem) => {
+    setEditingIdea(idea);
+    setEditOpen(true);
+  };
 
   return (
     <div className="remi-page">
@@ -71,7 +92,19 @@ export default function IdeasPage() {
 
           {!loading &&
             ideas.map((idea) => (
-              <div key={idea.id} className="remi-task-row">
+              <div
+                key={idea.id}
+                className="remi-task-row"
+                onClick={() => handleIdeaClick(idea)}
+                role="button"
+                tabIndex={0}
+                style={{ cursor: "pointer" }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    handleIdeaClick(idea);
+                  }
+                }}
+              >
                 <div
                   className="remi-task-dot"
                   style={{
@@ -91,6 +124,23 @@ export default function IdeasPage() {
             ))}
         </div>
       </div>
+
+      {/* Modal para editar / convertir una idea */}
+      <IdeaEditModal
+        open={editOpen}
+        idea={editingIdea}
+        onClose={() => setEditOpen(false)}
+        onUpdated={(updated) => {
+          // actualizar el texto de la idea en la lista
+          setIdeas((prev) =>
+            prev.map((i) => (i.id === updated.id ? updated : i))
+          );
+        }}
+        onConverted={(convertedTask) => {
+          // la idea pasa a ser tarea -> la quitamos de la lista de ideas
+          setIdeas((prev) => prev.filter((i) => i.id !== convertedTask.id));
+        }}
+      />
     </div>
   );
 }

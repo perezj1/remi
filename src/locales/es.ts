@@ -13,6 +13,11 @@ export const es = {
     loading: "Cargando...",
   },
 
+  index: {
+  clearMind: "Mente despejada",
+},
+
+
   nav: {
     today: "Hoy",
     inbox: "Bandeja",
@@ -23,7 +28,82 @@ export const es = {
   bottomNav: {
   today: "Hoy",
   inbox: "Bandeja",
+  status: "status"
 },
+
+installPrompt: {
+  iosTitle: "Instala Remi en tu iPhone - GRATIS",
+  iosStep1BeforeShare: "1. Pulsa el botón",
+  iosShareLabel: "Compartir",
+  iosStep1AfterShare: ".",
+  iosStep2BeforeAction: "2. Elige",
+  iosAddToHome: "Añadir a pantalla de inicio",
+  iosStep2AfterAction: "y confirma.",
+  defaultTitle: "Instala Remi",
+  defaultDescription: "Añade Remi a tu lista de aplicaciones — ¡GRATIS!",
+  buttonInstall: "Instalar",
+  close: "Cerrar",
+},
+
+
+status: {
+    back: "Volver",
+    headerTitle: "Estado de Remi",
+    headerSubtitle: "Hemos ayudado a tu mente a estar un poco más ligera hoy.",
+
+    helperLabel: "Tu ayudante de memoria",
+    helperFallback:
+      "Estoy aquí para guardar tus tareas, ideas y recordatorios, para que tu mente no tenga que cargar con todo.",
+
+    mindClearLabel: "Mente despejada",
+    mindClearDescription:
+      "Cada cosa que guardamos en Remi es una cosa menos que tu cabeza tiene que sostener.",
+
+    todaySectionTitle: "Lo que hemos conseguido hoy",
+    todaySectionSubtitle:
+      "Resumen de cómo hemos cuidado tu mente en las últimas horas.",
+    todayTasksLabel: "Tareas de hoy",
+    todayTasksDescription:
+      "Hoy hemos organizado {{todayTotal}} tareas para que no dependan solo de tu memoria.",
+
+    streakSectionTitle: "Nuestra racha",
+    streakValue: "{{streakDays}} días",
+    streakDescription:
+      "Llevamos {{streakDays}} días cuidando de tus tareas juntos, sin que tu mente tenga que recordarlo todo sola.",
+
+    memoryDelegatedTitle: "Memoria delegada",
+    memoryDelegatedValue: "{{tasks}} tareas · {{ideas}} ideas",
+    memoryDelegatedDescription:
+      "Ahora mismo Remi está cuidando de {{tasks}} tareas y {{ideas}} ideas por ti. Tu mente no tiene que tenerlas todas en la cabeza.",
+
+    weekSectionTitle: "Nuestra semana",
+    weekSectionSubtitle:
+      "Cada día que usas Remi, tu cabeza tiene un poco menos de carga.",
+    weekActiveLabel: "Días activos esta semana",
+
+    loading: "Actualizando tu resumen con Remi…",
+
+    // Moods
+    moodTitleCelebrate: "¡Equipo increíble!",
+    moodTitleHappy: "Hoy vamos genial",
+    moodTitleCalm: "Todo bajo control",
+    moodTitleWaiting: "Estoy listo cuando tú quieras",
+    moodTitleConcerned: "Vamos poco a poco",
+    moodTitleDefault: "Estamos en esto juntos",
+
+    moodSubtitleCelebrate:
+      "Estos días estamos cuidando muy bien tu cabeza. Hemos descargado {{cleared}} tareas de hoy y Remi tiene guardadas {{totalItems}} cosas en total entre tareas e ideas.",
+    moodSubtitleHappy:
+      "Hoy hemos despejado bastante tu mente: tienes {{todayTotal}} tareas organizadas y {{todayDone}} de ellas ya están hechas.",
+    moodSubtitleCalm:
+      "Vamos avanzando sin prisa. Tenemos {{todayTotal}} tareas guardadas para hoy y Remi se encarga de acordarse por ti.",
+    moodSubtitleWaiting:
+      "Hoy tu mente está ligera. Si quieres, podemos descargar alguna cosa más en Remi para que no tengas que recordarla tú.",
+    moodSubtitleConcerned:
+      "Parece que aún queda día por delante. Podemos empezar con una tarea pequeña y dejar que tu mente respire un poco más.",
+    moodSubtitleDefault:
+      "Cada cosa que guardas en Remi es una cosa menos que tu cabeza tiene que sostener.",
+  },
 
 
 capture: {
@@ -31,8 +111,8 @@ capture: {
   subtitle: "Escribe lo que tengas en mente y decide si es tarea o idea.",
   textareaPlaceholder: "Ej: Enviar el email, preguntar receta a mamá...",
 
-  ideaButton: "Es una idea",
-  taskButton: "Es una tarea",
+  ideaButton: "Idea",
+  taskButton: "Tarea",
 
   dueLabel: "Fecha límite",
   dueToday: "Hoy",
@@ -93,7 +173,7 @@ capture: {
   streak: "Racha",
 
   greeting: "Hola, {{name}} 👋",
-  tasksToday: "Tienes {{count}} tareas hoy",
+  tasksToday: "Tienes {{count}} tareas activas",
   prioritize: "Prioricemos solo lo importante.",
 
   tabsToday: "Hoy",
@@ -158,6 +238,34 @@ capture: {
     "Usa el botón + en la pantalla de Hoy para guardar tus ideas.",
   savedAt: "Guardada el {{date}}",
   errorLoading: "Error cargando tus ideas",
+  updateError: "No se ha podido actualizar la idea.",
+    convertError: "No se ha podido convertir la idea en tarea.",
+
+    editLabel: "Editar idea",
+    editTitle: "Convierte esta idea en algo accionable",
+    editSubtitle:
+      "Mejora el texto o conviértela en una tarea con fecha y recordatorio.",
+
+    fieldTitle: "Texto de la idea",
+    fieldTitlePlaceholder: "Ej: comprar zapatos nuevos para la boda",
+
+    taskOptionsTitle: "Opciones de tarea",
+    dueDateLabel: "Fecha y hora límite (opcional)",
+    reminderLabel: "Recordatorio",
+
+    reminder: {
+      none: "Sin recordatorio",
+      onDue: "Solo el día de la fecha",
+      dayBeforeAndDue: "Un día antes y el día de la fecha",
+      dailyUntilDue: "Cada día hasta la fecha límite",
+    },
+
+    saveAsIdea: "Guardar como idea",
+    convertToTask: "Convertir en tarea",
+    confirmConvert: "Convertir en tarea ahora",
+
+    footerHint:
+      "Convertir una idea en tarea no la duplica: la idea original pasa a ser una tarea.",
   },
 
   profile: {

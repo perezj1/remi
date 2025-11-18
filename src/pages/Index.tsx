@@ -19,6 +19,8 @@ import {
   fetchActiveTasks,
   setTaskStatus,
   postponeTask,
+  fetchRemiStatusSummary,
+  type RemiStatusSummary,
 } from "@/lib/brainItemsApi";
 import { supabase } from "@/integrations/supabase/client";
 import { registerPushSubscription } from "@/lib/registerPush";
@@ -55,6 +57,8 @@ export default function TodayPage() {
     useState<"TODAY" | "WEEK" | "MONTH">("TODAY");
   const [profileOpen, setProfileOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [statusSummary, setStatusSummary] =
+    useState<RemiStatusSummary | null>(null);
 
   // popup para activar notificaciones push
   const [showPushModal, setShowPushModal] = useState(false);
@@ -62,19 +66,21 @@ export default function TodayPage() {
 
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
 
-  // ---------- Cargar tareas e ideas ----------
+  // ---------- Cargar tareas, ideas y resumen de estado ----------
   useEffect(() => {
     if (!user) return;
     setLoading(true);
 
     (async () => {
       try {
-        const [tks, ids] = await Promise.all([
+        const [tks, ids, summaryData] = await Promise.all([
           fetchActiveTasks(user.id),
           fetchActiveIdeas(user.id),
+          fetchRemiStatusSummary(user.id),
         ]);
         setTasks(tks);
         setIdeas(ids);
+        setStatusSummary(summaryData);
       } catch (err) {
         console.error(err);
         alert(t("today.errorLoadingTasks"));
@@ -83,6 +89,20 @@ export default function TodayPage() {
       }
     })();
   }, [user, t]);
+
+  // ---------- Porcentaje de "Mente despejada" (tareas + ideas) ----------
+  const mindClearPercent = useMemo(() => {
+    if (!statusSummary) return 10;
+    const totalItems =
+      statusSummary.totalItemsStored ??
+      statusSummary.totalTasksStored + statusSummary.totalIdeasStored;
+    if (totalItems <= 0) return 10;
+
+    return Math.min(
+      100,
+      30 + Math.round(Math.log10(totalItems + 1) * 35)
+    );
+  }, [statusSummary]);
 
   // ---------- Comprobar si ya tiene suscripción push ----------
   useEffect(() => {
@@ -287,11 +307,11 @@ export default function TodayPage() {
 
   return (
     <div className="remi-page">
-      {/* CABECERA CON DEGRADADO (más pequeña) */}
+      {/* CABECERA CON DEGRADADO + barra "Mente despejada" */}
       <div
         style={{
           padding: "16px 20px 56px",
-          background: "linear-gradient(#8F31F3)",
+          background: "linear-gradient(#8F31F3, #8F31F3)",
           color: "white",
           borderBottomLeftRadius: "24px",
           borderBottomRightRadius: "24px",
@@ -413,6 +433,42 @@ export default function TodayPage() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Barra "Mente despejada" en la cabecera */}
+        <div style={{ marginTop: 14 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              fontSize: 11,
+              opacity: 0.9,
+            }}
+          >
+            <span>{t("index.clearMind")}</span>
+            <span>{mindClearPercent}%</span>
+          </div>
+          <div
+            style={{
+              marginTop: 6,
+              height: 6,
+              borderRadius: 999,
+              background: "rgba(255,255,255,0.28)",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                height: "100%",
+                width: `${mindClearPercent}%`,
+                borderRadius: 999,
+                background:
+                  "linear-gradient(90deg, #ffffff, #FDE68A, #FDBA74)",
+                transition: "width 0.4s ease",
+              }}
+            />
           </div>
         </div>
       </div>

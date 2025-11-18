@@ -1,6 +1,12 @@
 // src/App.tsx
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { I18nProvider, useI18n } from "@/contexts/I18nContext";
 import type { RemiLocale } from "@/locales";
@@ -13,12 +19,23 @@ import AuthPage from "@/pages/Auth";
 import NotFound from "@/pages/NotFound";
 import BottomNav from "@/components/BottomNav";
 import InstallPrompt from "@/components/InstallPrompt";
+import StatusPage from "@/pages/Status";
+import ScrollToTop from "@/components/ScrollToTop";
 
-// Protege rutas privadas
+// ---- RUTAS PROTEGIDAS ----
 function RequireAuth({ children }: { children: JSX.Element }) {
   const { user } = useAuth();
+  const location = useLocation();
+
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    // Guardamos desde dónde venimos para volver después de login/recarga
+    return (
+      <Navigate
+        to="/auth"
+        replace
+        state={{ from: location.pathname || "/" }}
+      />
+    );
   }
   return children;
 }
@@ -26,26 +43,36 @@ function RequireAuth({ children }: { children: JSX.Element }) {
 function AppRoutes() {
   const { user, profile } = useAuth();
   const { lang, setLang } = useI18n();
+  const location = useLocation();
 
   // 👇 si existe profiles.language, manda sobre navegador/localStorage
   React.useEffect(() => {
-    // profile viene tipado como ProfileRow (sin language), así que casteamos
     const pLang =
       (((profile as any)?.language ?? null) as RemiLocale | null);
 
     if (pLang && pLang !== lang && ["es", "en", "de"].includes(pLang)) {
       setLang(pLang);
     }
-  }, [profile, lang, setLang]); // dependemos de profile completo, no de profile?.language
+  }, [profile, lang, setLang]);
+
+  // De dónde venimos (por ejemplo, /status)
+  type LocationState = { from?: string };
+  const state = location.state as LocationState | null;
+  const from = state?.from || "/";
 
   return (
     <>
+      {/* Siempre que cambie la ruta, pone el scroll arriba */}
+      <ScrollToTop />
+
       <Routes>
+        {/* Auth */}
         <Route
           path="/auth"
-          element={!user ? <AuthPage /> : <Navigate to="/" replace />}
+          element={!user ? <AuthPage /> : <Navigate to={from} replace />}
         />
 
+        {/* Hoy */}
         <Route
           path="/"
           element={
@@ -55,6 +82,7 @@ function AppRoutes() {
           }
         />
 
+        {/* Inbox (tareas) */}
         <Route
           path="/inbox"
           element={
@@ -64,6 +92,7 @@ function AppRoutes() {
           }
         />
 
+        {/* Ideas */}
         <Route
           path="/ideas"
           element={
@@ -73,6 +102,7 @@ function AppRoutes() {
           }
         />
 
+        {/* Perfil */}
         <Route
           path="/profile"
           element={
@@ -82,11 +112,21 @@ function AppRoutes() {
           }
         />
 
+        {/* Status */}
+        <Route
+          path="/status"
+          element={
+            <RequireAuth>
+              <StatusPage />
+            </RequireAuth>
+          }
+        />
+
+        {/* 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
 
       {user && <BottomNav />}
-
       <InstallPrompt />
     </>
   );
