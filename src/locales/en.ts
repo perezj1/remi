@@ -45,63 +45,64 @@ installPrompt: {
 
 
  status: {
-    back: "Back",
-    headerTitle: "Remi’s status",
-    headerSubtitle: "We’ve helped your mind feel a little lighter today.",
+  back: "Back",
+  headerTitle: "Remi status",
+  headerSubtitle: "Today we helped your mind feel a little lighter.",
 
-    helperLabel: "Your memory helper",
-    helperFallback:
-      "I’m here to store your tasks, ideas and reminders so your mind doesn’t have to carry everything.",
+  helperLabel: "Your external memory",
+  helperFallback:
+    "I'm here to store your tasks, ideas and reminders so your mind doesn’t have to carry everything.",
 
-    mindClearLabel: "Clear mind",
-    mindClearDescription:
-      "Everything you save in Remi is one thing less your head has to hold.",
+  mindClearLabel: "Clear mind",
+  mindClearDescription:
+    "Every thing you store in Remi is one less thing your mind has to carry.",
 
-    todaySectionTitle: "What we’ve achieved today",
-    todaySectionSubtitle:
-      "A quick summary of how we’ve looked after your mind in the last hours.",
-    todayTasksLabel: "Today’s tasks",
-    todayTasksDescription:
-      "Today we’ve organised {{todayTotal}} tasks so they don’t depend only on your memory.",
+  todaySectionTitle: "What we’ve achieved",
+  todaySectionSubtitle:
+    "A summary of how we’re taking care of your mind.",
+  todayTasksLabel: "Today’s tasks",
+  todayTasksDescription:
+    "Today we’ve organised {{todayTotal}} tasks.",
 
-    streakSectionTitle: "Our streak",
-    streakValue: "{{streakDays}} days",
-    streakDescription:
-      "We’ve spent {{streakDays}} days taking care of your tasks together, so your mind doesn’t have to remember everything alone.",
+  streakSectionTitle: "Our streak",
+  streakValue: "{{streakDays}} days",
+  streakDescription:
+    "We’ve gone {{streakDays}} days without your mind having to remember everything on its own.",
 
-    memoryDelegatedTitle: "Delegated memory",
-    memoryDelegatedValue: "{{tasks}} tasks · {{ideas}} ideas",
-    memoryDelegatedDescription:
-      "Right now Remi is looking after {{tasks}} tasks and {{ideas}} ideas for you. Your mind doesn’t need to hold them all.",
+  memoryDelegatedTitle: "Delegated memory",
+  memoryDelegatedValue: "{{tasks}} tasks · {{ideas}} ideas",
+  memoryDelegatedDescription:
+    "Right now Remi is taking care of {{tasks}} tasks and {{ideas}} ideas for you.",
 
-    weekSectionTitle: "Our week",
-    weekSectionSubtitle:
-      "Every day you use Remi, your mind carries a little less weight.",
-    weekActiveLabel: "Active days this week",
+  weekSectionTitle: "Our week",
+  weekSectionSubtitle:
+    "Every day you use Remi, your head carries a little less weight.",
+  weekActiveLabel: "Active days this week",
 
-    loading: "Updating your summary with Remi…",
+  loading: "Updating your summary with Remi…",
 
-    // Moods
-    moodTitleCelebrate: "Amazing team!",
-    moodTitleHappy: "We’re doing great today",
-    moodTitleCalm: "Everything under control",
-    moodTitleWaiting: "I’m ready whenever you are",
-    moodTitleConcerned: "Let’s go step by step",
-    moodTitleDefault: "We’re in this together",
+  // Moods
+  moodTitleCelebrate: "Amazing team!",
+  moodTitleHappy: "We’re doing great today",
+  moodTitleCalm: "Everything under control",
+  moodTitleWaiting: "I’m ready",
+  moodTitleConcerned: "Let’s take it step by step",
+  moodTitleDefault: "We’re in this together",
 
-    moodSubtitleCelebrate:
-      "These days we’re taking very good care of your head. We’ve unloaded {{cleared}} tasks for today and Remi is holding {{totalItems}} things in total between tasks and ideas.",
-    moodSubtitleHappy:
-      "We’ve cleared a good part of your mind today: you have {{todayTotal}} tasks organised and {{todayDone}} of them are already done.",
-    moodSubtitleCalm:
-      "We’re moving forward without rushing. We have {{todayTotal}} tasks saved for today and Remi will remember them for you.",
-    moodSubtitleWaiting:
-      "Your mind feels light today. If you want, we can unload a few more things into Remi so you don’t have to remember them yourself.",
-    moodSubtitleConcerned:
-      "It looks like there’s still a day ahead. We can start with one small task and let your mind breathe a bit more.",
-    moodSubtitleDefault:
-      "Every thing you keep in Remi is one less thing your mind has to carry.",
-  },
+  moodSubtitleCelebrate:
+    "These days we’re taking great care of your mind. We’ve cleared {{cleared}} tasks for today and Remi is storing {{totalItems}} things in total between tasks and ideas.",
+  moodSubtitleHappy:
+    "We’ve cleared a good part of your mind today: you have {{todayTotal}} tasks organised and {{todayDone}} of them are already done.",
+  moodSubtitleCalm:
+    "We’re moving forward without rushing. We’ve saved {{todayTotal}} tasks for today and Remi is remembering them for you.",
+  moodSubtitleWaiting:
+    "Today your mind is light, but we can still offload a few more things into Remi so you don’t have to remember them yourself.",
+  moodSubtitleConcerned:
+    "Looks like there’s still some day ahead. We can start with one small task and let your mind breathe a bit more.",
+  moodSubtitleDefault:
+    "Every thing you store in Remi is one less thing your mind has to carry.",
+},
+
 
 capture: {
   title: "Empty your mind",

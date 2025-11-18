@@ -8,6 +8,7 @@ import {
   CalendarDays,
   Info,
   Loader2,
+  LayoutTemplate
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -289,7 +290,7 @@ export default function StatusPage() {
             <div className="rounded-2xl border border-slate-100 bg-slate-50/80 px-3 py-3">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-100">
-                  <CalendarDays className="h-4 w-4 text-violet-700" />
+                  <LayoutTemplate className="h-4 w-4 text-violet-700" />
                 </div>
                 <div>
                   <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
@@ -317,7 +318,7 @@ export default function StatusPage() {
         <section className="mt-4 rounded-3xl bg-white p-5 shadow-md shadow-black/10">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100">
-              <Info className="h-4 w-4 text-slate-500" />
+              <CalendarDays className="h-4 w-4 text-slate-500" />
             </div>
             <div>
               <h3 className="text-sm font-semibold text-slate-900">

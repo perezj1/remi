@@ -51,30 +51,30 @@ status: {
     headerTitle: "Estado de Remi",
     headerSubtitle: "Hemos ayudado a tu mente a estar un poco más ligera hoy.",
 
-    helperLabel: "Tu ayudante de memoria",
+    helperLabel: "Tu memoria externa",
     helperFallback:
       "Estoy aquí para guardar tus tareas, ideas y recordatorios, para que tu mente no tenga que cargar con todo.",
 
     mindClearLabel: "Mente despejada",
     mindClearDescription:
-      "Cada cosa que guardamos en Remi es una cosa menos que tu cabeza tiene que sostener.",
+      "Cada cosa que guardas en Remi es una cosa menos que carga tu mente.",
 
-    todaySectionTitle: "Lo que hemos conseguido hoy",
+    todaySectionTitle: "Lo que hemos conseguido",
     todaySectionSubtitle:
-      "Resumen de cómo hemos cuidado tu mente en las últimas horas.",
+      "Resumen de cómo estamos cuidando tu mente.",
     todayTasksLabel: "Tareas de hoy",
     todayTasksDescription:
-      "Hoy hemos organizado {{todayTotal}} tareas para que no dependan solo de tu memoria.",
+      "Hoy hemos organizado {{todayTotal}} tareas.",
 
     streakSectionTitle: "Nuestra racha",
     streakValue: "{{streakDays}} días",
     streakDescription:
-      "Llevamos {{streakDays}} días cuidando de tus tareas juntos, sin que tu mente tenga que recordarlo todo sola.",
+      "Llevamos {{streakDays}} días sin que tu mente tenga que recordarlo todo sola.",
 
     memoryDelegatedTitle: "Memoria delegada",
     memoryDelegatedValue: "{{tasks}} tareas · {{ideas}} ideas",
     memoryDelegatedDescription:
-      "Ahora mismo Remi está cuidando de {{tasks}} tareas y {{ideas}} ideas por ti. Tu mente no tiene que tenerlas todas en la cabeza.",
+      "Ahora mismo Remi está cuidando de {{tasks}} tareas y {{ideas}} ideas.",
 
     weekSectionTitle: "Nuestra semana",
     weekSectionSubtitle:
@@ -87,7 +87,7 @@ status: {
     moodTitleCelebrate: "¡Equipo increíble!",
     moodTitleHappy: "Hoy vamos genial",
     moodTitleCalm: "Todo bajo control",
-    moodTitleWaiting: "Estoy listo cuando tú quieras",
+    moodTitleWaiting: "Estoy listo",
     moodTitleConcerned: "Vamos poco a poco",
     moodTitleDefault: "Estamos en esto juntos",
 
@@ -98,11 +98,11 @@ status: {
     moodSubtitleCalm:
       "Vamos avanzando sin prisa. Tenemos {{todayTotal}} tareas guardadas para hoy y Remi se encarga de acordarse por ti.",
     moodSubtitleWaiting:
-      "Hoy tu mente está ligera. Si quieres, podemos descargar alguna cosa más en Remi para que no tengas que recordarla tú.",
+      "Hoy tu mente está ligera pero podemos descargar alguna cosa más en Remi para que no tengas que recordarla tú.",
     moodSubtitleConcerned:
       "Parece que aún queda día por delante. Podemos empezar con una tarea pequeña y dejar que tu mente respire un poco más.",
     moodSubtitleDefault:
-      "Cada cosa que guardas en Remi es una cosa menos que tu cabeza tiene que sostener.",
+      "Cada cosa que guardas en Remi es una cosa menos que carga tu mente.",
   },
 
 

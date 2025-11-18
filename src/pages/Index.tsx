@@ -573,17 +573,17 @@ export default function TodayPage() {
                   }}
                 >
                   <div
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: "999px",
-                      border: "2px solid #22c55e",
-                      background: "rgba(34,197,94,0.06)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginTop: 4,
-                      color: "#16a34a",
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: "999px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginTop: 2,
+                        background:
+                          "rgba(143,49,243,0.08)",                         
+                        color: "#8F31F3" ,
                     }}
                   >
                     <ListTodo size={16} />
