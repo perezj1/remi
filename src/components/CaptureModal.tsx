@@ -291,33 +291,12 @@ export default function CaptureModal({
                 className="remi-input"
                 style={{
                   borderRadius: 14,
-                  // padding simétrico para centrar el texto verticalmente
-                  padding: "12px 42px 12px 14px",
-                  height: 48,
-                  boxSizing: "border-box",
+                  paddingRight: 42,
                 }}
                 value={customDue}
                 onChange={(e) => setCustomDue(e.target.value)}
                 disabled={dueOption === "NONE"}
               />
-
-              {/* Placeholder "Elegir fecha y hora" centrado */}
-              {!customDue && dueOption !== "NONE" && (
-                <span
-                  style={{
-                    position: "absolute",
-                    left: 16,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    fontSize: 12,
-                    color: "#9ca3af",
-                    pointerEvents: "none",
-                  }}
-                >
-                  {t("capture.duePlaceholder")}
-                </span>
-              )}
-
               <p
                 className="remi-modal-sub"
                 style={{ fontSize: 11, marginTop: 4 }}
