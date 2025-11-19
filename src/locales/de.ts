@@ -183,6 +183,7 @@ status: {
   tabsToday: "Heute",
   tabsWeek: "Woche",
   tabsMonth: "Monat",
+  tabsNext: "Bevorstehende Aufgaben",
 
   loadingTasks: "Aufgaben werden geladen…",
   noUrgentTitle: "Heute nichts Dringendes 🎉",
@@ -234,6 +235,10 @@ status: {
   itemIdeaPrefix: "Idee · ",
   errorLoading: "Fehler beim Laden deines Posteingangs",
   errorUpdating: "Fehler beim Aktualisieren deines Posteingangs",
+
+   sectionToday: "Heute",
+  sectionTomorrow: "Morgen",
+  sectionNoDate: "Ohne Datum",
   },
 
   ideas: {

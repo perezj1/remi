@@ -475,5 +475,16 @@ input {
   transform: translateY(-1px);
 }
 
+/* Oculta la barra de scroll en contenedores con .remi-scroll */
+.remi-scroll {
+  scrollbar-width: none;      /* Firefox */
+  -ms-overflow-style: none;   /* IE y Edge antiguo */
+}
+
+.remi-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
 /* --- (opcional) si usas también las clases remi-... del home --- */
 /* aquí puedes pegar tu CSS de remi-shell, remi-bottom-nav, etc. */

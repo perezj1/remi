@@ -204,7 +204,7 @@ export default function StatusPage() {
       </header>
 
       {/* Contenido */}
-      <main className="flex-1 overflow-y-auto px-4 pb-24 pt-2 bg-white">
+      <main className="flex-1 px-4 pb-24 pt-2 bg-white remi-scroll">
         {/* Tarjeta principal */}
         <section className="mt-2 rounded-3xl bg-white p-5 shadow-xl shadow-black/10">
           <RemiAvatar mood={mood} loading={loading} />

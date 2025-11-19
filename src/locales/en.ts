@@ -179,6 +179,7 @@ capture: {
   tabsToday: "Today",
   tabsWeek: "Week",
   tabsMonth: "Month",
+  tabsNext: "Upcoming tasks",
 
   loadingTasks: "Loading tasks…",
   noUrgentTitle: "Nothing urgent for today 🎉",
@@ -226,6 +227,11 @@ capture: {
   itemIdeaPrefix: "Idea · ",
   errorLoading: "Error loading your inbox",
   errorUpdating: "Error updating your inbox",
+
+  sectionToday: "Today",
+  sectionTomorrow: "Tomorrow",
+  sectionNoDate: "No date",
+
   },
 
   ideas: {

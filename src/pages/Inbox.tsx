@@ -23,6 +23,20 @@ function statusLabel(
   return t("inbox.statusArchived");
 }
 
+type DateGroup = {
+  key: string;
+  label: string;
+  items: BrainItem[];
+};
+
+function isSameDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
 export default function InboxPage() {
   const { user } = useAuth();
   const { t } = useI18n();
@@ -65,6 +79,99 @@ export default function InboxPage() {
     return true;
   });
 
+  // Agrupar por fecha:
+  // - Hoy: inbox.sectionToday
+  // - Mañana: inbox.sectionTomorrow
+  // - Resto fechas: fecha formateada
+  // - Sin fecha: inbox.sectionNoDate
+  const dateGroups: DateGroup[] = (() => {
+    if (filtered.length === 0) return [];
+
+    const today = new Date();
+    const todayMid = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+    const tomorrowMid = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate() + 1
+    );
+
+    const todayGroup: DateGroup = {
+      key: "TODAY",
+      label: t("inbox.sectionToday"),
+      items: [],
+    };
+    const tomorrowGroup: DateGroup = {
+      key: "TOMORROW",
+      label: t("inbox.sectionTomorrow"),
+      items: [],
+    };
+    const noDateGroup: DateGroup = {
+      key: "NO_DATE",
+      label: t("inbox.sectionNoDate"),
+      items: [],
+    };
+
+    const otherDateGroupsMap = new Map<
+      string,
+      { group: DateGroup; dateMs: number }
+    >();
+
+    for (const item of filtered) {
+      if (item.due_date) {
+        const d = new Date(item.due_date);
+        const dMid = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+        if (isSameDay(dMid, todayMid)) {
+          todayGroup.items.push(item);
+        } else if (isSameDay(dMid, tomorrowMid)) {
+          tomorrowGroup.items.push(item);
+        } else {
+          const key = dMid.toISOString().slice(0, 10);
+          let stored = otherDateGroupsMap.get(key);
+          if (!stored) {
+            const label = d.toLocaleDateString(undefined, {
+              weekday: "short",
+              day: "numeric",
+              month: "short",
+            });
+            stored = {
+              group: {
+                key,
+                label,
+                items: [],
+              },
+              dateMs: dMid.getTime(),
+            };
+            otherDateGroupsMap.set(key, stored);
+          }
+          stored.group.items.push(item);
+        }
+      } else {
+        // Sin fecha límite → grupo "Sin fecha"
+        noDateGroup.items.push(item);
+      }
+    }
+
+    const groups: DateGroup[] = [];
+
+    if (todayGroup.items.length > 0) groups.push(todayGroup);
+    if (tomorrowGroup.items.length > 0) groups.push(tomorrowGroup);
+
+    const otherDateGroups = Array.from(otherDateGroupsMap.values())
+      .sort((a, b) => a.dateMs - b.dateMs)
+      .map((x) => x.group);
+
+    groups.push(...otherDateGroups);
+
+    if (noDateGroup.items.length > 0) groups.push(noDateGroup);
+
+    return groups;
+  })();
+
   // marcar como hecha o borrar según estado actual
   const handlePrimaryAction = async (item: BrainItem) => {
     try {
@@ -98,7 +205,7 @@ export default function InboxPage() {
       </header>
 
       {/* Contenido scrollable */}
-      <main className="flex-1 overflow-y-auto px-4 pb-24 pt-3 bg-white">
+      <main className="flex-1 px-4 pb-24 pt-2 bg-white remi-scroll">
         {/* filtros tipo pestañas */}
         <div className="mb-2 flex items-center justify-between">
           <div className="remi-tabs">
@@ -153,181 +260,190 @@ export default function InboxPage() {
           )}
 
           {!loading &&
-            filtered.map((item) => {
-              const isTask = item.type === "task";
-              const isDone = item.status === "DONE";
+            dateGroups.map((group) => (
+              <div key={group.key}>
+                {/* Cabecera de fecha */}
+                <p className="mt-3 mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                  {group.label}
+                </p>
 
-              const btnBg = isDone
-                ? "rgba(248,113,113,0.08)"
-                : "rgba(16,185,129,0.08)";
-              const btnBorder = isDone
-                ? "rgba(248,113,113,0.4)"
-                : "rgba(16,185,129,0.4)";
-              const btnColor = isDone ? "#DC2626" : "#10B981";
+                {group.items.map((item) => {
+                  const isTask = item.type === "task";
+                  const isDone = item.status === "DONE";
 
-              const hasDue = !!item.due_date;
-              const dueStr = hasDue
-                ? new Date(item.due_date as string).toLocaleString()
-                : t("today.dueNoDate"); // Sin fecha límite
+                  const btnBg = isDone
+                    ? "rgba(248,113,113,0.08)"
+                    : "rgba(16,185,129,0.08)";
+                  const btnBorder = isDone
+                    ? "rgba(248,113,113,0.4)"
+                    : "rgba(16,185,129,0.4)";
+                  const btnColor = isDone ? "#DC2626" : "#10B981";
 
-              return (
-                <div
-                  key={item.id}
-                  className="remi-task-row"
-                  style={{
-                    alignItems: "center",
-                    padding: "10px 12px",
-                    borderRadius: 16,
-                    background: "#ffffff",
-                    boxShadow: "0 10px 25px rgba(15,23,42,0.04)",
-                    marginBottom: 8,
-                  }}
-                >
-                  {/* icono + texto */}
-                  <div
-                    style={{
-                      display: "flex",
-                      flex: 1,
-                      gap: 10,
-                      alignItems: "flex-start",
-                    }}
-                  >
+                  const hasDue = !!item.due_date;
+                  const dueStr = hasDue
+                    ? new Date(item.due_date as string).toLocaleString()
+                    : t("today.dueNoDate"); // Sin fecha límite
+
+                  return (
                     <div
+                      key={item.id}
+                      className="remi-task-row"
                       style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: "999px",
-                        display: "flex",
                         alignItems: "center",
-                        justifyContent: "center",
-                        marginTop: 2,
-                        background: isTask
-                          ? "rgba(143,49,243,0.08)"
-                          : "rgba(251,191,36,0.15)",
-                        color: isTask ? "#8F31F3" : "#F59E0B",
+                        padding: "10px 12px",
+                        borderRadius: 16,
+                        background: "#ffffff",
+                        boxShadow: "0 10px 25px rgba(15,23,42,0.04)",
+                        marginBottom: 8,
                       }}
                     >
-                      {isTask ? (
-                        <ListTodo size={18} />
-                      ) : (
-                        <Lightbulb size={18} />
-                      )}
-                    </div>
-
-                    <div>
-                      <p
-                        className="remi-task-title"
+                      {/* icono + texto */}
+                      <div
                         style={{
-                          wordBreak: "break-word",
-                          whiteSpace: "normal",
+                          display: "flex",
+                          flex: 1,
+                          gap: 10,
+                          alignItems: "flex-start",
                         }}
                       >
-                        {item.title}
-                      </p>
-
-                      {/* Línea secundaria:
-                          - Tasks: "Due date: ... / Sin fecha límite"
-                          - Ideas: "Idea. no tienen fecha." */}
-                      {isTask ? (
-                        <p className="remi-task-sub">
-                          {t("today.dueLabel")}
-                          {dueStr}
-                        </p>
-                      ) : (
-                        <p className="remi-task-sub">
-                          {t("inbox.itemIdeaPrefix")}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* estado + botones circulares */}
-                  <div
-                    style={{
-                      textAlign: "right",
-                      marginLeft: 8,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "flex-end",
-                      gap: 6,
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: 10,
-                        color: isDone
-                          ? "#16a34a"
-                          : item.status === "ACTIVE"
-                          ? "#8b8fa6"
-                          : "#b2b6d1",
-                      }}
-                    >
-                      {statusLabel(item.status, t)}
-                    </div>
-
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: 6,
-                      }}
-                    >
-                      {/* Botón editar SOLO para ideas */}
-                      {item.type === "idea" && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openEditModal(item);
-                          }}
+                        <div
                           style={{
-                            width: 30,
-                            height: 30,
+                            width: 32,
+                            height: 32,
                             borderRadius: "999px",
-                            border:
-                              "1px solid rgba(148,163,184,0.8)", // gris claro
-                            background: "transparent",
-                            display: "inline-flex",
+                            display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            cursor: "pointer",
-                            padding: 0,
+                            marginTop: 2,
+                            background: isTask
+                              ? "rgba(143,49,243,0.08)"
+                              : "rgba(251,191,36,0.15)",
+                            color: isTask ? "#8F31F3" : "#F59E0B",
                           }}
                         >
-                          <Pencil size={16} color="#6b7280" />
-                        </button>
-                      )}
+                          {isTask ? (
+                            <ListTodo size={18} />
+                          ) : (
+                            <Lightbulb size={18} />
+                          )}
+                        </div>
 
-                      {/* Botón principal: marcar DONE / borrar */}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handlePrimaryAction(item);
-                        }}
+                        <div>
+                          <p
+                            className="remi-task-title"
+                            style={{
+                              wordBreak: "break-word",
+                              whiteSpace: "normal",
+                            }}
+                          >
+                            {item.title}
+                          </p>
+
+                          {/* Línea secundaria:
+                              - Tasks: "Due date: ... / Sin fecha límite"
+                              - Ideas: "Idea. no tienen fecha." */}
+                          {isTask ? (
+                            <p className="remi-task-sub">
+                              {hasDue ? t("today.dueLabel") : ""}
+                              {dueStr}
+                            </p>
+                          ) : (
+                            <p className="remi-task-sub">
+                              {t("inbox.itemIdeaPrefix")}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* estado + botones circulares */}
+                      <div
                         style={{
-                          width: 30,
-                          height: 30,
-                          borderRadius: "999px",
-                          border: `1px solid ${btnBorder}`,
-                          background: btnBg,
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          cursor: "pointer",
-                          padding: 0,
+                          textAlign: "right",
+                          marginLeft: 8,
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "flex-end",
+                          gap: 6,
                         }}
                       >
-                        {isDone ? (
-                          <Trash2 size={16} color={btnColor} />
-                        ) : (
-                          <Check size={16} color={btnColor} />
-                        )}
-                      </button>
+                        <div
+                          style={{
+                            fontSize: 10,
+                            color: isDone
+                              ? "#16a34a"
+                              : item.status === "ACTIVE"
+                              ? "#8b8fa6"
+                              : "#b2b6d1",
+                          }}
+                        >
+                          {statusLabel(item.status, t)}
+                        </div>
+
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 6,
+                          }}
+                        >
+                          {/* Botón editar SOLO para ideas */}
+                          {item.type === "idea" && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEditModal(item);
+                              }}
+                              style={{
+                                width: 30,
+                                height: 30,
+                                borderRadius: "999px",
+                                border:
+                                  "1px solid rgba(148,163,184,0.8)", // gris claro
+                                background: "transparent",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                cursor: "pointer",
+                                padding: 0,
+                              }}
+                            >
+                              <Pencil size={16} color="#6b7280" />
+                            </button>
+                          )}
+
+                          {/* Botón principal: marcar DONE / borrar */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePrimaryAction(item);
+                            }}
+                            style={{
+                              width: 30,
+                              height: 30,
+                              borderRadius: "999px",
+                              border: `1px solid ${btnBorder}`,
+                              background: btnBg,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor: "pointer",
+                              padding: 0,
+                            }}
+                          >
+                            {isDone ? (
+                              <Trash2 size={16} color={btnColor} />
+                            ) : (
+                              <Check size={16} color={btnColor} />
+                            )}
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            ))}
         </div>
       </main>
 
@@ -343,9 +459,7 @@ export default function InboxPage() {
         }}
         onConverted={(convertedTask) => {
           setItems((prev) =>
-            prev.map((i) =>
-              i.id === convertedTask.id ? convertedTask : i
-            )
+            prev.map((i) => (i.id === convertedTask.id ? convertedTask : i))
           );
         }}
       />

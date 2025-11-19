@@ -1,6 +1,6 @@
 // src/components/CaptureModal.tsx
 import { useState } from "react";
-import { Lightbulb, ListTodo, X } from "lucide-react";
+import { Lightbulb, ListTodo, X, CalendarDays } from "lucide-react";
 import type { ReminderMode } from "@/lib/brainItemsApi";
 import { toast } from "sonner";
 import { useI18n } from "@/contexts/I18nContext";
@@ -159,41 +159,75 @@ export default function CaptureModal({
             gap: 14,
           }}
         >
-          {/* “Es una idea” guarda directamente la idea y muestra el toast */}
+          {/* IDEA: botón amarillo */}
           <button
-            className="remi-btn-ghost"
             onClick={handleConfirmIdea}
             disabled={loading}
+            type="button"
             style={{
-              padding: "12px 0",
+              padding: "10px 10px",
               fontSize: 14,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: 8,
+              gap: 10,
               borderRadius: 999,
+              border: "1px solid rgba(251,191,36,0.4)",
+              background: "rgba(251,191,36,0.08)",
+              color: "#92400E",
+              cursor: loading ? "default" : "pointer",
             }}
           >
-            <Lightbulb size={18} />
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: "999px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(251,191,36,0.15)",
+                color: "#F59E0B",
+              }}
+            >
+              <Lightbulb size={18} />
+            </div>
             <span>{t("capture.ideaButton")}</span>
           </button>
 
-          {/* “Es una tarea” pasa al paso de configuración de tarea */}
+          {/* TAREA: botón morado */}
           <button
-            className="remi-btn-primary"
             onClick={() => setMode("task")}
             disabled={loading}
+            type="button"
             style={{
-              padding: "12px 0",
+              padding: "10px 10px",
               fontSize: 14,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: 8,
+              gap: 10,
               borderRadius: 999,
+              border: "1px solid rgba(143,49,243,0.5)",
+              background: "rgba(143,49,243,0.08)",
+              color: "#4C1D95",
+              cursor: loading ? "default" : "pointer",
             }}
           >
-            <ListTodo size={18} />
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: "999px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(143,49,243,0.08)",
+                color: "#8F31F3",
+              }}
+            >
+              <ListTodo size={18} />
+            </div>
             <span>{t("capture.taskButton")}</span>
           </button>
         </div>
@@ -251,15 +285,53 @@ export default function CaptureModal({
               />
             </div>
 
-            <div style={{ marginTop: 8 }}>
+            <div style={{ marginTop: 8, position: "relative" }}>
               <input
                 type="datetime-local"
                 className="remi-input"
-                style={{ borderRadius: 14 }}
+                style={{
+                  borderRadius: 14,
+                  paddingRight: 42,
+                }}
                 value={customDue}
                 onChange={(e) => setCustomDue(e.target.value)}
                 disabled={dueOption === "NONE"}
               />
+              {/* Icono calendario a la derecha */}
+              <div
+                style={{
+                  position: "absolute",
+                  right: 10,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  pointerEvents: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 24,
+                  height: 24,
+                  borderRadius: "999px",
+                  background: "rgba(148,163,184,0.12)",
+                  color: "#64748b",
+                }}
+              >
+                <CalendarDays size={14} />
+              </div>
+              {!customDue && dueOption !== "NONE" && (
+                <span
+                  style={{
+                    position: "absolute",
+                    left: 14,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    fontSize: 12,
+                    color: "#9ca3af",
+                    pointerEvents: "none",
+                  }}
+                >
+                  {t("capture.duePlaceholder")}
+                </span>
+              )}
               <p
                 className="remi-modal-sub"
                 style={{ fontSize: 11, marginTop: 4 }}

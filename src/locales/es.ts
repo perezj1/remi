@@ -176,7 +176,8 @@ capture: {
   greeting: "Hola, {{name}} 👋",
   tasksToday: "Tienes {{count}} tareas activas",
   prioritize: "Prioricemos solo lo importante.",
-
+  
+  tabsNext: "Próximas tareas",
   tabsToday: "Hoy",
   tabsWeek: "Semana",
   tabsMonth: "Mes",
@@ -227,6 +228,9 @@ capture: {
   itemIdeaPrefix: "Idea · ",
   errorLoading: "Error cargando tu bandeja",
   errorUpdating: "Error actualizando tu bandeja",
+  sectionToday: "Hoy",
+  sectionTomorrow: "Mañana",
+  sectionNoDate: "Sin fecha",
   },
 
   ideas: {
