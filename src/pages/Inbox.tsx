@@ -165,6 +165,11 @@ export default function InboxPage() {
                 : "rgba(16,185,129,0.4)";
               const btnColor = isDone ? "#DC2626" : "#10B981";
 
+              const hasDue = !!item.due_date;
+              const dueStr = hasDue
+                ? new Date(item.due_date as string).toLocaleString()
+                : t("today.dueNoDate"); // Sin fecha límite
+
               return (
                 <div
                   key={item.id}
@@ -219,12 +224,20 @@ export default function InboxPage() {
                       >
                         {item.title}
                       </p>
-                      <p className="remi-task-sub">
-                        {isTask
-                          ? t("inbox.itemTaskPrefix")
-                          : t("inbox.itemIdeaPrefix")}
-                        {new Date(item.created_at).toLocaleString()}
-                      </p>
+
+                      {/* Línea secundaria:
+                          - Tasks: "Due date: ... / Sin fecha límite"
+                          - Ideas: "Idea. no tienen fecha." */}
+                      {isTask ? (
+                        <p className="remi-task-sub">
+                          {t("today.dueLabel")}
+                          {dueStr}
+                        </p>
+                      ) : (
+                        <p className="remi-task-sub">
+                          {t("inbox.itemIdeaPrefix")}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -330,7 +343,9 @@ export default function InboxPage() {
         }}
         onConverted={(convertedTask) => {
           setItems((prev) =>
-            prev.map((i) => (i.id === convertedTask.id ? convertedTask : i))
+            prev.map((i) =>
+              i.id === convertedTask.id ? convertedTask : i
+            )
           );
         }}
       />
