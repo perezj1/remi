@@ -286,6 +286,12 @@ export default function CaptureModal({
             </div>
 
             <div style={{ marginTop: 8, position: "relative" }}>
+              <p
+                className="remi-modal-sub"
+                style={{ fontSize: 11, marginTop: 4 }}
+              >
+                {t("capture.dueHint")}
+              </p>
               <input
                 type="datetime-local"
                 className="remi-input"
@@ -297,12 +303,7 @@ export default function CaptureModal({
                 onChange={(e) => setCustomDue(e.target.value)}
                 disabled={dueOption === "NONE"}
               />
-              <p
-                className="remi-modal-sub"
-                style={{ fontSize: 11, marginTop: 4 }}
-              >
-                {t("capture.dueHint")}
-              </p>
+              
             </div>
           </div>
 
