@@ -80,10 +80,6 @@ export default function InboxPage() {
   });
 
   // Agrupar por fecha:
-  // - Hoy: inbox.sectionToday
-  // - Mañana: inbox.sectionTomorrow
-  // - Resto fechas: fecha formateada
-  // - Sin fecha: inbox.sectionNoDate
   const dateGroups: DateGroup[] = (() => {
     if (filtered.length === 0) return [];
 
@@ -304,6 +300,7 @@ export default function InboxPage() {
                           flex: 1,
                           gap: 10,
                           alignItems: "flex-start",
+                          minWidth: 0,
                         }}
                       >
                         <div
@@ -319,6 +316,7 @@ export default function InboxPage() {
                               ? "rgba(143,49,243,0.08)"
                               : "rgba(251,191,36,0.15)",
                             color: isTask ? "#7d59c9" : "#F59E0B",
+                            flexShrink: 0, // el icono no se deforma
                           }}
                         >
                           {isTask ? (
@@ -328,12 +326,13 @@ export default function InboxPage() {
                           )}
                         </div>
 
-                        <div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
                           <p
                             className="remi-task-title"
                             style={{
-                              wordBreak: "break-word",
                               whiteSpace: "normal",
+                              wordBreak: "break-word",
+                              overflowWrap: "anywhere", // rompe incluso palabras muy largas
                             }}
                           >
                             {item.title}

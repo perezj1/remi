@@ -1,6 +1,6 @@
 // src/components/CaptureModal.tsx
 import { useState } from "react";
-import { Lightbulb, ListTodo, X, CalendarDays } from "lucide-react";
+import { Lightbulb, ListTodo, X } from "lucide-react";
 import type { ReminderMode } from "@/lib/brainItemsApi";
 import { toast } from "sonner";
 import { useI18n } from "@/contexts/I18nContext";
@@ -297,26 +297,8 @@ export default function CaptureModal({
                 onChange={(e) => setCustomDue(e.target.value)}
                 disabled={dueOption === "NONE"}
               />
-              {/* Icono calendario a la derecha */}
-              <div
-                style={{
-                  position: "absolute",
-                  right: 10,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  pointerEvents: "none",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: 24,
-                  height: 24,
-                  borderRadius: "999px",
-                  background: "rgba(148,163,184,0.12)",
-                  color: "#64748b",
-                }}
-              >
-                <CalendarDays size={14} />
-              </div>
+             
+              
               {!customDue && dueOption !== "NONE" && (
                 <span
                   style={{

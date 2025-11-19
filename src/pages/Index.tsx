@@ -44,6 +44,20 @@ function formatDueDiff(dueDate: string | null): string | null {
   return `${diffDays} d`;
 }
 
+type DateGroup = {
+  key: string;
+  label: string;
+  items: BrainItem[];
+};
+
+function isSameDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
 export default function TodayPage() {
   const navigate = useNavigate();
   const { user, signOut, profile } = useAuth();
@@ -53,8 +67,6 @@ export default function TodayPage() {
   const [ideas, setIdeas] = useState<BrainItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [captureOpen, setCaptureOpen] = useState(false);
-  const [activeTab, setActiveTab] =
-    useState<"TODAY" | "WEEK" | "MONTH">("TODAY");
   const [profileOpen, setProfileOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [statusSummary, setStatusSummary] =
@@ -194,22 +206,94 @@ export default function TodayPage() {
     };
   }, [profileOpen]);
 
-  const topTasks = useMemo(() => {
-    const now = new Date();
-
-    const scored = tasks.map((t) => {
-      const due = t.due_date ? new Date(t.due_date) : null;
-      let score = Number.MAX_SAFE_INTEGER;
-      if (due) {
-        score = due.getTime() - now.getTime();
-      }
-      return { ...t, _score: score as number };
-    });
-
-    return scored.sort((a, b) => a._score - b._score).slice(0, 4);
-  }, [tasks]);
-
   const todayCount = tasks.length;
+
+  // ---------- Agrupar tareas por fecha (Hoy, Mañana, otras fechas, Sin fecha) ----------
+  const dateGroups: DateGroup[] = useMemo(() => {
+    if (tasks.length === 0) return [];
+
+    const today = new Date();
+    const todayMid = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+    const tomorrowMid = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate() + 1
+    );
+
+    const todayGroup: DateGroup = {
+      key: "TODAY",
+      label: t("inbox.sectionToday"),
+      items: [],
+    };
+    const tomorrowGroup: DateGroup = {
+      key: "TOMORROW",
+      label: t("inbox.sectionTomorrow"),
+      items: [],
+    };
+    const noDateGroup: DateGroup = {
+      key: "NO_DATE",
+      label: t("inbox.sectionNoDate"),
+      items: [],
+    };
+
+    const otherDateGroupsMap = new Map<
+      string,
+      { group: DateGroup; dateMs: number }
+    >();
+
+    for (const task of tasks) {
+      if (task.due_date) {
+        const d = new Date(task.due_date);
+        const dMid = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+        if (isSameDay(dMid, todayMid)) {
+          todayGroup.items.push(task);
+        } else if (isSameDay(dMid, tomorrowMid)) {
+          tomorrowGroup.items.push(task);
+        } else {
+          const key = dMid.toISOString().slice(0, 10);
+          let stored = otherDateGroupsMap.get(key);
+          if (!stored) {
+            const label = d.toLocaleDateString(undefined, {
+              weekday: "short",
+              day: "numeric",
+              month: "short",
+            });
+            stored = {
+              group: {
+                key,
+                label,
+                items: [],
+              },
+              dateMs: dMid.getTime(),
+            };
+            otherDateGroupsMap.set(key, stored);
+          }
+          stored.group.items.push(task);
+        }
+      } else {
+        noDateGroup.items.push(task);
+      }
+    }
+
+    const groups: DateGroup[] = [];
+    if (todayGroup.items.length > 0) groups.push(todayGroup);
+    if (tomorrowGroup.items.length > 0) groups.push(tomorrowGroup);
+
+    const otherDateGroups = Array.from(otherDateGroupsMap.values())
+      .sort((a, b) => a.dateMs - b.dateMs)
+      .map((x) => x.group);
+
+    groups.push(...otherDateGroups);
+
+    if (noDateGroup.items.length > 0) groups.push(noDateGroup);
+
+    return groups;
+  }, [tasks, t]);
 
   // ---------- creación / actualización de tareas / ideas ----------
   const handleCreateTask = async (
@@ -486,10 +570,10 @@ export default function TodayPage() {
           />
         </div>
 
-        {/* pestañas Today/Week/Month debajo del formulario */}
+        {/* pill "Próximas tareas" (mismo estilo que tabs, pero solo texto) */}
         <div
           style={{
-            marginTop: 10,
+            marginTop: 20,
             marginBottom: 8,
             display: "flex",
             justifyContent: "flex-start",
@@ -498,34 +582,16 @@ export default function TodayPage() {
         >
           <div className="remi-tabs">
             <button
-              className={
-                "remi-tab " + (activeTab === "TODAY" ? "remi-tab--active" : "")
-              }
-              onClick={() => setActiveTab("TODAY")}
+              className="remi-tab remi-tab"
+              type="button"
+              style={{ cursor: "default" }}
             >
-              {t("today.tabsToday")}
-            </button>
-            <button
-              className={
-                "remi-tab " + (activeTab === "WEEK" ? "remi-tab--active" : "")
-              }
-              onClick={() => setActiveTab("WEEK")}
-            >
-              {t("today.tabsWeek")}
-            </button>
-            <button
-              className={
-                "remi-tab " +
-                (activeTab === "MONTH" ? "remi-tab--active" : "")
-              }
-              onClick={() => setActiveTab("MONTH")}
-            >
-              {t("today.tabsMonth")}
+              {t("today.tabsNext")}
             </button>
           </div>
         </div>
 
-        {/* lista de tareas */}
+        {/* lista de tareas agrupadas por fecha */}
         <div className="remi-task-list">
           {loading && (
             <div className="remi-task-row">
@@ -535,7 +601,7 @@ export default function TodayPage() {
             </div>
           )}
 
-          {!loading && topTasks.length === 0 && (
+          {!loading && tasks.length === 0 && (
             <div className="remi-task-row">
               <div className="remi-task-dot" />
               <div>
@@ -550,122 +616,143 @@ export default function TodayPage() {
           )}
 
           {!loading &&
-            topTasks.map((task) => (
-              <div
-                key={task.id}
-                className="remi-task-row"
-                style={{
-                  alignItems: "center",
-                  padding: "10px 12px",
-                  borderRadius: 16,
-                  background: "#ffffff",
-                  boxShadow: "0 10px 25px rgba(15,23,42,0.04)",
-                  marginBottom: 8,
-                }}
-              >
-                {/* izquierda: icono + texto */}
-                <div
-                  style={{
-                    display: "flex",
-                    flex: 1,
-                    gap: 10,
-                    alignItems: "flex-start",
-                  }}
-                >
-                  <div
-                      style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: "999px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginTop: 2,
-                        background:
-                          "rgba(143,49,243,0.08)",                         
-                        color: "#7d59c9" ,
-                    }}
-                  >
-                    <ListTodo size={16} />
-                  </div>
+            dateGroups.map((group) => (
+              <div key={group.key}>
+                {/* Cabecera de fecha (Hoy, Mañana, Di., fecha…) */}
+                <p className="mt-3 mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                  {group.label}
+                </p>
 
-                  <div>
-                    <p
-                      className="remi-task-title"
+                {group.items.map((task) => {
+                  const hasDue = !!task.due_date;
+                  const dueStr = hasDue
+                    ? new Date(task.due_date as string).toLocaleString()
+                    : t("today.dueNoDate");
+
+                  return (
+                    <div
+                      key={task.id}
+                      className="remi-task-row"
                       style={{
-                        wordBreak: "break-word",
-                        whiteSpace: "normal",
+                        alignItems: "center",
+                        padding: "10px 12px",
+                        borderRadius: 16,
+                        background: "#ffffff",
+                        boxShadow: "0 10px 25px rgba(15,23,42,0.04)",
+                        marginBottom: 8,
                       }}
                     >
-                      {task.title}
-                    </p>
-                    <div className="remi-task-sub">
-                      {task.due_date ? t("today.dueLabel") : ""}
-                      {task.due_date
-                        ? new Date(task.due_date).toLocaleString()
-                        : t("today.dueNoDate")}
+                      {/* izquierda: icono + texto */}
+                      <div
+                        style={{
+                          display: "flex",
+                          flex: 1,
+                          gap: 10,
+                          alignItems: "flex-start",
+                          minWidth: 0,
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: "999px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginTop: 2,
+                            background: "rgba(143,49,243,0.08)",
+                            color: "#7d59c9",
+                            flexShrink: 0, // el icono no se deforma
+                          }}
+                        >
+                          <ListTodo size={16} />
+                        </div>
+
+                        <div
+                          style={{
+                            flex: 1,
+                            minWidth: 0,
+                          }}
+                        >
+                          <p
+                            className="remi-task-title"
+                            style={{
+                              wordBreak: "break-word",
+                              overflowWrap: "break-word",
+                              whiteSpace: "normal",
+                            }}
+                          >
+                            {task.title}
+                          </p>
+                          <div className="remi-task-sub">
+                            {hasDue ? t("today.dueLabel") : ""}
+                            {dueStr}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* derecha: controles */}
+                      <div
+                        style={{
+                          textAlign: "right",
+                          marginLeft: 8,
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "flex-end",
+                          gap: 6,
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                        >
+                          <button
+                            style={{
+                              background: "transparent",
+                              color: "rgba(237, 104, 104, 1)",
+                              fontSize: 15,
+                              cursor: "pointer",
+                              width: 30,
+                              height: 30,
+                              borderRadius: "999px",
+                              border: "1px solid rgba(237, 104, 104, 1)",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              padding: 0,
+                            }}
+                            onClick={() => handlePostpone(task, "DAY")}
+                          >
+                            <SkipForward size={16} />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDone(task)}
+                            style={{
+                              width: 30,
+                              height: 30,
+                              borderRadius: "999px",
+                              border: "1px solid rgba(16,185,129,0.4)",
+                              background: "rgba(16,185,129,0.08)",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor: "pointer",
+                              padding: 0,
+                            }}
+                          >
+                            <Check size={16} color="#10B981" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-
-                {/* derecha: controles */}
-                <div
-                  style={{
-                    textAlign: "right",
-                    marginLeft: 8,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "flex-end",
-                    gap: 6,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                    }}
-                  >
-                    <button
-                      style={{
-                        background: "transparent",
-                        color: "rgba(245, 170, 39, 0.8)",
-                        fontSize: 15,
-                        cursor: "pointer",
-                        width: 30,
-                        height: 30,
-                        borderRadius: "999px",
-                        border: "1px solid rgba(245, 170, 39, 0.8)",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        padding: 0,
-                      }}
-                      onClick={() => handlePostpone(task, "DAY")}
-                    >
-                      <SkipForward size={16} />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleDone(task)}
-                      style={{
-                        width: 30,
-                        height: 30,
-                        borderRadius: "999px",
-                        border: "1px solid rgba(16,185,129,0.4)",
-                        background: "rgba(16,185,129,0.08)",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "pointer",
-                        padding: 0,
-                      }}
-                    >
-                      <Check size={16} color="#10B981" />
-                    </button>
-                  </div>
-                </div>
+                  );
+                })}
               </div>
             ))}
         </div>
