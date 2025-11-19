@@ -265,7 +265,7 @@ export default function ProfilePage() {
             notify_day_before: true,
             notify_on_due_date: true,
             repeat_until_done: true,
-            notification_hour_utc: 7, // ejemplo: 7:00 UTC
+            notification_hour_utc: 6, // ejemplo: 6:00 UTC
           },
           { onConflict: "user_id" }
         );
