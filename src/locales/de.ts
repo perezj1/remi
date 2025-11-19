@@ -121,6 +121,7 @@ status: {
   dueWeek: "1 Woche",
   dueNone: "Kein Datum",
   dueHint: "Du kannst Datum und Uhrzeit manuell anpassen.",
+  duePlaceholder: "Datum und Uhrzeit wählen",
 
   remindersLabel: "Erinnerungen",
   remindersNone: "Keine Erinnerungen",

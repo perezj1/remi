@@ -118,6 +118,7 @@ capture: {
   dueWeek: "1 week",
   dueNone: "No date",
   dueHint: "You can adjust date and time manually.",
+  duePlaceholder: "Choose date and time",
 
   remindersLabel: "Reminders",
   remindersNone: "No reminders",

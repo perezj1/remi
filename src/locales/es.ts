@@ -120,6 +120,7 @@ capture: {
   dueWeek: "1 semana",
   dueNone: "Sin fecha",
   dueHint: "Puedes ajustar la fecha y hora manualmente.",
+  duePlaceholder: "Elegir fecha y hora",
 
   remindersLabel: "Recordatorios",
   remindersNone: "Sin recordatorios",

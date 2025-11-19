@@ -8,7 +8,7 @@ import {
   CalendarDays,
   Info,
   Loader2,
-  LayoutTemplate
+  LayoutTemplate,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -96,7 +96,18 @@ function getMoodSubtitle(
   }
 }
 
-function RemiAvatar({ mood }: { mood: RemiMood }) {
+function RemiAvatar({ mood, loading }: { mood: RemiMood; loading: boolean }) {
+  // Mientras esté cargando, mostramos círculo con spinner, sin emoji intermedio
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center">
+        <div className="h-24 w-24 rounded-full bg-gradient-to-br from-slate-100 via-white to-slate-50 shadow-xl shadow-black/10 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 text-slate-500 animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
   let emoji = "🙂";
   let bg = "from-white/90 via-white to-white/80";
 
@@ -182,8 +193,6 @@ export default function StatusPage() {
     <div className="remi-page min-h-screen bg-white text-slate-900 flex flex-col">
       {/* Header morado */}
       <header className="bg-[#8F31F3] text-white px-4 pt-8 pb-8 rounded-b-3xl shadow-md flex items-center gap-3">
-        
-
         <div className="flex flex-col">
           <h1 className="text-lg font-semibold">
             {t("status.headerTitle")}
@@ -198,7 +207,7 @@ export default function StatusPage() {
       <main className="flex-1 overflow-y-auto px-4 pb-24 pt-2 bg-white">
         {/* Tarjeta principal */}
         <section className="mt-2 rounded-3xl bg-white p-5 shadow-xl shadow-black/10">
-          <RemiAvatar mood={mood} />
+          <RemiAvatar mood={mood} loading={loading} />
 
           <div className="mt-4 text-center">
             <p className="text-xs font-medium uppercase tracking-wide text-violet-500">
