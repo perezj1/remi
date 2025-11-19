@@ -310,11 +310,11 @@ export default function ProfilePage() {
 
   return (
     <div className="remi-page flex flex-col">
-      {/* HEADER CON GRADIENTE USANDO COLOR REMI (#8F31F3) */}
+      {/* HEADER CON GRADIENTE USANDO COLOR REMI (#7d59c9) */}
       <div
         style={{
           padding: "16px 20px 40px",
-          background: "#8F31F3",
+          background: "#7d59c9",
           color: "white",
           borderBottomLeftRadius: "28px",
           borderBottomRightRadius: "28px",
@@ -514,7 +514,7 @@ export default function ProfilePage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="mt-3 w-full rounded-full bg-[#8F31F3] text-white text-xs font-semibold py-2.5 shadow-md active:translate-y-[1px] disabled:opacity-70"
+                className="mt-3 w-full rounded-full bg-[#7d59c9] text-white text-xs font-semibold py-2.5 shadow-md active:translate-y-[1px] disabled:opacity-70"
               >
                 {saving ? t("profile.saving") : t("profile.saveChanges")}
               </button>

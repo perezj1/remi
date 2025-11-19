@@ -6,7 +6,7 @@
 :root {
   --remi-bg: #f5f4ff;
   --remi-card: #ffffff;
-  --remi-purple: #8F31F3;
+  --remi-purple: #7d59c9;
   --remi-purple-soft: #a66bff;
   --remi-pink: #ff6fd8;
   --remi-text-main: #2d3142;
@@ -244,7 +244,7 @@ body {
 
 /* estado activo: cambia solo el color (icono + texto) */
 .remi-bottom-link--active {
-  color: #8F31F3;              /* morado activo */
+  color: #7d59c9;              /* morado activo */
   font-weight: 600;
 }
 
@@ -265,7 +265,7 @@ body {
   border-radius: 50%;
   border: none;
   cursor: pointer;
-  background: linear-gradient( #8F31F3);
+  background: linear-gradient( #7d59c9);
   color: #ffffff;
   font-size: 30px;
   display: flex;
@@ -354,9 +354,9 @@ body {
 }
 
 .remi-chip--active {
-  background: #8F31F3;
+  background: #7d59c9;
   color: #ffffff;
-  border-color: #8F31F3;
+  border-color: #7d59c9;
 }
 
 /* footer de botones del modal */
@@ -378,7 +378,7 @@ body {
 .remi-btn-primary {
   border: none;
   border-radius: 999px;
-  background: linear-gradient(#8F31F3);
+  background: linear-gradient(#7d59c9);
   color: #ffffff;
   padding: 7px 16px;
   font-size: 12px;
@@ -387,7 +387,7 @@ body {
   
 }
 
-/* --- THEME BÁSICO SHADCN ADAPTADO A REMI (#8F31F3) --- */
+/* --- THEME BÁSICO SHADCN ADAPTADO A REMI (#7d59c9) --- */
 :root {
   --background: 276 40% 98%;
   --foreground: 224 71.4% 4.1%;
@@ -399,7 +399,7 @@ body {
   --popover-foreground: 224 71.4% 4.1%;
 
   /* color principal REMI */
-  --primary: 276 86% 57%; /* #8F31F3 aproximado en HSL */
+  --primary: 276 86% 57%; /* #7d59c9 aproximado en HSL */
   --primary-foreground: 0 0% 100%;
 
   --secondary: 276 30% 96%;
@@ -449,7 +449,7 @@ input {
 .bg-gradient-hero {
   background: linear-gradient(
     135deg,
-    #8f31f3 0%,
+    #7d59c9 0%,
     #a75bff 45%,
     #ff6fd8 100%
   );

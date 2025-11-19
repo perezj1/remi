@@ -311,7 +311,7 @@ export default function TodayPage() {
       <div
         style={{
           padding: "16px 20px 56px",
-          background: "linear-gradient(#8F31F3, #8F31F3)",
+          background: "linear-gradient(#7d59c9, #7d59c9)",
           color: "white",
           borderBottomLeftRadius: "24px",
           borderBottomRightRadius: "24px",
@@ -583,7 +583,7 @@ export default function TodayPage() {
                         marginTop: 2,
                         background:
                           "rgba(143,49,243,0.08)",                         
-                        color: "#8F31F3" ,
+                        color: "#7d59c9" ,
                     }}
                   >
                     <ListTodo size={16} />
@@ -687,7 +687,7 @@ export default function TodayPage() {
                 type="button"
                 onClick={handleEnablePush}
                 disabled={registeringPush}
-                className="w-full rounded-full bg-[#8F31F3] text-white text-xs font-semibold py-2.5 shadow-md disabled:opacity-70"
+                className="w-full rounded-full bg-[#7d59c9] text-white text-xs font-semibold py-2.5 shadow-md disabled:opacity-70"
               >
                 {registeringPush
                   ? t("today.pushEnabling")

@@ -192,7 +192,7 @@ export default function StatusPage() {
   return (
     <div className="remi-page min-h-screen bg-white text-slate-900 flex flex-col">
       {/* Header morado */}
-      <header className="bg-[#8F31F3] text-white px-4 pt-8 pb-8 rounded-b-3xl shadow-md flex items-center gap-3">
+      <header className="bg-[#7d59c9] text-white px-4 pt-8 pb-8 rounded-b-3xl shadow-md flex items-center gap-3">
         <div className="flex flex-col">
           <h1 className="text-lg font-semibold">
             {t("status.headerTitle")}

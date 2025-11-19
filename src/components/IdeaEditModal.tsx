@@ -231,7 +231,7 @@ export default function IdeaEditModal({
             type="button"
             onClick={handleConvertClick}
             disabled={loading || !title.trim()}
-            className="flex-1 rounded-full bg-[#8F31F3] px-4 py-2 text-xs font-semibold text-white shadow-md disabled:opacity-60"
+            className="flex-1 rounded-full bg-[#7d59c9] px-4 py-2 text-xs font-semibold text-white shadow-md disabled:opacity-60"
           >
             {showTaskOptions
               ? t("ideas.confirmConvert")

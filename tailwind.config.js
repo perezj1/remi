@@ -9,7 +9,7 @@ export default {
       colors: {
         // color principal REMI
         remi: {
-          primary: "#8F31F3",
+          primary: "#7d59c9",
         },
       },
       borderRadius: {

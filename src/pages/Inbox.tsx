@@ -199,7 +199,7 @@ export default function InboxPage() {
   return (
     <div className="remi-page min-h-screen bg-white text-slate-900 flex flex-col">
       {/* Cabecera morada */}
-      <header className="bg-[#8F31F3] text-white px-4 pt-8 pb-8 rounded-b-3xl shadow-md">
+      <header className="bg-[#7d59c9] text-white px-4 pt-8 pb-8 rounded-b-3xl shadow-md">
         <h1 className="text-lg font-semibold">{t("inbox.title")}</h1>
         <p className="text-xs text-white/80">{t("inbox.subtitle")}</p>
       </header>
@@ -318,7 +318,7 @@ export default function InboxPage() {
                             background: isTask
                               ? "rgba(143,49,243,0.08)"
                               : "rgba(251,191,36,0.15)",
-                            color: isTask ? "#8F31F3" : "#F59E0B",
+                            color: isTask ? "#7d59c9" : "#F59E0B",
                           }}
                         >
                           {isTask ? (

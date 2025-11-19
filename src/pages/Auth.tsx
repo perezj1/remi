@@ -71,7 +71,7 @@ const Auth = () => {
       <Card className="w-full max-w-md relative shadow-card border-0">
         <CardHeader className="space-y-2 text-center">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 rounded-full bg-[#8F31F3] flex items-center justify-center shadow-button">
+            <div className="w-16 h-16 rounded-full bg-[#7d59c9] flex items-center justify-center shadow-button">
               <Sparkles className="w-8 h-8 text-white" />
             </div>
           </div>
@@ -124,7 +124,7 @@ const Auth = () => {
 
             <Button
               type="submit"
-              className="remi-btn-primary w-full shadow-button h-11 rounded-full bg-[#8F31F3] hover:bg-[#7a28d0]"
+              className="remi-btn-primary w-full shadow-button h-11 rounded-full bg-[#7d59c9] hover:bg-[#7a28d0]"
               disabled={loading}
             >
               {loading
@@ -138,7 +138,7 @@ const Auth = () => {
               <button
                 type="button"
                 onClick={() => setIsLogin(!isLogin)}
-                className="text-sm text-[#8F31F3] hover:text-[#7a28d0] font-medium"
+                className="text-sm text-[#7d59c9] hover:text-[#7a28d0] font-medium"
               >
                 {isLogin
                   ? t("auth.toggleToRegister")

@@ -40,7 +40,7 @@ export default function BottomNav() {
 
         {/* Botón central: + morado REMI */}
         <button
-          className="flex h-14 w-14 items-center justify-center rounded-full border-1 border-white bg-[#8F31F3] text-white shadow-[0_8px_20px_rgba(143,49,243,0.2)] -translate-y-0"
+          className="flex h-14 w-14 items-center justify-center rounded-full border-1 border-white bg-[#7d59c9] text-white shadow-[0_8px_20px_rgba(143,49,243,0.2)] -translate-y-0"
           onClick={handleCreateClick}
           type="button"
         >
@@ -74,7 +74,7 @@ function NavItem({ to, label, active, icon: Icon }: NavItemProps) {
     >
       <Icon
         className={`w-6 h-6 ${
-          active ? "text-[#8F31F3]" : "text-neutral-800"
+          active ? "text-[#7d59c9]" : "text-neutral-800"
         }`}
       />
       {/* Etiqueta solo para accesibilidad */}

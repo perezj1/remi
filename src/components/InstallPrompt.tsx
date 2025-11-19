@@ -155,7 +155,7 @@ export default function InstallPrompt() {
         {showPwaPrompt && !showIosInstructions && (
           <button
             onClick={handleInstallClick}
-            className="px-3 py-1.5 rounded-full bg-[#8F31F3] text-white text-xs font-semibold"
+            className="px-3 py-1.5 rounded-full bg-[#7d59c9] text-white text-xs font-semibold"
           >
             {t("installPrompt.buttonInstall")}
           </button>

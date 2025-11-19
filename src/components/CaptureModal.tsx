@@ -223,7 +223,7 @@ export default function CaptureModal({
                 alignItems: "center",
                 justifyContent: "center",
                 background: "rgba(143,49,243,0.08)",
-                color: "#8F31F3",
+                color: "#7d59c9",
               }}
             >
               <ListTodo size={18} />
