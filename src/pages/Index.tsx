@@ -323,6 +323,13 @@ export default function TodayPage() {
     if (option === "WEEK") base.setDate(base.getDate() + 7);
     const updated = await postponeTask(task.id, base.toISOString());
     setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+
+     // 👉 Toast al posponer
+  if (option === "DAY") {
+    toast.success(t("today.postponeDayToast"));
+  } else {
+    toast.success(t("today.postponeDayToast"));
+  }
   };
 
   // ---------- activar notificaciones push ----------

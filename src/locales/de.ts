@@ -179,6 +179,7 @@ status: {
   greeting: "Hallo, {{name}} 👋",
   tasksToday: "Du hast {{count}} aktive Aufgaben",
   prioritize: "Lass uns nur das Wichtige priorisieren.",
+  postponeDayToast: "Du hast deiner Aufgabe einen Tag hinzugefügt.",
 
   tabsToday: "Heute",
   tabsWeek: "Woche",

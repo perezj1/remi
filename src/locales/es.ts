@@ -176,6 +176,7 @@ capture: {
   greeting: "Hola, {{name}} 👋",
   tasksToday: "Tienes {{count}} tareas activas",
   prioritize: "Prioricemos solo lo importante.",
+  postponeDayToast: "Has añadido un día más a tu tarea.",
   
   tabsNext: "Próximas tareas",
   tabsToday: "Hoy",
