@@ -325,45 +325,49 @@ export default function StatusPage() {
 
         {/* Nuestra semana */}
         <section className="mt-4 rounded-3xl bg-white p-5 shadow-md shadow-black/10">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100">
-              <CalendarDays className="h-4 w-4 text-slate-500" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-slate-900">
-                {t("status.weekSectionTitle")}
-              </h3>
-              <p className="text-xs text-slate-500">
-                {t("status.weekSectionSubtitle")}
-              </p>
-            </div>
-          </div>
+  <div className="flex items-start gap-2">
+    {/* Icono: tamaño fijo, no se deforma */}
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100">
+      <CalendarDays className="h-4 w-4 text-slate-500" />
+    </div>
 
-          <div className="mt-4 flex flex-col gap-2">
-            <p className="text-xs font-medium text-slate-600">
-              {t("status.weekActiveLabel")}
-            </p>
+    {/* Texto: ocupa el resto, hace el wrap */}
+    <div className="flex-1 min-w-0">
+      <h3 className="text-sm font-semibold text-slate-900">
+        {t("status.weekSectionTitle")}
+      </h3>
+      <p className="text-xs text-slate-500">
+        {t("status.weekSectionSubtitle")}
+      </p>
+    </div>
+  </div>
 
-            <div className="flex items-center justify-center gap-3 mt-1">
-              <p className="text-lg font-semibold text-slate-900">
-                {weekActiveDays} / 7
-              </p>
-              <div className="flex gap-1">
-                {Array.from({ length: 7 }).map((_, index) => {
-                  const filled = index < weekActiveDays;
-                  return (
-                    <div
-                      key={index}
-                      className={`h-8 w-4 rounded-full border border-violet-100 ${
-                        filled ? "bg-violet-500" : "bg-violet-100/60"
-                      }`}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </section>
+  <div className="mt-4 flex flex-col gap-2">
+    <p className="text-xs font-medium text-slate-600">
+      {t("status.weekActiveLabel")}
+    </p>
+
+    <div className="mt-1 flex items-center justify-center gap-3">
+      <p className="text-lg font-semibold text-slate-900">
+        {weekActiveDays} / 7
+      </p>
+      <div className="flex gap-1">
+        {Array.from({ length: 7 }).map((_, index) => {
+          const filled = index < weekActiveDays;
+          return (
+            <div
+              key={index}
+              className={`h-8 w-4 rounded-full border border-violet-100 ${
+                filled ? "bg-violet-500" : "bg-violet-100/60"
+              }`}
+            />
+          );
+        })}
+      </div>
+    </div>
+  </div>
+</section>
+
 
         {loading && (
           <div className="mt-4 flex items-center justify-center gap-2 text-xs text-violet-700">
