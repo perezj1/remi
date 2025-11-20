@@ -204,7 +204,7 @@ capture: {
   menuShareApp: "Compartir app",
   menuLogout: "Cerrar sesión",
 
-  shareText: "I’m using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed. I definitely recommend trying it, it really helps. Here’s the link. 🙂",
+  shareText: "I’m using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\n\nIf you feel like you can’t handle everything, I definitely recommend trying it, it really helps. Here’s the link. 🙂",
   shareCopied: "Enlace copiado al portapapeles",
 
   defaultUserName: "Usuario",
@@ -322,7 +322,7 @@ capture: {
   shareButton: "Compartir app",
   logoutButton: "Cerrar sesión",
 
-  shareText: "I’m using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed. I definitely recommend trying it, it really helps. Here’s the link. 🙂",
+  shareText: "I’m using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\n\nIf you feel like you can’t handle everything, I definitely recommend trying it, it really helps. Here’s the link. 🙂",
   shareCopied: "Enlace de REMI copiado al portapapeles",
 
   defaultUserName: "Usuario",
