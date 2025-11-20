@@ -172,6 +172,7 @@ capture: {
   emptyState: "No tienes tareas para hoy.",
   addTask: "Añadir tarea",
   streak: "Racha",
+  menuInstallApp: "Instalar app",
 
   greeting: "Hola, {{name}} 👋",
   tasksToday: "Tienes {{count}} tareas activas",

@@ -175,6 +175,7 @@ status: {
   emptyState: "Du hast heute keine Aufgaben.",
   addTask: "Aufgabe hinzufügen",
   streak: "Serie",
+  menuInstallApp: "App installieren",
 
   greeting: "Hallo, {{name}} 👋",
   tasksToday: "Du hast {{count}} aktive Aufgaben",

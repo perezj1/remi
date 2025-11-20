@@ -25,7 +25,14 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { registerPushSubscription } from "@/lib/registerPush";
 import CaptureModal from "@/components/CaptureModal";
-import { ListTodo, Check, SkipForward } from "lucide-react";
+import {
+  ListTodo,
+  Check,
+  SkipForward,
+  User,
+  Share2,
+  Smartphone,
+} from "lucide-react";
 
 const AVATAR_KEY = "remi_avatar";
 
@@ -60,7 +67,7 @@ function isSameDay(a: Date, b: Date): boolean {
 
 export default function TodayPage() {
   const navigate = useNavigate();
-  const { user, signOut, profile } = useAuth();
+  const { user, profile } = useAuth();
   const { t } = useI18n();
 
   const [tasks, setTasks] = useState<BrainItem[]>([]);
@@ -324,12 +331,12 @@ export default function TodayPage() {
     const updated = await postponeTask(task.id, base.toISOString());
     setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
 
-     // 👉 Toast al posponer
-  if (option === "DAY") {
-    toast.success(t("today.postponeDayToast"));
-  } else {
-    toast.success(t("today.postponeDayToast"));
-  }
+    // 👉 Toast al posponer
+    if (option === "DAY") {
+      toast.success(t("today.postponeDayToast"));
+    } else {
+      toast.success(t("today.postponeDayToast"));
+    }
   };
 
   // ---------- activar notificaciones push ----------
@@ -387,13 +394,12 @@ export default function TodayPage() {
     }
   };
 
-  const handleLogout = async () => {
+  // 👉 nuevo: reabrir el banner de instalación
+  const handleInstallApp = () => {
     setProfileOpen(false);
-    try {
-      await signOut();
-    } catch (e) {
-      console.error(e);
-    }
+    if (typeof window === "undefined") return;
+
+    window.dispatchEvent(new Event("remi-open-install"));
   };
 
   return (
@@ -506,21 +512,24 @@ export default function TodayPage() {
                   onClick={handleOpenProfile}
                   style={menuButtonStyle}
                 >
-                  {t("today.menuProfile")}
+                  <User size={16} style={{ marginRight: 8 }} />
+                  <span>{t("today.menuProfile")}</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleShareApp}
                   style={menuButtonStyle}
                 >
-                  {t("today.menuShareApp")}
+                  <Share2 size={16} style={{ marginRight: 8 }} />
+                  <span>{t("today.menuShareApp")}</span>
                 </button>
                 <button
                   type="button"
-                  onClick={handleLogout}
-                  style={{ ...menuButtonStyle, color: "#e74c3c" }}
+                  onClick={handleInstallApp}
+                  style={menuButtonStyle}
                 >
-                  {t("today.menuLogout")}
+                  <Smartphone size={16} style={{ marginRight: 8 }} />
+                  <span>{t("today.menuInstallApp")}</span>
                 </button>
               </div>
             )}
@@ -788,13 +797,13 @@ export default function TodayPage() {
                   : t("today.pushEnable")}
               </button>
 
-              <button
+             {/*  <button
                 type="button"
                 onClick={handleLater}
                 className="w-full rounded-full border border-slate-200 text-xs py-2.5 text-slate-600"
               >
                 {t("today.pushLater")}
-              </button>
+              </button> */}
             </div>
           </div>
         </div>
@@ -820,4 +829,6 @@ const menuButtonStyle: CSSProperties = {
   fontSize: 13,
   cursor: "pointer",
   borderRadius: 10,
+  display: "flex",
+  alignItems: "center",
 };

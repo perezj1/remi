@@ -9,6 +9,7 @@ declare global {
 
   interface WindowEventMap {
     beforeinstallprompt: BeforeInstallPromptEvent;
+    "remi-open-install": Event; // 👈 nuevo evento para reabrir el banner
   }
 
   interface Navigator {
@@ -64,6 +65,24 @@ export default function InstallPrompt() {
     window.addEventListener("beforeinstallprompt", handler);
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, [isIos]);
+
+  // 👉 NUEVO: reabrir el banner cuando se dispare "remi-open-install"
+  useEffect(() => {
+    const openHandler = () => {
+      if (isIos) {
+        // En iOS, volvemos a mostrar las instrucciones si no está ya instalada
+        if (!detectIsStandalone()) {
+          setShowIosInstructions(true);
+        }
+      } else if (deferredPrompt) {
+        // En Android/desktop, solo si todavía tenemos el evento guardado
+        setShowPwaPrompt(true);
+      }
+    };
+
+    window.addEventListener("remi-open-install", openHandler);
+    return () => window.removeEventListener("remi-open-install", openHandler);
+  }, [isIos, deferredPrompt]);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;

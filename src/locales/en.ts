@@ -170,6 +170,7 @@ capture: {
     emptyState: "You don't have tasks for today.",
     addTask: "Add task",
     streak: "Streak",
+    menuInstallApp: "Install app",
     
 
   greeting: "Hi, {{name}} 👋",

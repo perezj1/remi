@@ -43,40 +43,45 @@ export async function registerPushSubscription(userId: string) {
   // Esperamos a que el SW esté listo
   const registration = await navigator.serviceWorker.ready;
 
-  // Si ya hay suscripción, la reutilizamos
-  let sub = await registration.pushManager.getSubscription();
-  if (!sub) {
-    const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
-    sub = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey,
-    });
-  }
+  try {
+    // Si ya hay suscripción, la reutilizamos
+    let sub = await registration.pushManager.getSubscription();
+    if (!sub) {
+      const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+      sub = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey,
+      });
+    }
 
-  const raw = sub.toJSON();
-  const endpoint = sub.endpoint;
-  const p256dh = raw.keys?.p256dh ?? null;
-  const auth = raw.keys?.auth ?? null;
+    const raw = sub.toJSON();
+    const endpoint = sub.endpoint;
+    const p256dh = raw.keys?.p256dh ?? null;
+    const auth = raw.keys?.auth ?? null;
 
-  const { error } = await supabase
-    .from("remi_push_subscriptions")
-    .upsert(
-      {
-        user_id: userId,
-        endpoint,
-        p256dh,
-        auth,
-        user_agent: navigator.userAgent,
-        status: "ACTIVE",   // 👈 importante
-      },
-      {
-        // IMPORTANT: solo columnas que existen en la tabla
-        onConflict: "user_id,endpoint",
-      }
-    );
+    const { error } = await supabase
+      .from("remi_push_subscriptions")
+      .upsert(
+        {
+          user_id: userId,
+          endpoint,
+          p256dh,
+          auth,
+          user_agent: navigator.userAgent,
+          status: "ACTIVE",
+        },
+        {
+          // ahora cuadra con el índice UNIQUE que sí quieres mantener
+          onConflict: "user_id,endpoint",
+        }
+      );
 
-  if (error) {
-    console.error("Error saving push subscription", error);
-    throw error;
+    if (error) {
+      console.error("Error saving push subscription", error);
+      throw error;
+    }
+  } catch (err) {
+    console.error("Error registering push subscription", err);
+    throw err;
   }
 }
