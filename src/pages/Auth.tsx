@@ -14,7 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Sparkles, Mail, Lock } from "lucide-react";
+import { Mail, Lock } from "lucide-react";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -71,8 +71,16 @@ const Auth = () => {
       <Card className="w-full max-w-md relative shadow-card border-0">
         <CardHeader className="space-y-2 text-center">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 rounded-full bg-[#7d59c9] flex items-center justify-center shadow-button">
-              <Sparkles className="w-8 h-8 text-white" />
+            {/* Contenedor circular para mostrar solo el círculo del icono */}
+            <div
+              className="h-16 w-16 rounded-full bg-[#7d59c9] flex items-center justify-center"
+              style={{ boxShadow: "0 4px 12px rgba(15, 23, 42, 0.18)" }}
+            >
+              <img
+                src="/icons/icon-192.png"
+                alt="Remi"
+                className="h-15 w-15 rounded-full"
+              />
             </div>
           </div>
           <CardTitle className="text-3xl font-bold">
@@ -124,7 +132,8 @@ const Auth = () => {
 
             <Button
               type="submit"
-              className="remi-btn-primary w-full shadow-button h-11 rounded-full bg-[#7d59c9] hover:bg-[#7a28d0]"
+              className="remi-btn-primary w-full h-11 rounded-full bg-[#7d59c9] hover:bg-[#7a28d0] border-0"
+              style={{ boxShadow: "0 4px 10px rgba(15, 23, 42, 0.25)" }}
               disabled={loading}
             >
               {loading
