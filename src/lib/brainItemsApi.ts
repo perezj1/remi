@@ -22,13 +22,29 @@ export interface BrainItem {
   last_notified_at: string | null;
 }
 
+/**
+ * Devuelve la fecha de inicio de hoy en hora local (00:00:00.000)
+ */
+function getTodayStart(): Date {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 export async function fetchActiveTasks(userId: string): Promise<BrainItem[]> {
+  const todayStart = getTodayStart();
+  const todayIso = todayStart.toISOString();
+
   const { data, error } = await supabase
     .from("brain_items")
     .select("*")
     .eq("user_id", userId)
     .eq("type", "task")
     .eq("status", "ACTIVE")
+    // Solo tareas:
+    // - sin fecha (due_date IS NULL)
+    // - o con due_date >= inicio de hoy
+    .or(`due_date.is.null,due_date.gte.${todayIso}`)
     .order("due_date", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: true });
 
@@ -45,7 +61,28 @@ export async function fetchInboxItems(userId: string): Promise<BrainItem[]> {
     .order("created_at", { ascending: false });
 
   if (error) throw error;
-  return data as BrainItem[];
+
+  const items = (data ?? []) as BrainItem[];
+  const todayStart = getTodayStart();
+
+  // Filtramos aquí para no liarnos con combinaciones AND/OR en Supabase:
+  // - Todas las ideas se mantienen.
+  // - Tareas sin fecha se mantienen.
+  // - Tareas con fecha solo si due_date >= hoy.
+  const filtered = items.filter((item) => {
+    if (item.type === "idea") return true;
+
+    if (item.type === "task") {
+      if (!item.due_date) return true;
+      const due = new Date(item.due_date);
+      return due >= todayStart;
+    }
+
+    // Por si en el futuro hay otros tipos
+    return true;
+  });
+
+  return filtered;
 }
 
 export async function fetchActiveIdeas(userId: string): Promise<BrainItem[]> {
