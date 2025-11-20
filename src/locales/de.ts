@@ -208,7 +208,7 @@ status: {
   menuShareApp: "App teilen",
   menuLogout: "Abmelden",
 
-  shareText: "I’m using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\n\nIf you feel like you can’t handle everything, I definitely recommend trying it, it really helps. Here’s the link. 🙂",
+  shareText: "I’m using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\nI definitely recommend trying it, it really helps. Here’s the link. 🙂",
   shareCopied: "Link in die Zwischenablage kopiert",
 
   defaultUserName: "Benutzer",
@@ -333,7 +333,7 @@ status: {
   shareButton: "App teilen",
   logoutButton: "Abmelden",
 
-  shareText: "I’m using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\n\nIf you feel like you can’t handle everything, I definitely recommend trying it, it really helps. Here’s the link. 🙂",
+  shareText: "I’m using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\nI definitely recommend trying it, it really helps. Here’s the link. 🙂",
   shareCopied: "REMI-Link in die Zwischenablage kopiert",
 
   defaultUserName: "Benutzer",

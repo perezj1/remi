@@ -203,7 +203,7 @@ capture: {
   menuShareApp: "Share app",
   menuLogout: "Log out",
 
-  shareText: "I’m using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\n\nIf you feel like you can’t handle everything, I definitely recommend trying it, it really helps. Here’s the link. 🙂",
+  shareText: "I’m using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\nI definitely recommend trying it, it really helps. Here’s the link. 🙂",
   shareCopied: "Link copied to clipboard",
 
   defaultUserName: "User",
@@ -325,7 +325,7 @@ capture: {
   shareButton: "Share app",
   logoutButton: "Log out",
 
-  shareText: "I’m using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\n\nIf you feel like you can’t handle everything, I definitely recommend trying it, it really helps. Here’s the link. 🙂",
+  shareText: "I’m using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\nI definitely recommend trying it, it really helps. Here’s the link. 🙂",
   shareCopied: "REMI link copied to clipboard",
 
   defaultUserName: "User",
