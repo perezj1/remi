@@ -484,7 +484,7 @@ export default function ProfilePage() {
               </div>
 
               {/* NOTIFICATIONS */}
-              <div className="flex items-center justify-between pt-2">
+              {/* <div className="flex items-center justify-between pt-2">
                 <div className="text-xs">
                   <div className="font-medium">
                     {t("profile.notificationsLabel")}
@@ -508,7 +508,7 @@ export default function ProfilePage() {
                     }`}
                   />
                 </button>
-              </div>
+              </div> */}
 
               {/* BOTÓN GUARDAR */}
               <button
