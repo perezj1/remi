@@ -327,7 +327,7 @@ capture: {
 
   defaultUserName: "Usuario",
 
-  avatarTooBig: "La imagen debe pesar menos de 2 MB.",
+  avatarTooBig: "La imagen debe pesar menos de 5 MB.",
   avatarUploadError: "No se pudo subir la imagen. Intenta de nuevo.",
   passwordTooShort:
     "La nueva contraseña debe tener al menos 6 caracteres.",

@@ -330,7 +330,7 @@ capture: {
 
   defaultUserName: "User",
 
-  avatarTooBig: "The image must be smaller than 2 MB.",
+  avatarTooBig: "The image must be smaller than 5 MB.",
   avatarUploadError: "The image could not be uploaded. Please try again.",
   passwordTooShort: "The new password must be at least 6 characters.",
   authUpdateError: "Email/password could not be updated.",

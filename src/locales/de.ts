@@ -6,7 +6,7 @@ export const de = {
     cancel: "Abbrechen",
     delete: "Löschen",
     edit: "Bearbeiten",
-    close: "Schließen",
+    close: "Schliessen",
     confirm: "Bestätigen",
     loading: "Laden...",
   },
@@ -40,7 +40,7 @@ installPrompt: {
   defaultTitle: "Installiere Remi",
   defaultDescription: "Füge Remi zu deinen Apps hinzu – KOSTENLOS!",
   buttonInstall: "Installieren",
-  close: "Schließen",
+  close: "Schliessen",
 },
 
 
@@ -340,7 +340,7 @@ status: {
 
   defaultUserName: "Benutzer",
 
-  avatarTooBig: "Das Bild darf maximal 2 MB groß sein.",
+  avatarTooBig: "Das Bild darf maximal 5 MB gross sein.",
   avatarUploadError:
     "Das Bild konnte nicht hochgeladen werden. Bitte versuche es erneut.",
   passwordTooShort:
