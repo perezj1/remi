@@ -75,6 +75,20 @@ export default function IdeaEditModal({
     setLoading(false);
   }, [open, idea]);
 
+  // Si NO hay fecha (dueDateTime vacío), solo permitimos NONE o DAILY_UNTIL_DUE.
+  // Si estaba en ON_DUE_DATE o DAY_BEFORE_AND_DUE y se borra la fecha,
+  // lo reseteamos a NONE.
+  useEffect(() => {
+    const hasDue = !!dueDateTime;
+    if (
+      !hasDue &&
+      (reminderMode === "ON_DUE_DATE" ||
+        reminderMode === "DAY_BEFORE_AND_DUE")
+    ) {
+      setReminderMode("NONE");
+    }
+  }, [dueDateTime, reminderMode]);
+
   if (!open || !idea) return null;
 
   const handleClose = () => {
@@ -125,6 +139,8 @@ export default function IdeaEditModal({
       setLoading(false);
     }
   };
+
+  const hasDueDate = !!dueDateTime;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4">
@@ -185,6 +201,7 @@ export default function IdeaEditModal({
                 value={dueDateTime}
                 onChange={(e) => setDueDateTime(e.target.value)}
               />
+              
             </div>
 
             {/* Modo de recordatorio */}
@@ -199,18 +216,32 @@ export default function IdeaEditModal({
                   setReminderMode(e.target.value as ReminderMode)
                 }
               >
-                <option value="NONE">
-                  {t("ideas.reminder.none")}
-                </option>
-                <option value="ON_DUE_DATE">
-                  {t("ideas.reminder.onDue")}
-                </option>
-                <option value="DAY_BEFORE_AND_DUE">
-                  {t("ideas.reminder.dayBeforeAndDue")}
-                </option>
-                <option value="DAILY_UNTIL_DUE">
-                  {t("ideas.reminder.dailyUntilDue")}
-                </option>
+                {hasDueDate ? (
+                  <>
+                    <option value="NONE">
+                      {t("ideas.reminder.none")}
+                    </option>
+                    <option value="ON_DUE_DATE">
+                      {t("ideas.reminder.onDue")}
+                    </option>
+                    <option value="DAY_BEFORE_AND_DUE">
+                      {t("ideas.reminder.dayBeforeAndDue")}
+                    </option>
+                    <option value="DAILY_UNTIL_DUE">
+                      {t("ideas.reminder.dailyUntilDue")}
+                    </option>
+                  </>
+                ) : (
+                  <>
+                    {/* Sin fecha → solo 2 opciones */}
+                    <option value="NONE">
+                      {t("ideas.reminder.none")}
+                    </option>
+                    <option value="DAILY_UNTIL_DUE">
+                      {t("ideas.reminder.dailyUntilDue")}
+                    </option>
+                  </>
+                )}
               </select>
             </div>
           </div>

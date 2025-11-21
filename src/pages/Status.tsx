@@ -181,18 +181,66 @@ export default function StatusPage() {
   const totalItemsStored =
     summary?.totalItemsStored ?? totalTasksStored + totalIdeasStored;
   const streakDays = summary?.streakDays ?? 0;
+  const daysSinceLastActivity = summary?.daysSinceLastActivity ?? null;
 
-  const mindClearPercent = Math.min(
-    100,
-    totalItemsStored > 0
-      ? 30 + Math.round(Math.log10(totalItemsStored + 1) * 35)
-      : 10
-  );
+  // --- NUEVA LÓGICA DE MENTE DESPEJADA CON DÍAS SIN USAR REMI ---
+  const mindClearPercent = (() => {
+    // Si aún no hay datos, valor mínimo
+    if (!summary) return 10;
+
+    const items = totalItemsStored;
+
+    // 1) Base por cantidad de cosas delegadas en Remi
+    const baseClear = (() => {
+      if (items <= 0) return 10;
+
+      if (items === 1) return 18;
+      if (items === 2) return 26;
+      if (items === 3) return 32;
+      if (items === 4) return 38;
+      if (items === 5) return 43;
+
+      return Math.min(
+        100,
+        30 + Math.round(Math.log10(items + 1) * 35)
+      );
+    })();
+
+    // 2) Ajuste por días desde la última actividad
+    // 0 días  -> 1.0  (hoy has usado Remi)
+    // 1 día   -> 0.8
+    // 2 días  -> 0.7
+    // 3 días  -> 0.6
+    // 4+ días -> 0.5  (mínimo)
+    let multiplier: number;
+
+    const daysSince = daysSinceLastActivity;
+    if (daysSince == null) {
+      // Nunca ha habido actividad registrada → mente bastante cargada
+      multiplier = 0.5;
+    } else if (daysSince <= 0) {
+      multiplier = 1;
+    } else if (daysSince === 1) {
+      multiplier = 0.8;
+    } else if (daysSince === 2) {
+      multiplier = 0.7;
+    } else if (daysSince === 3) {
+      multiplier = 0.6;
+    } else {
+      multiplier = 0.5;
+    }
+
+    const value = Math.round(baseClear * multiplier);
+
+    // 3) Límites
+    return Math.max(10, Math.min(100, value));
+  })();
 
   return (
     <div className="remi-page min-h-screen bg-white text-slate-900 flex flex-col">
       {/* Header morado */}
       <header className="bg-[#7d59c9] text-white px-4 pt-8 pb-8 rounded-b-3xl shadow-md flex items-center gap-3">
+       
         <div className="flex flex-col">
           <h1 className="text-lg font-semibold">
             {t("status.headerTitle")}
@@ -325,49 +373,48 @@ export default function StatusPage() {
 
         {/* Nuestra semana */}
         <section className="mt-4 rounded-3xl bg-white p-5 shadow-md shadow-black/10">
-  <div className="flex items-start gap-2">
-    {/* Icono: tamaño fijo, no se deforma */}
-    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100">
-      <CalendarDays className="h-4 w-4 text-slate-500" />
-    </div>
+          <div className="flex items-start gap-2">
+            {/* Icono: tamaño fijo, no se deforma */}
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100">
+              <CalendarDays className="h-4 w-4 text-slate-500" />
+            </div>
 
-    {/* Texto: ocupa el resto, hace el wrap */}
-    <div className="flex-1 min-w-0">
-      <h3 className="text-sm font-semibold text-slate-900">
-        {t("status.weekSectionTitle")}
-      </h3>
-      <p className="text-xs text-slate-500">
-        {t("status.weekSectionSubtitle")}
-      </p>
-    </div>
-  </div>
+            {/* Texto: ocupa el resto, hace el wrap */}
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-semibold text-slate-900">
+                {t("status.weekSectionTitle")}
+              </h3>
+              <p className="text-xs text-slate-500">
+                {t("status.weekSectionSubtitle")}
+              </p>
+            </div>
+          </div>
 
-  <div className="mt-4 flex flex-col gap-2">
-    <p className="text-xs font-medium text-slate-600">
-      {t("status.weekActiveLabel")}
-    </p>
+          <div className="mt-4 flex flex-col gap-2">
+            <p className="text-xs font-medium text-slate-600">
+              {t("status.weekActiveLabel")}
+            </p>
 
-    <div className="mt-1 flex items-center justify-center gap-3">
-      <p className="text-lg font-semibold text-slate-900">
-        {weekActiveDays} / 7
-      </p>
-      <div className="flex gap-1">
-        {Array.from({ length: 7 }).map((_, index) => {
-          const filled = index < weekActiveDays;
-          return (
-            <div
-              key={index}
-              className={`h-8 w-4 rounded-full border border-violet-100 ${
-                filled ? "bg-violet-500" : "bg-violet-100/60"
-              }`}
-            />
-          );
-        })}
-      </div>
-    </div>
-  </div>
-</section>
-
+            <div className="mt-1 flex items-center justify-center gap-3">
+              <p className="text-lg font-semibold text-slate-900">
+                {weekActiveDays} / 7
+              </p>
+              <div className="flex gap-1">
+                {Array.from({ length: 7 }).map((_, index) => {
+                  const filled = index < weekActiveDays;
+                  return (
+                    <div
+                      key={index}
+                      className={`h-8 w-4 rounded-full border border-violet-100 ${
+                        filled ? "bg-violet-500" : "bg-violet-100/60"
+                      }`}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </section>
 
         {loading && (
           <div className="mt-4 flex items-center justify-center gap-2 text-xs text-violet-700">

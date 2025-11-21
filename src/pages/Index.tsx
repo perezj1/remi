@@ -109,18 +109,62 @@ export default function TodayPage() {
     })();
   }, [user, t]);
 
-  // ---------- Porcentaje de "Mente despejada" (tareas + ideas) ----------
+  // ---------- Porcentaje de "Mente despejada" (mismas reglas que Status) ----------
   const mindClearPercent = useMemo(() => {
     if (!statusSummary) return 10;
+
     const totalItems =
       statusSummary.totalItemsStored ??
       statusSummary.totalTasksStored + statusSummary.totalIdeasStored;
-    if (totalItems <= 0) return 10;
 
-    return Math.min(
-      100,
-      30 + Math.round(Math.log10(totalItems + 1) * 35)
-    );
+    const items = totalItems;
+    const daysSince =
+      statusSummary.daysSinceLastActivity !== undefined
+        ? statusSummary.daysSinceLastActivity
+        : null;
+
+    // 1) Base por cantidad de cosas delegadas en Remi
+    const baseClear = (() => {
+      if (items <= 0) return 10;
+
+      if (items === 1) return 18;
+      if (items === 2) return 26;
+      if (items === 3) return 32;
+      if (items === 4) return 38;
+      if (items === 5) return 43;
+
+      return Math.min(
+        100,
+        30 + Math.round(Math.log10(items + 1) * 35)
+      );
+    })();
+
+    // 2) Ajuste por días desde la última actividad
+    // 0 días  -> 1.0  (hoy has usado Remi)
+    // 1 día   -> 0.8
+    // 2 días  -> 0.7
+    // 3 días  -> 0.6
+    // 4+ días -> 0.5  (mínimo)
+    let multiplier: number;
+
+    if (daysSince == null) {
+      // Nunca ha habido actividad registrada → mente bastante cargada
+      multiplier = 0.5;
+    } else if (daysSince <= 0) {
+      multiplier = 1;
+    } else if (daysSince === 1) {
+      multiplier = 0.8;
+    } else if (daysSince === 2) {
+      multiplier = 0.7;
+    } else if (daysSince === 3) {
+      multiplier = 0.6;
+    } else {
+      multiplier = 0.5;
+    }
+
+    const value = Math.round(baseClear * multiplier);
+
+    return Math.max(10, Math.min(100, value));
   }, [statusSummary]);
 
   // ---------- Comprobar si ya tiene suscripción push ----------
@@ -797,7 +841,7 @@ export default function TodayPage() {
                   : t("today.pushEnable")}
               </button>
 
-             {/*  <button
+              {/*  <button
                 type="button"
                 onClick={handleLater}
                 className="w-full rounded-full border border-slate-200 text-xs py-2.5 text-slate-600"

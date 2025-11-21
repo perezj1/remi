@@ -1,5 +1,5 @@
 // src/components/CaptureModal.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Lightbulb, ListTodo, X } from "lucide-react";
 import type { ReminderMode } from "@/lib/brainItemsApi";
 import { toast } from "sonner";
@@ -38,6 +38,18 @@ export default function CaptureModal({
   const [reminderMode, setReminderMode] =
     useState<ReminderMode>("ON_DUE_DATE");
   const [loading, setLoading] = useState(false);
+
+  // Si pasamos a "Sin fecha" y el modo de recordatorio no es válido ahí,
+  // lo reseteamos a "NONE" para que el select tenga una opción coherente.
+  useEffect(() => {
+    if (
+      dueOption === "NONE" &&
+      (reminderMode === "ON_DUE_DATE" ||
+        reminderMode === "DAY_BEFORE_AND_DUE")
+    ) {
+      setReminderMode("NONE");
+    }
+  }, [dueOption, reminderMode]);
 
   // En modo modal respetamos "open". En modo embebido se muestra siempre.
   if (!embedded && !open) return null;
@@ -303,7 +315,6 @@ export default function CaptureModal({
                 onChange={(e) => setCustomDue(e.target.value)}
                 disabled={dueOption === "NONE"}
               />
-              
             </div>
           </div>
 
@@ -319,16 +330,32 @@ export default function CaptureModal({
                 setReminderMode(e.target.value as ReminderMode)
               }
             >
-              <option value="NONE">{t("capture.remindersNone")}</option>
-              <option value="ON_DUE_DATE">
-                {t("capture.remindersOnDue")}
-              </option>
-              <option value="DAY_BEFORE_AND_DUE">
-                {t("capture.remindersDayBeforeAndDue")}
-              </option>
-              <option value="DAILY_UNTIL_DUE">
-                {t("capture.remindersDailyUntilDue")}
-              </option>
+              {dueOption === "NONE" ? (
+                <>
+                  {/* Solo 2 opciones si es "Sin fecha" */}
+                  <option value="NONE">
+                    {t("capture.remindersNone")}
+                  </option>
+                  <option value="DAILY_UNTIL_DUE">
+                    {t("capture.remindersDailyUntilDue")}
+                  </option>
+                </>
+              ) : (
+                <>
+                  <option value="NONE">
+                    {t("capture.remindersNone")}
+                  </option>
+                  <option value="ON_DUE_DATE">
+                    {t("capture.remindersOnDue")}
+                  </option>
+                  <option value="DAY_BEFORE_AND_DUE">
+                    {t("capture.remindersDayBeforeAndDue")}
+                  </option>
+                  <option value="DAILY_UNTIL_DUE">
+                    {t("capture.remindersDailyUntilDue")}
+                  </option>
+                </>
+              )}
             </select>
           </div>
 

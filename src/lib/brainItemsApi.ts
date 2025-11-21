@@ -241,14 +241,14 @@ export async function deleteBrainItem(id: string): Promise<void> {
 
 /**
  * Resumen para la página de "Status" de Remi.
- * Usa tareas e ideas + tabla brain_activity_days para la racha.
+ * Usa tareas e ideas + tabla brain_activity_days para la racha y actividad.
  */
 export type RemiStatusSummary = {
   /** Tareas de hoy (por fecha de vencimiento) */
   todayTotal: number;
   /** Tareas de hoy marcadas como DONE */
   todayDone: number;
-  /** Días de los últimos 7 con al menos 1 tarea completada */
+  /** Días de los últimos 7 con al menos 1 día de actividad (crear/completar) */
   weekActiveDays: number;
   /** Total de tareas almacenadas (no archivadas) */
   totalTasksStored: number;
@@ -256,8 +256,10 @@ export type RemiStatusSummary = {
   totalIdeasStored: number;
   /** Total de elementos (tareas + ideas) no archivados */
   totalItemsStored: number;
-  /** Racha de días consecutivos con al menos 1 tarea completada (hasta hoy) */
+  /** Racha de días consecutivos con actividad (hasta hoy) */
   streakDays: number;
+  /** Días desde la última actividad (0 = hoy, 1 = ayer, etc., null = nunca) */
+  daysSinceLastActivity: number | null;
 };
 
 export async function fetchRemiStatusSummary(
@@ -365,9 +367,10 @@ export async function fetchRemiStatusSummary(
   type ActivityRow = { day: string; completed_tasks: number };
   const activity = (activityRows ?? []) as ActivityRow[];
 
-  const completionDays = new Set<string>();
+  const activityDays = new Set<string>();
   for (const row of activity) {
-    completionDays.add(row.day); // "YYYY-MM-DD"
+    // "day" viene como "YYYY-MM-DD"
+    activityDays.add(row.day);
   }
 
   // 5) Calcular racha de días consecutivos (hasta hoy)
@@ -376,7 +379,7 @@ export async function fetchRemiStatusSummary(
     const d = new Date(todayStart);
     d.setDate(d.getDate() - offset);
     const key = formatLocalDateKey(d);
-    if (completionDays.has(key)) {
+    if (activityDays.has(key)) {
       streakDays += 1;
     } else {
       break;
@@ -389,8 +392,28 @@ export async function fetchRemiStatusSummary(
     const d = new Date(todayStart);
     d.setDate(d.getDate() - offset);
     const key = formatLocalDateKey(d);
-    if (completionDays.has(key)) {
+    if (activityDays.has(key)) {
       weekActiveDays += 1;
+    }
+  }
+
+  // 7) Días desde la última actividad (crear tarea/idea o completar tarea)
+  let daysSinceLastActivity: number | null = null;
+  if (activity.length > 0) {
+    let lastDate: Date | null = null;
+
+    for (const row of activity) {
+      // row.day es "YYYY-MM-DD"
+      const d = new Date(row.day + "T00:00:00Z");
+      if (!lastDate || d > lastDate) {
+        lastDate = d;
+      }
+    }
+
+    if (lastDate) {
+      const diffMs = todayStart.getTime() - lastDate.getTime();
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      daysSinceLastActivity = diffDays < 0 ? 0 : diffDays;
     }
   }
 
@@ -402,5 +425,6 @@ export async function fetchRemiStatusSummary(
     totalIdeasStored: totalIdeas,
     totalItemsStored,
     streakDays,
+    daysSinceLastActivity,
   };
 }
