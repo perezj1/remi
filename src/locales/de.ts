@@ -142,6 +142,8 @@ status: {
   auth: {
     titleLogin: "Melde dich bei REMI an",
     titleRegister: "Erstelle dein REMI-Konto",
+    subtitleAuth2:"From MIND FULL to MINDFUL" ,
+
     email: "E-Mail",
     password: "Passwort",
     login: "Anmelden",

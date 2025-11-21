@@ -1,5 +1,5 @@
 // src/pages/Auth.tsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
@@ -31,7 +31,7 @@ const Auth = () => {
     }
   }, [user, navigate]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
@@ -51,10 +51,8 @@ const Auth = () => {
       } else {
         if (!isLogin) {
           toast.success(t("auth.signUpSuccess"));
-          navigate("/");
-        } else {
-          navigate("/");
         }
+        navigate("/");
       }
     } catch (_error) {
       toast.error(t("auth.errorGeneric"));
@@ -64,99 +62,104 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-[#ffffff]">
-      {/* fondo suave con el color principal */}
-      <div className="absolute inset-0 bg-gradient-hero opacity-20 -z-10" />
+    <div className="min-h-screen flex flex-col bg-white">
+      {/* Franja morada superior con el icono de Remi */}
+      <div className="relative flex flex-col items-center justify-center bg-[#7d59c9] text-white rounded-b-[40px] pt-8 pb-8 px-6 overflow-hidden">
+        {/* Icono Remi flotando (sin círculo blanco) */}
+        <div className="flex flex-col items-center mb-3">
+          <img
+            src="/icons/icon-192.png"
+            alt="Remi"
+            className="h-20 w-20"
+          />
+          <div className="h-2 w-12 rounded-full bg-black/35 opacity-50 blur-[2px]" />
+        </div>
 
-      <Card className="w-full max-w-md relative shadow-card border-0">
-        <CardHeader className="space-y-2 text-center">
-          <div className="flex justify-center mb-4">
-            {/* Contenedor circular para mostrar solo el círculo del icono */}
-            <div
-              className="h-16 w-16 rounded-full bg-[#7d59c9] flex items-center justify-center"
-              style={{ boxShadow: "0 4px 12px rgba(15, 23, 42, 0.18)" }}
-            >
-              <img
-                src="/icons/icon-192.png"
-                alt="Remi"
-                className="h-15 w-15 rounded-full"
-              />
-            </div>
-          </div>
-          <CardTitle className="text-3xl font-bold">
-            {isLogin ? t("auth.loginTitle") : t("auth.registerTitle")}
-          </CardTitle>
-          <CardDescription className="text-base">
-            {isLogin ? t("auth.loginSubtitle") : t("auth.registerSubtitle")}
-          </CardDescription>
-        </CardHeader>
+        <span className="text-2xl font-bold tracking-tight">Remi</span>
+        <span className="mt-2 text-sm text-white/90 text-center max-w-xs">
+          {t("auth.subtitleAuth2")}
+        </span>
+      </div>
 
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium">
-                {t("auth.emailLabel")}
-              </Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder={t("auth.emailPlaceholder")}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="pl-10 h-11"
-                />
+      {/* Card colocada debajo de la franja morada, sin solaparse */}
+      <div className="flex-1 flex items-start justify-center px-4">
+        <Card className="w-full max-w-md mt-5 rounded-3xl shadow-xl border-0">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold text-slate-900">
+              {isLogin ? t("auth.loginTitle") : t("auth.registerTitle")}
+            </CardTitle>
+            <CardDescription className="text-sm text-slate-500">
+              {isLogin ? t("auth.loginSubtitle") : t("auth.registerSubtitle")}
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium">
+                  {t("auth.emailLabel")}
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder={t("auth.emailPlaceholder")}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="pl-10 h-11"
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium">
-                {t("auth.passwordLabel")}
-              </Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder={t("auth.passwordPlaceholder")}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  className="pl-10 h-11"
-                />
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium">
+                  {t("auth.passwordLabel")}
+                </Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder={t("auth.passwordPlaceholder")}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    className="pl-10 h-11"
+                  />
+                </div>
               </div>
-            </div>
 
-            <Button
-              type="submit"
-              className="remi-btn-primary w-full h-11 rounded-full bg-[#7d59c9] hover:bg-[#7a28d0] border-0"
-              style={{ boxShadow: "0 4px 10px rgba(15, 23, 42, 0.25)" }}
-              disabled={loading}
-            >
-              {loading
-                ? t("common.loading")
-                : isLogin
-                ? t("auth.submitLogin")
-                : t("auth.submitRegister")}
-            </Button>
-
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-sm text-[#7d59c9] hover:text-[#7a28d0] font-medium"
+              <Button
+                type="submit"
+                className="remi-btn-primary w-full h-11 rounded-full bg-[#7d59c9] hover:bg-[#7a28d0] border-0 text-white"
+                style={{ boxShadow: "0 4px 10px rgba(15, 23, 42, 0.25)" }}
+                disabled={loading}
               >
-                {isLogin
-                  ? t("auth.toggleToRegister")
-                  : t("auth.toggleToLogin")}
-              </button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+                {loading
+                  ? t("common.loading")
+                  : isLogin
+                  ? t("auth.submitLogin")
+                  : t("auth.submitRegister")}
+              </Button>
+
+              <div className="pt-1 text-center text-sm">
+                <button
+                  type="button"
+                  onClick={() => setIsLogin(!isLogin)}
+                  className="font-medium text-[#7d59c9] hover:text-[#7a28d0]"
+                >
+                  {isLogin
+                    ? t("auth.toggleToRegister")
+                    : t("auth.toggleToLogin")}
+                </button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

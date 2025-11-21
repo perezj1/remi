@@ -141,6 +141,7 @@ capture: {
   auth: {
     titleLogin: "Inicia sesión en REMI",
     titleRegister: "Crea tu cuenta en REMI",
+    subtitleAuth2:"From MIND FULL to MINDFUL" ,
     email: "Correo electrónico",
     password: "Contraseña",
     login: "Entrar",
