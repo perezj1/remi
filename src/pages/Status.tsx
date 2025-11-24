@@ -13,6 +13,8 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import {
   fetchRemiStatusSummary,
+  fetchActiveTasks,
+  fetchActiveIdeas,
   type RemiStatusSummary,
 } from "@/lib/brainItemsApi";
 import { useI18n } from "@/contexts/I18nContext";
@@ -147,6 +149,10 @@ export default function StatusPage() {
   const [summary, setSummary] = useState<RemiStatusSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // NUEVO: contadores de tareas/ideas activas (fetchActiveTasks / fetchActiveIdeas)
+  const [activeTasksCount, setActiveTasksCount] = useState(0);
+  const [activeIdeasCount, setActiveIdeasCount] = useState(0);
+
   // siempre arriba al entrar
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -159,8 +165,15 @@ export default function StatusPage() {
 
     const load = async () => {
       try {
-        const data = await fetchRemiStatusSummary(user.id);
-        setSummary(data);
+        const [summaryData, activeTasks, activeIdeas] = await Promise.all([
+          fetchRemiStatusSummary(user.id),
+          fetchActiveTasks(user.id),
+          fetchActiveIdeas(user.id),
+        ]);
+
+        setSummary(summaryData);
+        setActiveTasksCount(activeTasks.length);
+        setActiveIdeasCount(activeIdeas.length);
       } catch (error) {
         console.error("Error fetching Remi status summary", error);
       } finally {
@@ -240,7 +253,6 @@ export default function StatusPage() {
     <div className="remi-page min-h-screen bg-white text-slate-900 flex flex-col">
       {/* Header morado */}
       <header className="bg-[#7d59c9] text-white px-4 pt-8 pb-8 rounded-b-3xl shadow-md flex items-center gap-3">
-       
         <div className="flex flex-col">
           <h1 className="text-lg font-semibold">
             {t("status.headerTitle")}
@@ -343,7 +355,7 @@ export default function StatusPage() {
               </p>
             </div>
 
-            {/* Memoria delegada: tareas + ideas */}
+            {/* Memoria delegada: tareas + ideas activas */}
             <div className="rounded-2xl border border-slate-100 bg-slate-50/80 px-3 py-3">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-100">
@@ -355,16 +367,16 @@ export default function StatusPage() {
                   </p>
                   <p className="text-sm font-semibold text-slate-900">
                     {t("status.memoryDelegatedValue", {
-                      tasks: totalTasksStored,
-                      ideas: totalIdeasStored,
+                      tasks: activeTasksCount,
+                      ideas: activeIdeasCount,
                     })}
                   </p>
                 </div>
               </div>
               <p className="mt-2 text-[11px] text-slate-500">
                 {t("status.memoryDelegatedDescription", {
-                  tasks: totalTasksStored,
-                  ideas: totalIdeasStored,
+                  tasks: activeTasksCount,
+                  ideas: activeIdeasCount,
                 })}
               </p>
             </div>
