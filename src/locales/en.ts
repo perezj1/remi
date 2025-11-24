@@ -184,6 +184,10 @@ capture: {
   tabsWeek: "Week",
   tabsMonth: "Month",
   tabsNext: "Upcoming tasks",
+ 
+tabsAll: "All",
+tabsNoDate: "No date",
+
 
   loadingTasks: "Loading tasks…",
   noUrgentTitle: "Nothing urgent for today 🎉",

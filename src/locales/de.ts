@@ -188,6 +188,8 @@ status: {
   tabsWeek: "Woche",
   tabsMonth: "Monat",
   tabsNext: "Bevorstehende Aufgaben",
+  tabsAll: "Alle",
+tabsNoDate: "Ohne Datum",
 
   loadingTasks: "Aufgaben werden geladen…",
   noUrgentTitle: "Heute nichts Dringendes 🎉",

@@ -184,6 +184,8 @@ capture: {
   tabsToday: "Hoy",
   tabsWeek: "Semana",
   tabsMonth: "Mes",
+  tabsAll: "Todo",
+  tabsNoDate: "Sin Fecha",
 
   loadingTasks: "Cargando tareas…",
   noUrgentTitle: "Nada urgente por hoy 🎉",

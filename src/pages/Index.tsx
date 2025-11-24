@@ -55,7 +55,10 @@ type DateGroup = {
   key: string;
   label: string;
   items: BrainItem[];
+  dateMs?: number;
 };
+
+type FilterMode = "TODAY" | "WEEK" | "ALL" | "NO_DATE";
 
 function isSameDay(a: Date, b: Date): boolean {
   return (
@@ -84,6 +87,12 @@ export default function TodayPage() {
   const [registeringPush, setRegisteringPush] = useState(false);
 
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
+
+  // filtro de lista (Hoy / Semana / Todo / Sin fecha)
+  const [filter, setFilter] = useState<FilterMode>("TODAY");
+
+  // 👉 contador total de tareas activas (para la cabecera)
+  const activeTasksCount = tasks.length;
 
   // ---------- Cargar tareas, ideas y resumen de estado ----------
   useEffect(() => {
@@ -133,22 +142,13 @@ export default function TodayPage() {
       if (items === 4) return 38;
       if (items === 5) return 43;
 
-      return Math.min(
-        100,
-        30 + Math.round(Math.log10(items + 1) * 35)
-      );
+      return Math.min(100, 30 + Math.round(Math.log10(items + 1) * 35));
     })();
 
     // 2) Ajuste por días desde la última actividad
-    // 0 días  -> 1.0  (hoy has usado Remi)
-    // 1 día   -> 0.8
-    // 2 días  -> 0.7
-    // 3 días  -> 0.6
-    // 4+ días -> 0.5  (mínimo)
     let multiplier: number;
 
     if (daysSince == null) {
-      // Nunca ha habido actividad registrada → mente bastante cargada
       multiplier = 0.5;
     } else if (daysSince <= 0) {
       multiplier = 1;
@@ -257,11 +257,140 @@ export default function TodayPage() {
     };
   }, [profileOpen]);
 
-  const todayCount = tasks.length;
+  // ---------- Agrupar tareas por fecha + separar "Sin fecha" ----------
+  const {
+    dateGroups,
+    noDateTasks,
+    todayCount,
+  }: { dateGroups: DateGroup[]; noDateTasks: BrainItem[]; todayCount: number } =
+    useMemo(() => {
+      if (tasks.length === 0) {
+        return { dateGroups: [], noDateTasks: [], todayCount: 0 };
+      }
 
-  // ---------- Agrupar tareas por fecha (Hoy, Mañana, otras fechas, Sin fecha) ----------
-  const dateGroups: DateGroup[] = useMemo(() => {
-    if (tasks.length === 0) return [];
+      const today = new Date();
+      const todayMid = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate()
+      );
+      const tomorrowMid = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate() + 1
+      );
+
+      const todayIso = todayMid.toISOString().slice(0, 10);
+
+      const groupsMap = new Map<string, DateGroup>();
+      const noDate: BrainItem[] = [];
+      let todayCountLocal = 0;
+
+      const addTaskToDate = (dateMid: Date, task: BrainItem) => {
+        const dMid = new Date(
+          dateMid.getFullYear(),
+          dateMid.getMonth(),
+          dateMid.getDate()
+        );
+        const iso = dMid.toISOString().slice(0, 10);
+
+        let group = groupsMap.get(iso);
+        if (!group) {
+          let label: string;
+          if (iso === todayIso) {
+            label = t("inbox.sectionToday");
+          } else if (isSameDay(dMid, tomorrowMid)) {
+            label = t("inbox.sectionTomorrow");
+          } else {
+            label = dMid.toLocaleDateString(undefined, {
+              weekday: "short",
+              day: "numeric",
+              month: "short",
+            });
+          }
+
+          group = {
+            key: iso,
+            label,
+            items: [],
+            dateMs: dMid.getTime(),
+          };
+          groupsMap.set(iso, group);
+        }
+
+        if (!group.items.includes(task)) {
+          group.items.push(task);
+          if (isSameDay(dMid, todayMid)) {
+            todayCountLocal += 1;
+          }
+        }
+      };
+
+      for (const task of tasks) {
+        const mode = (task as any).reminder_mode as
+          | ReminderMode
+          | undefined;
+
+        // --- TAREAS SIN FECHA ---
+        if (!task.due_date) {
+          // Sólo en el bloque "Sin fecha" (se mostrará siempre debajo)
+          noDate.push(task);
+          continue;
+        }
+
+        // --- TAREAS CON FECHA LÍMITE ---
+        const due = new Date(task.due_date as string);
+        const dueMid = new Date(
+          due.getFullYear(),
+          due.getMonth(),
+          due.getDate()
+        );
+
+        // 1) Siempre se muestran el día de la fecha límite
+        addTaskToDate(dueMid, task);
+
+        // 2) Día antes + día de due date
+        if (mode === "DAY_BEFORE_AND_DUE") {
+          const dayBefore = new Date(dueMid);
+          dayBefore.setDate(dayBefore.getDate() - 1);
+          addTaskToDate(dayBefore, task);
+        }
+
+        // 3) Recordar a diario hasta due date (desde hoy hasta el día anterior)
+        if (mode === "DAILY_UNTIL_DUE") {
+          const todayMidTime = todayMid.getTime();
+          const dueMidTime = dueMid.getTime();
+
+          if (dueMidTime >= todayMidTime) {
+            let cursor = new Date(todayMid);
+            while (cursor.getTime() < dueMidTime) {
+              addTaskToDate(cursor, task);
+              cursor = new Date(
+                cursor.getFullYear(),
+                cursor.getMonth(),
+                cursor.getDate() + 1
+              );
+            }
+          }
+        }
+
+        // Modo ON_DUE_DATE o undefined ya está cubierto
+      }
+
+      const dateGroupsArr = Array.from(groupsMap.values())
+        .filter((g) => g.items.length > 0)
+        .sort((a, b) => (a.dateMs ?? 0) - (b.dateMs ?? 0));
+
+      return {
+        dateGroups: dateGroupsArr,
+        noDateTasks: noDate,
+        todayCount: todayCountLocal,
+      };
+    }, [tasks, t]);
+
+  // Grupos filtrados según el modo (Hoy / Semana / Todo / Sin fecha)
+  const filteredDateGroups = useMemo(() => {
+    if (filter === "NO_DATE") return [];
 
     const today = new Date();
     const todayMid = new Date(
@@ -269,82 +398,33 @@ export default function TodayPage() {
       today.getMonth(),
       today.getDate()
     );
-    const tomorrowMid = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate() + 1
+    const weekEndMid = new Date(
+      todayMid.getFullYear(),
+      todayMid.getMonth(),
+      todayMid.getDate() + 7
     );
 
-    const todayGroup: DateGroup = {
-      key: "TODAY",
-      label: t("inbox.sectionToday"),
-      items: [],
-    };
-    const tomorrowGroup: DateGroup = {
-      key: "TOMORROW",
-      label: t("inbox.sectionTomorrow"),
-      items: [],
-    };
-    const noDateGroup: DateGroup = {
-      key: "NO_DATE",
-      label: t("inbox.sectionNoDate"),
-      items: [],
-    };
+    return dateGroups.filter((group) => {
+      if (!group.dateMs) return false;
+      const time = group.dateMs;
 
-    const otherDateGroupsMap = new Map<
-      string,
-      { group: DateGroup; dateMs: number }
-    >();
-
-    for (const task of tasks) {
-      if (task.due_date) {
-        const d = new Date(task.due_date);
-        const dMid = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-
-        if (isSameDay(dMid, todayMid)) {
-          todayGroup.items.push(task);
-        } else if (isSameDay(dMid, tomorrowMid)) {
-          tomorrowGroup.items.push(task);
-        } else {
-          const key = dMid.toISOString().slice(0, 10);
-          let stored = otherDateGroupsMap.get(key);
-          if (!stored) {
-            const label = d.toLocaleDateString(undefined, {
-              weekday: "short",
-              day: "numeric",
-              month: "short",
-            });
-            stored = {
-              group: {
-                key,
-                label,
-                items: [],
-              },
-              dateMs: dMid.getTime(),
-            };
-            otherDateGroupsMap.set(key, stored);
-          }
-          stored.group.items.push(task);
-        }
-      } else {
-        noDateGroup.items.push(task);
+      if (filter === "TODAY") {
+        return isSameDay(new Date(time), todayMid);
       }
-    }
 
-    const groups: DateGroup[] = [];
-    if (todayGroup.items.length > 0) groups.push(todayGroup);
-    if (tomorrowGroup.items.length > 0) groups.push(tomorrowGroup);
+      if (filter === "WEEK") {
+        return time >= todayMid.getTime() && time <= weekEndMid.getTime();
+      }
 
-    const otherDateGroups = Array.from(otherDateGroupsMap.values())
-      .sort((a, b) => a.dateMs - b.dateMs)
-      .map((x) => x.group);
+      // "ALL"
+      return true;
+    });
+  }, [dateGroups, filter]);
 
-    groups.push(...otherDateGroups);
-
-    if (noDateGroup.items.length > 0) groups.push(noDateGroup);
-
-    return groups;
-  }, [tasks, t]);
+  const hasVisibleDatedTasks = filteredDateGroups.some(
+    (g) => g.items.length > 0
+  );
+  const hasNoDateTasks = noDateTasks.length > 0;
 
   // ---------- creación / actualización de tareas / ideas ----------
   const handleCreateTask = async (
@@ -446,6 +526,29 @@ export default function TodayPage() {
     window.dispatchEvent(new Event("remi-open-install"));
   };
 
+  const renderFilterButton = (mode: FilterMode, label: string) => (
+    <button
+      key={mode}
+      type="button"
+      onClick={() => setFilter(mode)}
+      className="remi-tab"
+      style={{
+        cursor: "pointer",
+        fontSize: 11,
+        padding: "6px 12px",
+        borderRadius: 999,
+        border: "none",
+        background:
+          filter === mode ? "rgba(143,49,243,0.18)" : "rgba(248,250,252,1)",
+        color: filter === mode ? "#7d59c9" : "#64748b",
+        fontWeight: filter === mode ? 600 : 500,
+        transition: "background 0.2s ease, color 0.2s ease",
+      }}
+    >
+      {label}
+    </button>
+  );
+
   return (
     <div className="remi-page">
       {/* CABECERA CON DEGRADADO + barra "Mente despejada" */}
@@ -477,7 +580,7 @@ export default function TodayPage() {
                 fontWeight: 600,
               }}
             >
-              {t("today.tasksToday", { count: todayCount })}
+              {t("today.tasksToday", { count: activeTasksCount })}
             </h1>
             <p style={{ fontSize: 11, opacity: 0.85 }}>
               {t("today.prioritize")}
@@ -630,7 +733,7 @@ export default function TodayPage() {
           />
         </div>
 
-        {/* pill "Próximas tareas" (mismo estilo que tabs, pero solo texto) */}
+        {/* Filtros Hoy / Semana / Todo / Sin fecha */}
         <div
           style={{
             marginTop: 20,
@@ -640,14 +743,23 @@ export default function TodayPage() {
             alignItems: "center",
           }}
         >
-          <div className="remi-tabs">
-            <button
-              className="remi-tab remi-tab"
-              type="button"
-              style={{ cursor: "default" }}
-            >
-              {t("today.tabsNext")}
-            </button>
+          <div
+            className="remi-tabs"
+            style={{
+              display: "flex",
+              gap: 6,
+              background: "#f9fafb",
+              padding: 4,
+              borderRadius: 999,
+            }}
+          >
+            {renderFilterButton("TODAY", t("today.tabsToday") || "Hoy")}
+            {renderFilterButton("WEEK", t("today.tabsWeek") || "Semana")}
+            {renderFilterButton("ALL", t("today.tabsAll") || "Todo")}
+            {renderFilterButton(
+              "NO_DATE",
+              t("today.tabsNoDate") || "Sin fecha"
+            )}
           </div>
         </div>
 
@@ -661,24 +773,26 @@ export default function TodayPage() {
             </div>
           )}
 
-          {!loading && tasks.length === 0 && (
-            <div className="remi-task-row">
-              <div className="remi-task-dot" />
-              <div>
-                <p className="remi-task-title">
-                  {t("today.noUrgentTitle")}
-                </p>
-                <p className="remi-task-sub">
-                  {t("today.noUrgentSubtitle")}
-                </p>
+          {!loading &&
+            !hasVisibleDatedTasks &&
+            !hasNoDateTasks && (
+              <div className="remi-task-row">
+                <div className="remi-task-dot" />
+                <div>
+                  <p className="remi-task-title">
+                    {t("today.noUrgentTitle")}
+                  </p>
+                  <p className="remi-task-sub">
+                    {t("today.noUrgentSubtitle")}
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {!loading &&
-            dateGroups.map((group) => (
+            filteredDateGroups.map((group) => (
               <div key={group.key}>
-                {/* Cabecera de fecha (Hoy, Mañana, Di., fecha…) */}
+                {/* Cabecera de fecha (Hoy, Mañana, Vi., fecha…) */}
                 <p className="mt-3 mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
                   {group.label}
                 </p>
@@ -779,7 +893,8 @@ export default function TodayPage() {
                               width: 30,
                               height: 30,
                               borderRadius: "999px",
-                              border: "1px solid rgba(237, 104, 104, 1)",
+                              border:
+                                "1px solid rgba(237, 104, 104, 1)",
                               display: "inline-flex",
                               alignItems: "center",
                               justifyContent: "center",
@@ -797,7 +912,8 @@ export default function TodayPage() {
                               width: 30,
                               height: 30,
                               borderRadius: "999px",
-                              border: "1px solid rgba(16,185,129,0.4)",
+                              border:
+                                "1px solid rgba(16,185,129,0.4)",
                               background: "rgba(16,185,129,0.08)",
                               display: "inline-flex",
                               alignItems: "center",
@@ -815,6 +931,145 @@ export default function TodayPage() {
                 })}
               </div>
             ))}
+
+          {/* Bloque "Sin fecha" siempre al final (según filtro) */}
+          {!loading &&
+            hasNoDateTasks &&
+            (filter === "ALL" ||
+              filter === "TODAY" ||
+              filter === "WEEK" ||
+              filter === "NO_DATE") && (
+              <div>
+                <p className="mt-3 mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                  {t("inbox.sectionNoDate")}
+                </p>
+
+                {noDateTasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className="remi-task-row"
+                    style={{
+                      alignItems: "center",
+                      padding: "10px 12px",
+                      borderRadius: 16,
+                      background: "#ffffff",
+                      boxShadow: "0 10px 25px rgba(15,23,42,0.04)",
+                      marginBottom: 8,
+                    }}
+                  >
+                    {/* izquierda: icono + texto */}
+                    <div
+                      style={{
+                        display: "flex",
+                        flex: 1,
+                        gap: 10,
+                        alignItems: "flex-start",
+                        minWidth: 0,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: "999px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          marginTop: 2,
+                          background: "rgba(143,49,243,0.08)",
+                          color: "#7d59c9",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <ListTodo size={16} />
+                      </div>
+
+                      <div
+                        style={{
+                          flex: 1,
+                          minWidth: 0,
+                        }}
+                      >
+                        <p
+                          className="remi-task-title"
+                          style={{
+                            wordBreak: "break-word",
+                            overflowWrap: "break-word",
+                            whiteSpace: "normal",
+                          }}
+                        >
+                          {task.title}
+                        </p>
+                        <div className="remi-task-sub">
+                          {t("today.dueNoDate")}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* derecha: controles */}
+                    <div
+                      style={{
+                        textAlign: "right",
+                        marginLeft: 8,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "flex-end",
+                        gap: 6,
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <button
+                          style={{
+                            background: "transparent",
+                            color: "rgba(237, 104, 104, 1)",
+                            fontSize: 15,
+                            cursor: "pointer",
+                            width: 30,
+                            height: 30,
+                            borderRadius: "999px",
+                            border:
+                              "1px solid rgba(237, 104, 104, 1)",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            padding: 0,
+                          }}
+                          onClick={() => handlePostpone(task, "DAY")}
+                        >
+                          <SkipForward size={16} />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDone(task)}
+                          style={{
+                            width: 30,
+                            height: 30,
+                            borderRadius: "999px",
+                            border:
+                              "1px solid rgba(16,185,129,0.4)",
+                            background: "rgba(16,185,129,0.08)",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                            padding: 0,
+                          }}
+                        >
+                          <Check size={16} color="#10B981" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
         </div>
       </div>
 
