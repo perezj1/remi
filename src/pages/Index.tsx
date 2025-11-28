@@ -501,7 +501,7 @@ export default function TodayPage() {
 
   const handleShareApp = async () => {
     setProfileOpen(false);
-    const url = window.location.origin;
+    const url = `${window.location.origin}/landing`;
     const text = t("today.shareText");
 
     try {
