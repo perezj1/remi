@@ -362,4 +362,146 @@ tabsNoDate: "Ohne Datum",
     dueTodayTitle: "Du hast Aufgaben für heute",
     dueTodayBody: "Öffne REMI, um deine offenen Aufgaben zu sehen.",
   },
+
+landing: {
+  hero: {
+    badge: "Dein externes Gedächtnis",
+    shareButtonLabel: "Remi teilen",
+    shareText:
+      "Ich benutze Remi, um alles zu organisieren, was ich früher im Kopf hatte, und ich habe meinen Stress und meine mentale Belastung deutlich reduziert. Hier ist der Link:",
+    shareCopied: "Remi-Link in die Zwischenablage kopiert.",
+    title: {
+      part1: "Erinnere dich an alles ohne",
+      highlighted: "mentalen Stress",
+    },
+    description:
+      "Hole Aufgaben, Ideen und Erinnerungen aus deinem Kopf, damit du dich auf das Wichtige konzentrieren kannst. Remi sorgt dafür, dass du dich im richtigen Moment an das Wichtige erinnerst.",
+    ctaPrimary: "Jetzt starten",
+    ctaSecondary: "So funktioniert es",
+    userStatsHighlight: "Menschen, die Remi nutzen",
+    userStats:
+      "sagen, dass sie sich leichter fühlen und deutlich weniger mentale Last spüren.",
+  },
+
+  features: {
+    title: {
+      part1: "Entwickelt, um",
+      highlighted: "deinen Kopf zu entlasten",
+    },
+    subtitle:
+      "Remi kombiniert intelligente Erinnerungen, zeitliche Steuerung und eine schnelle Ideenerfassung, damit dein Kopf nicht länger deine Aufgabenliste ist.",
+
+    items: {
+      reminders: {
+        title: "Personalisierte Erinnerungen",
+        description:
+          "Stelle genau die Häufigkeit ein, die du brauchst: täglich, wöchentlich, monatlich oder individuell. Remi passt sich deinem Rhythmus an. Nur das Wichtige, zum richtigen Zeitpunkt.",
+      },
+      temporal: {
+        title: "Zeitliche Kontrolle",
+        description:
+          "Lege fest, wie lange du dich an jede Sache erinnern lassen willst. Keine endlosen Erinnerungen mehr. Dein zukünftiges Ich wird es dir danken.",
+      },
+      mentalLoad: {
+        title: "Mentale Last im Griff",
+        description:
+          "Hol alles aus deinem Kopf heraus, was dich beschäftigt: große und kleine Aufgaben, Erledigungen, Ideen, Dinge, die du nicht vergessen willst. Remi speichert sie und bringt sie genau dann zurück, wenn du sie brauchst.",
+      },
+
+      quickCapture: {
+        title: "Ultraschnelle Erfassung",
+        description:
+          "Notiere eine Idee oder Aufgabe in einem Moment, ohne komplizierte Menüs. Öffnen, schreiben, fertig. Den Rest organisiert Remi.",
+      },
+    },
+  },
+
+  mentalLoad: {
+    cardTitle: "Dein mentaler Zustand heute",
+    cardDate: "Heute",
+    cardStatus: "Klarerer Kopf",
+
+    example1: "Wichtige Rechnungen notiert",
+    example1Freq: "Jeden Monat",
+    example2: "Geburtstagsgeschenke geplant",
+    example2Freq: "Über das Jahr verteilt",
+    example3: "Aufgaben des Tages organisiert",
+    example3Freq: "Jeden Morgen",
+
+    badge: "Dein externes Gedächtnis",
+    headline: "Heute läuft es richtig gut",
+    subheadline:
+      "Heute haben wir deinen Kopf ordentlich entlastet: Du hast 5 Aufgaben organisiert und 3 davon sind bereits erledigt.",
+    clearMindLabel: "Klarer Kopf",
+    clearMindHelper:
+      "Jede Sache, die du in Remi speicherst, ist eine Sache weniger, die deinen Kopf belastet.",
+
+    title: {
+      part1: "Dein Kopf ist zum Kreieren da,",
+      highlighted: "Remi zum Erinnern",
+    },
+    description:
+      "Wir benutzen unseren Kopf als Aufgabenliste, Kalender, Haushaltsorganisation und Speicher für alles Unerledigte. Das erzeugt Stress und ein ständiges Gefühl mentaler Überlastung. Remi hilft dir, diese Last schnell und einfach in einen externen, klaren und vertrauenswürdigen Ort auszulagern, damit du deine Aufmerksamkeit auf das richten kannst, was wirklich zählt.",
+    step1Title: "Hol alles aus deinem Kopf",
+    step1Description:
+      "Immer wenn dir etwas in den Sinn kommt – eine Aufgabe, eine Idee, ein Erledigung –, schreibst du es in Remi. Ohne groß nachzudenken: einfach notieren und weitermachen.",
+
+    step2Title: "Lass Remi mit dir Ordnung schaffen",
+    step2Description:
+      "Wenn es eine Idee ist, speicherst du sie mit einem Klick und kannst sie später bearbeiten oder in eine Aufgabe verwandeln.\nWenn es eine Aufgabe ist, wählst du ein Fälligkeitsdatum und wie Remi dich daran erinnern soll – schnell und ohne sie noch einmal anfassen zu müssen.",
+
+    step3Title: "Hol dir deinen klaren Kopf zurück",
+    step3Description:
+      "Dein Kopf hört auf, ein Lagerraum zu sein, und wird wieder das, was er sein sollte: ein Raum zum Denken, Kreieren und Präsenz zeigen – ohne die Angst, etwas Wichtiges zu vergessen.",
+  },
+
+  cta: {
+    badge: "Starte heute mit etwas Kleinem",
+    title: {
+      part1: "Baue dir nach und nach einen",
+      highlighted: "leichteren, ruhigeren Kopf",
+    },
+    description:
+      "Du musst nicht dein ganzes Leben umkrempeln. Fang einfach damit an, außerhalb deines Kopfes aufzuschreiben, was du bisher in dir getragen hast. Remi ist dafür gemacht, dich auf diesem Weg zu begleiten.",
+
+    ctaPrimary: "Remi jetzt ausprobieren",
+    ctaSecondary: "Zuerst weiter lesen",
+
+    feature1: "Komplett kostenlos",
+    feature2: "Für alle Arten von Menschen und Denkweisen gemacht",
+    feature3: "Funktioniert gleichermaßen gut für Aufgaben und Ideen",
+  },
+
+  footer: {
+    description:
+      "Remi ist dein vertrauenswürdiges externes Gedächtnis für all die Dinge, die du nicht vergessen willst, aber auch nicht den ganzen Tag im Kopf mit dir herumtragen möchtest.",
+
+    product: "Produkt",
+    productLinks: {
+      features: "Funktionen",
+      pricing: "Preise",
+      useCases: "Anwendungsfälle",
+      roadmap: "Roadmap",
+    },
+
+    company: "Unternehmen",
+    companyLinks: {
+      about: "Über Remi",
+      blog: "Blog",
+      careers: "Jobs",
+      contact: "Kontakt",
+    },
+
+    legal: "Rechtliches",
+    legalLinks: {
+      privacy: "Datenschutzerklärung",
+      terms: "Nutzungsbedingungen",
+      cookies: "Cookies",
+      licenses: "Lizenzen",
+    },
+
+    copyright: "© Remi 2025. Alle Rechte vorbehalten.",
+  },
+},
+
 } as const;

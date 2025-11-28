@@ -3,39 +3,140 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --remi-bg: #f5f4ff;
-  --remi-card: #ffffff;
-  --remi-purple: #7d59c9;
-  --remi-purple-soft: #a66bff;
-  --remi-pink: #ff6fd8;
-  --remi-text-main: #2d3142;
-  --remi-text-soft: #8b8fa6;
-  --remi-border-soft: #ecebfd;
-  --remi-radius-xl: 32px;
-  --remi-radius-lg: 20px;
+/* ---------- DESIGN SYSTEM + THEME REMI ---------- */
+@layer base {
+  :root {
+    /* Paleta principal estilo landing (valores HSL) */
+    --background: 250 100% 99%;
+    --foreground: 260 20% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 260 20% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 260 20% 15%;
+
+    /* Primary morado REMI (muy cercano a #7d59c9) */
+    --primary: 260 52% 57%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 260 60% 95%;
+    --secondary-foreground: 260 52% 40%;
+
+    --muted: 260 40% 96%;
+    --muted-foreground: 260 15% 50%;
+
+    --accent: 280 70% 65%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 260 30% 92%;
+    --input: 260 30% 92%;
+    --ring: 260 52% 57%;
+
+    --radius: 0.75rem;
+
+    /* Gradientes y sombras usados en la landing */
+    --gradient-primary: linear-gradient(
+      135deg,
+      hsl(260 52% 57%),
+      hsl(280 70% 65%)
+    );
+    --gradient-subtle: linear-gradient(
+      180deg,
+      hsl(250 100% 99%),
+      hsl(260 60% 97%)
+    );
+    --shadow-elegant: 0 20px 50px -12px hsl(260 52% 57% / 0.25);
+    --shadow-soft: 0 8px 30px -8px hsl(260 40% 70% / 0.3);
+
+    /* Tokens extra REMI (hex) por si los necesitas en otras pantallas */
+    --remi-bg: #f5f4ff;
+    --remi-card: #ffffff;
+    --remi-purple: #7d59c9;
+    --remi-purple-soft: #a66bff;
+    --remi-pink: #ff6fd8;
+    --remi-text-main: #2d3142;
+    --remi-text-soft: #8b8fa6;
+    --remi-border-soft: #ecebfd;
+    --remi-radius-xl: 32px;
+    --remi-radius-lg: 20px;
+  }
+
+  .dark {
+    --background: 260 30% 8%;
+    --foreground: 260 20% 95%;
+
+    --card: 260 25% 12%;
+    --card-foreground: 260 20% 95%;
+
+    --popover: 260 25% 12%;
+    --popover-foreground: 260 20% 95%;
+
+    --primary: 260 52% 57%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 260 30% 18%;
+    --secondary-foreground: 260 20% 95%;
+
+    --muted: 260 30% 18%;
+    --muted-foreground: 260 15% 65%;
+
+    --accent: 280 70% 65%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 260 30% 20%;
+    --input: 260 30% 20%;
+    --ring: 260 52% 57%;
+
+    --gradient-primary: linear-gradient(
+      135deg,
+      hsl(260 52% 57%),
+      hsl(280 70% 65%)
+    );
+    --gradient-subtle: linear-gradient(
+      180deg,
+      hsl(260 30% 8%),
+      hsl(260 25% 12%)
+    );
+    --shadow-elegant: 0 20px 50px -12px hsl(260 52% 57% / 0.5);
+    --shadow-soft: 0 8px 30px -8px hsl(260 52% 40% / 0.4);
+  }
+
+  /* Global reset/light border usando la variable --border */
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+      "Segoe UI", sans-serif;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+
+  button,
+  input {
+    font-family: inherit;
+  }
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  padding: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-    "Segoe UI", sans-serif;
-  background: var(--remi-bg);
-  color: var(--remi-text-main);
-}
+/* --------- CONTENEDOR TIPO APP MÓVIL REMI --------- */
 
 /* contenedor de fondo */
 .remi-root {
   min-height: 100vh;
-  background: white
-  ;
+  background: hsl(var(--background));
 }
 
 /* carcasa principal de la app */
@@ -44,13 +145,13 @@ body {
   max-width: 430px;
   height: 100vh;
   margin: 0 auto;
-  background: white;
+  background: hsl(var(--card));
   border-radius: 0;
   box-shadow: none;
-  overflow: hidden;          /* 👈 la shell NO scroll */
+  overflow: hidden; /* la shell NO scroll */
   display: flex;
   flex-direction: column;
-  position: relative;   
+  position: relative;
 }
 
 /* en escritorio que parezca móvil flotante */
@@ -63,11 +164,11 @@ body {
 
 /* página interior scrollable */
 .remi-page {
-    flex: 1;
-  min-height: 0;                 /* 👈 CLAVE para que funcione el scroll */
-  overflow-y: auto;              /* scroll vertical */
+  flex: 1;
+  min-height: 0; /* clave para que funcione el scroll */
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: 80px;          /* hueco para la bottom nav */
+  padding-bottom: 80px; /* hueco para la bottom nav */
 }
 
 /* ocultar scroll feo en móvil */
@@ -75,7 +176,8 @@ body {
   width: 0;
 }
 
-/* inputs bonitos */
+/* --------- INPUTS / TITULOS REMI --------- */
+
 .remi-input {
   width: 100%;
   border-radius: 999px;
@@ -189,7 +291,7 @@ body {
 /* ------- BOTTOM NAV CON CTA CENTRAL ------- */
 
 .remi-bottom-nav {
-    position: absolute;
+  position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
@@ -200,7 +302,7 @@ body {
   border-top-left-radius: 24px;
   border-top-right-radius: 24px;
   box-shadow: 0 -12px 24px rgba(90, 76, 170, 0.18);
-  z-index: 30;   
+  z-index: 30;
 }
 
 /* contenedor interno dejando hueco en el centro para el + */
@@ -220,7 +322,7 @@ body {
   align-items: center;
   gap: 4px;
   font-size: 10px;
-  color: #c2c5dd;              /* gris suave por defecto */
+  color: #c2c5dd; /* gris suave por defecto */
 }
 
 /* solo sirve para centrar el icono, sin caja alrededor */
@@ -244,7 +346,7 @@ body {
 
 /* estado activo: cambia solo el color (icono + texto) */
 .remi-bottom-link--active {
-  color: #7d59c9;              /* morado activo */
+  color: #7d59c9; /* morado activo */
   font-weight: 600;
 }
 
@@ -252,7 +354,6 @@ body {
 .remi-bottom-link--active svg {
   filter: drop-shadow(0 0 4px rgba(108, 92, 231, 0.55));
 }
-
 
 /* botón + flotante centrado */
 .remi-bottom-cta {
@@ -265,7 +366,7 @@ body {
   border-radius: 50%;
   border: none;
   cursor: pointer;
-  background: linear-gradient( #7d59c9);
+  background: linear-gradient(#7d59c9, #a75bff);
   color: #ffffff;
   font-size: 30px;
   display: flex;
@@ -378,81 +479,19 @@ body {
 .remi-btn-primary {
   border: none;
   border-radius: 999px;
-  background: linear-gradient(#7d59c9);
+  background: linear-gradient(#7d59c9, #a75bff);
   color: #ffffff;
   padding: 7px 16px;
   font-size: 12px;
   cursor: pointer;
   box-shadow: 0 14px 35px rgba(15, 23, 42, 0.08);
-  
-}
-
-/* --- THEME BÁSICO SHADCN ADAPTADO A REMI (#7d59c9) --- */
-:root {
-  --background: 276 40% 98%;
-  --foreground: 224 71.4% 4.1%;
-
-  --card: 0 0% 100%;
-  --card-foreground: 224 71.4% 4.1%;
-
-  --popover: 0 0% 100%;
-  --popover-foreground: 224 71.4% 4.1%;
-
-  /* color principal REMI */
-  --primary: 276 86% 57%; /* #7d59c9 aproximado en HSL */
-  --primary-foreground: 0 0% 100%;
-
-  --secondary: 276 30% 96%;
-  --secondary-foreground: 224 71.4% 4.1%;
-
-  --muted: 220 14.3% 95.9%;
-  --muted-foreground: 220 8.9% 46.1%;
-
-  --accent: 276 40% 95%;
-  --accent-foreground: 224 71.4% 4.1%;
-
-  --destructive: 0 72.2% 50.6%;
-  --destructive-foreground: 210 20% 98%;
-
-  --border: 220 13% 91%;
-  --input: 220 13% 91%;
-  --ring: var(--primary);
-
-  --radius: 14px;
-}
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-/* Fondo global suave */
-body {
-  margin: 0;
-  padding: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-    "Segoe UI", sans-serif;
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
-}
-
-/* Para que los modales, cards y botones se vean bien redondeados */
-button,
-input {
-  font-family: inherit;
 }
 
 /* --------- UTILIDADES PERSONALIZADAS REMI --------- */
 
 /* Hero gradient usado en Auth, header perfil, etc. */
 .bg-gradient-hero {
-  background: linear-gradient(
-    135deg,
-    #7d59c9 0%,
-    #a75bff 45%,
-    #ff6fd8 100%
-  );
+  background: linear-gradient(135deg, #7d59c9 0%, #a75bff 45%, #ff6fd8 100%);
 }
 
 /* Tarjetas con sombra suave (Auth card, perfil, etc.) */
@@ -477,8 +516,8 @@ input {
 
 /* Oculta la barra de scroll en contenedores con .remi-scroll */
 .remi-scroll {
-  scrollbar-width: none;      /* Firefox */
-  -ms-overflow-style: none;   /* IE y Edge antiguo */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE y Edge antiguo */
 }
 
 .remi-scroll::-webkit-scrollbar {
@@ -486,5 +525,65 @@ input {
   height: 0;
 }
 
-/* --- (opcional) si usas también las clases remi-... del home --- */
-/* aquí puedes pegar tu CSS de remi-shell, remi-bottom-nav, etc. */
+/* --------- LANDING REMI --------- */
+@layer components {
+  /* fondo general de la landing (igual que mockup) */
+  .landing-shell {
+    @apply min-h-screen flex justify-center;
+    background-color: #f5f4ff;
+  }
+
+  /* “tarjeta” blanca centrada tipo móvil */
+  .landing-page {
+    @apply w-full max-w-[430px] min-h-screen mx-auto bg-white;
+    border-radius: 40px;
+    box-shadow: 0 18px 40px rgba(25, 16, 74, 0.22);
+    position: relative;
+    padding-bottom: 2rem;
+    color: hsl(var(--foreground));
+  }
+
+  /* píldora blanca reutilizable (botones, etc.) */
+  .landing-pill {
+    @apply rounded-full shadow-sm bg-white;
+    border: 1px solid hsl(var(--border));
+  }
+
+  /* badge superior (“Reduce tu carga mental”) */
+  .landing-badge {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium;
+    background-color: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+  }
+
+  /* botón morado principal */
+  .landing-btn-primary {
+    @apply inline-flex items-center justify-center gap-2
+      font-semibold text-sm sm:text-base
+      px-6 py-4 w-full rounded-full;
+    background-image: linear-gradient(
+      135deg,
+      hsl(260 52% 57%),
+      hsl(280 70% 65%)
+    );
+    color: hsl(var(--primary-foreground));
+    box-shadow: 0 12px 24px rgba(143, 49, 243, 0.45);
+  }
+
+  /* botón secundario blanco con borde */
+  .landing-btn-secondary {
+    @apply inline-flex items-center justify-center gap-2
+      font-semibold text-sm sm:text-base
+      px-6 py-4 w-full rounded-full;
+    background-color: #ffffff;
+    border: 1px solid hsl(var(--border));
+    color: hsl(var(--foreground));
+  }
+
+  /* cards de características / bloques intermedios */
+  .landing-card {
+    @apply rounded-3xl bg-white;
+    border: 1px solid hsl(var(--border));
+    box-shadow: var(--shadow-soft);
+  }
+}

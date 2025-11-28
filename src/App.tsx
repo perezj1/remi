@@ -21,6 +21,7 @@ import BottomNav from "@/components/BottomNav";
 import InstallPrompt from "@/components/InstallPrompt";
 import StatusPage from "@/pages/Status";
 import ScrollToTop from "@/components/ScrollToTop";
+import LandingPage from "@/pages/Landing";
 
 // ---- RUTAS PROTEGIDAS ----
 function RequireAuth({ children }: { children: JSX.Element }) {
@@ -28,7 +29,6 @@ function RequireAuth({ children }: { children: JSX.Element }) {
   const location = useLocation();
 
   if (!user) {
-    // Guardamos desde dónde venimos para volver después de login/recarga
     return (
       <Navigate
         to="/auth"
@@ -45,7 +45,6 @@ function AppRoutes() {
   const { lang, setLang } = useI18n();
   const location = useLocation();
 
-  // 👇 si existe profiles.language, manda sobre navegador/localStorage
   React.useEffect(() => {
     const pLang =
       (((profile as any)?.language ?? null) as RemiLocale | null);
@@ -55,10 +54,13 @@ function AppRoutes() {
     }
   }, [profile, lang, setLang]);
 
-  // De dónde venimos (por ejemplo, /status)
   type LocationState = { from?: string };
   const state = location.state as LocationState | null;
   const from = state?.from || "/";
+
+  // 👇 Ocultar bottom nav en la landing (da igual mayúsculas/minúsculas)
+  const pathname = location.pathname.toLowerCase();
+  const hideBottomNav = pathname.startsWith("/landing");
 
   return (
     <>
@@ -122,11 +124,16 @@ function AppRoutes() {
           }
         />
 
+        {/* Landing pública */}
+        <Route path="/landing" element={<LandingPage />} />
+
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
 
-      {user && <BottomNav />}
+      {/* Bottom nav solo si hay usuario y NO estamos en /landing */}
+      {user && !hideBottomNav && <BottomNav />}
+
       <InstallPrompt />
     </>
   );

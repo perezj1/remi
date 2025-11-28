@@ -352,4 +352,145 @@ tabsNoDate: "No date",
     dueTodayTitle: "You have tasks today",
     dueTodayBody: "Open REMI to see what's pending.",
   },
+
+landing: {
+  hero: {
+    badge: "Your external memory",
+    shareButtonLabel: "Share Remi",
+    shareText:
+      "I'm using Remi to organize everything I used to carry in my head, and I've greatly reduced my stress and mental load. Here’s the link:",
+    shareCopied: "Remi link copied to clipboard.",
+    title: {
+      part1: "Remember everything without",
+      highlighted: "mental stress",
+    },
+    description:
+      "Take tasks, ideas and reminders out of your head so you can focus on what really matters. Remi makes sure you remember the important things at just the right moment.",
+    ctaPrimary: "Start now",
+    ctaSecondary: "See how it works",
+    userStatsHighlight: "People who use Remi",
+    userStats:
+      "say they feel lighter and under much less mental load.",
+  },
+
+  features: {
+    title: {
+      part1: "Designed to",
+      highlighted: "free your mind",
+    },
+    subtitle:
+      "Remi combines smart reminders, time control and fast idea capture so your head stops being your to-do list.",
+
+    items: {
+      reminders: {
+        title: "Personalized reminders",
+        description:
+          "Set whatever frequency you need: daily, weekly, monthly or custom. Remi adapts to your rhythm. Only what matters, at the right time.",
+      },
+      temporal: {
+        title: "Time control",
+        description:
+          "Decide how long you want to remember each thing. No more endless reminders. Your future self will thank you.",
+      },
+      mentalLoad: {
+        title: "Mental load under control",
+        description:
+          "Get everything that’s on your mind out of your head: big or small tasks, errands, ideas, things you don’t want to forget. Remi stores them and brings them back exactly when you need them.",
+      },
+
+      quickCapture: {
+        title: "Ultra-fast capture",
+        description:
+          "Write down an idea or a task in a moment, without complicated menus. Open, type, done. Remi takes care of the rest.",
+      },
+    },
+  },
+
+  mentalLoad: {
+    cardTitle: "How your mind is today",
+    cardDate: "Today",
+    cardStatus: "Clearer mind",
+
+    example1: "Important bills written down",
+    example1Freq: "Every month",
+    example2: "Birthday gifts planned",
+    example2Freq: "Throughout the year",
+    example3: "Today’s tasks organized",
+    example3Freq: "Every morning",
+
+    badge: "Your external memory",
+    headline: "We’re doing great today",
+    subheadline:
+      "Today we’ve cleared your mind quite a bit: you have 5 tasks organized and 3 of them are already done.",
+    clearMindLabel: "Clear mind",
+    clearMindHelper:
+      "Every thing you save in Remi is one less thing weighing on your mind.",
+
+    title: {
+      part1: "Your mind is for creating,",
+      highlighted: "Remi is for remembering",
+    },
+    description:
+      "We use our mind as a to-do list, a calendar, home management and storage for everything that’s pending. That creates stress and a constant feeling of mental load. Remi helps you unload that burden easily and quickly into an external, clear and reliable place so you can dedicate your attention to what really matters.",
+    step1Title: "Get everything out of your head",
+    step1Description:
+      "Whenever something comes to mind —a task, an idea, an errand— you write it down in Remi. Without overthinking it: just write it and go back to what you were doing.",
+
+    step2Title: "Let Remi organize it with you",
+    step2Description:
+      "If it’s an idea, you save it with one click and can edit it later or turn it into a task.\nIf it’s a task, you choose a due date and how you want Remi to remind you — fast and without having to touch it again.",
+
+    step3Title: "Get a clear head again",
+    step3Description:
+      "Your mind stops being a storage room and becomes what it should be: a space to think, create and be present, without the fear of forgetting anything important.",
+  },
+
+  cta: {
+    badge: "Start with something small today",
+    title: {
+      part1: "Little by little, build a",
+      highlighted: "lighter, calmer mind",
+    },
+    description:
+      "You don’t need to change your whole life. Just start writing outside your head what you used to carry inside. Remi is designed to accompany you in that process.",
+
+    ctaPrimary: "Try Remi now",
+    ctaSecondary: "Keep reading first",
+
+    feature1: "Completely free",
+    feature2: "Designed for all kinds of people and minds",
+    feature3: "Works equally well for tasks and ideas",
+  },
+
+  footer: {
+    description:
+      "Remi is your trusted external memory for all those things you don’t want to forget, but don’t want to carry in your head all day either.",
+
+    product: "Product",
+    productLinks: {
+      features: "Features",
+      pricing: "Pricing",
+      useCases: "Use cases",
+      roadmap: "Roadmap",
+    },
+
+    company: "Company",
+    companyLinks: {
+      about: "About Remi",
+      blog: "Blog",
+      careers: "Careers",
+      contact: "Contact",
+    },
+
+    legal: "Legal",
+    legalLinks: {
+      privacy: "Privacy policy",
+      terms: "Terms of use",
+      cookies: "Cookies",
+      licenses: "Licenses",
+    },
+
+    copyright: "© Remi 2025. All rights reserved.",
+  },
+},
 } as const;

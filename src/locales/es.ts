@@ -348,4 +348,148 @@ capture: {
     dueTodayTitle: "Tienes tareas para hoy",
     dueTodayBody: "Abre REMI para ver lo que tienes pendiente.",
   },
+
+
+landing: {
+    hero: {
+      badge: "Tu memoria externa",
+      shareButtonLabel: "Comparte Remi",
+      shareText:
+        "Estoy usando Remi para organizar todo lo que antes llevaba en la cabeza y he reducido mucho el estrés y la carga mental. Te paso el enlace:",
+      shareCopied: "Enlace de Remi copiado al portapapeles.",
+      title: {
+        part1: "Recuerda todo sin",
+        highlighted: "estrés mental",
+      },
+      description:
+        "Saca de tu cabeza tareas, ideas y recordatorios para que puedas concentrarte en lo importante. Remi se encarga de que recuerdes lo importante en el momento justo.",
+      ctaPrimary: "Empezar ahora",
+      ctaSecondary: "Ver cómo funciona",
+      userStatsHighlight: "Quienes usan Remi",
+      userStats:
+        "dicen que se sienten más ligeros y con mucha menos carga mental.",
+    },
+
+    features: {
+      title: {
+        part1: "Diseñado para",
+        highlighted: "liberar tu mente",
+      },
+      subtitle:
+        "Remi combina recordatorios inteligentes, gestión temporal y una captura rápida de ideas para que tu cabeza deje de ser tu lista de tareas.",
+
+      items: {
+        reminders: {
+          title: "Recordatorios personalizados",
+          description:
+            "Establece la frecuencia que necesites: diaria, semanal, mensual o personalizada. Remi se adapta a tu ritmo. Solo lo importante, en el momento adecuado.",
+        },
+        temporal: {
+          title: "Control temporal",
+          description:
+            "Define hasta cuándo quieres recordar cada cosa. Nada de recordatorios eternos. Tu 'yo' del futuro te lo agradecerá.",
+        },
+        mentalLoad: {
+          title: "Carga mental bajo control",
+          description:
+            "Saca de la cabeza todo lo que te ronda: tareas grandes o pequeñas, recados, ideas, cosas que no quieres olvidar. Remi las guarda y te las devuelve justo cuando las necesitas.",
+             
+        },
+
+        quickCapture: {
+          title: "Captura ultra rápida",
+          description:
+            "Anota una idea o tarea en un momento, sin menús complicados. Abrir, escribir y listo. El resto lo organiza Remi.",
+        },
+      },
+    },
+
+    mentalLoad: {
+      cardTitle: "Estado de tu mente hoy",
+      cardDate: "Hoy",
+      cardStatus: "Mente más despejada",
+
+      example1: "Facturas importantes apuntadas",
+      example1Freq: "Cada mes",
+      example2: "Regalos de cumpleaños planificados",
+      example2Freq: "A lo largo del año",
+      example3: "Tareas del día organizadas",
+      example3Freq: "Cada mañana",
+       badge: "Tu memoria externa",
+            headline: "Hoy vamos genial",
+            subheadline:
+              "Hoy hemos despejado bastante tu mente: tienes 5 tareas organizadas y 3 de ellas ya están hechas.",
+            clearMindLabel: "Mente despejada",
+            clearMindHelper:
+              "Cada cosa que guardas en Remi es una cosa menos que carga tu mente.",
+        
+
+      title: {
+        part1: "Tu mente es para crear,",
+        highlighted: "Remi es para recordar",
+      },
+      description:
+"Usamos la mente como lista de tareas, agenda, gestión del hogar y memoria de cosas pendientes. Eso genera estrés y sensación de carga mental constante. Remi te ayuda a vaciar esa carga de forma fácil y rápida en un sitio externo, claro y fiable para que puedas dedicar tu atención a lo que de verdad importa.",
+      step1Title: "Sácalo todo de tu cabeza",
+      step1Description:
+        "Cada vez que algo te venga a la mente —una tarea, una idea, un recado— lo apuntas en Remi. Sin pensarlo mucho, solo escríbelo y sigue con lo que estabas haciendo.",
+
+      step2Title: "Deja que Remi lo ordene contigo",
+      step2Description:
+        "Si es una idea, la guardas con un clic y luego puedes editarla o convertirla en tarea. \nSi es una tarea, eliges fecha límite y cómo quieres que Remi te la recuerde, rápido y sin tener que volver a tocarla.",
+
+      step3Title: "Vuelve a tener la cabeza despejada",
+      step3Description:
+        "Tu mente deja de ser almacén y vuelve a ser lo que debería: un espacio para pensar, crear y estar presente, sin miedo a olvidar nada importante.",
+    },
+
+    cta: {
+      badge: "Empieza con algo pequeño hoy",
+      title: {
+        part1: "Construye poco a poco una mente más",
+        highlighted: "ligera y tranquila",
+      },
+      description:
+        "No hace falta cambiar tu vida entera. Solo empezar a apuntar fuera de tu cabeza lo que antes cargabas dentro. Remi está pensado para acompañarte en ese proceso.",
+
+      ctaPrimary: "Probar Remi ahora",
+      ctaSecondary: "Seguir leyendo primero",
+
+      feature1: "Totalmente gratis",
+      feature2: "Diseñado para todo tipo de personas y mentes",
+      feature3: "Funciona igual de bien para tareas e ideas",
+    },
+
+    footer: {
+      description:
+        "Remi es tu memoria externa de confianza para todas esas cosas que no quieres olvidar, pero tampoco quieres llevar en la cabeza todo el día.",
+
+      product: "Producto",
+      productLinks: {
+        features: "Características",
+        pricing: "Precios",
+        useCases: "Casos de uso",
+        roadmap: "Hoja de ruta",
+      },
+
+      company: "Compañía",
+      companyLinks: {
+        about: "Sobre Remi",
+        blog: "Blog",
+        careers: "Trabaja con nosotros",
+        contact: "Contacto",
+      },
+
+      legal: "Legal",
+      legalLinks: {
+        privacy: "Política de privacidad",
+        terms: "Términos de uso",
+        cookies: "Cookies",
+        licenses: "Licencias",
+      },
+
+      copyright: "© Remi 2025. Todos los derechos reservados.",
+    },
+  },
+
 } as const;
