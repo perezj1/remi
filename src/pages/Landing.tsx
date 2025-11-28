@@ -60,27 +60,27 @@ const LandingPage: React.FC = () => {
   const t = landingCopyByLang[lang];
 
   const handleShareRemi = async () => {
-    const url = window.location.origin;
-    const text = t.hero.shareText; // solo landing
-    const copiedMsg = t.hero.shareCopied; // solo landing
+  const url = `${window.location.origin}/landing`; // 👈 ahora comparte /landing
+  const text = t.hero.shareText;      // solo landing
+  const copiedMsg = t.hero.shareCopied; // solo landing
 
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: "REMI",
-          text,
-          url,
-        });
-      } else if (navigator.clipboard) {
-        await navigator.clipboard.writeText(url);
-        alert(copiedMsg);
-      } else {
-        alert(url);
-      }
-    } catch (e) {
-      console.error(e);
+  try {
+    if (navigator.share) {
+      await navigator.share({
+        title: "REMI",
+        text,
+        url,
+      });
+    } else if (navigator.clipboard) {
+      await navigator.clipboard.writeText(url);
+      alert(copiedMsg);
+    } else {
+      alert(url);
     }
-  };
+  } catch (e) {
+    console.error(e);
+  }
+};
 
   return (
     // remi-page -> scroll dentro de la shell, landing-shell -> fondo lila y centrado
