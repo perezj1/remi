@@ -365,7 +365,7 @@ landing: {
       highlighted: "mental stress",
     },
     description:
-      "Take tasks, ideas and reminders out of your head so you can focus on what really matters. Remi makes sure you remember the important things at just the right moment.",
+      "Take tasks, ideas and reminders out of your head so you can focus on what really matters. Remi makes sure you remember what you need at exactly the right moment.",
     ctaPrimary: "Start now",
     ctaSecondary: "See how it works",
     userStatsHighlight: "People who use Remi",
@@ -379,7 +379,7 @@ landing: {
       highlighted: "free your mind",
     },
     subtitle:
-      "Remi combines smart reminders, time control and fast idea capture so your head stops being your to-do list.",
+"Remi combines smart reminders, time management and quick capture so your head stops being your to-do list.",
 
     items: {
       reminders: {

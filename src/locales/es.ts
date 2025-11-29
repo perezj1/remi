@@ -362,7 +362,7 @@ landing: {
         highlighted: "estrés mental",
       },
       description:
-        "Saca de tu cabeza tareas, ideas y recordatorios para que puedas concentrarte en lo importante. Remi se encarga de que recuerdes lo importante en el momento justo.",
+        "Saca de tu cabeza tareas, ideas y recordatorios para que puedas concentrarte en lo que realmente importa. Remi se encarga de que recuerdes lo necesario en el momento justo.",
       ctaPrimary: "Empezar ahora",
       ctaSecondary: "Ver cómo funciona",
       userStatsHighlight: "Quienes usan Remi",
@@ -376,7 +376,7 @@ landing: {
         highlighted: "liberar tu mente",
       },
       subtitle:
-        "Remi combina recordatorios inteligentes, gestión temporal y una captura rápida de ideas para que tu cabeza deje de ser tu lista de tareas.",
+        "Remi combina recordatorios inteligentes, gestión temporal y una captura rápida para que tu cabeza deje de ser tu lista de tareas.",
 
       items: {
         reminders: {

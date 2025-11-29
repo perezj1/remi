@@ -375,7 +375,7 @@ landing: {
       highlighted: "mentalen Stress",
     },
     description:
-      "Hole Aufgaben, Ideen und Erinnerungen aus deinem Kopf, damit du dich auf das Wichtige konzentrieren kannst. Remi sorgt dafür, dass du dich im richtigen Moment an das Wichtige erinnerst.",
+"Hol dir Aufgaben, Ideen und Erinnerungen aus deinem Kopf, damit du dich auf das wirklich Wichtige konzentrieren kannst. Remi sorgt dafür, dass du dich genau im richtigen Moment an das Wichtige erinnerst.",
     ctaPrimary: "Jetzt starten",
     ctaSecondary: "So funktioniert es",
     userStatsHighlight: "Menschen, die Remi nutzen",
@@ -389,7 +389,7 @@ landing: {
       highlighted: "deinen Kopf zu entlasten",
     },
     subtitle:
-      "Remi kombiniert intelligente Erinnerungen, zeitliche Steuerung und eine schnelle Ideenerfassung, damit dein Kopf nicht länger deine Aufgabenliste ist.",
+      "Remi kombiniert intelligente Erinnerungen, Zeitplanung und schnelle Erfassung, damit dein Kopf aufhört, deine To-do-Liste zu sein.",
 
     items: {
       reminders: {
