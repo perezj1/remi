@@ -1,4 +1,4 @@
-// src/pages/Ideas.tsx
+// src/pages/Tasks.tsx
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -8,9 +8,8 @@ import {
   setTaskStatus,
   deleteBrainItem,
 } from "@/lib/brainItemsApi";
-import { Lightbulb, Check, Trash2, Pencil } from "lucide-react";
+import { ListTodo, Check, Trash2 } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
-import IdeaEditModal from "@/components/IdeaEditModal";
 
 type DateGroup = {
   key: string;
@@ -35,15 +34,12 @@ function isSameDay(a: Date, b: Date): boolean {
   );
 }
 
-export default function IdeasPage() {
+export default function TasksPage() {
   const { user } = useAuth();
   const { t } = useI18n();
 
   const [items, setItems] = useState<BrainItem[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const [editingIdea, setEditingIdea] = useState<BrainItem | null>(null);
-  const [editOpen, setEditOpen] = useState(false);
 
   // siempre arriba al entrar / recargar
   useEffect(() => {
@@ -52,7 +48,7 @@ export default function IdeasPage() {
     }
   }, []);
 
-  // cargar todos los ítems de bandeja y luego filtrar ideas
+  // cargar todos los ítems de bandeja y luego filtrar tareas
   useEffect(() => {
     if (!user) return;
     setLoading(true);
@@ -70,7 +66,7 @@ export default function IdeasPage() {
     })();
   }, [user, t]);
 
-  const filtered = items.filter((item) => item.type === "idea");
+  const filtered = items.filter((item) => item.type === "task");
 
   // Agrupar por fecha:
   const dateGroups: DateGroup[] = (() => {
@@ -179,13 +175,7 @@ export default function IdeasPage() {
     }
   };
 
-  const openEditModal = (item: BrainItem) => {
-    if (item.type !== "idea") return;
-    setEditingIdea(item);
-    setEditOpen(true);
-  };
-
-  const filterLabel = t("inbox.ideasTab");
+  const filterLabel = t("inbox.tasksTab");
 
   return (
     <div className="remi-page min-h-screen bg-white text-slate-900 flex flex-col">
@@ -245,6 +235,11 @@ export default function IdeasPage() {
                     : "rgba(16,185,129,0.4)";
                   const btnColor = isDone ? "#DC2626" : "#10B981";
 
+                  const hasDue = !!item.due_date;
+                  const dueStr = hasDue
+                    ? new Date(item.due_date as string).toLocaleString()
+                    : t("today.dueNoDate");
+
                   return (
                     <div
                       key={item.id}
@@ -277,12 +272,12 @@ export default function IdeasPage() {
                             alignItems: "center",
                             justifyContent: "center",
                             marginTop: 2,
-                            background: "rgba(251,191,36,0.15)",
-                            color: "#F59E0B",
+                            background: "rgba(143,49,243,0.08)",
+                            color: "#7d59c9",
                             flexShrink: 0,
                           }}
                         >
-                          <Lightbulb size={18} />
+                          <ListTodo size={18} />
                         </div>
 
                         <div style={{ flex: 1, minWidth: 0 }}>
@@ -298,7 +293,8 @@ export default function IdeasPage() {
                           </p>
 
                           <p className="remi-task-sub">
-                            {t("inbox.itemIdeaPrefix")}
+                            {hasDue ? t("today.dueLabel") : ""}
+                            {dueStr}
                           </p>
                         </div>
                       </div>
@@ -333,30 +329,6 @@ export default function IdeasPage() {
                             gap: 6,
                           }}
                         >
-                          {/* Botón editar SOLO para ideas */}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openEditModal(item);
-                            }}
-                            style={{
-                              width: 30,
-                              height: 30,
-                              borderRadius: "999px",
-                              border:
-                                "1px solid rgba(148,163,184,0.8)",
-                              background: "transparent",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              cursor: "pointer",
-                              padding: 0,
-                            }}
-                          >
-                            <Pencil size={16} color="#6b7280" />
-                          </button>
-
                           {/* Botón principal: marcar DONE / borrar */}
                           <button
                             type="button"
@@ -392,23 +364,6 @@ export default function IdeasPage() {
             ))}
         </div>
       </main>
-
-      {/* Modal para editar / convertir una idea */}
-      <IdeaEditModal
-        open={editOpen}
-        idea={editingIdea}
-        onClose={() => setEditOpen(false)}
-        onUpdated={(updated) => {
-          setItems((prev) =>
-            prev.map((i) => (i.id === updated.id ? updated : i))
-          );
-        }}
-        onConverted={(convertedTask) => {
-          setItems((prev) =>
-            prev.map((i) => (i.id === convertedTask.id ? convertedTask : i))
-          );
-        }}
-      />
     </div>
   );
 }

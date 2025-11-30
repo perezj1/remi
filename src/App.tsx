@@ -13,6 +13,7 @@ import type { RemiLocale } from "@/locales";
 
 import TodayPage from "@/pages/Index";
 import InboxPage from "@/pages/Inbox";
+import TasksPage from "@/pages/Tasks";
 import IdeasPage from "@/pages/Ideas";
 import ProfilePage from "@/pages/Profile";
 import AuthPage from "@/pages/Auth";
@@ -58,7 +59,7 @@ function AppRoutes() {
   const state = location.state as LocationState | null;
   const from = state?.from || "/";
 
-  // 👇 Ocultar bottom nav en la landing (da igual mayúsculas/minúsculas)
+  // Ocultar bottom nav en la landing
   const pathname = location.pathname.toLowerCase();
   const hideBottomNav = pathname.startsWith("/landing");
 
@@ -84,12 +85,22 @@ function AppRoutes() {
           }
         />
 
-        {/* Inbox (tareas) */}
+        {/* Bandeja de entrada (Todo) */}
         <Route
           path="/inbox"
           element={
             <RequireAuth>
               <InboxPage />
+            </RequireAuth>
+          }
+        />
+
+        {/* Tareas */}
+        <Route
+          path="/tasks"
+          element={
+            <RequireAuth>
+              <TasksPage />
             </RequireAuth>
           }
         />

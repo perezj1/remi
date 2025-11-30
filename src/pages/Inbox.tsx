@@ -1,5 +1,6 @@
 // src/pages/Inbox.tsx
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   BrainItem,
@@ -37,13 +38,54 @@ function isSameDay(a: Date, b: Date): boolean {
   );
 }
 
+// helper para leer el filtro desde unos search params
+function getFilterFromParams(params: URLSearchParams | null): Filter {
+  if (!params) return "ALL";
+  const view = params.get("view");
+  if (view === "tasks") return "TASKS";
+  if (view === "ideas") return "IDEAS";
+  return "ALL";
+}
+
 export default function InboxPage() {
   const { user } = useAuth();
   const { t } = useI18n();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [items, setItems] = useState<BrainItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<Filter>("ALL");
+
+  // filtro en estado, inicializado leyendo la URL actual (incluyendo refresh)
+  const [filter, setFilter] = useState<Filter>(() => {
+    if (typeof window === "undefined") return "ALL";
+    const params = new URLSearchParams(window.location.search);
+    return getFilterFromParams(params);
+  });
+
+  // sincronizar filtro cada vez que cambian los search params
+  useEffect(() => {
+    const nextFilter = getFilterFromParams(searchParams);
+    setFilter((prev) => (prev === nextFilter ? prev : nextFilter));
+  }, [searchParams]);
+
+  // función para cambiar el filtro (se usa en el bloque comentado)
+  const changeFilter = (next: Filter) => {
+    if (next === "TASKS") {
+      setSearchParams({ view: "tasks" });
+    } else if (next === "IDEAS") {
+      setSearchParams({ view: "ideas" });
+    } else {
+      setSearchParams({});
+    }
+  };
+
+  // etiqueta a mostrar según filtro actual (con traducciones)
+  const filterLabel =
+    filter === "TASKS"
+      ? t("inbox.tasksTab")
+      : filter === "IDEAS"
+      ? t("inbox.ideasTab")
+      : t("inbox.allTab");
 
   // estado para el modal de edición de ideas
   const [editingIdea, setEditingIdea] = useState<BrainItem | null>(null);
@@ -202,14 +244,14 @@ export default function InboxPage() {
 
       {/* Contenido scrollable */}
       <main className="flex-1 px-4 pb-24 pt-2 bg-white remi-scroll">
-        {/* filtros tipo pestañas */}
-        <div className="mb-2 flex items-center justify-between">
+        {/* filtros tipo pestañas (antiguos, ocultos pero conservados en el código) */}
+        {/* <div className="mb-2 flex items-center justify-between">
           <div className="remi-tabs">
             <button
               className={
                 "remi-tab " + (filter === "ALL" ? "remi-tab--active" : "")
               }
-              onClick={() => setFilter("ALL")}
+              onClick={() => changeFilter("ALL")}
               type="button"
             >
               {t("inbox.allTab")}
@@ -218,7 +260,7 @@ export default function InboxPage() {
               className={
                 "remi-tab " + (filter === "TASKS" ? "remi-tab--active" : "")
               }
-              onClick={() => setFilter("TASKS")}
+              onClick={() => changeFilter("TASKS")}
               type="button"
             >
               {t("inbox.tasksTab")}
@@ -227,11 +269,23 @@ export default function InboxPage() {
               className={
                 "remi-tab " + (filter === "IDEAS" ? "remi-tab--active" : "")
               }
-              onClick={() => setFilter("IDEAS")}
+              onClick={() => changeFilter("IDEAS")}
               type="button"
             >
               {t("inbox.ideasTab")}
             </button>
+          </div>
+          <span className="text-[11px] text-[#b2b6d1]">
+            {t("inbox.itemsCount", { count: filtered.length })}
+          </span>
+        </div> */}
+
+        {/* Chip con el filtro actual + contador */}
+        <div className="mb-2 flex items-center justify-between">
+          <div className="remi-tabs">
+            <div className="remi-tab remi-tab--active cursor-default select-none">
+              {filterLabel}
+            </div>
           </div>
           <span className="text-[11px] text-[#b2b6d1]">
             {t("inbox.itemsCount", { count: filtered.length })}
@@ -316,7 +370,7 @@ export default function InboxPage() {
                               ? "rgba(143,49,243,0.08)"
                               : "rgba(251,191,36,0.15)",
                             color: isTask ? "#7d59c9" : "#F59E0B",
-                            flexShrink: 0, // el icono no se deforma
+                            flexShrink: 0,
                           }}
                         >
                           {isTask ? (
@@ -332,15 +386,12 @@ export default function InboxPage() {
                             style={{
                               whiteSpace: "normal",
                               wordBreak: "break-word",
-                              overflowWrap: "anywhere", // rompe incluso palabras muy largas
+                              overflowWrap: "anywhere",
                             }}
                           >
                             {item.title}
                           </p>
 
-                          {/* Línea secundaria:
-                              - Tasks: "Due date: ... / Sin fecha límite"
-                              - Ideas: "Idea. no tienen fecha." */}
                           {isTask ? (
                             <p className="remi-task-sub">
                               {hasDue ? t("today.dueLabel") : ""}
@@ -397,7 +448,7 @@ export default function InboxPage() {
                                 height: 30,
                                 borderRadius: "999px",
                                 border:
-                                  "1px solid rgba(148,163,184,0.8)", // gris claro
+                                  "1px solid rgba(148,163,184,0.8)",
                                 background: "transparent",
                                 display: "inline-flex",
                                 alignItems: "center",

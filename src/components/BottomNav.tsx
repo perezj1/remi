@@ -1,6 +1,14 @@
 // src/components/BottomNav.tsx
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Inbox, Plus, Brain, type LucideIcon } from "lucide-react";
+import {
+  Home,
+  Plus,
+  Brain,
+  ListTodo,
+  Lightbulb,
+  // Inbox, // (lo dejamos importable por si lo necesitas luego)
+  type LucideIcon,
+} from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
 
 export default function BottomNav() {
@@ -8,7 +16,7 @@ export default function BottomNav() {
   const navigate = useNavigate();
   const { t } = useI18n();
 
-  const isActive = (path: string) => location.pathname === path;
+  const { pathname } = location;
 
   const handleCreateClick = () => {
     // Siempre abrimos el modal en la pantalla de Hoy
@@ -17,6 +25,10 @@ export default function BottomNav() {
       window.dispatchEvent(new CustomEvent("remi-open-capture"));
     }, 80);
   };
+
+  // Rutas dedicadas para tareas e ideas
+  const isTasksActive = pathname === "/tasks";
+  const isIdeasActive = pathname === "/ideas";
 
   return (
     <nav className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2">
@@ -27,7 +39,7 @@ export default function BottomNav() {
           to="/"
           label={t("bottomNav.today")}
           icon={Home}
-          active={isActive("/")}
+          active={pathname === "/"}
         />
 
         {/* Botón: Status */}
@@ -35,7 +47,7 @@ export default function BottomNav() {
           to="/status"
           label={t("bottomNav.status")}
           icon={Brain}
-          active={isActive("/status")}
+          active={pathname === "/status"}
         />
 
         {/* Botón central: + morado REMI */}
@@ -47,13 +59,31 @@ export default function BottomNav() {
           <Plus className="w-7 h-7" />
         </button>
 
-        {/* Botón: Bandeja */}
+        {/* Botón: Tareas (página /tasks) */}
+        <NavItem
+          to="/tasks"
+          label={t("bottomNav.tasks")}
+          icon={ListTodo}
+          active={isTasksActive}
+        />
+
+        {/* Botón: Ideas (página /ideas) */}
+        <NavItem
+          to="/ideas"
+          label={t("bottomNav.ideas")}
+          icon={Lightbulb}
+          active={isIdeasActive}
+        />
+
+        {/* Botón: Bandeja (oculto, por si lo quieres recuperar más tarde) */}
+        {/*
         <NavItem
           to="/inbox"
           label={t("bottomNav.inbox")}
           icon={Inbox}
-          active={isActive("/inbox")}
+          active={pathname === "/inbox"}
         />
+        */}
       </div>
     </nav>
   );
