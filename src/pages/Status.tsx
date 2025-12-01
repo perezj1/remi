@@ -189,6 +189,7 @@ export default function StatusPage() {
   const todayTotal = summary?.todayTotal ?? 0;
   const todayDone = summary?.todayDone ?? 0;
   const weekActiveDays = summary?.weekActiveDays ?? 0;
+  const weekActivitySlots = summary?.weekActivitySlots ?? null; // NUEVO
   const totalTasksStored = summary?.totalTasksStored ?? 0;
   const totalIdeasStored = summary?.totalIdeasStored ?? 0;
   const totalItemsStored =
@@ -413,7 +414,12 @@ export default function StatusPage() {
               </p>
               <div className="flex gap-1">
                 {Array.from({ length: 7 }).map((_, index) => {
-                  const filled = index < weekActiveDays;
+                  // Si tenemos weekActivitySlots, cada barra representa un día concreto (L–D)
+                  // Si por lo que sea viene null, usamos el comportamiento antiguo como fallback
+                  const filled = weekActivitySlots
+                    ? weekActivitySlots[index] === true
+                    : index < weekActiveDays;
+
                   return (
                     <div
                       key={index}

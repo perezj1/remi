@@ -251,6 +251,8 @@ export type RemiStatusSummary = {
   /** Días de los últimos 7 con al menos 1 día de actividad (crear/completar) */
   weekActiveDays: number;
   /** Total de tareas almacenadas (no archivadas) */
+  weekActivitySlots: boolean[]; 
+  // NUEVO: un boolean por cada día de la semana
   totalTasksStored: number;
   /** Total de ideas almacenadas (no archivadas) */
   totalIdeasStored: number;
@@ -387,7 +389,7 @@ export async function fetchRemiStatusSummary(
   }
 
   // 6) Días activos en la última semana (7 días incluyendo hoy)
-  let weekActiveDays = 0;
+  /* let weekActiveDays = 0;
   for (let offset = 0; offset < 7; offset++) {
     const d = new Date(todayStart);
     d.setDate(d.getDate() - offset);
@@ -395,7 +397,40 @@ export async function fetchRemiStatusSummary(
     if (activityDays.has(key)) {
       weekActiveDays += 1;
     }
+  } */
+ 
+// 6) Días activos en la semana actual (lunes–domingo)
+let weekActiveDays = 0;
+const weekActivitySlots: boolean[] = [];
+
+// Partimos del inicio de hoy en hora local
+const todayLocal = new Date(todayStart);
+
+// getDay(): 0 = domingo, 1 = lunes, ..., 6 = sábado
+const jsDay = todayLocal.getDay();
+// Distancia desde hoy hasta el lunes de esta semana
+const diffToMonday = (jsDay + 6) % 7;
+
+// Lunes de la semana actual (00:00)
+const mondayStart = new Date(todayLocal);
+mondayStart.setDate(mondayStart.getDate() - diffToMonday);
+
+// Recorremos de lunes a domingo
+for (let offset = 0; offset < 7; offset++) {
+  const d = new Date(mondayStart);
+  d.setDate(mondayStart.getDate() + offset);
+
+  const key = formatLocalDateKey(d);
+  const hasActivity = activityDays.has(key); // hay actividad ese día
+
+  weekActivitySlots.push(hasActivity);
+
+  if (hasActivity) {
+    weekActiveDays += 1;
   }
+}
+
+
 
   // 7) Días desde la última actividad (crear tarea/idea o completar tarea)
   let daysSinceLastActivity: number | null = null;
@@ -421,6 +456,7 @@ export async function fetchRemiStatusSummary(
     todayTotal,
     todayDone,
     weekActiveDays,
+    weekActivitySlots,
     totalTasksStored: totalTasks,
     totalIdeasStored: totalIdeas,
     totalItemsStored,
