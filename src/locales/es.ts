@@ -450,7 +450,7 @@ landing: {
         highlighted: "ligera y tranquila",
       },
       description:
-        "No hace falta cambiar tu vida entera. Solo empezar a apuntar fuera de tu cabeza lo que antes cargabas dentro. Remi está pensado para acompañarte en ese proceso.",
+        "No hace falta cambiar tu vida entera. Solo sacar de tu cabeza lo que antes cargabas dentro. Remi no te obliga a hacer nada en un momento concreto: Remi te lo recuerda a tiempo para que tú decidas cuándo te viene mejor hacerlo sin que se te olvide.",
 
       ctaPrimary: "Probar Remi ahora",
       ctaSecondary: "Seguir leyendo primero",

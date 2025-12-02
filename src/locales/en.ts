@@ -452,7 +452,7 @@ landing: {
       highlighted: "lighter, calmer mind",
     },
     description:
-      "You don’t need to change your whole life. Just start writing outside your head what you used to carry inside. Remi is designed to accompany you in that process.",
+        "You don't need to change your whole life. Just take out of your head what you used to carry inside. Remi doesn't force you to do things at a specific time: Remi simply reminds you in time so you can choose when it suits you best, without forgetting.",
 
     ctaPrimary: "Try Remi now",
     ctaSecondary: "Keep reading first",

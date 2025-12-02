@@ -462,7 +462,7 @@ landing: {
       highlighted: "leichteren, ruhigeren Kopf",
     },
     description:
-      "Du musst nicht dein ganzes Leben umkrempeln. Fang einfach damit an, außerhalb deines Kopfes aufzuschreiben, was du bisher in dir getragen hast. Remi ist dafür gemacht, dich auf diesem Weg zu begleiten.",
+        "Du musst nicht dein ganzes Leben umkrempeln. Hol einfach das aus deinem Kopf, was du bisher mit dir herumgetragen hast. Remi zwingt dich nicht, etwas zu einem bestimmten Zeitpunkt zu erledigen: Remi erinnert dich nur rechtzeitig daran, damit du selbst entscheiden kannst, wann es für dich am besten passt, ohne es zu vergessen.",
 
     ctaPrimary: "Remi jetzt ausprobieren",
     ctaSecondary: "Zuerst weiter lesen",
