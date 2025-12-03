@@ -108,7 +108,7 @@ status: {
 
 capture: {
   title: "Vaciar la cabeza",
-subtitle: "Write down everything that's on your mind so you don't forget it.",
+subtitle: "Escribe todo lo que tengas en mente para no olvidarlo.",
   textareaPlaceholder: "Ej: Enviar el email, preguntar receta a mamá...",
 
   ideaButton: "Idea",

@@ -154,33 +154,12 @@ export default function CaptureModal({
 
   const body = (
     <div className="remi-modal-body">
-  <textarea
-    placeholder={t("capture.textareaPlaceholder")}
-    value={text}
-    onChange={(e) => setText(e.target.value)}
-    className="
-      w-full
-      min-h-[210px]
-      rounded-3xl
-      bg-[#faf9ff]
-      border
-      border-slate-100
-      shadow-sm
-      px-4
-      py-3
-      text-sm
-      leading-relaxed
-      text-slate-900
-      placeholder:text-slate-400
-      resize-none
-      focus:outline-none
-      focus:ring-2
-      focus:ring-[#7d59c9]/40
-      focus:border-transparent
-    "
-  />
-
-
+      <textarea
+        className="remi-modal-textarea"
+        placeholder={t("capture.textareaPlaceholder")}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+      />
 
       {/* Paso 1: elegir tarea o idea */}
       {mode === "choose" && (

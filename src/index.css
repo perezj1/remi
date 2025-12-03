@@ -431,9 +431,10 @@
   padding: 10px 12px;
   font-size: 13px;
   resize: none;
-  min-height: 90px;
+  min-height: 210px;
   margin-top: 10px;
-  background: #faf9ff;
+  background: #faf9ff;  
+  outline: none; 
 }
 
 /* chips para fechas */
