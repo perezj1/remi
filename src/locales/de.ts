@@ -108,8 +108,7 @@ status: {
   capture: {
   title: "Kopf leeren",
 subtitle: "Schreib alles auf, was dir durch den Kopf geht, damit du es nicht vergisst.",
-  textareaPlaceholder:
-    "Z.B. E-Mail schicken, Rezept bei Mama nachfragen...",
+textareaPlaceholder: "Z.B.: Geburtstagsgeschenk kaufen, die Serie anschauen, die mir meine Freunde empfohlen haben...",
 
   ideaButton: "Idee",
   taskButton: "Aufgabe",

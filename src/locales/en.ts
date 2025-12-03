@@ -107,7 +107,7 @@ installPrompt: {
 capture: {
   title: "Empty your mind",
 subtitle: "Write down whatever is on your mind so you don't forget it.",
-  textareaPlaceholder: "E.g. Send the email, ask mum for the recipe...",
+textareaPlaceholder: "E.g. Buy a birthday present, watch the series my friends recommended...",
 
   ideaButton: "Idea",
   taskButton: "Task",

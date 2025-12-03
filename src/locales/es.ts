@@ -109,7 +109,7 @@ status: {
 capture: {
   title: "Vaciar la cabeza",
 subtitle: "Escribe todo lo que tengas en mente para no olvidarlo.",
-  textareaPlaceholder: "Ej: Enviar el email, preguntar receta a mamá...",
+  textareaPlaceholder: "Ej: Comprar regalo de cumpleaños, Ver la serie recomendada por mis amigos...",
 
   ideaButton: "Idea",
   taskButton: "Tarea",
