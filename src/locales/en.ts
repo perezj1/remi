@@ -168,6 +168,7 @@ textareaPlaceholder: "E.g. Buy a birthday present, watch the series my friends r
   },
 
   today: {
+    
     title: "Today",
     emptyState: "You don't have tasks for today.",
     addTask: "Add task",
