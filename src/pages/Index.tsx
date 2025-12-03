@@ -554,7 +554,7 @@ export default function TodayPage() {
       {/* CABECERA CON DEGRADADO + barra "Mente despejada" */}
       <div
         style={{
-          padding: "16px 20px 56px",
+          padding: "16px 20px 18px",
           background: "linear-gradient(#7d59c9, #7d59c9)",
           color: "white",
           borderBottomLeftRadius: "24px",
