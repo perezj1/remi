@@ -108,7 +108,7 @@ status: {
 
 capture: {
   title: "Vaciar la cabeza",
-  subtitle: "Escribe lo que tengas en mente y decide si es tarea o idea.",
+subtitle: "Write down everything that's on your mind so you don't forget it.",
   textareaPlaceholder: "Ej: Enviar el email, preguntar receta a mamá...",
 
   ideaButton: "Idea",

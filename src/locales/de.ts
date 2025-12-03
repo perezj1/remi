@@ -107,8 +107,7 @@ status: {
 
   capture: {
   title: "Kopf leeren",
-  subtitle:
-    "Schreibe auf, was dir im Kopf herumgeht, und entscheide, ob es eine Aufgabe oder eine Idee ist.",
+subtitle: "Schreib alles auf, was dir durch den Kopf geht, damit du es nicht vergisst.",
   textareaPlaceholder:
     "Z.B. E-Mail schicken, Rezept bei Mama nachfragen...",
 
