@@ -1,6 +1,20 @@
 // src/locales/de.ts
 export const de = {
   common: {
+
+ repeat: {
+   label: "Gewohnheit",
+help: "Mach aus dieser Aufgabe eine Gewohnheit, an die Remi dich immer zur gewählten Uhrzeit erinnert.",
+
+ 
+  options: {
+    daily: "Täglich",
+    weekly: "Wöchentlich",
+    monthly: "Monatlich",
+    yearly: "Jährlich",
+  },
+},
+
     appName: "REMI",
     save: "Speichern",
     cancel: "Abbrechen",
@@ -106,7 +120,13 @@ status: {
 
 
   capture: {
-  title: "Kopf leeren",
+  repeatOn: "An",
+  repeatOff: "Aus",
+   remindersDisabledByHabit:"Erinnerungen werden deaktiviert, wenn du diese Aufgabe in eine Gewohnheit verwandelst.",
+    timeHour: "Stunde",
+  timeMinute: "Minuten",
+
+    title: "Kopf leeren",
 subtitle: "Schreib alles auf, was dir durch den Kopf geht, damit du es nicht vergisst.",
 textareaPlaceholder: "Z.B.: Geburtstagsgeschenk kaufen, die Serie anschauen, die mir meine Freunde empfohlen haben...",
 
@@ -500,6 +520,9 @@ landing: {
 
     copyright: "© Remi 2025. Alle Rechte vorbehalten.",
   },
+
+ 
+
 },
 
 } as const;

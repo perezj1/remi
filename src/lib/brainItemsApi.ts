@@ -9,6 +9,9 @@ export type ReminderMode =
   | "DAY_BEFORE_AND_DUE"
   | "DAILY_UNTIL_DUE";
 
+// NUEVO: tipo de repetición
+export type RepeatType = "none" | "daily" | "weekly" | "monthly" | "yearly";
+
 export interface BrainItem {
   id: string;
   user_id: string;
@@ -20,6 +23,10 @@ export interface BrainItem {
   created_at: string;
   updated_at: string;
   last_notified_at: string | null;
+
+  // NUEVOS CAMPOS
+  repeat_type: RepeatType;
+  next_reminder_at: string | null; // ISO string o null
 }
 
 /**
@@ -98,12 +105,21 @@ export async function fetchActiveIdeas(userId: string): Promise<BrainItem[]> {
   return data as BrainItem[];
 }
 
+// 👇 A partir de aquí, soporte para repetición y next_reminder_at
+
 export async function createTask(
   userId: string,
   title: string,
   dueDate: string | null,
-  reminderMode: ReminderMode
+  reminderMode: ReminderMode,
+  // tipo de repetición (hábito)
+  repeatType: RepeatType = "none"
 ): Promise<BrainItem> {
+  // Si hay hábito, usamos dueDate como primer "disparo" del hábito,
+  // aunque reminderMode sea "NONE".
+  const hasHabit = repeatType !== "none";
+  const nextReminderAt = hasHabit && dueDate ? dueDate : null;
+
   const { data, error } = await supabase
     .from("brain_items")
     .insert({
@@ -112,6 +128,8 @@ export async function createTask(
       title,
       due_date: dueDate,
       reminder_mode: reminderMode,
+      repeat_type: repeatType,
+      next_reminder_at: nextReminderAt,
     })
     .select()
     .single();
@@ -130,6 +148,9 @@ export async function createIdea(
       user_id: userId,
       type: "idea",
       title,
+      // ideas nuevas: sin repetición ni next_reminder_at
+      repeat_type: "none",
+      next_reminder_at: null,
     })
     .select()
     .single();
@@ -165,13 +186,19 @@ export async function updateIdeaTitle(
  * - cambia type a "task"
  * - actualiza el título
  * - asigna due_date y reminder_mode
+ * - asigna repeat_type y next_reminder_at (si es hábito)
  */
 export async function convertIdeaToTask(
   id: string,
   title: string,
   dueDate: string | null,
-  reminderMode: ReminderMode
+  reminderMode: ReminderMode,
+  // repetición opcional al convertir
+  repeatType: RepeatType = "none"
 ): Promise<BrainItem> {
+  const hasHabit = repeatType !== "none";
+  const nextReminderAt = hasHabit && dueDate ? dueDate : null;
+
   const { data, error } = await supabase
     .from("brain_items")
     .update({
@@ -179,6 +206,8 @@ export async function convertIdeaToTask(
       title,
       due_date: dueDate,
       reminder_mode: reminderMode,
+      repeat_type: repeatType,
+      next_reminder_at: nextReminderAt,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)
@@ -212,10 +241,14 @@ export async function postponeTask(
   id: string,
   newDueDate: string | null
 ): Promise<BrainItem> {
+  // Si se pospone, alineamos también next_reminder_at con la nueva due_date.
+  // Para tareas sin hábito esto no afecta, porque las notificaciones clásicas
+  // no usan next_reminder_at; para hábitos sí mueve la hora base.
   const { data, error } = await supabase
     .from("brain_items")
     .update({
       due_date: newDueDate,
+      next_reminder_at: newDueDate,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)
@@ -251,8 +284,7 @@ export type RemiStatusSummary = {
   /** Días de los últimos 7 con al menos 1 día de actividad (crear/completar) */
   weekActiveDays: number;
   /** Total de tareas almacenadas (no archivadas) */
-  weekActivitySlots: boolean[]; 
-  // NUEVO: un boolean por cada día de la semana
+  weekActivitySlots: boolean[]; // un boolean por cada día de la semana
   totalTasksStored: number;
   /** Total de ideas almacenadas (no archivadas) */
   totalIdeasStored: number;
@@ -388,51 +420,38 @@ export async function fetchRemiStatusSummary(
     }
   }
 
-  // 6) Días activos en la última semana (7 días incluyendo hoy)
-  /* let weekActiveDays = 0;
+  // 6) Días activos en la semana actual (lunes–domingo)
+  let weekActiveDays = 0;
+  const weekActivitySlots: boolean[] = [];
+
+  // Partimos del inicio de hoy en hora local
+  const todayLocal = new Date(todayStart);
+
+  // getDay(): 0 = domingo, 1 = lunes, ..., 6 = sábado
+  const jsDay = todayLocal.getDay();
+  // Distancia desde hoy hasta el lunes de esta semana
+  const diffToMonday = (jsDay + 6) % 7;
+
+  // Lunes de la semana actual (00:00)
+  const mondayStart = new Date(todayLocal);
+  mondayStart.setDate(mondayStart.getDate() - diffToMonday);
+
+  // Recorremos de lunes a domingo
   for (let offset = 0; offset < 7; offset++) {
-    const d = new Date(todayStart);
-    d.setDate(d.getDate() - offset);
+    const d = new Date(mondayStart);
+    d.setDate(mondayStart.getDate() + offset);
+
     const key = formatLocalDateKey(d);
-    if (activityDays.has(key)) {
+    const hasActivity = activityDays.has(key); // hay actividad ese día
+
+    weekActivitySlots.push(hasActivity);
+
+    if (hasActivity) {
       weekActiveDays += 1;
     }
-  } */
- 
-// 6) Días activos en la semana actual (lunes–domingo)
-let weekActiveDays = 0;
-const weekActivitySlots: boolean[] = [];
-
-// Partimos del inicio de hoy en hora local
-const todayLocal = new Date(todayStart);
-
-// getDay(): 0 = domingo, 1 = lunes, ..., 6 = sábado
-const jsDay = todayLocal.getDay();
-// Distancia desde hoy hasta el lunes de esta semana
-const diffToMonday = (jsDay + 6) % 7;
-
-// Lunes de la semana actual (00:00)
-const mondayStart = new Date(todayLocal);
-mondayStart.setDate(mondayStart.getDate() - diffToMonday);
-
-// Recorremos de lunes a domingo
-for (let offset = 0; offset < 7; offset++) {
-  const d = new Date(mondayStart);
-  d.setDate(mondayStart.getDate() + offset);
-
-  const key = formatLocalDateKey(d);
-  const hasActivity = activityDays.has(key); // hay actividad ese día
-
-  weekActivitySlots.push(hasActivity);
-
-  if (hasActivity) {
-    weekActiveDays += 1;
   }
-}
 
-
-
-  // 7) Días desde la última actividad (crear tarea/idea o completar tarea)
+  // 7) Días desde la última actividad
   let daysSinceLastActivity: number | null = null;
   if (activity.length > 0) {
     let lastDate: Date | null = null;

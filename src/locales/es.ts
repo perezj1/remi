@@ -1,6 +1,19 @@
 // src/locales/es.ts
 export const es = {
 
+  repeat: {
+   label: "Hábito",
+  help: "Convierte esta tarea en un hábito que Remi te recordará siempre a la hora elegida.",
+ 
+  options: {
+    daily: "Diario",
+    weekly: "Semanal",
+    monthly: "Mensual",
+    yearly: "Anual",
+  },
+},
+
+
 
   common: {
     appName: "REMI",
@@ -107,6 +120,12 @@ status: {
 
 
 capture: {
+  repeatOn: "Activado",
+  repeatOff: "Desactivado",
+  remindersDisabledByHabit:"Los hábitos crean recordatorios propios usando la fecha y hora seleccionadas.",
+  timeHour: "Hora",
+  timeMinute: "Minutos",
+
   title: "Vaciar la cabeza",
 subtitle: "Escribe todo lo que tengas en mente para no olvidarlo.",
   textareaPlaceholder: "Ej: Comprar regalo de cumpleaños, Ver la serie recomendada por mis amigos...",
@@ -490,6 +509,11 @@ landing: {
 
       copyright: "© Remi 2025. Todos los derechos reservados.",
     },
+
+  
+
   },
+
+  
 
 } as const;

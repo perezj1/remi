@@ -13,6 +13,7 @@ import { useI18n } from "@/contexts/I18nContext";
 import {
   BrainItem,
   ReminderMode,
+  RepeatType,
   createIdea,
   createTask,
   fetchActiveIdeas,
@@ -430,10 +431,17 @@ export default function TodayPage() {
   const handleCreateTask = async (
     title: string,
     dueDate: string | null,
-    reminderMode: ReminderMode
+    reminderMode: ReminderMode,
+    repeatType: RepeatType
   ) => {
     if (!user) return;
-    const created = await createTask(user.id, title, dueDate, reminderMode);
+    const created = await createTask(
+      user.id,
+      title,
+      dueDate,
+      reminderMode,
+      repeatType
+    );
     setTasks((prev) => [...prev, created]);
   };
 

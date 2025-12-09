@@ -1,5 +1,18 @@
 // src/locales/en.ts
 export const en = {
+
+  repeat: {
+   label: "Habit",
+help: "Turn this task into a habit that Remi will always remind you of at the chosen time.",
+ 
+  options: {
+    daily: "Daily",
+    weekly: "Weekly",
+    monthly: "Monthly",
+    yearly: "Yearly",
+  },
+},
+
   common: {
     appName: "REMI",
     save: "Save",
@@ -105,6 +118,12 @@ installPrompt: {
 
 
 capture: {
+  repeatOn: "On",
+  repeatOff: "Off",
+  remindersDisabledByHabit:"Reminders are disabled when you turn this task into a habit.",
+   timeHour: "Hour",
+  timeMinute: "Minutes",
+
   title: "Empty your mind",
 subtitle: "Write down whatever is on your mind so you don't forget it.",
 textareaPlaceholder: "E.g. Buy a birthday present, watch the series my friends recommended...",
@@ -493,5 +512,8 @@ landing: {
 
     copyright: "© Remi 2025. All rights reserved.",
   },
+
+
+
 },
 } as const;

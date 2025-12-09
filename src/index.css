@@ -286,7 +286,20 @@
 .remi-task-time {
   font-size: 11px;
   color: var(--remi-text-soft);
+
+  
+}/* Oculta el scroll de las ruedas de hora/minuto */
+.remi-timewheel-scroll {
+  scrollbar-width: none;         /* Firefox */
+  -ms-overflow-style: none;      /* IE/Edge antiguo */
 }
+
+.remi-timewheel-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;                 /* Chrome, Safari, Edge */
+}
+
 
 /* ------- BOTTOM NAV CON CTA CENTRAL ------- */
 
@@ -487,6 +500,16 @@
   cursor: pointer;
   box-shadow: 0 14px 35px rgba(15, 23, 42, 0.08);
 }
+
+.remi-timewheel-scroll {
+  scrollbar-width: none;         /* Firefox */
+  -ms-overflow-style: none;      /* IE/Edge */
+}
+
+.remi-timewheel-scroll::-webkit-scrollbar {
+  display: none;                 /* Chrome, Safari, etc. */
+}
+
 
 /* --------- UTILIDADES PERSONALIZADAS REMI --------- */
 
