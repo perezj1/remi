@@ -59,8 +59,9 @@ export default function CaptureModal({
   // Mostrar/ocultar calendario + hora
   const [isDateTimePickerOpen, setIsDateTimePickerOpen] = useState(false);
 
-  // Flag: el usuario ha tocado manualmente fecha/hora
+  // Flags para no pisar decisiones manuales del usuario
   const [manualDateOverride, setManualDateOverride] = useState(false);
+  const [manualRepeatOverride, setManualRepeatOverride] = useState(false);
 
   // Opciones de rueda
   const hoursOptions = Array.from({ length: 24 }, (_, i) => i);
@@ -85,7 +86,6 @@ export default function CaptureModal({
     setCustomDue(formatDateTimeLocal(d));
   };
 
-  // Versión que marca que el usuario ha decidido la fecha/hora a mano
   const applyDateTimeManual = (
     dateBase: Date,
     hour: number,
@@ -123,7 +123,7 @@ export default function CaptureModal({
     }
   }, [repeatEnabled, reminderMode]);
 
-  // Sincronizar el date/time picker cuando cambie customDue
+  // Sincronizar el date/time picker cuando cambie customDue (por texto o por usuario)
   useEffect(() => {
     if (!customDue) return;
     const d = new Date(customDue);
@@ -143,24 +143,38 @@ export default function CaptureModal({
     }
   }, [selectedDate]);
 
-  // Detectar fecha/hora desde el texto y mostrarla en el cuadrito
-  // Solo si el usuario NO ha elegido ya fecha/hora manualmente
+  // Detectar fecha/hora + hábito desde el texto y actualizar en vivo
   useEffect(() => {
     const trimmed = text.trim();
-    if (!trimmed) return;
-    if (manualDateOverride) return;
-
-    const { dueDateISO } = parseDateTimeFromText(trimmed, lang);
-    if (!dueDateISO) return;
-
-    const d = new Date(dueDateISO);
-    if (Number.isNaN(d.getTime())) return;
-
-    applyDateTime(d, d.getHours(), d.getMinutes());
-    if (dueOption === "NONE") {
-      setDueOption("TODAY");
+    if (!trimmed) {
+      // Si vaciamos el texto, no hacemos nada especial (no reseteamos por si el user ya tocó cosas)
+      return;
     }
-  }, [text, lang, dueOption, manualDateOverride]);
+
+    const { dueDateISO, repeatHint } = parseDateTimeFromText(trimmed, lang);
+
+    // Actualizar fecha/hora solo si no hay override manual
+    if (dueDateISO && !manualDateOverride) {
+      const d = new Date(dueDateISO);
+      if (!Number.isNaN(d.getTime())) {
+        applyDateTime(d, d.getHours(), d.getMinutes());
+        if (dueOption === "NONE") {
+          setDueOption("TODAY");
+        }
+      }
+    }
+
+    // Actualizar hábito solo si el usuario no lo ha tocado a mano
+    if (!manualRepeatOverride) {
+      if (repeatHint) {
+        setRepeatEnabled(true);
+        setRepeatType(repeatHint as RepeatType);
+      } else {
+        setRepeatEnabled(false);
+        setRepeatType("none");
+      }
+    }
+  }, [text, lang, dueOption, manualDateOverride, manualRepeatOverride]);
 
   // En modo modal respetamos "open". En modo embebido se muestra siempre.
   if (!embedded && !open) return null;
@@ -178,6 +192,7 @@ export default function CaptureModal({
     setSelectedMinute(0);
     setIsDateTimePickerOpen(false);
     setManualDateOverride(false);
+    setManualRepeatOverride(false);
     if (!embedded) onClose();
   };
 
@@ -216,7 +231,7 @@ export default function CaptureModal({
       // 1) Fecha/hora desde chips + calendario
       const dueDateFromOptions = getDueDateFromOption();
 
-      // 2) Fecha/hora desde lenguaje natural
+      // 2) Fecha/hora desde lenguaje natural (para asegurarnos)
       const { cleanTitle, dueDateISO } = parseDateTimeFromText(
         text.trim(),
         lang
@@ -908,6 +923,7 @@ export default function CaptureModal({
                   type="button"
                   onClick={() => {
                     const next = !repeatEnabled;
+                    setManualRepeatOverride(true);
 
                     if (!next) {
                       // Desactivamos hábito
@@ -976,22 +992,34 @@ export default function CaptureModal({
                 <Chip
                   label={t("repeat.options.daily")}
                   active={repeatType === "daily"}
-                  onClick={() => setRepeatType("daily")}
+                  onClick={() => {
+                    setRepeatType("daily");
+                    setManualRepeatOverride(true);
+                  }}
                 />
                 <Chip
                   label={t("repeat.options.weekly")}
                   active={repeatType === "weekly"}
-                  onClick={() => setRepeatType("weekly")}
+                  onClick={() => {
+                    setRepeatType("weekly");
+                    setManualRepeatOverride(true);
+                  }}
                 />
                 <Chip
                   label={t("repeat.options.monthly")}
                   active={repeatType === "monthly"}
-                  onClick={() => setRepeatType("monthly")}
+                  onClick={() => {
+                    setRepeatType("monthly");
+                    setManualRepeatOverride(true);
+                  }}
                 />
                 <Chip
                   label={t("repeat.options.yearly")}
                   active={repeatType === "yearly"}
-                  onClick={() => setRepeatType("yearly")}
+                  onClick={() => {
+                    setRepeatType("yearly");
+                    setManualRepeatOverride(true);
+                  }}
                 />
               </div>
             )}
