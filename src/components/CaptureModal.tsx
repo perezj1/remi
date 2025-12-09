@@ -5,6 +5,7 @@ import { Lightbulb, ListTodo, X } from "lucide-react";
 import type { ReminderMode, RepeatType } from "@/lib/brainItemsApi";
 import { toast } from "sonner";
 import { useI18n } from "@/contexts/I18nContext";
+import { parseDateTimeFromText } from "@/lib/parseDateTimeFromText";
 
 interface CaptureModalProps {
   open: boolean;
@@ -29,7 +30,7 @@ export default function CaptureModal({
   onCreateIdea,
   embedded = false,
 }: CaptureModalProps) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   const [text, setText] = useState("");
   const [mode, setMode] = useState<Mode>("choose");
@@ -174,12 +175,25 @@ export default function CaptureModal({
     if (!text.trim() || loading) return;
     setLoading(true);
     try {
-      const dueDate = getDueDateFromOption();
+      // 1) Fecha/hora desde chips + calendario (lógica actual)
+      const dueDateFromOptions = getDueDateFromOption();
+
+      // 2) Fecha/hora desde lenguaje natural (multi-idioma según lang)
+      const { cleanTitle, dueDateISO } = parseDateTimeFromText(
+        text.trim(),
+        lang
+      );
+
+      // 3) Decidir fecha final:
+      //    - Si el texto tiene fecha/hora → se usa esa.
+      //    - Si no, se usa la lógica actual (chips/calendario).
+      const finalDueDate = dueDateISO ?? dueDateFromOptions;
+
       const finalRepeatType: RepeatType = repeatEnabled ? repeatType : "none";
 
       await onCreateTask(
-        text.trim(),
-        dueDate,
+        cleanTitle,
+        finalDueDate,
         reminderMode,
         finalRepeatType
       );
@@ -998,7 +1012,7 @@ function TimeWheel({ values, selected, onChange }: TimeWheelProps) {
         height: itemHeight * visibleItems,
         borderRadius: 999,
         background: "#ffffff",
-        
+
         overflow: "hidden",
       }}
     >
