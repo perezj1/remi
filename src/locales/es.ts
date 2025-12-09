@@ -125,10 +125,12 @@ capture: {
   remindersDisabledByHabit:"Los hábitos crean recordatorios propios usando la fecha y hora seleccionadas.",
   timeHour: "Hora",
   timeMinute: "Minutos",
+  dateTimeLabel: "Fecha y hora",
+    dateTimeNoneShort: "Sin fecha ni hora",
 
   title: "Vaciar la cabeza",
 subtitle: "Escribe todo lo que tengas en mente para no olvidarlo.",
-  textareaPlaceholder: "Ej: Comprar regalo de cumpleaños, Ver la serie recomendada por mis amigos...",
+  textareaPlaceholder: "Ej: Recuerdame comprar regalo de cumpleaños antes del 12 de Diciembre a las 13:00, Ver la serie recomendada por mis amigos...",
 
   ideaButton: "Idea",
   taskButton: "Tarea",

@@ -125,10 +125,12 @@ status: {
    remindersDisabledByHabit:"Erinnerungen werden deaktiviert, wenn du diese Aufgabe in eine Gewohnheit verwandelst.",
     timeHour: "Stunde",
   timeMinute: "Minuten",
+  dateTimeLabel: "Datum & Uhrzeit",
+    dateTimeNoneShort: "Kein Datum / keine Uhrzeit",
 
     title: "Kopf leeren",
 subtitle: "Schreib alles auf, was dir durch den Kopf geht, damit du es nicht vergisst.",
-textareaPlaceholder: "Z.B.: Geburtstagsgeschenk kaufen, die Serie anschauen, die mir meine Freunde empfohlen haben...",
+textareaPlaceholder:   "Z.B.: Erinnere mich daran, vor dem 12. Dezember um 13:00 Uhr ein Geburtstagsgeschenk zu kaufen, die von meinen Freunden empfohlene Serie anzusehen...",
 
   ideaButton: "Idee",
   taskButton: "Aufgabe",

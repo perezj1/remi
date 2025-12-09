@@ -123,10 +123,12 @@ capture: {
   remindersDisabledByHabit:"Reminders are disabled when you turn this task into a habit.",
    timeHour: "Hour",
   timeMinute: "Minutes",
+  dateTimeLabel: "Date & time",
+    dateTimeNoneShort: "No date or time",
 
   title: "Empty your mind",
 subtitle: "Write down whatever is on your mind so you don't forget it.",
-textareaPlaceholder: "E.g. Buy a birthday present, watch the series my friends recommended...",
+textareaPlaceholder:   "E.g.: Remind me to buy a birthday present before December 12th at 1:00 pm, watch the series my friends recommended...",
 
   ideaButton: "Idea",
   taskButton: "Task",

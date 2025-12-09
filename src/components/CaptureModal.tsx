@@ -56,6 +56,12 @@ export default function CaptureModal({
     return d;
   });
 
+  // Mostrar/ocultar calendario + hora
+  const [isDateTimePickerOpen, setIsDateTimePickerOpen] = useState(false);
+
+  // Flag: el usuario ha tocado manualmente fecha/hora
+  const [manualDateOverride, setManualDateOverride] = useState(false);
+
   // Opciones de rueda
   const hoursOptions = Array.from({ length: 24 }, (_, i) => i);
   const minutesOptions = Array.from({ length: 12 }, (_, i) => i * 5);
@@ -79,8 +85,18 @@ export default function CaptureModal({
     setCustomDue(formatDateTimeLocal(d));
   };
 
+  // Versión que marca que el usuario ha decidido la fecha/hora a mano
+  const applyDateTimeManual = (
+    dateBase: Date,
+    hour: number,
+    minute: number
+  ) => {
+    setManualDateOverride(true);
+    applyDateTime(dateBase, hour, minute);
+  };
+
   const applyDateFromChip = (d: Date) => {
-    applyDateTime(d, d.getHours(), d.getMinutes());
+    applyDateTimeManual(d, d.getHours(), d.getMinutes());
   };
 
   // Si pasamos a "Sin fecha" y el modo de recordatorio no es válido ahí,
@@ -96,6 +112,7 @@ export default function CaptureModal({
     if (dueOption === "NONE") {
       setCustomDue("");
       setSelectedDate(null);
+      setManualDateOverride(false);
     }
   }, [dueOption, reminderMode]);
 
@@ -126,6 +143,25 @@ export default function CaptureModal({
     }
   }, [selectedDate]);
 
+  // Detectar fecha/hora desde el texto y mostrarla en el cuadrito
+  // Solo si el usuario NO ha elegido ya fecha/hora manualmente
+  useEffect(() => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    if (manualDateOverride) return;
+
+    const { dueDateISO } = parseDateTimeFromText(trimmed, lang);
+    if (!dueDateISO) return;
+
+    const d = new Date(dueDateISO);
+    if (Number.isNaN(d.getTime())) return;
+
+    applyDateTime(d, d.getHours(), d.getMinutes());
+    if (dueOption === "NONE") {
+      setDueOption("TODAY");
+    }
+  }, [text, lang, dueOption, manualDateOverride]);
+
   // En modo modal respetamos "open". En modo embebido se muestra siempre.
   if (!embedded && !open) return null;
 
@@ -140,6 +176,8 @@ export default function CaptureModal({
     setSelectedDate(null);
     setSelectedHour(20);
     setSelectedMinute(0);
+    setIsDateTimePickerOpen(false);
+    setManualDateOverride(false);
     if (!embedded) onClose();
   };
 
@@ -175,20 +213,17 @@ export default function CaptureModal({
     if (!text.trim() || loading) return;
     setLoading(true);
     try {
-      // 1) Fecha/hora desde chips + calendario (lógica actual)
+      // 1) Fecha/hora desde chips + calendario
       const dueDateFromOptions = getDueDateFromOption();
 
-      // 2) Fecha/hora desde lenguaje natural (multi-idioma según lang)
+      // 2) Fecha/hora desde lenguaje natural
       const { cleanTitle, dueDateISO } = parseDateTimeFromText(
         text.trim(),
         lang
       );
 
-      // 3) Decidir fecha final:
-      //    - Si el texto tiene fecha/hora → se usa esa.
-      //    - Si no, se usa la lógica actual (chips/calendario).
+      // 3) Prioridad: texto > chips/calendario
       const finalDueDate = dueDateISO ?? dueDateFromOptions;
-
       const finalRepeatType: RepeatType = repeatEnabled ? repeatType : "none";
 
       await onCreateTask(
@@ -309,18 +344,27 @@ export default function CaptureModal({
       0,
       0
     );
-    applyDateTime(merged, merged.getHours(), merged.getMinutes());
+    applyDateTimeManual(merged, merged.getHours(), merged.getMinutes());
   };
 
   const handleHourChange = (h: number) => {
     const base = selectedDate ?? new Date();
-    applyDateTime(base, h, selectedMinute);
+    applyDateTimeManual(base, h, selectedMinute);
   };
 
   const handleMinuteChange = (m: number) => {
     const base = selectedDate ?? new Date();
-    applyDateTime(base, selectedHour, m);
+    applyDateTimeManual(base, selectedHour, m);
   };
+
+  // Texto mostrado en el cuadrito “resumen fecha/hora”
+  const dateTimePreview =
+    selectedDate && dueOption !== "NONE"
+      ? selectedDate.toLocaleString(undefined, {
+          dateStyle: "medium",
+          timeStyle: "short",
+        })
+      : t("capture.dateTimeNoneShort") ?? t("capture.dueNone");
 
   const body = (
     <div className="remi-modal-body">
@@ -466,6 +510,7 @@ export default function CaptureModal({
                   setDueOption("NONE");
                   setCustomDue("");
                   setSelectedDate(null);
+                  setManualDateOverride(false);
                 }}
               />
             </div>
@@ -478,230 +523,297 @@ export default function CaptureModal({
                 {t("capture.dueHint")}
               </p>
 
-              {/* Picker fecha + hora */}
-              <div
+              {/* Resumen fecha + hora + flecha para desplegar */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (dueOption === "NONE") return;
+                  setIsDateTimePickerOpen((prev) => !prev);
+                }}
+                disabled={dueOption === "NONE"}
                 style={{
                   marginTop: 10,
-                  borderRadius: 18,
+                  width: "100%",
+                  borderRadius: 14,
                   border: "1px solid rgba(226,232,240,0.9)",
-                  background: "#f9fafb",
-                  padding: 12,
-                  opacity: dueOption === "NONE" ? 0.5 : 1,
-                  pointerEvents: dueOption === "NONE" ? "none" : "auto",
+                  background: "#ffffff",
+                  padding: "10px 12px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  cursor: dueOption === "NONE" ? "not-allowed" : "pointer",
+                  opacity: dueOption === "NONE" ? 0.6 : 1,
                 }}
               >
-                {/* Cabecera calendario */}
                 <div
                   style={{
                     display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: 8,
+                    flexDirection: "column",
+                    gap: 2,
+                    textAlign: "left",
                   }}
                 >
                   <span
                     style={{
-                      fontSize: 12,
-                      fontWeight: 500,
-                      color: "#64748b",
+                      fontSize: 11,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.04,
+                      color: "#9ca3af",
                     }}
                   >
-                    {calendarMonth.toLocaleString(undefined, {
-                      month: "long",
-                      year: "numeric",
-                    })}
+                    {t("capture.dateTimeLabel") ?? t("capture.dueLabel")}
                   </span>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = new Date(calendarMonth);
-                        d.setMonth(d.getMonth() - 1);
-                        setCalendarMonth(d);
-                      }}
-                      style={{
-                        width: 26,
-                        height: 26,
-                        borderRadius: 999,
-                        border: "none",
-                        background: "#e5e7eb",
-                        fontSize: 14,
-                        color: "#4b5563",
-                      }}
-                    >
-                      ‹
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = new Date(calendarMonth);
-                        d.setMonth(d.getMonth() + 1);
-                        setCalendarMonth(d);
-                      }}
-                      style={{
-                        width: 26,
-                        height: 26,
-                        borderRadius: 999,
-                        border: "none",
-                        background: "#e5e7eb",
-                        fontSize: 14,
-                        color: "#4b5563",
-                      }}
-                    >
-                      ›
-                    </button>
-                  </div>
+                  <span
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 500,
+                      color:
+                        selectedDate && dueOption !== "NONE"
+                          ? "#111827"
+                          : "#9ca3af",
+                    }}
+                  >
+                    {dateTimePreview}
+                  </span>
                 </div>
-
-                {/* Días semana */}
-                <div
+                <span
                   style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(7, 1fr)",
-                    fontSize: 10,
-                    textTransform: "uppercase",
-                    color: "#9ca3af",
-                    marginBottom: 4,
-                    gap: 2,
+                    fontSize: 18,
+                    color: "#6b7280",
+                    transform: isDateTimePickerOpen
+                      ? "rotate(180deg)"
+                      : "rotate(0deg)",
+                    transition: "transform 0.15s ease-out",
                   }}
                 >
-                  {weekdayLabels.map((w) => (
-                    <div
-                      key={w}
-                      style={{ textAlign: "center", paddingBottom: 2 }}
-                    >
-                      {w}
-                    </div>
-                  ))}
-                </div>
+                  ▾
+                </span>
+              </button>
 
-                {/* Celdas calendario */}
+              {/* Picker fecha + hora (solo si está desplegado) */}
+              {isDateTimePickerOpen && dueOption !== "NONE" && (
                 <div
                   style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(7, 1fr)",
-                    gap: 2,
-                    marginBottom: 10,
+                    marginTop: 10,
+                    borderRadius: 18,
+                    border: "1px solid rgba(226,232,240,0.9)",
+                    background: "#f9fafb",
+                    padding: 12,
                   }}
                 >
-                  {calendarDays.map((cell, idx) => {
-                    const isSelected =
-                      selectedDate && isSameDay(cell.date, selectedDate);
-                    const isToday = isSameDay(cell.date, new Date());
-                    const isCurrent = cell.isCurrentMonth;
-
-                    let bg = "transparent";
-                    let color = "#64748b";
-                    let fontWeight = 400;
-                    let border = "none";
-
-                    if (!isCurrent) {
-                      color = "#cbd5f5";
-                    }
-                    if (isToday && !isSelected) {
-                      border = "1px solid rgba(125,89,201,0.35)";
-                    }
-                    if (isSelected) {
-                      bg = "#7d59c9";
-                      color = "#ffffff";
-                      fontWeight = 600;
-                    }
-
-                    return (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => handleSelectDay(cell.date)}
-                        style={{
-                          width: "100%",
-                          height: 32,
-                          borderRadius: 999,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: 12,
-                          background: bg,
-                          color,
-                          fontWeight,
-                          border,
-                        }}
-                      >
-                        {cell.date.getDate()}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Time picker estilo rueda dentro de un cuadrado blanco */}
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    marginTop: 4,
-                  }}
-                >
+                  {/* Cabecera calendario */}
                   <div
                     style={{
                       display: "flex",
+                      justifyContent: "space-between",
                       alignItems: "center",
-                      gap: 24,
-                      padding: "16px 24px",
-                      borderRadius: 24,
-                      background: "#ffffff",
-                      boxShadow: "0 8px 20px rgba(15,23,42,0.08)",
+                      marginBottom: 8,
                     }}
                   >
-                    {/* Horas */}
-                    <div style={{ textAlign: "center" }}>
-                      <div
-                        style={{
-                          fontSize: 10,
-                          textTransform: "uppercase",
-                          color: "#9ca3af",
-                          marginBottom: 4,
-                        }}
-                      >
-                        {t("capture.timeHour") ?? "Hora"}
-                      </div>
-                      <TimeWheel
-                        values={hoursOptions}
-                        selected={selectedHour}
-                        onChange={handleHourChange}
-                      />
-                    </div>
-
-                    <div
+                    <span
                       style={{
-                        fontSize: 22,
+                        fontSize: 12,
                         fontWeight: 500,
                         color: "#64748b",
-                        marginTop: 18,
                       }}
                     >
-                      :
-                    </div>
-
-                    {/* Minutos */}
-                    <div style={{ textAlign: "center" }}>
-                      <div
+                      {calendarMonth.toLocaleString(undefined, {
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </span>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const d = new Date(calendarMonth);
+                          d.setMonth(d.getMonth() - 1);
+                          setCalendarMonth(d);
+                        }}
                         style={{
-                          fontSize: 10,
-                          textTransform: "uppercase",
-                          color: "#9ca3af",
-                          marginBottom: 4,
+                          width: 26,
+                          height: 26,
+                          borderRadius: 999,
+                          border: "none",
+                          background: "#e5e7eb",
+                          fontSize: 14,
+                          color: "#4b5563",
                         }}
                       >
-                        {t("capture.timeMinute") ?? "Min"}
+                        ‹
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const d = new Date(calendarMonth);
+                          d.setMonth(d.getMonth() + 1);
+                          setCalendarMonth(d);
+                        }}
+                        style={{
+                          width: 26,
+                          height: 26,
+                          borderRadius: 999,
+                          border: "none",
+                          background: "#e5e7eb",
+                          fontSize: 14,
+                          color: "#4b5563",
+                        }}
+                      >
+                        ›
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Días semana */}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(7, 1fr)",
+                      fontSize: 10,
+                      textTransform: "uppercase",
+                      color: "#9ca3af",
+                      marginBottom: 4,
+                      gap: 2,
+                    }}
+                  >
+                    {weekdayLabels.map((w) => (
+                      <div
+                        key={w}
+                        style={{ textAlign: "center", paddingBottom: 2 }}
+                      >
+                        {w}
                       </div>
-                      <TimeWheel
-                        values={minutesOptions}
-                        selected={selectedMinute}
-                        onChange={handleMinuteChange}
-                      />
+                    ))}
+                  </div>
+
+                  {/* Celdas calendario */}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(7, 1fr)",
+                      gap: 2,
+                      marginBottom: 10,
+                    }}
+                  >
+                    {calendarDays.map((cell, idx) => {
+                      const isSelected =
+                        selectedDate && isSameDay(cell.date, selectedDate);
+                      const isToday = isSameDay(cell.date, new Date());
+                      const isCurrent = cell.isCurrentMonth;
+
+                      let bg = "transparent";
+                      let color = "#64748b";
+                      let fontWeight = 400;
+                      let border = "none";
+
+                      if (!isCurrent) {
+                        color = "#cbd5f5";
+                      }
+                      if (isToday && !isSelected) {
+                        border = "1px solid rgba(125,89,201,0.35)";
+                      }
+                      if (isSelected) {
+                        bg = "#7d59c9";
+                        color = "#ffffff";
+                        fontWeight = 600;
+                      }
+
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleSelectDay(cell.date)}
+                          style={{
+                            width: "100%",
+                            height: 32,
+                            borderRadius: 999,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 12,
+                            background: bg,
+                            color,
+                            fontWeight,
+                            border,
+                          }}
+                        >
+                          {cell.date.getDate()}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Time picker estilo rueda dentro de un cuadrado blanco */}
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      marginTop: 4,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 24,
+                        padding: "16px 24px",
+                        borderRadius: 24,
+                        background: "#ffffff",
+                        boxShadow: "0 8px 20px rgba(15,23,42,0.08)",
+                      }}
+                    >
+                      {/* Horas */}
+                      <div style={{ textAlign: "center" }}>
+                        <div
+                          style={{
+                            fontSize: 10,
+                            textTransform: "uppercase",
+                            color: "#9ca3af",
+                            marginBottom: 4,
+                          }}
+                        >
+                          {t("capture.timeHour") ?? "Hora"}
+                        </div>
+                        <TimeWheel
+                          values={hoursOptions}
+                          selected={selectedHour}
+                          onChange={handleHourChange}
+                        />
+                      </div>
+
+                      <div
+                        style={{
+                          fontSize: 22,
+                          fontWeight: 500,
+                          color: "#64748b",
+                          marginTop: 18,
+                        }}
+                      >
+                        :
+                      </div>
+
+                      {/* Minutos */}
+                      <div style={{ textAlign: "center" }}>
+                        <div
+                          style={{
+                            fontSize: 10,
+                            textTransform: "uppercase",
+                            color: "#9ca3af",
+                            marginBottom: 4,
+                          }}
+                        >
+                          {t("capture.timeMinute") ?? "Min"}
+                        </div>
+                        <TimeWheel
+                          values={minutesOptions}
+                          selected={selectedMinute}
+                          onChange={handleMinuteChange}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 
@@ -1012,7 +1124,6 @@ function TimeWheel({ values, selected, onChange }: TimeWheelProps) {
         height: itemHeight * visibleItems,
         borderRadius: 999,
         background: "#ffffff",
-
         overflow: "hidden",
       }}
     >
