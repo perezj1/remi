@@ -300,6 +300,24 @@ export default function StatusPage() {
               {t("status.mindClearDescription")}
             </p>
           </div>
+
+          {/* NUEVO: Botón Descarga mental intensiva */}
+          <button
+            type="button"
+            onClick={() => {
+              // Igual que el botón de crear en BottomNav:
+              // vamos a la home y disparamos un evento global
+              navigate("/");
+              setTimeout(() => {
+                window.dispatchEvent(
+                  new CustomEvent("remi-open-mental-dump")
+                );
+              }, 80);
+            }}
+            className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-violet-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-violet-700 active:bg-violet-800 transition-colors"
+          >
+            {t("mentalDump.title")}
+          </button>
         </section>
 
         {/* Lo que hemos conseguido hoy */}
