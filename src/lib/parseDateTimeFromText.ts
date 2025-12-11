@@ -7,6 +7,15 @@ export interface ParsedResult {
   cleanTitle: string;
   dueDateISO: string | null;
   repeatHint: "daily" | "weekly" | "monthly" | "yearly" | null;
+  /**
+   * Sugerencia de modo de recordatorio detectada en el texto.
+   * Ejemplos:
+   *  - "el día antes" → "DAY_BEFORE_AND_DUE"
+   *  - "todos los días hasta el 10 de enero" → "DAILY_UNTIL_DUE"
+   *
+   * Es opcional para no romper código existente.
+   */
+  reminderHint?: "DAY_BEFORE_AND_DUE" | "DAILY_UNTIL_DUE" | null;
 }
 
 // Detectar si el texto sugiere un hábito recurrente
@@ -22,7 +31,7 @@ function detectRepeatHint(
   // ---- Español ----
   if (locale === "es") {
     if (
-      /\b(cada dia|cada día|todos los dias|todos los días|a diario|diariamente)\b/.test(
+      /\b(cada dia|cada dia|todos los dias|todos los dias|a diario|diariamente)\b/.test(
         text
       )
     ) {
@@ -31,7 +40,7 @@ function detectRepeatHint(
 
     if (
       /\b(cada semana|semanalmente)\b/.test(text) ||
-      /\btodos los (lunes|martes|miercoles|miércoles|jueves|viernes|sabados?|sábados?|domingos?)\b/.test(
+      /\btodos los (lunes|martes|miercoles|jueves|viernes|sabados?|domingos?)\b/.test(
         text
       )
     ) {
@@ -46,9 +55,7 @@ function detectRepeatHint(
     }
 
     if (
-      /\b(cada ano|cada año|todos los anos|todos los años|anualmente)\b/.test(
-        text
-      )
+      /\b(cada ano|todos los anos|anualmente)\b/.test(text)
     ) {
       return "yearly";
     }
@@ -80,11 +87,11 @@ function detectRepeatHint(
 
   // ---- Alemán ----
   if (locale === "de") {
-    if (/\b(jeden tag|taeglich|täglich)\b/.test(text)) {
+    if (/\b(jeden tag|taglich|taeglich)\b/.test(text)) {
       return "daily";
     }
     if (
-      /\b(jede woche|woechentlich|wöchentlich)\b/.test(text) ||
+      /\b(jede woche|wochentlich|woechentlich)\b/.test(text) ||
       /\bjeden (montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)\b/.test(
         text
       )
@@ -97,7 +104,7 @@ function detectRepeatHint(
     ) {
       return "monthly";
     }
-    if (/\b(jedes jahr|jaehrlich|jährlich)\b/.test(text)) {
+    if (/\b(jedes jahr|jahrlich|jaehrlich)\b/.test(text)) {
       return "yearly";
     }
   }
@@ -106,13 +113,87 @@ function detectRepeatHint(
   return null;
 }
 
+// Detectar sugerencia de modo de recordatorio (día antes / diario hasta fecha)
+function detectReminderHint(
+  raw: string,
+  locale: RemiLocale
+): ParsedResult["reminderHint"] {
+  const text = raw
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, ""); // quitar acentos
+
+  // ---- Español ----
+  if (locale === "es") {
+    // "día antes", "el día antes", "un día antes"
+    if (
+      /\b(dia antes|el dia antes|un dia antes)\b/.test(text)
+    ) {
+      return "DAY_BEFORE_AND_DUE";
+    }
+
+    // "todos los días hasta", "cada día hasta", "diariamente hasta", "a diario hasta"
+    if (
+      /(todos los dias hasta|cada dia hasta|diariamente hasta|a diario hasta)/.test(
+        text
+      )
+    ) {
+      return "DAILY_UNTIL_DUE";
+    }
+  }
+
+  // ---- Inglés ----
+  if (locale === "en") {
+    // "the day before", "one day before", "1 day before"
+    if (
+      /\b(the day before|one day before|1 day before|day before)\b/.test(
+        text
+      )
+    ) {
+      return "DAY_BEFORE_AND_DUE";
+    }
+
+    // "every day until", "each day until", "daily until"
+    if (
+      /\b(every day until|each day until|daily until)\b/.test(
+        text
+      )
+    ) {
+      return "DAILY_UNTIL_DUE";
+    }
+  }
+
+  // ---- Alemán ----
+  if (locale === "de") {
+    // "einen Tag davor", "am Tag davor", "einen Tag vorher", "am Tag vorher"
+    if (
+      /(einen tag davor|am tag davor|1 tag davor|einen tag vorher|am tag vorher)/.test(
+        text
+      )
+    ) {
+      return "DAY_BEFORE_AND_DUE";
+    }
+
+    // "jeden Tag bis", "täglich bis", "taeglich bis"
+    if (
+      /(jeden tag bis|taglich bis|taeglich bis)/.test(text)
+    ) {
+      return "DAILY_UNTIL_DUE";
+    }
+  }
+
+  return null;
+}
+
 /**
- * Parsear texto libre y extraer fecha/hora + sugerencia de hábito.
+ * Parsear texto libre y extraer fecha/hora + sugerencia de hábito y recordatorio.
  *
  * Ejemplos:
  *  - "recuérdame el 10 de enero a las 16:00 comprar pan"
  *  - "el primer jueves de cada mes a las 14:00 pagar alquiler"
  *  - "antes del 12 de diciembre a las 14:00 enviar informe"
+ *  - "recordar todos los días hasta el 17 de diciembre enviar el informe"
+ *  - "remind me every day until December 17th to send the report"
  */
 export function parseDateTimeFromText(
   raw: string,
@@ -121,7 +202,12 @@ export function parseDateTimeFromText(
 ): ParsedResult {
   const text = raw.trim();
   if (!text) {
-    return { cleanTitle: text, dueDateISO: null, repeatHint: null };
+    return {
+      cleanTitle: text,
+      dueDateISO: null,
+      repeatHint: null,
+      reminderHint: null,
+    };
   }
 
   // 1) Parser según idioma
@@ -146,7 +232,12 @@ export function parseDateTimeFromText(
 
   if (!results || results.length === 0) {
     // No se reconoció ninguna fecha/hora
-    return { cleanTitle: text, dueDateISO: null, repeatHint: null };
+    return {
+      cleanTitle: text,
+      dueDateISO: null,
+      repeatHint: null,
+      reminderHint: detectReminderHint(text, locale),
+    };
   }
 
   const best = results[0];
@@ -156,7 +247,8 @@ export function parseDateTimeFromText(
 
   // 3.1) Fallback manual para horas tipo "a las 14:00" / "a las 14"
   //     (a veces chrono pilla la fecha pero no la hora en español)
-  const timeRegex = /(?:\b(?:a las|a la|at|um)\b)\s*(\d{1,2})(?:[:\.](\d{2}))?/i;
+  const timeRegex =
+    /(?:\b(?:a las|a la|at|um)\b)\s*(\d{1,2})(?:[:\.](\d{2}))?/i;
   const timeMatch = timeRegex.exec(text);
   if (timeMatch) {
     const hour = parseInt(timeMatch[1], 10);
@@ -197,5 +289,8 @@ export function parseDateTimeFromText(
   // 6) Sugerencia de hábito (daily/weekly/monthly/yearly) o null
   const repeatHint = detectRepeatHint(text, locale);
 
-  return { cleanTitle, dueDateISO, repeatHint };
+  // 7) Sugerencia de modo de recordatorio (día antes / diario hasta fecha)
+  const reminderHint = detectReminderHint(text, locale);
+
+  return { cleanTitle, dueDateISO, repeatHint, reminderHint };
 }

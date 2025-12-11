@@ -23,6 +23,18 @@ interface CaptureModalProps {
 
 type Mode = "choose" | "task";
 
+// Solo las keys; los textos vienen de i18n (reutiliza mentalDump.hints.*)
+const HINT_KEYS = [
+  "mentalDump.hints.0",
+  "mentalDump.hints.7",
+  "mentalDump.hints.1",
+  "mentalDump.hints.2",
+  "mentalDump.hints.3",
+  "mentalDump.hints.4",
+  "mentalDump.hints.5",
+  "mentalDump.hints.6",
+];
+
 export default function CaptureModal({
   open,
   onClose,
@@ -38,8 +50,11 @@ export default function CaptureModal({
     "NONE" | "TODAY" | "TOMORROW" | "WEEK"
   >("TODAY");
   const [customDue, setCustomDue] = useState<string>("");
+
+  // Por defecto: recordatorios diarios hasta la fecha límite
   const [reminderMode, setReminderMode] =
-    useState<ReminderMode>("ON_DUE_DATE");
+    useState<ReminderMode>("DAILY_UNTIL_DUE");
+
   const [loading, setLoading] = useState(false);
 
   // Hábito/repetición
@@ -62,6 +77,11 @@ export default function CaptureModal({
   // Flags para no pisar decisiones manuales del usuario
   const [manualDateOverride, setManualDateOverride] = useState(false);
   const [manualRepeatOverride, setManualRepeatOverride] = useState(false);
+
+  // Hints dinámicos
+  const [hintIndex, setHintIndex] = useState(0);
+  const hints = HINT_KEYS.map((key) => t(key));
+  const totalHints = hints.length;
 
   // Opciones de rueda
   const hoursOptions = Array.from({ length: 24 }, (_, i) => i);
@@ -99,14 +119,9 @@ export default function CaptureModal({
     applyDateTimeManual(d, d.getHours(), d.getMinutes());
   };
 
-  // Si pasamos a "Sin fecha" y el modo de recordatorio no es válido ahí,
-  // lo reseteamos a "NONE"
+  // Si pasamos a "Sin fecha" y hay recordatorios, los reseteamos a NONE
   useEffect(() => {
-    if (
-      dueOption === "NONE" &&
-      (reminderMode === "ON_DUE_DATE" ||
-        reminderMode === "DAY_BEFORE_AND_DUE")
-    ) {
+    if (dueOption === "NONE" && reminderMode !== "NONE") {
       setReminderMode("NONE");
     }
     if (dueOption === "NONE") {
@@ -147,7 +162,7 @@ export default function CaptureModal({
   useEffect(() => {
     const trimmed = text.trim();
     if (!trimmed) {
-      // Si vaciamos el texto, no hacemos nada especial (no reseteamos por si el user ya tocó cosas)
+      // Si vaciamos el texto, no tocamos overrides manuales
       return;
     }
 
@@ -176,6 +191,18 @@ export default function CaptureModal({
     }
   }, [text, lang, dueOption, manualDateOverride, manualRepeatOverride]);
 
+  // Rotar hints cada 15s mientras el modal está visible (open o embebido)
+  useEffect(() => {
+    if ((!open && !embedded) || totalHints === 0) return;
+
+    setHintIndex(0); // reset al abrir/mostrar
+    const interval = setInterval(() => {
+      setHintIndex((prev) => (prev + 1) % totalHints);
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, [open, embedded, totalHints]);
+
   // En modo modal respetamos "open". En modo embebido se muestra siempre.
   if (!embedded && !open) return null;
 
@@ -184,7 +211,8 @@ export default function CaptureModal({
     setMode("choose");
     setDueOption("TODAY");
     setCustomDue("");
-    setReminderMode("ON_DUE_DATE");
+    // reset a recordatorios diarios por defecto
+    setReminderMode("DAILY_UNTIL_DUE");
     setRepeatEnabled(false);
     setRepeatType("none");
     setSelectedDate(null);
@@ -225,24 +253,31 @@ export default function CaptureModal({
   };
 
   const handleConfirmTask = async () => {
-    if (!text.trim() || loading) return;
+    const trimmed = text.trim();
+    if (!trimmed || loading) return;
     setLoading(true);
     try {
-      // 1) Fecha/hora desde chips + calendario
+      // 1) Fecha/hora desde chips + calendario (incluye customDue)
       const dueDateFromOptions = getDueDateFromOption();
 
       // 2) Fecha/hora desde lenguaje natural (para asegurarnos)
-      const { cleanTitle, dueDateISO } = parseDateTimeFromText(
-        text.trim(),
-        lang
-      );
+      //    Importante: NO usamos cleanTitle para no borrar "mañana a las 12"
+      const { dueDateISO } = parseDateTimeFromText(trimmed, lang);
 
-      // 3) Prioridad: texto > chips/calendario
-      const finalDueDate = dueDateISO ?? dueDateFromOptions;
+      // 3) Prioridad:
+      //    - Si el usuario ha tocado manualmente fecha/hora, se usa SIEMPRE lo manual.
+      //    - Si no ha tocado nada manual, el texto puede rellenar fecha/hora.
+      let finalDueDate: string | null;
+      if (manualDateOverride) {
+        finalDueDate = dueDateFromOptions;
+      } else {
+        finalDueDate = dueDateISO ?? dueDateFromOptions;
+      }
+
       const finalRepeatType: RepeatType = repeatEnabled ? repeatType : "none";
 
       await onCreateTask(
-        cleanTitle,
+        trimmed, // guardamos el texto completo: "comer mañana a las 12"
         finalDueDate,
         reminderMode,
         finalRepeatType
@@ -272,17 +307,46 @@ export default function CaptureModal({
   };
 
   const header = (
-    <div style={{ display: "flex", justifyContent: "space-between" }}>
-      <div>
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        gap: 12,
+      }}
+    >
+      <div style={{ flex: 1, minWidth: 0 }}>
         <div className="remi-modal-title">{t("capture.title")}</div>
         <div className="remi-modal-sub">{t("capture.subtitle")}</div>
+
+        {/* Hints dinámicos debajo del subtitle, con tamaño fijo */}
+        {totalHints > 0 && (
+          <div
+            className="remi-hint-banner"
+            style={{
+              marginTop: 8,
+              padding: "6px 10px",
+              borderRadius: 12, // menos redondeado
+              background: "#f9fafb",
+              border: "1px solid rgba(226,232,240,0.9)",
+              fontSize: 11,
+              color: "#4b5563",
+              maxWidth: 420,
+              height: 40, // altura fija
+              display: "flex",
+              alignItems: "center",
+              overflow: "hidden",
+            }}
+          >
+            {hints[hintIndex]}
+          </div>
+        )}
       </div>
       {!embedded && (
         <button
           type="button"
           onClick={resetAndClose}
           disabled={loading}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex-shrink-0"
         >
           <X className="h-4 w-4" />
         </button>

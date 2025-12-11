@@ -13,6 +13,65 @@ help: "Turn this task into a habit that Remi will always remind you of at the ch
   },
 },
 
+
+// ENGLISH
+mentalDump: {
+  buttonLabel: "Clear your head",
+
+  title: "Intensive brain dump",
+  description:
+    "Spend 2–3 minutes emptying your head. Write down everything you don’t want to forget: tasks, ideas, loose ends. You don’t need to organize anything: Remi turns it into reminders for you.",
+
+  inputLabel:
+    "Write short sentences, separated by line breaks or commas.",
+  placeholder:
+    "Examples:\n" +
+    "Change hallway light bulb tomorrow at 10\n" +
+    "Call mum on Sunday\n" +
+    "Use Remi every Monday at 14:00\n" +
+    "Trip idea to Italy in spring",
+
+  // Summary texts
+  summaryNone: "No sentences detected yet.",
+  summaryPrefix: "Detected",
+  summarySuffix: "possible reminders in your text.",
+
+  // Button states
+  submitSaving: "Saving...",
+  submitToPreview: "Review reminders",
+  submitConfirm: "Save to Remi",
+
+  // Preview
+  previewTitle: "Review your brain dump",
+  previewDescription:
+    "Turn on or off the lines you want to keep, adjust the texts and confirm to create tasks and ideas in Remi.",
+  previewNoneSelected: "No item selected.",
+  previewTaskLabel: "Task",
+  previewIdeaLabel: "Idea",
+  previewInclude: "Save",
+  previewBackToEdit: "Back to edit text",
+
+  // Habits
+  habitNone: "No habit",
+  habitDaily: "Daily habit",
+  habitWeekly: "Weekly habit",
+  habitMonthly: "Monthly habit",
+  habitYearly: "Yearly habit",
+
+  // Rotating hints
+  hints: {
+    0: "Start with whatever comes to mind first. It doesn’t need to be in order.",
+    1: "Think about your home: things to fix, clean or buy.",
+    2: "Think about work or studies: tasks, emails, deadlines you don’t want to forget.",
+    3: "Think about your health: doctor appointments, dentist, check-ups or tests.",
+    4: "Think about people: who you want to text, call or thank for something.",
+    5: "Think about money and paperwork: bills, banks, subscriptions, documents.",
+    6: "Think about yourself: habits, projects, ideas you don’t want to lose.",
+    7: "You don’t need to write perfectly. Use your normal language: \"call the dentist on Tuesday morning\".",
+  },
+},
+
+
   common: {
     appName: "REMI",
     save: "Save",

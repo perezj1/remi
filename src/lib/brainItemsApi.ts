@@ -12,6 +12,10 @@ export type ReminderMode =
 // NUEVO: tipo de repetición
 export type RepeatType = "none" | "daily" | "weekly" | "monthly" | "yearly";
 
+// Offset por defecto para hábitos: cuántos minutos antes de la hora
+// queremos que suene el recordatorio (ej: 120 = 2h antes).
+const DEFAULT_HABIT_OFFSET_MINUTES = 0;
+
 export interface BrainItem {
   id: string;
   user_id: string;
@@ -24,9 +28,12 @@ export interface BrainItem {
   updated_at: string;
   last_notified_at: string | null;
 
-  // NUEVOS CAMPOS
+  // NUEVOS CAMPOS DE REPETICIÓN / HÁBITOS
   repeat_type: RepeatType;
-  next_reminder_at: string | null; // ISO string o null
+  next_reminder_at: string | null;      // ISO string o null (sistema actual)
+  is_habit?: boolean;                   // true si es hábito
+  habit_offset_minutes?: number;        // minutos antes de la hora base
+  next_notification_at?: string | null; // ISO string o null (puede usarse en el Edge Function nuevo)
 }
 
 /**
@@ -36,6 +43,22 @@ function getTodayStart(): Date {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
   return d;
+}
+
+/**
+ * Calcula la hora de notificación de un hábito aplicando un offset
+ * (ej: dueDate = 10:00, offset = 120 -> 08:00).
+ */
+function computeHabitNotificationTime(
+  dueDateIso: string | null,
+  offsetMinutes: number
+): string | null {
+  if (!dueDateIso) return null;
+  const base = new Date(dueDateIso);
+  if (Number.isNaN(base.getTime())) return null;
+
+  base.setMinutes(base.getMinutes() - offsetMinutes);
+  return base.toISOString();
 }
 
 export async function fetchActiveTasks(userId: string): Promise<BrainItem[]> {
@@ -115,10 +138,20 @@ export async function createTask(
   // tipo de repetición (hábito)
   repeatType: RepeatType = "none"
 ): Promise<BrainItem> {
-  // Si hay hábito, usamos dueDate como primer "disparo" del hábito,
-  // aunque reminderMode sea "NONE".
   const hasHabit = repeatType !== "none";
-  const nextReminderAt = hasHabit && dueDate ? dueDate : null;
+  const habitOffsetMinutes = hasHabit ? DEFAULT_HABIT_OFFSET_MINUTES : 0;
+
+  // Para hábitos, calculamos la primera notificación aplicando el offset.
+  const habitNotification =
+    hasHabit && dueDate
+      ? computeHabitNotificationTime(dueDate, habitOffsetMinutes)
+      : null;
+
+  // next_reminder_at lo usamos para el sistema actual de notificaciones.
+  const nextReminderAt = habitNotification;
+
+  // next_notification_at queda listo por si el Edge Function nuevo lo usa.
+  const nextNotificationAt = habitNotification;
 
   const { data, error } = await supabase
     .from("brain_items")
@@ -130,6 +163,9 @@ export async function createTask(
       reminder_mode: reminderMode,
       repeat_type: repeatType,
       next_reminder_at: nextReminderAt,
+      is_habit: hasHabit,
+      habit_offset_minutes: habitOffsetMinutes,
+      next_notification_at: nextNotificationAt,
     })
     .select()
     .single();
@@ -151,6 +187,9 @@ export async function createIdea(
       // ideas nuevas: sin repetición ni next_reminder_at
       repeat_type: "none",
       next_reminder_at: null,
+      is_habit: false,
+      habit_offset_minutes: 0,
+      next_notification_at: null,
     })
     .select()
     .single();
@@ -186,7 +225,7 @@ export async function updateIdeaTitle(
  * - cambia type a "task"
  * - actualiza el título
  * - asigna due_date y reminder_mode
- * - asigna repeat_type y next_reminder_at (si es hábito)
+ * - asigna repeat_type y next_reminder_at / next_notification_at (si es hábito)
  */
 export async function convertIdeaToTask(
   id: string,
@@ -197,7 +236,15 @@ export async function convertIdeaToTask(
   repeatType: RepeatType = "none"
 ): Promise<BrainItem> {
   const hasHabit = repeatType !== "none";
-  const nextReminderAt = hasHabit && dueDate ? dueDate : null;
+  const habitOffsetMinutes = hasHabit ? DEFAULT_HABIT_OFFSET_MINUTES : 0;
+
+  const habitNotification =
+    hasHabit && dueDate
+      ? computeHabitNotificationTime(dueDate, habitOffsetMinutes)
+      : null;
+
+  const nextReminderAt = habitNotification;
+  const nextNotificationAt = habitNotification;
 
   const { data, error } = await supabase
     .from("brain_items")
@@ -208,6 +255,9 @@ export async function convertIdeaToTask(
       reminder_mode: reminderMode,
       repeat_type: repeatType,
       next_reminder_at: nextReminderAt,
+      is_habit: hasHabit,
+      habit_offset_minutes: habitOffsetMinutes,
+      next_notification_at: nextNotificationAt,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)
@@ -241,14 +291,16 @@ export async function postponeTask(
   id: string,
   newDueDate: string | null
 ): Promise<BrainItem> {
-  // Si se pospone, alineamos también next_reminder_at con la nueva due_date.
-  // Para tareas sin hábito esto no afecta, porque las notificaciones clásicas
-  // no usan next_reminder_at; para hábitos sí mueve la hora base.
+  // De momento mantenemos la lógica simple:
+  // - movemos due_date
+  // - alineamos next_reminder_at y next_notification_at con la nueva due_date
+  //   (el Edge Function podrá recalcular con offset si hace falta).
   const { data, error } = await supabase
     .from("brain_items")
     .update({
       due_date: newDueDate,
       next_reminder_at: newDueDate,
+      next_notification_at: newDueDate,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)

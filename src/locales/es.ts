@@ -14,6 +14,64 @@ export const es = {
 },
 
 
+mentalDump: {
+  buttonLabel: "Vaciar la cabeza",
+
+  title: "Descarga mental intensiva",
+  description:
+    "Dedica 2–3 minutos a vaciar tu cabeza. Escribe todo lo que no quieres olvidar: tareas, ideas, cosas pendientes. No hace falta organizar nada: Remi lo convierte en recordatorios por ti.",
+
+  inputLabel:
+    "Escribe frases sueltas, separadas por saltos de línea o comas.",
+  placeholder:
+    "Ejemplos:\n" +
+    "Cambiar bombilla del pasillo mañana a las 10\n" +
+    "Llamar a mamá el domingo\n" +
+    "Todos los lunes a las 14:00 usar Remi\n" +
+    "Idea viaje a Italia en primavera",
+
+  // Textos del resumen inicial
+  summaryNone: "Aún no se ha detectado ninguna frase.",
+  summaryPrefix: "Se han detectado",
+  summarySuffix: "posibles recordatorios en tu texto.",
+
+  // Botones estados
+  submitSaving: "Guardando...",
+  submitToPreview: "Revisar recordatorios",
+  submitConfirm: "Guardar en Remi",
+
+  // Vista previa
+  previewTitle: "Revisa tu descarga mental",
+  previewDescription:
+    "Activa o desactiva las líneas que quieras guardar, ajusta los textos y confirma para crear tareas e ideas en Remi.",
+  previewNoneSelected: "No hay ningún elemento seleccionado.",
+  previewTaskLabel: "Tarea",
+  previewIdeaLabel: "Idea",
+  previewInclude: "Guardar",
+  previewBackToEdit: "Volver a editar texto",
+
+  // Hábitos
+  habitNone: "Sin hábito",
+  habitDaily: "Hábito diario",
+  habitWeekly: "Hábito semanal",
+  habitMonthly: "Hábito mensual",
+  habitYearly: "Hábito anual",
+
+  // Pistas rotatorias (hints)
+  hints: {
+    0: "Empieza por lo primero que te venga a la cabeza. No tiene que estar ordenado.",
+    1: "Piensa en tu casa: cosas por arreglar, limpiar o comprar.",
+    2: "Piensa en trabajo o estudios: tareas, mails, entregas que no quieres olvidar.",
+    3: "Piensa en tu salud: citas médicas, dentista, revisiones o análisis.",
+    4: "Piensa en personas: a quién quieres escribir, llamar o agradecer algo.",
+    5: "Piensa en dinero y papeleo: facturas, bancos, suscripciones, documentos.",
+    6: "Piensa en ti: hábitos, proyectos, ideas que no quieres que se pierdan.",
+    7:"No hace falta escribir perfecto. Usa tu lenguaje normal: “llamar al dentista el martes por la mañana”.",
+  
+  },
+},
+
+
 
   common: {
     appName: "REMI",

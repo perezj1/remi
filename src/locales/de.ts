@@ -1,6 +1,6 @@
 // src/locales/de.ts
 export const de = {
-  common: {
+ 
 
  repeat: {
    label: "Gewohnheit",
@@ -14,8 +14,68 @@ help: "Mach aus dieser Aufgabe eine Gewohnheit, an die Remi dich immer zur gewä
     yearly: "Jährlich",
   },
 },
+      
 
-    appName: "REMI",
+ // GERMAN
+mentalDump: {
+  buttonLabel: "Kopf leeren",
+
+  title: "Intensiver Gedanken-Download",
+  description:
+    "Nimm dir 2–3 Minuten, um deinen Kopf zu leeren. Schreib alles auf, was du nicht vergessen willst: Aufgaben, Ideen, offene To-dos. Du musst nichts sortieren: Remi macht daraus Erinnerungen für dich.",
+
+  inputLabel:
+    "Schreibe kurze Sätze, getrennt durch Zeilenumbrüche oder Kommata.",
+  placeholder:
+    "Beispiele:\n" +
+    "Glühbirne im Flur morgen um 10 wechseln\n" +
+    "Mama am Sonntag anrufen\n" +
+    "Jeden Montag um 14:00 Remi benutzen\n" +
+    "Idee: Reise nach Italien im Frühling",
+
+  // Zusammenfassung
+  summaryNone: "Es wurde noch kein Satz erkannt.",
+  summaryPrefix: "Es wurden",
+  summarySuffix: "mögliche Erinnerungen in deinem Text erkannt.",
+
+  // Button-States
+  submitSaving: "Wird gespeichert...",
+  submitToPreview: "Erinnerungen prüfen",
+  submitConfirm: "In Remi speichern",
+
+  // Vorschau
+  previewTitle: "Prüfe deinen Mental-Download",
+  previewDescription:
+    "Aktiviere oder deaktiviere die Zeilen, die du speichern möchtest, passe die Texte an und bestätige, um Aufgaben und Ideen in Remi zu erstellen.",
+  previewNoneSelected: "Kein Element ausgewählt.",
+  previewTaskLabel: "Aufgabe",
+  previewIdeaLabel: "Idee",
+  previewInclude: "Speichern",
+  previewBackToEdit: "Zurück zum Text bearbeiten",
+
+  // Gewohnheiten
+  habitNone: "Keine Gewohnheit",
+  habitDaily: "Tägliche Gewohnheit",
+  habitWeekly: "Wöchentliche Gewohnheit",
+  habitMonthly: "Monatliche Gewohnheit",
+  habitYearly: "Jährliche Gewohnheit",
+
+  // Rotierende Hinweise
+  hints: {
+    0: "Fang mit dem an, was dir zuerst in den Kopf kommt. Es muss nicht sortiert sein.",
+    1: "Denk an dein Zuhause: Dinge, die repariert, geputzt oder gekauft werden müssen.",
+    2: "Denk an Arbeit oder Studium: Aufgaben, E-Mails, Abgaben, die du nicht vergessen willst.",
+    3: "Denk an deine Gesundheit: Arzttermine, Zahnarzt, Kontrollen oder Untersuchungen.",
+    4: "Denk an Menschen: wem du schreiben, wen du anrufen oder wem du danken möchtest.",
+    5: "Denk an Geld und Papierkram: Rechnungen, Banken, Abos, Dokumente.",
+    6: "Denk an dich: Gewohnheiten, Projekte, Ideen, die nicht verloren gehen sollen.",
+    7: "Du musst nicht perfekt schreiben. Benutz deine normale Sprache: „Zahnarzt am Dienstagmorgen anrufen“.",
+  },
+},
+
+
+common: {
+appName: "REMI",
     save: "Speichern",
     cancel: "Abbrechen",
     delete: "Löschen",
@@ -23,7 +83,7 @@ help: "Mach aus dieser Aufgabe eine Gewohnheit, an die Remi dich immer zur gewä
     close: "Schliessen",
     confirm: "Bestätigen",
     loading: "Laden...",
-  },
+},
 
   index: {
   clearMind: "Klarer Kopf",

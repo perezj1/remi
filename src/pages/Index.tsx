@@ -26,13 +26,14 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { registerPushSubscription } from "@/lib/registerPush";
 import CaptureModal from "@/components/CaptureModal";
+import MentalDumpModal from "@/components/MentalDumpModal"; // ⭐ NUEVO
 import {
   ListTodo,
   Check,
   SkipForward,
   User,
   Share2,
-  Smartphone,
+  Smartphone,  
 } from "lucide-react";
 
 const AVATAR_KEY = "remi_avatar";
@@ -78,6 +79,7 @@ export default function TodayPage() {
   const [ideas, setIdeas] = useState<BrainItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [captureOpen, setCaptureOpen] = useState(false);
+  const [mentalDumpOpen, setMentalDumpOpen] = useState(false); // ⭐ NUEVO
   const [profileOpen, setProfileOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [statusSummary, setStatusSummary] =
@@ -232,11 +234,19 @@ export default function TodayPage() {
     setAvatarUrl(finalUrl ?? null);
   }, [user, profile]);
 
-  // Escuchar el evento global del botón + de la BottomNav
+  // Escuchar el evento global del botón + de la BottomNav (Capture)
   useEffect(() => {
     const handler = () => setCaptureOpen(true);
     window.addEventListener("remi-open-capture", handler);
     return () => window.removeEventListener("remi-open-capture", handler);
+  }, []);
+
+  // ⭐ NUEVO: escuchar el evento para la Descarga mental
+  useEffect(() => {
+    const handler = () => setMentalDumpOpen(true);
+    window.addEventListener("remi-open-mental-dump", handler);
+    return () =>
+      window.removeEventListener("remi-open-mental-dump", handler);
   }, []);
 
   // Cerrar el menú de perfil al hacer clic fuera
@@ -1120,6 +1130,14 @@ export default function TodayPage() {
       <CaptureModal
         open={captureOpen}
         onClose={() => setCaptureOpen(false)}
+        onCreateTask={handleCreateTask}
+        onCreateIdea={handleCreateIdea}
+      />
+
+      {/* ⭐ NUEVO: Modal flotante para Descarga mental */}
+      <MentalDumpModal
+        open={mentalDumpOpen}
+        onClose={() => setMentalDumpOpen(false)}
         onCreateTask={handleCreateTask}
         onCreateIdea={handleCreateIdea}
       />
