@@ -341,8 +341,10 @@ export default function MentalDumpModal({
           {previewItems === null ? (
             <>
               {/* FASE 1: textarea + hint */}
-              <div className="rounded-2xl bg-slate-50 px-3 py-2 text-xs sm:text-sm text-slate-600 border border-slate-100">
-                {hints[hintIndex]}
+              <div className="rounded-2xl bg-slate-50 px-3 py-2 text-xs sm:text-sm text-slate-600 border border-slate-100 min-h-[60px] sm:min-h-[72px] flex items-center">
+                <p className="leading-snug">
+                  {hints[hintIndex]}
+                </p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-3">
