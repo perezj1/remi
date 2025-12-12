@@ -1,4 +1,5 @@
 // src/components/MentalDumpModal.tsx
+import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { X, ListTodo, Lightbulb } from "lucide-react";
 import type { ReminderMode, RepeatType } from "@/lib/brainItemsApi";
@@ -118,14 +119,12 @@ export default function MentalDumpModal({
   function classifyItem(text: string): "task" | "idea" {
     const lower = text.toLowerCase().trim();
 
-    // Si empieza por algo tipo "idea para...", "pensar en..."
     for (const prefix of IDEA_PREFIXES) {
       if (lower.startsWith(prefix + " ") || lower === prefix) {
         return "idea";
       }
     }
 
-    // Tomar la primera palabra como posible verbo de acción
     const firstWord = lower
       .split(/\s+/)[0]
       .replace(/[^a-záéíóúüñ]/g, "");
@@ -134,7 +133,6 @@ export default function MentalDumpModal({
       return "task";
     }
 
-    // Por defecto, tarea salvo que suene a idea
     if (
       lower.startsWith("proyecto") ||
       lower.startsWith("plan") ||
@@ -178,8 +176,78 @@ export default function MentalDumpModal({
     }
   }
 
-  const hasSelected =
-    previewItems?.some((item) => item.selected) ?? false;
+  function computeTaskFieldsFromText(text: string): Pick<
+    PreviewItem,
+    "dueDate" | "reminderMode" | "repeatType"
+  > {
+    const parsed = parseDateTimeFromText(text, lang as any, new Date());
+    const { dueDateISO, repeatHint, reminderHint } = parsed;
+
+    const dueDate = dueDateISO;
+
+    // repeatType (pero si es DAILY_UNTIL_DUE => tarea única)
+    let repeatType: RepeatType = "none";
+    if (reminderHint === "DAILY_UNTIL_DUE") {
+      repeatType = "none";
+    } else {
+      if (repeatHint === "daily") repeatType = "daily";
+      else if (repeatHint === "weekly") repeatType = "weekly";
+      else if (repeatHint === "monthly") repeatType = "monthly";
+      else if (repeatHint === "yearly") repeatType = "yearly";
+    }
+
+    // reminderMode (solo si hay fecha)
+    let reminderMode: ReminderMode = "NONE";
+    if (dueDate) {
+      if (reminderHint === "DAY_BEFORE_AND_DUE") {
+        reminderMode = "DAY_BEFORE_AND_DUE";
+      } else if (reminderHint === "DAILY_UNTIL_DUE") {
+        reminderMode = "DAILY_UNTIL_DUE";
+      } else {
+        // Default para tareas con fecha: recordar todos los días hasta la fecha
+        reminderMode = "DAILY_UNTIL_DUE";
+      }
+    }
+
+    return { dueDate, reminderMode, repeatType };
+  }
+
+  function setItemKind(itemId: number, nextKind: PreviewKind) {
+    setPreviewItems((prev) => {
+      if (!prev) return prev;
+
+      return prev.map((p) => {
+        if (p.id !== itemId) return p;
+        if (p.kind === nextKind) return p;
+
+        if (nextKind === "idea") {
+          // al convertir a idea, limpiamos campos de tarea
+          return {
+            ...p,
+            kind: "idea",
+            dueDate: null,
+            reminderMode: "NONE",
+            repeatType: "none",
+          };
+        }
+
+        // al convertir a tarea, recalculamos a partir del texto actual del input
+        const baseText = (p.title?.trim() || p.original).trim();
+        const { dueDate, reminderMode, repeatType } =
+          computeTaskFieldsFromText(baseText);
+
+        return {
+          ...p,
+          kind: "task",
+          dueDate,
+          reminderMode,
+          repeatType,
+        };
+      });
+    });
+  }
+
+  const hasSelected = previewItems?.some((item) => item.selected) ?? false;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -201,58 +269,20 @@ export default function MentalDumpModal({
         const kind = classifyItem(original);
 
         if (kind === "task") {
-          const parsed = parseDateTimeFromText(
-            original,
-            lang as any,
-            new Date()
-          );
-
-          const { dueDateISO, repeatHint, reminderHint } = parsed;
-
-          // Mantener SIEMPRE el texto original como título (no quitamos fecha/hora)
-          const title = original;
-          const dueDate = dueDateISO;
-
-          // 1) Calcular tipo de hábito a partir de repeatHint,
-          //    pero si el texto dice "every day until..." / "todos los días hasta..."
-          //    lo tratamos como tarea única con recordatorios diarios (no hábito).
-          let repeatType: RepeatType = "none";
-          if (reminderHint === "DAILY_UNTIL_DUE") {
-            // tarea única con recordatorio diario hasta fecha
-            repeatType = "none";
-          } else {
-            if (repeatHint === "daily") repeatType = "daily";
-            else if (repeatHint === "weekly") repeatType = "weekly";
-            else if (repeatHint === "monthly") repeatType = "monthly";
-            else if (repeatHint === "yearly") repeatType = "yearly";
-          }
-
-          // 2) Calcular reminderMode a partir de dueDate + reminderHint
-          let reminderMode: ReminderMode = "NONE";
-
-          if (dueDate) {
-            if (reminderHint === "DAY_BEFORE_AND_DUE") {
-              reminderMode = "DAY_BEFORE_AND_DUE";
-            } else if (reminderHint === "DAILY_UNTIL_DUE") {
-              reminderMode = "DAILY_UNTIL_DUE";
-            } else {
-              // Default para tareas con fecha: recordar todos los días hasta la fecha
-              reminderMode = "DAILY_UNTIL_DUE";
-            }
-          }
+          const { dueDate, reminderMode, repeatType } =
+            computeTaskFieldsFromText(original);
 
           next.push({
             id: idCounter++,
             kind: "task",
             original,
-            title,
+            title: original, // no quitamos fecha/hora
             dueDate,
             reminderMode,
             repeatType,
             selected: true,
           });
         } else {
-          // IDEA
           next.push({
             id: idCounter++,
             kind: "idea",
@@ -272,7 +302,6 @@ export default function MentalDumpModal({
 
     // FASE 2: crear en Remi lo que esté seleccionado
     if (!hasSelected) {
-      // nada seleccionado → no hacemos nada
       handleInternalClose();
       return;
     }
@@ -342,9 +371,7 @@ export default function MentalDumpModal({
             <>
               {/* FASE 1: textarea + hint */}
               <div className="rounded-2xl bg-slate-50 px-3 py-2 text-xs sm:text-sm text-slate-600 border border-slate-100 min-h-[60px] sm:min-h-[72px] flex items-center">
-                <p className="leading-snug">
-                  {hints[hintIndex]}
-                </p>
+                <p className="leading-snug">{hints[hintIndex]}</p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-3">
@@ -360,7 +387,7 @@ export default function MentalDumpModal({
                   />
                 </div>
 
-                {/* Resumen de cuántos items se han detectado */}
+                {/* Resumen */}
                 <p className="text-xs text-slate-500">
                   {items.length === 0
                     ? t("mentalDump.summaryNone")
@@ -412,12 +439,40 @@ export default function MentalDumpModal({
                     </div>
 
                     <div className="flex-1 min-w-0 space-y-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
-                          {item.kind === "task"
-                            ? t("mentalDump.previewTaskLabel")
-                            : t("mentalDump.previewIdeaLabel")}
-                        </span>
+                      <div className="flex items-start justify-between gap-2">
+                        {/* Switch Task/Idea */}
+                        <div className="flex items-center gap-2">
+                          <div className="inline-flex rounded-full border border-slate-200 bg-white p-0.5">
+                            <button
+                              type="button"
+                              onClick={() => setItemKind(item.id, "task")}
+                              className={[
+                                "rounded-full px-2.5 py-1 text-[11px] font-medium transition",
+                                item.kind === "task"
+                                  ? "bg-[#8F31F3] text-white shadow-sm"
+                                  : "text-slate-600 hover:bg-slate-50",
+                              ].join(" ")}
+                              aria-pressed={item.kind === "task"}
+                            >
+                              {t("mentalDump.previewTaskLabel")}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setItemKind(item.id, "idea")}
+                              className={[
+                                "rounded-full px-2.5 py-1 text-[11px] font-medium transition",
+                                item.kind === "idea"
+                                  ? "bg-[#8F31F3] text-white shadow-sm"
+                                  : "text-slate-600 hover:bg-slate-50",
+                              ].join(" ")}
+                              aria-pressed={item.kind === "idea"}
+                            >
+                              {t("mentalDump.previewIdeaLabel")}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Include */}
                         <label className="flex items-center gap-1.5 text-[11px] text-slate-500">
                           <input
                             type="checkbox"
@@ -444,23 +499,36 @@ export default function MentalDumpModal({
                         value={item.title}
                         onChange={(e) => {
                           const value = e.target.value;
-                          setPreviewItems((prev) =>
-                            prev
-                              ? prev.map((p) =>
-                                  p.id === item.id
-                                    ? { ...p, title: value }
-                                    : p
-                                )
-                              : prev
-                          );
+
+                          setPreviewItems((prev) => {
+                            if (!prev) return prev;
+
+                            return prev.map((p) => {
+                              if (p.id !== item.id) return p;
+
+                              // Si es tarea, recalculamos campos al editar título (mantiene coherencia del preview)
+                              if (p.kind === "task") {
+                                const { dueDate, reminderMode, repeatType } =
+                                  computeTaskFieldsFromText(value);
+                                return {
+                                  ...p,
+                                  title: value,
+                                  dueDate,
+                                  reminderMode,
+                                  repeatType,
+                                };
+                              }
+
+                              // Si es idea, solo cambiamos el título
+                              return { ...p, title: value };
+                            });
+                          });
                         }}
                         className="w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#8F31F3]"
                       />
 
                       <p className="text-[11px] text-slate-500">
-                        <span className="font-medium">
-                          {t("today.dueLabel")}
-                        </span>
+                        <span className="font-medium">{t("today.dueLabel")}</span>
                         {formatDateTime(item.dueDate)}
                         {item.kind === "task" && (
                           <>

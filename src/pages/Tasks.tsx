@@ -8,8 +8,9 @@ import {
   setTaskStatus,
   deleteBrainItem,
 } from "@/lib/brainItemsApi";
-import { ListTodo, Check, Trash2 } from "lucide-react";
+import { ListTodo, Check, Trash2, Pencil } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
+import TaskEditModal from "@/components/TaskEditModal";
 
 type DateGroup = {
   key: string;
@@ -40,6 +41,9 @@ export default function TasksPage() {
 
   const [items, setItems] = useState<BrainItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [editingTask, setEditingTask] = useState<BrainItem | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
 
   // siempre arriba al entrar / recargar
   useEffect(() => {
@@ -173,6 +177,12 @@ export default function TasksPage() {
       console.error(err);
       alert(t("inbox.errorUpdating"));
     }
+  };
+
+  const openEditModal = (item: BrainItem) => {
+    if (item.type !== "task") return;
+    setEditingTask(item);
+    setEditOpen(true);
   };
 
   const filterLabel = t("inbox.tasksTab");
@@ -323,12 +333,30 @@ export default function TasksPage() {
                           {statusLabel(item.status, t)}
                         </div>
 
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: 6,
-                          }}
-                        >
+                        <div style={{ display: "flex", gap: 6 }}>
+                          {/* Botón editar (tasks) */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditModal(item);
+                            }}
+                            style={{
+                              width: 30,
+                              height: 30,
+                              borderRadius: "999px",
+                              border: "1px solid rgba(148,163,184,0.8)",
+                              background: "transparent",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor: "pointer",
+                              padding: 0,
+                            }}
+                          >
+                            <Pencil size={16} color="#6b7280" />
+                          </button>
+
                           {/* Botón principal: marcar DONE / borrar */}
                           <button
                             type="button"
@@ -364,6 +392,18 @@ export default function TasksPage() {
             ))}
         </div>
       </main>
+
+      {/* Modal para editar una tarea */}
+      <TaskEditModal
+        open={editOpen}
+        task={editingTask}
+        onClose={() => setEditOpen(false)}
+        onUpdated={(updated) => {
+          setItems((prev) =>
+            prev.map((i) => (i.id === updated.id ? updated : i))
+          );
+        }}
+      />
     </div>
   );
 }

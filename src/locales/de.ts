@@ -218,6 +218,35 @@ textareaPlaceholder:   "Z.B.: Erinnere mich daran, vor dem 12. Dezember um 13:00
   toastIdeaError: "Fehler beim Erstellen der Idee",
 },
 
+tasks: {
+  weekdayLabels: "Mo|Di|Mi|Do|Fr|Sa|So",
+
+  editLabel: "Bearbeiten",
+  editTitle: "Aufgabe bearbeiten",
+  editSubtitle: "Ändere Text, Datum & Uhrzeit, Erinnerungen und Wiederholung.",
+
+  fieldTitle: "Aufgabe",
+  fieldTitlePlaceholder: "Schreibe deine Aufgabe...",
+
+  optionsTitle: "Optionen",
+
+  dueDateLabel: "Datum & Uhrzeit",
+  clearDueDate: "Entfernen",
+
+  reminderLabel: "Erinnerungen",
+  reminder: {
+    none: "Keine Erinnerungen",
+    onDue: "Nur am Fälligkeitstag",
+    dayBeforeAndDue: "Am Vortag und am Fälligkeitstag",
+    dailyUntilDue: "Jeden Tag bis zum Fälligkeitstag",
+  },
+
+  save: "Speichern",
+  footerHint: "Du kannst das jederzeit bearbeiten.",
+  updateError: "Fehler beim Aktualisieren der Aufgabe",
+},
+
+
 
   auth: {
     titleLogin: "Melde dich bei REMI an",

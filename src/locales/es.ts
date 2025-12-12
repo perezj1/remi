@@ -216,6 +216,34 @@ subtitle: "Escribe todo lo que tengas en mente para no olvidarlo.",
   toastIdeaError: "Error al crear la idea",
 },
 
+tasks: {
+  weekdayLabels: "L|M|X|J|V|S|D",
+
+  editLabel: "Editar",
+  editTitle: "Editar tarea",
+  editSubtitle: "Cambia el texto, la fecha y hora, los recordatorios y la repetición.",
+
+  fieldTitle: "Tarea",
+  fieldTitlePlaceholder: "Escribe tu tarea...",
+
+  optionsTitle: "Opciones",
+
+  dueDateLabel: "Fecha y hora",
+  clearDueDate: "Quitar",
+
+  reminderLabel: "Recordatorios",
+  reminder: {
+    none: "Sin recordatorios",
+    onDue: "Solo el día límite",
+    dayBeforeAndDue: "Día antes y día límite",
+    dailyUntilDue: "Cada día hasta la fecha límite",
+  },
+
+  save: "Guardar",
+  footerHint: "Puedes editar esto cuando quieras.",
+  updateError: "Error al actualizar la tarea",
+},
+
 
   auth: {
     titleLogin: "Inicia sesión en REMI",

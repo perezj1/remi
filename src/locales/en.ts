@@ -215,6 +215,35 @@ textareaPlaceholder:   "E.g.: Remind me to buy a birthday present before Decembe
   toastIdeaError: "Error creating the idea",
 },
 
+tasks: {
+  weekdayLabels: "Mon|Tue|Wed|Thu|Fri|Sat|Sun",
+
+  editLabel: "Edit",
+  editTitle: "Edit task",
+  editSubtitle: "Change the text, date & time, reminders and repeat.",
+
+  fieldTitle: "Task",
+  fieldTitlePlaceholder: "Write your task...",
+
+  optionsTitle: "Options",
+
+  dueDateLabel: "Date & time",
+  clearDueDate: "Clear",
+
+  reminderLabel: "Reminders",
+  reminder: {
+    none: "No reminders",
+    onDue: "Only on due date",
+    dayBeforeAndDue: "Day before and due date",
+    dailyUntilDue: "Every day until due date",
+  },
+
+  save: "Save",
+  footerHint: "You can edit this anytime.",
+  updateError: "Error updating task",
+},
+
+
 
   auth: {
     titleLogin: "Log in to REMI",

@@ -9,11 +9,10 @@ export type ReminderMode =
   | "DAY_BEFORE_AND_DUE"
   | "DAILY_UNTIL_DUE";
 
-// NUEVO: tipo de repetición
+// tipo de repetición
 export type RepeatType = "none" | "daily" | "weekly" | "monthly" | "yearly";
 
-// Offset por defecto para hábitos: cuántos minutos antes de la hora
-// queremos que suene el recordatorio (ej: 120 = 2h antes).
+// Offset por defecto para hábitos: minutos antes de la hora
 const DEFAULT_HABIT_OFFSET_MINUTES = 0;
 
 export interface BrainItem {
@@ -28,12 +27,12 @@ export interface BrainItem {
   updated_at: string;
   last_notified_at: string | null;
 
-  // NUEVOS CAMPOS DE REPETICIÓN / HÁBITOS
+  // CAMPOS DE REPETICIÓN / HÁBITOS
   repeat_type: RepeatType;
-  next_reminder_at: string | null;      // ISO string o null (sistema actual)
-  is_habit?: boolean;                   // true si es hábito
-  habit_offset_minutes?: number;        // minutos antes de la hora base
-  next_notification_at?: string | null; // ISO string o null (puede usarse en el Edge Function nuevo)
+  next_reminder_at: string | null; // ISO string o null (sistema actual)
+  is_habit?: boolean; // true si es hábito
+  habit_offset_minutes?: number; // minutos antes de la hora base
+  next_notification_at?: string | null; // ISO string o null (para edge function nuevo)
 }
 
 /**
@@ -108,7 +107,6 @@ export async function fetchInboxItems(userId: string): Promise<BrainItem[]> {
       return due >= todayStart;
     }
 
-    // Por si en el futuro hay otros tipos
     return true;
   });
 
@@ -128,14 +126,13 @@ export async function fetchActiveIdeas(userId: string): Promise<BrainItem[]> {
   return data as BrainItem[];
 }
 
-// 👇 A partir de aquí, soporte para repetición y next_reminder_at
+// 👇 A partir de aquí: soporte para repetición y next_reminder_at
 
 export async function createTask(
   userId: string,
   title: string,
   dueDate: string | null,
   reminderMode: ReminderMode,
-  // tipo de repetición (hábito)
   repeatType: RepeatType = "none"
 ): Promise<BrainItem> {
   const hasHabit = repeatType !== "none";
@@ -221,6 +218,62 @@ export async function updateIdeaTitle(
 }
 
 /**
+ * NUEVO: Actualizar una tarea (texto, fecha, recordatorio, repetición)
+ * - recalcula is_habit / habit_offset_minutes
+ * - recalcula next_reminder_at / next_notification_at
+ */
+export async function updateTask(
+  id: string,
+  title: string,
+  dueDate: string | null,
+  reminderMode: ReminderMode,
+  repeatType: RepeatType = "none"
+): Promise<BrainItem> {
+  const hasHabit = repeatType !== "none";
+  const habitOffsetMinutes = hasHabit ? DEFAULT_HABIT_OFFSET_MINUTES : 0;
+
+  // Si NO hay fecha, no tiene sentido ON_DUE_DATE / DAY_BEFORE...
+  const safeReminderMode: ReminderMode =
+    !dueDate &&
+    (reminderMode === "ON_DUE_DATE" || reminderMode === "DAY_BEFORE_AND_DUE")
+      ? "NONE"
+      : reminderMode;
+
+  // Para hábitos calculamos la notificación con offset
+  const habitNotification =
+    hasHabit && dueDate
+      ? computeHabitNotificationTime(dueDate, habitOffsetMinutes)
+      : null;
+
+  // IMPORTANTE:
+  // - Hábitos: next_* con offset
+  // - No hábitos: alineado con postponeTask (next_* = dueDate)
+  const nextReminderAt = hasHabit ? habitNotification : dueDate;
+  const nextNotificationAt = hasHabit ? habitNotification : dueDate;
+
+  const { data, error } = await supabase
+    .from("brain_items")
+    .update({
+      title,
+      due_date: dueDate,
+      reminder_mode: safeReminderMode,
+      repeat_type: repeatType,
+      next_reminder_at: nextReminderAt,
+      is_habit: hasHabit,
+      habit_offset_minutes: habitOffsetMinutes,
+      next_notification_at: nextNotificationAt,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("type", "task")
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as BrainItem;
+}
+
+/**
  * Convertir una idea existente en tarea:
  * - cambia type a "task"
  * - actualiza el título
@@ -232,7 +285,6 @@ export async function convertIdeaToTask(
   title: string,
   dueDate: string | null,
   reminderMode: ReminderMode,
-  // repetición opcional al convertir
   repeatType: RepeatType = "none"
 ): Promise<BrainItem> {
   const hasHabit = repeatType !== "none";
@@ -291,10 +343,9 @@ export async function postponeTask(
   id: string,
   newDueDate: string | null
 ): Promise<BrainItem> {
-  // De momento mantenemos la lógica simple:
+  // Lógica simple:
   // - movemos due_date
   // - alineamos next_reminder_at y next_notification_at con la nueva due_date
-  //   (el Edge Function podrá recalcular con offset si hace falta).
   const { data, error } = await supabase
     .from("brain_items")
     .update({
@@ -313,14 +364,9 @@ export async function postponeTask(
 
 /**
  * Borrar definitivamente un BrainItem de la base de datos.
- * Se usará cuando el usuario pulse el icono de papelera.
  */
 export async function deleteBrainItem(id: string): Promise<void> {
-  const { error } = await supabase
-    .from("brain_items")
-    .delete()
-    .eq("id", id);
-
+  const { error } = await supabase.from("brain_items").delete().eq("id", id);
   if (error) throw error;
 }
 
@@ -329,22 +375,14 @@ export async function deleteBrainItem(id: string): Promise<void> {
  * Usa tareas e ideas + tabla brain_activity_days para la racha y actividad.
  */
 export type RemiStatusSummary = {
-  /** Tareas de hoy (por fecha de vencimiento) */
   todayTotal: number;
-  /** Tareas de hoy marcadas como DONE */
   todayDone: number;
-  /** Días de los últimos 7 con al menos 1 día de actividad (crear/completar) */
   weekActiveDays: number;
-  /** Total de tareas almacenadas (no archivadas) */
-  weekActivitySlots: boolean[]; // un boolean por cada día de la semana
+  weekActivitySlots: boolean[];
   totalTasksStored: number;
-  /** Total de ideas almacenadas (no archivadas) */
   totalIdeasStored: number;
-  /** Total de elementos (tareas + ideas) no archivados */
   totalItemsStored: number;
-  /** Racha de días consecutivos con actividad (hasta hoy) */
   streakDays: number;
-  /** Días desde la última actividad (0 = hoy, 1 = ayer, etc., null = nunca) */
   daysSinceLastActivity: number | null;
 };
 
@@ -353,7 +391,6 @@ export async function fetchRemiStatusSummary(
 ): Promise<RemiStatusSummary> {
   const now = new Date();
 
-  // Helpers de fechas en hora local
   const startOfDay = (d: Date) => {
     const copy = new Date(d);
     copy.setHours(0, 0, 0, 0);
@@ -376,7 +413,6 @@ export async function fetchRemiStatusSummary(
   const todayStart = startOfDay(now);
   const todayEnd = endOfDay(now);
 
-  // Ventana máxima que miramos hacia atrás para la racha (en días)
   const MAX_STREAK_DAYS = 60;
   const streakWindowStart = new Date(todayStart);
   streakWindowStart.setDate(
@@ -384,10 +420,7 @@ export async function fetchRemiStatusSummary(
   );
 
   // 1) Tareas de hoy (por due_date)
-  const {
-    data: todayTasksRaw,
-    error: todayError,
-  } = await supabase
+  const { data: todayTasksRaw, error: todayError } = await supabase
     .from("brain_items")
     .select("id, status")
     .eq("user_id", userId)
@@ -404,11 +437,8 @@ export async function fetchRemiStatusSummary(
   const todayTotal = todayTasks.length;
   const todayDone = todayTasks.filter((t) => t.status === "DONE").length;
 
-  // 2) Total de tareas almacenadas (no archivadas)
-  const {
-    count: totalTasksStored,
-    error: totalTasksError,
-  } = await supabase
+  // 2) Total tareas almacenadas
+  const { count: totalTasksStored, error: totalTasksError } = await supabase
     .from("brain_items")
     .select("*", { count: "exact", head: true })
     .eq("user_id", userId)
@@ -417,11 +447,8 @@ export async function fetchRemiStatusSummary(
 
   if (totalTasksError) throw totalTasksError;
 
-  // 3) Total de ideas almacenadas (no archivadas)
-  const {
-    count: totalIdeasStored,
-    error: totalIdeasError,
-  } = await supabase
+  // 3) Total ideas almacenadas
+  const { count: totalIdeasStored, error: totalIdeasError } = await supabase
     .from("brain_items")
     .select("*", { count: "exact", head: true })
     .eq("user_id", userId)
@@ -434,14 +461,11 @@ export async function fetchRemiStatusSummary(
   const totalIdeas = totalIdeasStored ?? 0;
   const totalItemsStored = totalTasks + totalIdeas;
 
-  // 4) Días activos en la ventana de racha usando brain_activity_days
+  // 4) Días activos en la ventana de racha
   const startDateKey = formatLocalDateKey(streakWindowStart);
   const endDateKey = formatLocalDateKey(todayStart);
 
-  const {
-    data: activityRows,
-    error: activityError,
-  } = await supabase
+  const { data: activityRows, error: activityError } = await supabase
     .from("brain_activity_days")
     .select("day, completed_tasks")
     .eq("user_id", userId)
@@ -454,66 +478,48 @@ export async function fetchRemiStatusSummary(
   const activity = (activityRows ?? []) as ActivityRow[];
 
   const activityDays = new Set<string>();
-  for (const row of activity) {
-    // "day" viene como "YYYY-MM-DD"
-    activityDays.add(row.day);
-  }
+  for (const row of activity) activityDays.add(row.day);
 
-  // 5) Calcular racha de días consecutivos (hasta hoy)
+  // 5) racha consecutiva
   let streakDays = 0;
   for (let offset = 0; offset < MAX_STREAK_DAYS; offset++) {
     const d = new Date(todayStart);
     d.setDate(d.getDate() - offset);
     const key = formatLocalDateKey(d);
-    if (activityDays.has(key)) {
-      streakDays += 1;
-    } else {
-      break;
-    }
+    if (activityDays.has(key)) streakDays += 1;
+    else break;
   }
 
-  // 6) Días activos en la semana actual (lunes–domingo)
+  // 6) Semana actual (lunes–domingo)
   let weekActiveDays = 0;
   const weekActivitySlots: boolean[] = [];
 
-  // Partimos del inicio de hoy en hora local
   const todayLocal = new Date(todayStart);
-
-  // getDay(): 0 = domingo, 1 = lunes, ..., 6 = sábado
-  const jsDay = todayLocal.getDay();
-  // Distancia desde hoy hasta el lunes de esta semana
+  const jsDay = todayLocal.getDay(); // 0 domingo, 1 lunes...
   const diffToMonday = (jsDay + 6) % 7;
 
-  // Lunes de la semana actual (00:00)
   const mondayStart = new Date(todayLocal);
   mondayStart.setDate(mondayStart.getDate() - diffToMonday);
 
-  // Recorremos de lunes a domingo
   for (let offset = 0; offset < 7; offset++) {
     const d = new Date(mondayStart);
     d.setDate(mondayStart.getDate() + offset);
 
     const key = formatLocalDateKey(d);
-    const hasActivity = activityDays.has(key); // hay actividad ese día
+    const hasActivity = activityDays.has(key);
 
     weekActivitySlots.push(hasActivity);
-
-    if (hasActivity) {
-      weekActiveDays += 1;
-    }
+    if (hasActivity) weekActiveDays += 1;
   }
 
-  // 7) Días desde la última actividad
+  // 7) días desde última actividad
   let daysSinceLastActivity: number | null = null;
   if (activity.length > 0) {
     let lastDate: Date | null = null;
 
     for (const row of activity) {
-      // row.day es "YYYY-MM-DD"
       const d = new Date(row.day + "T00:00:00Z");
-      if (!lastDate || d > lastDate) {
-        lastDate = d;
-      }
+      if (!lastDate || d > lastDate) lastDate = d;
     }
 
     if (lastDate) {
