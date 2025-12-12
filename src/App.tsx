@@ -24,6 +24,9 @@ import StatusPage from "@/pages/Status";
 import ScrollToTop from "@/components/ScrollToTop";
 import LandingPage from "@/pages/Landing";
 
+// ✅ NUEVO: página que recibe el share_target
+import ShareTargetPage from "@/pages/ShareTarget";
+
 // ---- RUTAS PROTEGIDAS ----
 function RequireAuth({ children }: { children: JSX.Element }) {
   const { user } = useAuth();
@@ -47,8 +50,7 @@ function AppRoutes() {
   const location = useLocation();
 
   React.useEffect(() => {
-    const pLang =
-      (((profile as any)?.language ?? null) as RemiLocale | null);
+    const pLang = (((profile as any)?.language ?? null) as RemiLocale | null);
 
     if (pLang && pLang !== lang && ["es", "en", "de"].includes(pLang)) {
       setLang(pLang);
@@ -59,9 +61,10 @@ function AppRoutes() {
   const state = location.state as LocationState | null;
   const from = state?.from || "/";
 
-  // Ocultar bottom nav en la landing
+  // Ocultar bottom nav en rutas públicas/“técnicas”
   const pathname = location.pathname.toLowerCase();
-  const hideBottomNav = pathname.startsWith("/landing");
+  const hideBottomNav =
+    pathname.startsWith("/landing") || pathname.startsWith("/share-target");
 
   return (
     <>
@@ -69,6 +72,9 @@ function AppRoutes() {
       <ScrollToTop />
 
       <Routes>
+        {/* ✅ Share Target (pública): Android "Compartir → Remi" entra aquí */}
+        <Route path="/share-target" element={<ShareTargetPage />} />
+
         {/* Auth */}
         <Route
           path="/auth"
@@ -142,7 +148,7 @@ function AppRoutes() {
         <Route path="*" element={<NotFound />} />
       </Routes>
 
-      {/* Bottom nav solo si hay usuario y NO estamos en /landing */}
+      {/* Bottom nav solo si hay usuario y NO estamos en /landing o /share-target */}
       {user && !hideBottomNav && <BottomNav />}
 
       <InstallPrompt />

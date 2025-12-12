@@ -19,6 +19,15 @@ interface CaptureModalProps {
   onCreateIdea: (title: string) => Promise<void>;
   /** Cuando es true, se usa como card embebida en Index (sin backdrop) */
   embedded?: boolean;
+
+  /** Texto que llega desde fuera (Share Target / copiar-pegar desde otras apps) */
+  initialText?: string;
+
+  /**
+   * Cambia cuando llega un nuevo share.
+   * Permite re-aplicar aunque el texto sea idéntico.
+   */
+  initialTextNonce?: number;
 }
 
 type Mode = "choose" | "task";
@@ -41,19 +50,22 @@ export default function CaptureModal({
   onCreateTask,
   onCreateIdea,
   embedded = false,
+  initialText,
+  initialTextNonce,
 }: CaptureModalProps) {
   const { t, lang } = useI18n();
 
   const [text, setText] = useState("");
+  const textRef = useRef<string>(""); // ✅ leer texto actual sin depender de `text` en effects
+
   const [mode, setMode] = useState<Mode>("choose");
-  const [dueOption, setDueOption] = useState<
-    "NONE" | "TODAY" | "TOMORROW" | "WEEK"
-  >("TODAY");
+  const [dueOption, setDueOption] = useState<"NONE" | "TODAY" | "TOMORROW" | "WEEK">(
+    "TODAY"
+  );
   const [customDue, setCustomDue] = useState<string>("");
 
   // Por defecto: recordatorios diarios hasta la fecha límite
-  const [reminderMode, setReminderMode] =
-    useState<ReminderMode>("DAILY_UNTIL_DUE");
+  const [reminderMode, setReminderMode] = useState<ReminderMode>("DAILY_UNTIL_DUE");
 
   const [loading, setLoading] = useState(false);
 
@@ -77,6 +89,11 @@ export default function CaptureModal({
   // Flags para no pisar decisiones manuales del usuario
   const [manualDateOverride, setManualDateOverride] = useState(false);
   const [manualRepeatOverride, setManualRepeatOverride] = useState(false);
+
+  // Evitar pisar el texto si el usuario ya empezó a escribir
+  const userEditedRef = useRef(false);
+  const lastInitialAppliedRef = useRef<string>("");
+  const lastInitialAppliedNonceRef = useRef<number>(-1);
 
   // Hints dinámicos
   const [hintIndex, setHintIndex] = useState(0);
@@ -106,11 +123,7 @@ export default function CaptureModal({
     setCustomDue(formatDateTimeLocal(d));
   };
 
-  const applyDateTimeManual = (
-    dateBase: Date,
-    hour: number,
-    minute: number
-  ) => {
+  const applyDateTimeManual = (dateBase: Date, hour: number, minute: number) => {
     setManualDateOverride(true);
     applyDateTime(dateBase, hour, minute);
   };
@@ -118,6 +131,37 @@ export default function CaptureModal({
   const applyDateFromChip = (d: Date) => {
     applyDateTimeManual(d, d.getHours(), d.getMinutes());
   };
+
+  // ✅ Aplicar initialText cuando el modal/card sea visible (NO depende de `text`)
+  useEffect(() => {
+    const visible = embedded || open;
+    if (!visible) return;
+
+    const incoming = (initialText ?? "").trim();
+    if (!incoming) return;
+
+    const nonce = typeof initialTextNonce === "number" ? initialTextNonce : null;
+
+    // (A) Si hay nonce: solo aplicamos si es nuevo
+    if (nonce !== null) {
+      if (nonce <= lastInitialAppliedNonceRef.current) return;
+    } else {
+      // (B) Sin nonce: evitamos re-aplicar el mismo string
+      if (incoming === lastInitialAppliedRef.current) return;
+    }
+
+    // No pisamos si el usuario ya escribió (salvo textarea vacío)
+    const currentText = (textRef.current ?? "").trim();
+    const canOverwrite = !userEditedRef.current || currentText === "";
+    if (!canOverwrite) return;
+
+    if (nonce !== null) lastInitialAppliedNonceRef.current = nonce;
+    lastInitialAppliedRef.current = incoming;
+
+    userEditedRef.current = false; // lo consideramos “texto entrante”
+    textRef.current = incoming;
+    setText(incoming);
+  }, [initialText, initialTextNonce, open, embedded]);
 
   // Si pasamos a "Sin fecha" y hay recordatorios, los reseteamos a NONE
   useEffect(() => {
@@ -138,7 +182,7 @@ export default function CaptureModal({
     }
   }, [repeatEnabled, reminderMode]);
 
-  // Sincronizar el date/time picker cuando cambie customDue (por texto o por usuario)
+  // Sincronizar el date/time picker cuando cambie customDue
   useEffect(() => {
     if (!customDue) return;
     const d = new Date(customDue);
@@ -161,25 +205,20 @@ export default function CaptureModal({
   // Detectar fecha/hora + hábito desde el texto y actualizar en vivo
   useEffect(() => {
     const trimmed = text.trim();
-    if (!trimmed) {
-      // Si vaciamos el texto, no tocamos overrides manuales
-      return;
-    }
+    if (!trimmed) return;
 
     const { dueDateISO, repeatHint } = parseDateTimeFromText(trimmed, lang);
 
-    // Actualizar fecha/hora solo si no hay override manual
+    // fecha/hora solo si no hay override manual
     if (dueDateISO && !manualDateOverride) {
       const d = new Date(dueDateISO);
       if (!Number.isNaN(d.getTime())) {
         applyDateTime(d, d.getHours(), d.getMinutes());
-        if (dueOption === "NONE") {
-          setDueOption("TODAY");
-        }
+        if (dueOption === "NONE") setDueOption("TODAY");
       }
     }
 
-    // Actualizar hábito solo si el usuario no lo ha tocado a mano
+    // hábito solo si el usuario no lo ha tocado a mano
     if (!manualRepeatOverride) {
       if (repeatHint) {
         setRepeatEnabled(true);
@@ -195,7 +234,7 @@ export default function CaptureModal({
   useEffect(() => {
     if ((!open && !embedded) || totalHints === 0) return;
 
-    setHintIndex(0); // reset al abrir/mostrar
+    setHintIndex(0);
     const interval = setInterval(() => {
       setHintIndex((prev) => (prev + 1) % totalHints);
     }, 15000);
@@ -208,10 +247,15 @@ export default function CaptureModal({
 
   const resetAndClose = () => {
     setText("");
+    textRef.current = "";
+
+    userEditedRef.current = false;
+    lastInitialAppliedRef.current = "";
+    lastInitialAppliedNonceRef.current = -1;
+
     setMode("choose");
     setDueOption("TODAY");
     setCustomDue("");
-    // reset a recordatorios diarios por defecto
     setReminderMode("DAILY_UNTIL_DUE");
     setRepeatEnabled(false);
     setRepeatType("none");
@@ -221,14 +265,13 @@ export default function CaptureModal({
     setIsDateTimePickerOpen(false);
     setManualDateOverride(false);
     setManualRepeatOverride(false);
+
     if (!embedded) onClose();
   };
 
   const getDueDateFromOption = (): string | null => {
-    // Sin fecha y sin valor manual => null
     if (dueOption === "NONE" && !customDue) return null;
 
-    // Custom picker tiene prioridad
     if (customDue) {
       const d = new Date(customDue);
       if (!Number.isNaN(d.getTime())) return d.toISOString();
@@ -255,33 +298,19 @@ export default function CaptureModal({
   const handleConfirmTask = async () => {
     const trimmed = text.trim();
     if (!trimmed || loading) return;
+
     setLoading(true);
     try {
-      // 1) Fecha/hora desde chips + calendario (incluye customDue)
       const dueDateFromOptions = getDueDateFromOption();
-
-      // 2) Fecha/hora desde lenguaje natural (para asegurarnos)
-      //    Importante: NO usamos cleanTitle para no borrar "mañana a las 12"
       const { dueDateISO } = parseDateTimeFromText(trimmed, lang);
 
-      // 3) Prioridad:
-      //    - Si el usuario ha tocado manualmente fecha/hora, se usa SIEMPRE lo manual.
-      //    - Si no ha tocado nada manual, el texto puede rellenar fecha/hora.
-      let finalDueDate: string | null;
-      if (manualDateOverride) {
-        finalDueDate = dueDateFromOptions;
-      } else {
-        finalDueDate = dueDateISO ?? dueDateFromOptions;
-      }
-
+      // Prioridad:
+      // - si el usuario tocó manualmente fecha/hora => lo manual
+      // - si no => el texto puede rellenar
+      const finalDueDate = manualDateOverride ? dueDateFromOptions : dueDateISO ?? dueDateFromOptions;
       const finalRepeatType: RepeatType = repeatEnabled ? repeatType : "none";
 
-      await onCreateTask(
-        trimmed, // guardamos el texto completo: "comer mañana a las 12"
-        finalDueDate,
-        reminderMode,
-        finalRepeatType
-      );
+      await onCreateTask(trimmed, finalDueDate, reminderMode, finalRepeatType);
 
       toast.success(t("capture.toastTaskSaved"));
       resetAndClose();
@@ -293,10 +322,12 @@ export default function CaptureModal({
   };
 
   const handleConfirmIdea = async () => {
-    if (!text.trim() || loading) return;
+    const trimmed = text.trim();
+    if (!trimmed || loading) return;
+
     setLoading(true);
     try {
-      await onCreateIdea(text.trim());
+      await onCreateIdea(trimmed);
       toast.success(t("capture.toastIdeaSaved"));
       resetAndClose();
     } catch (err) {
@@ -307,31 +338,24 @@ export default function CaptureModal({
   };
 
   const header = (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        gap: 12,
-      }}
-    >
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="remi-modal-title">{t("capture.title")}</div>
         <div className="remi-modal-sub">{t("capture.subtitle")}</div>
 
-        {/* Hints dinámicos debajo del subtitle, con tamaño fijo */}
         {totalHints > 0 && (
           <div
             className="remi-hint-banner"
             style={{
               marginTop: 8,
               padding: "6px 10px",
-              borderRadius: 12, // menos redondeado
+              borderRadius: 12,
               background: "#f9fafb",
               border: "1px solid rgba(226,232,240,0.9)",
               fontSize: 11,
               color: "#4b5563",
               maxWidth: 420,
-              height: 40, // altura fija
+              height: 40,
               display: "flex",
               alignItems: "center",
               overflow: "hidden",
@@ -341,6 +365,7 @@ export default function CaptureModal({
           </div>
         )}
       </div>
+
       {!embedded && (
         <button
           type="button"
@@ -376,25 +401,21 @@ export default function CaptureModal({
     const firstOfMonth = new Date(year, month, 1);
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-    // 0 = domingo, 1 = lunes... → lunes = 0
     let startWeekDay = firstOfMonth.getDay();
     startWeekDay = (startWeekDay + 6) % 7;
 
     const days: { date: Date; isCurrentMonth: boolean }[] = [];
 
-    // días del mes anterior
     for (let i = 0; i < startWeekDay; i++) {
       const d = new Date(year, month, 1 - (startWeekDay - i));
       days.push({ date: d, isCurrentMonth: false });
     }
 
-    // días del mes actual
     for (let day = 1; day <= daysInMonth; day++) {
       const d = new Date(year, month, day);
       days.push({ date: d, isCurrentMonth: true });
     }
 
-    // días del siguiente mes
     while (days.length % 7 !== 0) {
       const last = days[days.length - 1].date;
       const d = new Date(last);
@@ -436,13 +457,9 @@ export default function CaptureModal({
     applyDateTimeManual(base, selectedHour, m);
   };
 
-  // Texto mostrado en el cuadrito “resumen fecha/hora”
   const dateTimePreview =
     selectedDate && dueOption !== "NONE"
-      ? selectedDate.toLocaleString(undefined, {
-          dateStyle: "medium",
-          timeStyle: "short",
-        })
+      ? selectedDate.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
       : t("capture.dateTimeNoneShort") ?? t("capture.dueNone");
 
   const body = (
@@ -451,7 +468,12 @@ export default function CaptureModal({
         className="remi-modal-textarea"
         placeholder={t("capture.textareaPlaceholder")}
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) => {
+          userEditedRef.current = true;
+          const v = e.target.value;
+          textRef.current = v;
+          setText(v);
+        }}
       />
 
       {/* Paso 1: elegir tarea o idea */}
@@ -595,14 +617,10 @@ export default function CaptureModal({
             </div>
 
             <div style={{ marginTop: 8 }}>
-              <p
-                className="remi-modal-sub"
-                style={{ fontSize: 11, marginTop: 4 }}
-              >
+              <p className="remi-modal-sub" style={{ fontSize: 11, marginTop: 4 }}>
                 {t("capture.dueHint")}
               </p>
 
-              {/* Resumen fecha + hora + flecha para desplegar */}
               <button
                 type="button"
                 onClick={() => {
@@ -624,14 +642,7 @@ export default function CaptureModal({
                   opacity: dueOption === "NONE" ? 0.6 : 1,
                 }}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 2,
-                    textAlign: "left",
-                  }}
-                >
+                <div style={{ display: "flex", flexDirection: "column", gap: 2, textAlign: "left" }}>
                   <span
                     style={{
                       fontSize: 11,
@@ -646,10 +657,7 @@ export default function CaptureModal({
                     style={{
                       fontSize: 13,
                       fontWeight: 500,
-                      color:
-                        selectedDate && dueOption !== "NONE"
-                          ? "#111827"
-                          : "#9ca3af",
+                      color: selectedDate && dueOption !== "NONE" ? "#111827" : "#9ca3af",
                     }}
                   >
                     {dateTimePreview}
@@ -659,9 +667,7 @@ export default function CaptureModal({
                   style={{
                     fontSize: 18,
                     color: "#6b7280",
-                    transform: isDateTimePickerOpen
-                      ? "rotate(180deg)"
-                      : "rotate(0deg)",
+                    transform: isDateTimePickerOpen ? "rotate(180deg)" : "rotate(0deg)",
                     transition: "transform 0.15s ease-out",
                   }}
                 >
@@ -669,7 +675,6 @@ export default function CaptureModal({
                 </span>
               </button>
 
-              {/* Picker fecha + hora (solo si está desplegado) */}
               {isDateTimePickerOpen && dueOption !== "NONE" && (
                 <div
                   style={{
@@ -680,7 +685,6 @@ export default function CaptureModal({
                     padding: 12,
                   }}
                 >
-                  {/* Cabecera calendario */}
                   <div
                     style={{
                       display: "flex",
@@ -689,17 +693,8 @@ export default function CaptureModal({
                       marginBottom: 8,
                     }}
                   >
-                    <span
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 500,
-                        color: "#64748b",
-                      }}
-                    >
-                      {calendarMonth.toLocaleString(undefined, {
-                        month: "long",
-                        year: "numeric",
-                      })}
+                    <span style={{ fontSize: 12, fontWeight: 500, color: "#64748b" }}>
+                      {calendarMonth.toLocaleString(undefined, { month: "long", year: "numeric" })}
                     </span>
                     <div style={{ display: "flex", gap: 8 }}>
                       <button
@@ -743,7 +738,6 @@ export default function CaptureModal({
                     </div>
                   </div>
 
-                  {/* Días semana */}
                   <div
                     style={{
                       display: "grid",
@@ -756,16 +750,12 @@ export default function CaptureModal({
                     }}
                   >
                     {weekdayLabels.map((w) => (
-                      <div
-                        key={w}
-                        style={{ textAlign: "center", paddingBottom: 2 }}
-                      >
+                      <div key={w} style={{ textAlign: "center", paddingBottom: 2 }}>
                         {w}
                       </div>
                     ))}
                   </div>
 
-                  {/* Celdas calendario */}
                   <div
                     style={{
                       display: "grid",
@@ -775,8 +765,7 @@ export default function CaptureModal({
                     }}
                   >
                     {calendarDays.map((cell, idx) => {
-                      const isSelected =
-                        selectedDate && isSameDay(cell.date, selectedDate);
+                      const isSelected = !!(selectedDate && isSameDay(cell.date, selectedDate));
                       const isToday = isSameDay(cell.date, new Date());
                       const isCurrent = cell.isCurrentMonth;
 
@@ -785,12 +774,8 @@ export default function CaptureModal({
                       let fontWeight = 400;
                       let border = "none";
 
-                      if (!isCurrent) {
-                        color = "#cbd5f5";
-                      }
-                      if (isToday && !isSelected) {
-                        border = "1px solid rgba(125,89,201,0.35)";
-                      }
+                      if (!isCurrent) color = "#cbd5f5";
+                      if (isToday && !isSelected) border = "1px solid rgba(125,89,201,0.35)";
                       if (isSelected) {
                         bg = "#7d59c9";
                         color = "#ffffff";
@@ -822,14 +807,7 @@ export default function CaptureModal({
                     })}
                   </div>
 
-                  {/* Time picker estilo rueda dentro de un cuadrado blanco */}
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "center",
-                      marginTop: 4,
-                    }}
-                  >
+                  <div style={{ display: "flex", justifyContent: "center", marginTop: 4 }}>
                     <div
                       style={{
                         display: "flex",
@@ -841,7 +819,6 @@ export default function CaptureModal({
                         boxShadow: "0 8px 20px rgba(15,23,42,0.08)",
                       }}
                     >
-                      {/* Horas */}
                       <div style={{ textAlign: "center" }}>
                         <div
                           style={{
@@ -853,25 +830,13 @@ export default function CaptureModal({
                         >
                           {t("capture.timeHour") ?? "Hora"}
                         </div>
-                        <TimeWheel
-                          values={hoursOptions}
-                          selected={selectedHour}
-                          onChange={handleHourChange}
-                        />
+                        <TimeWheel values={hoursOptions} selected={selectedHour} onChange={handleHourChange} />
                       </div>
 
-                      <div
-                        style={{
-                          fontSize: 22,
-                          fontWeight: 500,
-                          color: "#64748b",
-                          marginTop: 18,
-                        }}
-                      >
+                      <div style={{ fontSize: 22, fontWeight: 500, color: "#64748b", marginTop: 18 }}>
                         :
                       </div>
 
-                      {/* Minutos */}
                       <div style={{ textAlign: "center" }}>
                         <div
                           style={{
@@ -883,11 +848,7 @@ export default function CaptureModal({
                         >
                           {t("capture.timeMinute") ?? "Min"}
                         </div>
-                        <TimeWheel
-                          values={minutesOptions}
-                          selected={selectedMinute}
-                          onChange={handleMinuteChange}
-                        />
+                        <TimeWheel values={minutesOptions} selected={selectedMinute} onChange={handleMinuteChange} />
                       </div>
                     </div>
                   </div>
@@ -903,14 +864,13 @@ export default function CaptureModal({
             <p className="remi-modal-sub" style={{ marginBottom: 4 }}>
               {t("capture.remindersLabel")}
             </p>
+
             {remindersDisabled && (
-              <p
-                className="remi-modal-sub"
-                style={{ fontSize: 11, opacity: 0.75, marginBottom: 4 }}
-              >
+              <p className="remi-modal-sub" style={{ fontSize: 11, opacity: 0.75, marginBottom: 4 }}>
                 {t("capture.remindersDisabledByHabit") ?? ""}
               </p>
             )}
+
             <select
               className="remi-input"
               style={{
@@ -920,34 +880,20 @@ export default function CaptureModal({
               }}
               value={reminderMode}
               disabled={remindersDisabled}
-              onChange={(e) =>
-                setReminderMode(e.target.value as ReminderMode)
-              }
+              onChange={(e) => setReminderMode(e.target.value as ReminderMode)}
             >
-              {dueOption === "NONE" ? (
+              <option value="NONE">{t("capture.remindersNone")}</option>
+
+              {dueOption !== "NONE" && (
                 <>
-                  <option value="NONE">
-                    {t("capture.remindersNone")}
-                  </option>
-                  <option value="DAILY_UNTIL_DUE">
-                    {t("capture.remindersDailyUntilDue")}
-                  </option>
+                  <option value="ON_DUE_DATE">{t("capture.remindersOnDue")}</option>
+                  <option value="DAY_BEFORE_AND_DUE">{t("capture.remindersDayBeforeAndDue")}</option>
+                  <option value="DAILY_UNTIL_DUE">{t("capture.remindersDailyUntilDue")}</option>
                 </>
-              ) : (
-                <>
-                  <option value="NONE">
-                    {t("capture.remindersNone")}
-                  </option>
-                  <option value="ON_DUE_DATE">
-                    {t("capture.remindersOnDue")}
-                  </option>
-                  <option value="DAY_BEFORE_AND_DUE">
-                    {t("capture.remindersDayBeforeAndDue")}
-                  </option>
-                  <option value="DAILY_UNTIL_DUE">
-                    {t("capture.remindersDailyUntilDue")}
-                  </option>
-                </>
+              )}
+
+              {dueOption === "NONE" && (
+                <option value="DAILY_UNTIL_DUE">{t("capture.remindersDailyUntilDue")}</option>
               )}
             </select>
           </div>
@@ -956,33 +902,17 @@ export default function CaptureModal({
           <Separator />
 
           <div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
-              }}
-            >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
               <div>
                 <p className="remi-modal-sub" style={{ marginBottom: 2 }}>
                   {t("repeat.label")}
                 </p>
-                <p
-                  className="remi-modal-sub"
-                  style={{ fontSize: 11, opacity: 0.8 }}
-                >
+                <p className="remi-modal-sub" style={{ fontSize: 11, opacity: 0.8 }}>
                   {t("repeat.help")}
                 </p>
               </div>
 
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <button
                   type="button"
                   onClick={() => {
@@ -990,26 +920,16 @@ export default function CaptureModal({
                     setManualRepeatOverride(true);
 
                     if (!next) {
-                      // Desactivamos hábito
                       setRepeatType("none");
                     } else {
-                      // Activamos hábito: si estaba en "Sin fecha" o sin fecha,
-                      // forzamos "Hoy" con la hora actual del picker
                       if (dueOption === "NONE" || !selectedDate) {
                         const base = new Date();
-                        base.setHours(
-                          selectedHour,
-                          selectedMinute,
-                          0,
-                          0
-                        );
+                        base.setHours(selectedHour, selectedMinute, 0, 0);
                         setDueOption("TODAY");
                         applyDateFromChip(base);
                       }
                       setReminderMode("NONE");
-                      if (repeatType === "none") {
-                        setRepeatType("daily");
-                      }
+                      if (repeatType === "none") setRepeatType("daily");
                     }
 
                     setRepeatEnabled(next);
@@ -1019,18 +939,13 @@ export default function CaptureModal({
                     height: 26,
                     borderRadius: 999,
                     border: "1px solid rgba(148,163,184,0.8)",
-                    backgroundColor: repeatEnabled
-                      ? "rgba(34,197,94,0.18)"
-                      : "#e5e7eb",
+                    backgroundColor: repeatEnabled ? "rgba(34,197,94,0.18)" : "#e5e7eb",
                     padding: 3,
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: repeatEnabled
-                      ? "flex-end"
-                      : "flex-start",
+                    justifyContent: repeatEnabled ? "flex-end" : "flex-start",
                     cursor: "pointer",
-                    transition:
-                      "background-color 0.18s ease, justify-content 0.18s ease",
+                    transition: "background-color 0.18s ease, justify-content 0.18s ease",
                   }}
                 >
                   <div
@@ -1049,10 +964,7 @@ export default function CaptureModal({
             </div>
 
             {repeatEnabled && (
-              <div
-                className="remi-chip-row"
-                style={{ marginTop: 8, flexWrap: "wrap", rowGap: 8 }}
-              >
+              <div className="remi-chip-row" style={{ marginTop: 8, flexWrap: "wrap", rowGap: 8 }}>
                 <Chip
                   label={t("repeat.options.daily")}
                   active={repeatType === "daily"}
@@ -1092,28 +1004,11 @@ export default function CaptureModal({
           {/* BOTONES FOOTER */}
           <Separator />
 
-          <div
-            className="remi-modal-footer"
-            style={{
-              display: "flex",
-              gap: 10,
-              marginTop: 4,
-            }}
-          >
-            <button
-              className="remi-btn-ghost"
-              style={{ flex: 1 }}
-              onClick={() => setMode("choose")}
-              disabled={loading}
-            >
+          <div className="remi-modal-footer" style={{ display: "flex", gap: 10, marginTop: 4 }}>
+            <button className="remi-btn-ghost" style={{ flex: 1 }} onClick={() => setMode("choose")} disabled={loading}>
               {t("capture.back")}
             </button>
-            <button
-              className="remi-btn-primary"
-              style={{ flex: 1 }}
-              onClick={handleConfirmTask}
-              disabled={loading}
-            >
+            <button className="remi-btn-primary" style={{ flex: 1 }} onClick={handleConfirmTask} disabled={loading}>
               {t("capture.saveTask")}
             </button>
           </div>
@@ -1190,7 +1085,6 @@ function TimeWheel({ values, selected, onChange }: TimeWheelProps) {
   const visibleItems = 3;
   const ref = useRef<HTMLDivElement | null>(null);
 
-  // Sincronizar scroll cuando cambia el valor seleccionado
   useEffect(() => {
     const idx = values.indexOf(selected);
     if (idx === -1 || !ref.current) return;
@@ -1203,9 +1097,7 @@ function TimeWheel({ values, selected, onChange }: TimeWheelProps) {
     const idx = Math.round(scrollTop / itemHeight);
     const clamped = Math.min(Math.max(idx, 0), values.length - 1);
     const value = values[clamped];
-    if (value !== selected) {
-      onChange(value);
-    }
+    if (value !== selected) onChange(value);
   };
 
   return (

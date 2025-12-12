@@ -6,7 +6,7 @@ import {
   useRef,
   type CSSProperties,
 } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
@@ -26,14 +26,15 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { registerPushSubscription } from "@/lib/registerPush";
 import CaptureModal from "@/components/CaptureModal";
-import MentalDumpModal from "@/components/MentalDumpModal"; // ⭐ NUEVO
+import MentalDumpModal from "@/components/MentalDumpModal";
+import { SHARE_DRAFT_KEY } from "@/pages/ShareTarget";
 import {
   ListTodo,
   Check,
   SkipForward,
   User,
   Share2,
-  Smartphone,  
+  Smartphone,
 } from "lucide-react";
 
 const AVATAR_KEY = "remi_avatar";
@@ -72,6 +73,7 @@ function isSameDay(a: Date, b: Date): boolean {
 
 export default function TodayPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, profile } = useAuth();
   const { t } = useI18n();
 
@@ -79,11 +81,15 @@ export default function TodayPage() {
   const [ideas, setIdeas] = useState<BrainItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [captureOpen, setCaptureOpen] = useState(false);
-  const [mentalDumpOpen, setMentalDumpOpen] = useState(false); // ⭐ NUEVO
+  const [mentalDumpOpen, setMentalDumpOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [statusSummary, setStatusSummary] =
     useState<RemiStatusSummary | null>(null);
+
+  // ✅ Share draft -> prefill en CaptureModal
+  const [shareDraftText, setShareDraftText] = useState<string | null>(null);
+  const [shareDraftNonce, setShareDraftNonce] = useState(0);
 
   // popup para activar notificaciones push
   const [showPushModal, setShowPushModal] = useState(false);
@@ -96,6 +102,45 @@ export default function TodayPage() {
 
   // 👉 contador total de tareas activas (para la cabecera)
   const activeTasksCount = tasks.length;
+
+  // ---------- ✅ Leer draft compartido cuando llegamos desde /share-target ----------
+  useEffect(() => {
+    if (!user || typeof window === "undefined") return;
+
+    const params = new URLSearchParams(location.search);
+    const hasSharedFlag = params.get("shared") === "1";
+
+    const raw = sessionStorage.getItem(SHARE_DRAFT_KEY);
+    if (!raw) {
+      if (hasSharedFlag) navigate("/", { replace: true });
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(raw) as { text?: unknown; ts?: unknown };
+      const text = String(parsed?.text ?? "").trim();
+
+      if (!text) {
+        sessionStorage.removeItem(SHARE_DRAFT_KEY);
+        if (hasSharedFlag) navigate("/", { replace: true });
+        return;
+      }
+
+      // Ponemos el texto como prefill (sin pisar lo que el usuario escriba después)
+      setShareDraftText(text);
+      setShareDraftNonce((n) => n + 1);
+
+      // ✅ MICRO-FIX: borrar el draft tras leerlo (evita que se rellene al recargar)
+      sessionStorage.removeItem(SHARE_DRAFT_KEY);
+
+      // Limpiamos el ?shared=1
+      if (hasSharedFlag) navigate("/", { replace: true });
+    } catch (e) {
+      console.error("Invalid share draft JSON", e);
+      sessionStorage.removeItem(SHARE_DRAFT_KEY);
+      if (hasSharedFlag) navigate("/", { replace: true });
+    }
+  }, [user?.id, location.search, navigate]);
 
   // ---------- Cargar tareas, ideas y resumen de estado ----------
   useEffect(() => {
@@ -172,11 +217,7 @@ export default function TodayPage() {
 
   // ---------- Comprobar si ya tiene suscripción push ----------
   useEffect(() => {
-    if (
-      !user ||
-      typeof window === "undefined" ||
-      !("Notification" in window)
-    ) {
+    if (!user || typeof window === "undefined" || !("Notification" in window)) {
       return;
     }
 
@@ -241,12 +282,11 @@ export default function TodayPage() {
     return () => window.removeEventListener("remi-open-capture", handler);
   }, []);
 
-  // ⭐ NUEVO: escuchar el evento para la Descarga mental
+  // escuchar el evento para la Descarga mental
   useEffect(() => {
     const handler = () => setMentalDumpOpen(true);
     window.addEventListener("remi-open-mental-dump", handler);
-    return () =>
-      window.removeEventListener("remi-open-mental-dump", handler);
+    return () => window.removeEventListener("remi-open-mental-dump", handler);
   }, []);
 
   // Cerrar el menú de perfil al hacer clic fuera
@@ -338,24 +378,17 @@ export default function TodayPage() {
       };
 
       for (const task of tasks) {
-        const mode = (task as any).reminder_mode as
-          | ReminderMode
-          | undefined;
+        const mode = (task as any).reminder_mode as ReminderMode | undefined;
 
         // --- TAREAS SIN FECHA ---
         if (!task.due_date) {
-          // Sólo en el bloque "Sin fecha" (se mostrará siempre debajo)
           noDate.push(task);
           continue;
         }
 
         // --- TAREAS CON FECHA LÍMITE ---
         const due = new Date(task.due_date as string);
-        const dueMid = new Date(
-          due.getFullYear(),
-          due.getMonth(),
-          due.getDate()
-        );
+        const dueMid = new Date(due.getFullYear(), due.getMonth(), due.getDate());
 
         // 1) Siempre se muestran el día de la fecha límite
         addTaskToDate(dueMid, task);
@@ -384,8 +417,6 @@ export default function TodayPage() {
             }
           }
         }
-
-        // Modo ON_DUE_DATE o undefined ya está cubierto
       }
 
       const dateGroupsArr = Array.from(groupsMap.values())
@@ -427,14 +458,11 @@ export default function TodayPage() {
         return time >= todayMid.getTime() && time <= weekEndMid.getTime();
       }
 
-      // "ALL"
-      return true;
+      return true; // ALL
     });
   }, [dateGroups, filter]);
 
-  const hasVisibleDatedTasks = filteredDateGroups.some(
-    (g) => g.items.length > 0
-  );
+  const hasVisibleDatedTasks = filteredDateGroups.some((g) => g.items.length > 0);
   const hasNoDateTasks = noDateTasks.length > 0;
 
   // ---------- creación / actualización de tareas / ideas ----------
@@ -473,12 +501,7 @@ export default function TodayPage() {
     const updated = await postponeTask(task.id, base.toISOString());
     setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
 
-    // 👉 Toast al posponer
-    if (option === "DAY") {
-      toast.success(t("today.postponeDayToast"));
-    } else {
-      toast.success(t("today.postponeDayToast"));
-    }
+    toast.success(t("today.postponeDayToast"));
   };
 
   // ---------- activar notificaciones push ----------
@@ -536,11 +559,10 @@ export default function TodayPage() {
     }
   };
 
-  // 👉 nuevo: reabrir el banner de instalación
+  // reabrir el banner de instalación
   const handleInstallApp = () => {
     setProfileOpen(false);
     if (typeof window === "undefined") return;
-
     window.dispatchEvent(new Event("remi-open-install"));
   };
 
@@ -569,7 +591,7 @@ export default function TodayPage() {
 
   return (
     <div className="remi-page">
-      {/* CABECERA CON DEGRADADO + barra "Mente despejada" */}
+      {/* CABECERA */}
       <div
         style={{
           padding: "16px 20px 18px",
@@ -591,21 +613,13 @@ export default function TodayPage() {
             <p style={{ fontSize: 12, opacity: 0.8 }}>
               {t("today.greeting", { name: displayName })}
             </p>
-            <h1
-              style={{
-                fontSize: 20,
-                margin: "4px 0 2px",
-                fontWeight: 600,
-              }}
-            >
+            <h1 style={{ fontSize: 20, margin: "4px 0 2px", fontWeight: 600 }}>
               {t("today.tasksToday", { count: activeTasksCount })}
             </h1>
-            <p style={{ fontSize: 11, opacity: 0.85 }}>
-              {t("today.prioritize")}
-            </p>
+            <p style={{ fontSize: 11, opacity: 0.85 }}>{t("today.prioritize")}</p>
           </div>
 
-          {/* BOTÓN PERFIL + MENÚ DESPLEGABLE */}
+          {/* PERFIL */}
           <div style={{ position: "relative" }} ref={profileMenuRef}>
             <button
               onClick={() => setProfileOpen((open) => !open)}
@@ -680,6 +694,7 @@ export default function TodayPage() {
                   <User size={16} style={{ marginRight: 8 }} />
                   <span>{t("today.menuProfile")}</span>
                 </button>
+
                 <button
                   type="button"
                   onClick={handleShareApp}
@@ -688,6 +703,7 @@ export default function TodayPage() {
                   <Share2 size={16} style={{ marginRight: 8 }} />
                   <span>{t("today.menuShareApp")}</span>
                 </button>
+
                 <button
                   type="button"
                   onClick={handleInstallApp}
@@ -701,7 +717,7 @@ export default function TodayPage() {
           </div>
         </div>
 
-        {/* Barra "Mente despejada" en la cabecera */}
+        {/* Barra "Mente despejada" */}
         <div style={{ marginTop: 14 }}>
           <div
             style={{
@@ -729,8 +745,7 @@ export default function TodayPage() {
                 height: "100%",
                 width: `${mindClearPercent}%`,
                 borderRadius: 999,
-                background:
-                  "linear-gradient(90deg, #ffffff, #FDE68A, #FDBA74)",
+                background: "linear-gradient(90deg, #ffffff, #FDE68A, #FDBA74)",
                 transition: "width 0.4s ease",
               }}
             />
@@ -738,9 +753,9 @@ export default function TodayPage() {
         </div>
       </div>
 
-      {/* CONTENIDO BLANCO SUPERPUESTO */}
+      {/* CONTENIDO */}
       <div style={{ padding: "0 18px 18px" }}>
-        {/* FORMULARIO EMBEBIDO: mismo componente que el modal */}
+        {/* FORMULARIO EMBEBIDO */}
         <div style={{ marginTop: 18, marginBottom: 10 }}>
           <CaptureModal
             open={true}
@@ -748,10 +763,12 @@ export default function TodayPage() {
             onClose={() => {}}
             onCreateTask={handleCreateTask}
             onCreateIdea={handleCreateIdea}
+            initialText={shareDraftText}
+            initialTextNonce={shareDraftNonce}
           />
         </div>
 
-        {/* Filtros Hoy / Semana / Todo / Sin fecha */}
+        {/* Filtros */}
         <div
           style={{
             marginTop: 20,
@@ -774,10 +791,7 @@ export default function TodayPage() {
             {renderFilterButton("TODAY", t("today.tabsToday") || "Hoy")}
             {renderFilterButton("WEEK", t("today.tabsWeek") || "Semana")}
             {renderFilterButton("ALL", t("today.tabsAll") || "Todo")}
-            {renderFilterButton(
-              "NO_DATE",
-              t("today.tabsNoDate") || "Sin fecha"
-            )}
+            {renderFilterButton("NO_DATE", t("today.tabsNoDate") || "Sin fecha")}
           </div>
         </div>
 
@@ -785,32 +799,23 @@ export default function TodayPage() {
         <div className="remi-task-list">
           {loading && (
             <div className="remi-task-row">
-              <span className="remi-task-sub">
-                {t("today.loadingTasks")}
-              </span>
+              <span className="remi-task-sub">{t("today.loadingTasks")}</span>
+            </div>
+          )}
+
+          {!loading && !hasVisibleDatedTasks && !hasNoDateTasks && (
+            <div className="remi-task-row">
+              <div className="remi-task-dot" />
+              <div>
+                <p className="remi-task-title">{t("today.noUrgentTitle")}</p>
+                <p className="remi-task-sub">{t("today.noUrgentSubtitle")}</p>
+              </div>
             </div>
           )}
 
           {!loading &&
-            !hasVisibleDatedTasks &&
-            !hasNoDateTasks && (
-              <div className="remi-task-row">
-                <div className="remi-task-dot" />
-                <div>
-                  <p className="remi-task-title">
-                    {t("today.noUrgentTitle")}
-                  </p>
-                  <p className="remi-task-sub">
-                    {t("today.noUrgentSubtitle")}
-                  </p>
-                </div>
-              </div>
-            )}
-
-          {!loading &&
             filteredDateGroups.map((group) => (
               <div key={group.key}>
-                {/* Cabecera de fecha (Hoy, Mañana, Vi., fecha…) */}
                 <p className="mt-3 mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
                   {group.label}
                 </p>
@@ -834,7 +839,6 @@ export default function TodayPage() {
                         marginBottom: 8,
                       }}
                     >
-                      {/* izquierda: icono + texto */}
                       <div
                         style={{
                           display: "flex",
@@ -855,18 +859,13 @@ export default function TodayPage() {
                             marginTop: 2,
                             background: "rgba(143,49,243,0.08)",
                             color: "#7d59c9",
-                            flexShrink: 0, // el icono no se deforma
+                            flexShrink: 0,
                           }}
                         >
                           <ListTodo size={16} />
                         </div>
 
-                        <div
-                          style={{
-                            flex: 1,
-                            minWidth: 0,
-                          }}
-                        >
+                        <div style={{ flex: 1, minWidth: 0 }}>
                           <p
                             className="remi-task-title"
                             style={{
@@ -884,7 +883,6 @@ export default function TodayPage() {
                         </div>
                       </div>
 
-                      {/* derecha: controles */}
                       <div
                         style={{
                           textAlign: "right",
@@ -895,13 +893,7 @@ export default function TodayPage() {
                           gap: 6,
                         }}
                       >
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                          }}
-                        >
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           <button
                             style={{
                               background: "transparent",
@@ -911,8 +903,7 @@ export default function TodayPage() {
                               width: 30,
                               height: 30,
                               borderRadius: "999px",
-                              border:
-                                "1px solid rgba(237, 104, 104, 1)",
+                              border: "1px solid rgba(237, 104, 104, 1)",
                               display: "inline-flex",
                               alignItems: "center",
                               justifyContent: "center",
@@ -930,8 +921,7 @@ export default function TodayPage() {
                               width: 30,
                               height: 30,
                               borderRadius: "999px",
-                              border:
-                                "1px solid rgba(16,185,129,0.4)",
+                              border: "1px solid rgba(16,185,129,0.4)",
                               background: "rgba(16,185,129,0.08)",
                               display: "inline-flex",
                               alignItems: "center",
@@ -950,7 +940,6 @@ export default function TodayPage() {
               </div>
             ))}
 
-          {/* Bloque "Sin fecha" siempre al final (según filtro) */}
           {!loading &&
             hasNoDateTasks &&
             (filter === "ALL" ||
@@ -975,7 +964,6 @@ export default function TodayPage() {
                       marginBottom: 8,
                     }}
                   >
-                    {/* izquierda: icono + texto */}
                     <div
                       style={{
                         display: "flex",
@@ -1002,12 +990,7 @@ export default function TodayPage() {
                         <ListTodo size={16} />
                       </div>
 
-                      <div
-                        style={{
-                          flex: 1,
-                          minWidth: 0,
-                        }}
-                      >
+                      <div style={{ flex: 1, minWidth: 0 }}>
                         <p
                           className="remi-task-title"
                           style={{
@@ -1018,13 +1001,10 @@ export default function TodayPage() {
                         >
                           {task.title}
                         </p>
-                        <div className="remi-task-sub">
-                          {t("today.dueNoDate")}
-                        </div>
+                        <div className="remi-task-sub">{t("today.dueNoDate")}</div>
                       </div>
                     </div>
 
-                    {/* derecha: controles */}
                     <div
                       style={{
                         textAlign: "right",
@@ -1035,13 +1015,7 @@ export default function TodayPage() {
                         gap: 6,
                       }}
                     >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                        }}
-                      >
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <button
                           style={{
                             background: "transparent",
@@ -1051,8 +1025,7 @@ export default function TodayPage() {
                             width: 30,
                             height: 30,
                             borderRadius: "999px",
-                            border:
-                              "1px solid rgba(237, 104, 104, 1)",
+                            border: "1px solid rgba(237, 104, 104, 1)",
                             display: "inline-flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -1070,8 +1043,7 @@ export default function TodayPage() {
                             width: 30,
                             height: 30,
                             borderRadius: "999px",
-                            border:
-                              "1px solid rgba(16,185,129,0.4)",
+                            border: "1px solid rgba(16,185,129,0.4)",
                             background: "rgba(16,185,129,0.08)",
                             display: "inline-flex",
                             alignItems: "center",
@@ -1091,16 +1063,12 @@ export default function TodayPage() {
         </div>
       </div>
 
-      {/* POPUP para activar notificaciones push */}
+      {/* POPUP push */}
       {showPushModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl p-5 w-[90%] max-w-sm shadow-xl">
-            <h2 className="text-base font-semibold mb-1">
-              {t("today.pushTitle")}
-            </h2>
-            <p className="text-xs text-slate-600 mb-4">
-              {t("today.pushBody")}
-            </p>
+            <h2 className="text-base font-semibold mb-1">{t("today.pushTitle")}</h2>
+            <p className="text-xs text-slate-600 mb-4">{t("today.pushBody")}</p>
 
             <div className="flex flex-col gap-2">
               <button
@@ -1109,32 +1077,24 @@ export default function TodayPage() {
                 disabled={registeringPush}
                 className="w-full rounded-full bg-[#7d59c9] text-white text-xs font-semibold py-2.5 shadow-md disabled:opacity-70"
               >
-                {registeringPush
-                  ? t("today.pushEnabling")
-                  : t("today.pushEnable")}
+                {registeringPush ? t("today.pushEnabling") : t("today.pushEnable")}
               </button>
-
-              {/*  <button
-                type="button"
-                onClick={handleLater}
-                className="w-full rounded-full border border-slate-200 text-xs py-2.5 text-slate-600"
-              >
-                {t("today.pushLater")}
-              </button> */}
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal flotante del botón + (mismo componente, modo overlay) */}
+      {/* Modal flotante del botón + */}
       <CaptureModal
         open={captureOpen}
         onClose={() => setCaptureOpen(false)}
         onCreateTask={handleCreateTask}
         onCreateIdea={handleCreateIdea}
+        initialText={shareDraftText}
+        initialTextNonce={shareDraftNonce}
       />
 
-      {/* ⭐ NUEVO: Modal flotante para Descarga mental */}
+      {/* Modal Descarga mental */}
       <MentalDumpModal
         open={mentalDumpOpen}
         onClose={() => setMentalDumpOpen(false)}
