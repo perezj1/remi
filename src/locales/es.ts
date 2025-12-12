@@ -276,6 +276,12 @@ tasks: {
   },
 
   today: {
+
+    actionPostpone1d: "+1",
+    actionPostpone1dTitle: "Aplazar: añade 1 día a la fecha límite",
+    actionDone: " ",
+    actionDoneTitle: "Marcar como completada",
+
   title: "Hoy",
   emptyState: "No tienes tareas para hoy.",
   addTask: "Añadir tarea",

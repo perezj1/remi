@@ -35,6 +35,7 @@ import {
   User,
   Share2,
   Smartphone,
+  CalendarPlus,
 } from "lucide-react";
 
 const AVATAR_KEY = "remi_avatar";
@@ -68,6 +69,54 @@ function isSameDay(a: Date, b: Date): boolean {
     a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate()
+  );
+}
+
+type ActionPillProps = {
+  label: string;
+  title: string;
+  icon: JSX.Element;
+  onClick: () => void;
+};
+
+function ActionPill({ label, title, icon, onClick }: ActionPillProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      aria-label={title}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+        height: 30,
+        padding: "0 10px",
+        borderRadius: 999,
+        border: "1px solid rgba(143,49,243,0.30)",
+        background: "rgba(143,49,243,0.10)",
+        color: "#7d59c9",
+        cursor: "pointer",
+        fontSize: 11,
+        fontWeight: 600,
+        transition: "transform 0.08s ease, box-shadow 0.15s ease",
+        boxShadow: "0 6px 16px rgba(15,23,42,0.06)",
+        userSelect: "none",
+        whiteSpace: "nowrap",
+      }}
+      onMouseDown={(e) => {
+        (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.98)";
+      }}
+      onMouseUp={(e) => {
+        (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)";
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)";
+      }}
+    >
+      <span style={{ display: "inline-flex", alignItems: "center" }}>{icon}</span>
+      <span style={{ lineHeight: 1 }}>{label}</span>
+    </button>
   );
 }
 
@@ -521,10 +570,6 @@ export default function TodayPage() {
     }
   };
 
-  const handleLater = () => {
-    setShowPushModal(false);
-  };
-
   // ---------- datos de usuario / perfil para UI ----------
   const displayName =
     (profile?.display_name && profile.display_name.trim() !== ""
@@ -686,29 +731,17 @@ export default function TodayPage() {
                   {t("today.profileLoggedInAs", { name: displayName })}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleOpenProfile}
-                  style={menuButtonStyle}
-                >
+                <button type="button" onClick={handleOpenProfile} style={menuButtonStyle}>
                   <User size={16} style={{ marginRight: 8 }} />
                   <span>{t("today.menuProfile")}</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={handleShareApp}
-                  style={menuButtonStyle}
-                >
+                <button type="button" onClick={handleShareApp} style={menuButtonStyle}>
                   <Share2 size={16} style={{ marginRight: 8 }} />
                   <span>{t("today.menuShareApp")}</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={handleInstallApp}
-                  style={menuButtonStyle}
-                >
+                <button type="button" onClick={handleInstallApp} style={menuButtonStyle}>
                   <Smartphone size={16} style={{ marginRight: 8 }} />
                   <span>{t("today.menuInstallApp")}</span>
                 </button>
@@ -894,29 +927,38 @@ export default function TodayPage() {
                         }}
                       >
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          {/* ✅ APLAZAR +1 DÍA (con texto explicativo) */}                          
                           <button
-                            style={{
-                              background: "transparent",
-                              color: "rgba(237, 104, 104, 1)",
-                              fontSize: 15,
-                              cursor: "pointer",
-                              width: 30,
-                              height: 30,
-                              borderRadius: "999px",
-                              border: "1px solid rgba(237, 104, 104, 1)",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              padding: 0,
-                            }}
-                            onClick={() => handlePostpone(task, "DAY")}
-                          >
-                            <SkipForward size={16} />
-                          </button>
+  type="button"
+  onClick={() => handlePostpone(task, "DAY")}
+  title={t("today.actionPostpone1dTitle") || "Aplazar: añade 1 día a la fecha límite"}
+  aria-label={t("today.actionPostpone1dTitle") || "Aplazar: añade 1 día a la fecha límite"}
+  style={{
+    width: 30,
+    height: 30,
+    borderRadius: "999px",
+    border: "1px solid #C6CDD7",   // borde (como la imagen)
+    background: "#FFFFFF",         // fondo blanco (como la imagen)
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    padding: 0,
+  }}
+>
+  <CalendarPlus size={16} color="#747B88" />  {/* icono (como la imagen) */}
+</button>
 
+
+
+
+
+                          {/* ✅ DONE igual que antes (sin texto) */}
                           <button
                             type="button"
                             onClick={() => handleDone(task)}
+                            title={t("today.actionDoneTitle") || "Marcar como completada"}
+                            aria-label={t("today.actionDoneTitle") || "Marcar como completada"}
                             style={{
                               width: 30,
                               height: 30,
@@ -1016,29 +1058,12 @@ export default function TodayPage() {
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <button
-                          style={{
-                            background: "transparent",
-                            color: "rgba(237, 104, 104, 1)",
-                            fontSize: 15,
-                            cursor: "pointer",
-                            width: 30,
-                            height: 30,
-                            borderRadius: "999px",
-                            border: "1px solid rgba(237, 104, 104, 1)",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            padding: 0,
-                          }}
-                          onClick={() => handlePostpone(task, "DAY")}
-                        >
-                          <SkipForward size={16} />
-                        </button>
-
+                        {/* ✅ SIN FECHA: NO MOSTRAR APLAZAR +1 DÍA */}
                         <button
                           type="button"
                           onClick={() => handleDone(task)}
+                          title={t("today.actionDoneTitle") || "Marcar como completada"}
+                          aria-label={t("today.actionDoneTitle") || "Marcar como completada"}
                           style={{
                             width: 30,
                             height: 30,
