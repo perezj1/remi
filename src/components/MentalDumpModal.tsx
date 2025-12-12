@@ -1,7 +1,7 @@
 // src/components/MentalDumpModal.tsx
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
-import { X, ListTodo, Lightbulb } from "lucide-react";
+import { X, ListTodo, Lightbulb, ChevronDown, ChevronUp } from "lucide-react";
 import type { ReminderMode, RepeatType } from "@/lib/brainItemsApi";
 import { useI18n } from "@/contexts/I18nContext";
 import { parseDateTimeFromText } from "@/lib/parseDateTimeFromText";
@@ -57,15 +57,276 @@ const HINT_KEYS = [
 
 type PreviewKind = "task" | "idea";
 
+type WhyKey =
+  | "mentalDump.why.verbTask"
+  | "mentalDump.why.prefixIdea"
+  | "mentalDump.why.projectIdea"
+  | "mentalDump.why.defaultTask"
+  | "mentalDump.why.defaultIdea"
+  | "mentalDump.why.manualTask"
+  | "mentalDump.why.manualIdea";
+
 interface PreviewItem {
   id: number;
   kind: PreviewKind;
   original: string;
   title: string;
+
   dueDate: string | null;
   reminderMode: ReminderMode;
   repeatType: RepeatType;
+
   selected: boolean;
+
+  // “Por qué”
+  whyKey: WhyKey;
+  whyVars?: Record<string, any>;
+  whyLocked: boolean;
+
+  // “Detectado” (fecha / hora / recordatorio / hábito)
+  detectedDateText: string | null;
+  detectedTimeText: string | null;
+  detectedReminderText: string | null;
+  detectedHabitText: string | null;
+
+  // locks: si el user toca manualmente, no machacamos al editar título
+  reminderLocked: boolean;
+  habitLocked: boolean;
+}
+
+function pad2(n: number) {
+  return String(n).padStart(2, "0");
+}
+
+function toLocalYYYYMMDD(d: Date) {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
+function toLocalHHMM(d: Date) {
+  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+
+function buildISOFromLocalParts(dateYYYYMMDD: string, timeHHMM: string) {
+  const [yy, mm, dd] = dateYYYYMMDD.split("-").map((x) => parseInt(x, 10));
+  const [hh, mi] = timeHHMM.split(":").map((x) => parseInt(x, 10));
+  const dt = new Date(yy, (mm ?? 1) - 1, dd ?? 1, hh ?? 18, mi ?? 0, 0, 0);
+  return dt.toISOString();
+}
+
+function normalizeFirstWord(raw: string) {
+  return raw
+    .toLowerCase()
+    .trim()
+    .split(/\s+/)[0]
+    .replace(/[^a-záéíóúüñ]/g, "");
+}
+
+/**
+ * Fallback interpolation:
+ * - Si tu t() no sustituye vars (o el texto trae "(word)" / "{word}"),
+ *   lo sustituimos aquí igualmente.
+ */
+function interpolateFallback(text: string, vars?: Record<string, any>) {
+  if (!vars) return text;
+  let out = text;
+  for (const [k, v] of Object.entries(vars)) {
+    const value = String(v);
+    out = out
+      .split(`{${k}}`)
+      .join(value)
+      .split(`(${k})`)
+      .join(value)
+      .split(`"${k}"`)
+      .join(value);
+  }
+  return out;
+}
+
+/** Intento ligero de encontrar “qué parte” del texto activó fecha/hora/hábito (ES/EN/DE). */
+function detectDateSignal(text: string): string | null {
+  const s = text.toLowerCase();
+
+  const kw =
+    s.match(
+      /\b(hoy|mañana|pasado\s+mañana|este\s+finde|este\s+fin\s+de\s+semana|today|tomorrow|this\s+weekend|heute|morgen|dieses\s+wochenende)\b/i
+    )?.[0] ?? null;
+  if (kw) return kw;
+
+  const weekday =
+    s.match(
+      /\b(lunes|martes|mi[eé]rcoles|jueves|viernes|s[áa]bado|domingo|monday|tuesday|wednesday|thursday|friday|saturday|sunday|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)\b/i
+    )?.[0] ?? null;
+  if (weekday) return weekday;
+
+  const numeric =
+    s.match(
+      /\b(\d{1,2}[\/.\-]\d{1,2}([\/.\-]\d{2,4})?|\d{4}[\/.\-]\d{1,2}[\/.\-]\d{1,2})\b/
+    )?.[0] ?? null;
+  if (numeric) return numeric;
+
+  const esLong =
+    s.match(
+      /\b\d{1,2}\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\b/i
+    )?.[0] ?? null;
+  if (esLong) return esLong;
+
+  const otherLong =
+    s.match(
+      /\b\d{1,2}\s+(january|february|march|april|may|june|july|august|september|october|november|december|januar|februar|märz|maerz|april|mai|juni|juli|august|september|oktober|november|dezember)\b/i
+    )?.[0] ?? null;
+  if (otherLong) return otherLong;
+
+  return null;
+}
+
+function detectTimeSignal(text: string): string | null {
+  const s = text.toLowerCase();
+
+  const hhmm = s.match(/\b\d{1,2}:\d{2}\b/)?.[0] ?? null;
+  if (hhmm) return hhmm;
+
+  const spoken =
+    s.match(/\b(a\s+las|um|at)\s+\d{1,2}(:\d{2})?\b/i)?.[0] ?? null;
+  if (spoken) return spoken;
+
+  const h = s.match(/\b\d{1,2}\s*h\b/i)?.[0] ?? null;
+  if (h) return h;
+
+  const ampm = s.match(/\b\d{1,2}\s*(am|pm)\b/i)?.[0] ?? null;
+  if (ampm) return ampm;
+
+  return null;
+}
+
+function detectHabitSignal(text: string): string | null {
+  const s = text.toLowerCase();
+
+  const daily =
+    s.match(
+      /\b(cada\s+d[ií]a|todos\s+los\s+d[ií]as|a\s+diario|daily|every\s+day|täglich|jeden\s+tag)\b/i
+    )?.[0] ?? null;
+  if (daily) return daily;
+
+  const weekly =
+    s.match(
+      /\b(cada\s+semana|semanal(mente)?|weekly|every\s+week|wöchentlich|jede\s+woche)\b/i
+    )?.[0] ?? null;
+  if (weekly) return weekly;
+
+  const monthly =
+    s.match(
+      /\b(cada\s+mes|mensual(mente)?|monthly|every\s+month|monatlich|jeden\s+monat)\b/i
+    )?.[0] ?? null;
+  if (monthly) return monthly;
+
+  const yearly =
+    s.match(
+      /\b(cada\s+año|anual(mente)?|yearly|every\s+year|jährlich|jedes\s+jahr)\b/i
+    )?.[0] ?? null;
+  if (yearly) return yearly;
+
+  const eachWeekday =
+    s.match(
+      /\b(cada\s+(lunes|martes|mi[eé]rcoles|jueves|viernes|s[áa]bado|domingo)|every\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)|jeden\s+(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag))\b/i
+    )?.[0] ?? null;
+  if (eachWeekday) return eachWeekday;
+
+  return null;
+}
+
+function detectReminderSignal(
+  text: string,
+  reminderHint: string | null | undefined
+): string | null {
+  const s = text.toLowerCase();
+
+  if (reminderHint === "DAY_BEFORE_AND_DUE") {
+    const before =
+      s.match(
+        /\b(antes\s+de|un\s+d[ií]a\s+antes|day\s+before|the\s+day\s+before|vorher|einen\s+tag\s+vorher)\b/i
+      )?.[0] ?? null;
+    if (before) return before;
+    return reminderHint;
+  }
+
+  if (reminderHint === "DAILY_UNTIL_DUE") {
+    const daily =
+      s.match(
+        /\b(cada\s+d[ií]a|a\s+diario|daily|every\s+day|täglich|jeden\s+tag)\b/i
+      )?.[0] ?? null;
+    if (daily) return daily;
+    return reminderHint;
+  }
+
+  return null;
+}
+
+function detectWhyForText(text: string): {
+  kind: PreviewKind;
+  whyKey: WhyKey;
+  whyVars?: any;
+} {
+  const lower = text.toLowerCase().trim();
+
+  for (const prefix of IDEA_PREFIXES) {
+    if (lower.startsWith(prefix + " ") || lower === prefix) {
+      return {
+        kind: "idea",
+        whyKey: "mentalDump.why.prefixIdea",
+        whyVars: { word: prefix },
+      };
+    }
+  }
+
+  const firstWord = normalizeFirstWord(lower);
+  if (ACTION_VERBS.includes(firstWord)) {
+    return {
+      kind: "task",
+      whyKey: "mentalDump.why.verbTask",
+      whyVars: { word: firstWord },
+    };
+  }
+
+  if (
+    lower.startsWith("proyecto") ||
+    lower.startsWith("plan") ||
+    lower.includes("algún día") ||
+    lower.includes("me gustaría")
+  ) {
+    return { kind: "idea", whyKey: "mentalDump.why.projectIdea" };
+  }
+
+  return { kind: "task", whyKey: "mentalDump.why.defaultTask" };
+}
+
+function detectWhyForKind(
+  text: string,
+  kind: PreviewKind
+): { whyKey: WhyKey; whyVars?: any } {
+  const lower = text.toLowerCase().trim();
+  const firstWord = normalizeFirstWord(lower);
+
+  if (kind === "task") {
+    if (ACTION_VERBS.includes(firstWord)) {
+      return { whyKey: "mentalDump.why.verbTask", whyVars: { word: firstWord } };
+    }
+    return { whyKey: "mentalDump.why.defaultTask" };
+  }
+
+  for (const prefix of IDEA_PREFIXES) {
+    if (lower.startsWith(prefix + " ") || lower === prefix) {
+      return { whyKey: "mentalDump.why.prefixIdea", whyVars: { word: prefix } };
+    }
+  }
+  if (
+    lower.startsWith("proyecto") ||
+    lower.startsWith("plan") ||
+    lower.includes("algún día") ||
+    lower.includes("me gustaría")
+  ) {
+    return { whyKey: "mentalDump.why.projectIdea" };
+  }
+  return { whyKey: "mentalDump.why.defaultIdea" };
 }
 
 export default function MentalDumpModal({
@@ -81,13 +342,15 @@ export default function MentalDumpModal({
   const [hintIndex, setHintIndex] = useState(0);
   const [previewItems, setPreviewItems] = useState<PreviewItem[] | null>(null);
 
+  // ✅ accordion: items colapsados y se despliegan al click
+  const [expandedIds, setExpandedIds] = useState<Record<number, boolean>>({});
+
   const hints = HINT_KEYS.map((key) => t(key));
 
-  // Rotar las pistas cada 15s mientras el modal está abierto
   useEffect(() => {
     if (!open) return;
 
-    setHintIndex(0); // reset al abrir
+    setHintIndex(0);
     const interval = setInterval(() => {
       setHintIndex((prev) => (prev + 1) % hints.length);
     }, 15000);
@@ -95,60 +358,28 @@ export default function MentalDumpModal({
     return () => clearInterval(interval);
   }, [open, hints.length]);
 
-  // Cuando se cierra desde fuera, reseteamos el estado
   useEffect(() => {
     if (!open) {
       setDumpText("");
       setPreviewItems(null);
       setIsSubmitting(false);
+      setExpandedIds({});
     }
   }, [open]);
 
-  // Lista de líneas limpias (separar por saltos de línea o comas)
   const items = useMemo(() => {
     if (!dumpText.trim()) return [];
-
-    const rawParts = dumpText
+    return dumpText
       .split(/\n|,/g)
       .map((part) => part.trim())
       .filter((part) => part.length > 0);
-
-    return rawParts;
   }, [dumpText]);
-
-  function classifyItem(text: string): "task" | "idea" {
-    const lower = text.toLowerCase().trim();
-
-    for (const prefix of IDEA_PREFIXES) {
-      if (lower.startsWith(prefix + " ") || lower === prefix) {
-        return "idea";
-      }
-    }
-
-    const firstWord = lower
-      .split(/\s+/)[0]
-      .replace(/[^a-záéíóúüñ]/g, "");
-
-    if (ACTION_VERBS.includes(firstWord)) {
-      return "task";
-    }
-
-    if (
-      lower.startsWith("proyecto") ||
-      lower.startsWith("plan") ||
-      lower.includes("algún día") ||
-      lower.includes("me gustaría")
-    ) {
-      return "idea";
-    }
-
-    return "task";
-  }
 
   const handleInternalClose = () => {
     setDumpText("");
     setPreviewItems(null);
     setIsSubmitting(false);
+    setExpandedIds({});
     onClose();
   };
 
@@ -176,74 +407,230 @@ export default function MentalDumpModal({
     }
   }
 
-  function computeTaskFieldsFromText(text: string): Pick<
+  function formatReminderMode(mode: ReminderMode): string {
+    switch (mode) {
+      case "DAY_BEFORE_AND_DUE":
+        return t("mentalDump.reminderDayBeforeAndDue");
+      case "DAILY_UNTIL_DUE":
+        return t("mentalDump.reminderDailyUntilDue");
+      default:
+        return t("mentalDump.reminderOff");
+    }
+  }
+
+  function computeTaskFieldsFromText(
+    text: string
+  ): Pick<
     PreviewItem,
-    "dueDate" | "reminderMode" | "repeatType"
+    | "dueDate"
+    | "reminderMode"
+    | "repeatType"
+    | "detectedDateText"
+    | "detectedTimeText"
+    | "detectedReminderText"
+    | "detectedHabitText"
   > {
-    const parsed = parseDateTimeFromText(text, lang as any, new Date());
+    const parsed = parseDateTimeFromText(text, lang as any, new Date()) as any;
     const { dueDateISO, repeatHint, reminderHint } = parsed;
 
-    const dueDate = dueDateISO;
+    const dueDate = dueDateISO ?? null;
 
-    // repeatType (pero si es DAILY_UNTIL_DUE => tarea única)
     let repeatType: RepeatType = "none";
-    if (reminderHint === "DAILY_UNTIL_DUE") {
-      repeatType = "none";
-    } else {
-      if (repeatHint === "daily") repeatType = "daily";
-      else if (repeatHint === "weekly") repeatType = "weekly";
-      else if (repeatHint === "monthly") repeatType = "monthly";
-      else if (repeatHint === "yearly") repeatType = "yearly";
-    }
+    if (repeatHint === "daily") repeatType = "daily";
+    else if (repeatHint === "weekly") repeatType = "weekly";
+    else if (repeatHint === "monthly") repeatType = "monthly";
+    else if (repeatHint === "yearly") repeatType = "yearly";
 
-    // reminderMode (solo si hay fecha)
     let reminderMode: ReminderMode = "NONE";
     if (dueDate) {
-      if (reminderHint === "DAY_BEFORE_AND_DUE") {
+      if (reminderHint === "DAY_BEFORE_AND_DUE")
         reminderMode = "DAY_BEFORE_AND_DUE";
-      } else if (reminderHint === "DAILY_UNTIL_DUE") {
+      else if (reminderHint === "DAILY_UNTIL_DUE")
         reminderMode = "DAILY_UNTIL_DUE";
-      } else {
-        // Default para tareas con fecha: recordar todos los días hasta la fecha
-        reminderMode = "DAILY_UNTIL_DUE";
-      }
+      else reminderMode = "DAILY_UNTIL_DUE";
     }
 
-    return { dueDate, reminderMode, repeatType };
+    const detectedDateText = detectDateSignal(text);
+    const detectedTimeText = detectTimeSignal(text);
+
+    const reminderDetectedFromText = detectReminderSignal(text, reminderHint);
+    const detectedReminderText = dueDate
+      ? reminderDetectedFromText ?? t("mentalDump.detectedDefault")
+      : null;
+
+    const detectedHabitText = detectHabitSignal(text);
+
+    return {
+      dueDate,
+      reminderMode,
+      repeatType,
+      detectedDateText,
+      detectedTimeText,
+      detectedReminderText,
+      detectedHabitText,
+    };
+  }
+
+  function updatePreviewItem(
+    itemId: number,
+    fn: (p: PreviewItem) => PreviewItem
+  ) {
+    setPreviewItems((prev) => {
+      if (!prev) return prev;
+      return prev.map((p) => (p.id === itemId ? fn(p) : p));
+    });
+  }
+
+  function toggleExpanded(itemId: number) {
+    setExpandedIds((prev) => ({ ...prev, [itemId]: !prev[itemId] }));
   }
 
   function setItemKind(itemId: number, nextKind: PreviewKind) {
-    setPreviewItems((prev) => {
-      if (!prev) return prev;
+    updatePreviewItem(itemId, (p) => {
+      if (p.kind === nextKind) return p;
 
-      return prev.map((p) => {
-        if (p.id !== itemId) return p;
-        if (p.kind === nextKind) return p;
-
-        if (nextKind === "idea") {
-          // al convertir a idea, limpiamos campos de tarea
-          return {
-            ...p,
-            kind: "idea",
-            dueDate: null,
-            reminderMode: "NONE",
-            repeatType: "none",
-          };
-        }
-
-        // al convertir a tarea, recalculamos a partir del texto actual del input
-        const baseText = (p.title?.trim() || p.original).trim();
-        const { dueDate, reminderMode, repeatType } =
-          computeTaskFieldsFromText(baseText);
-
+      if (nextKind === "idea") {
         return {
           ...p,
-          kind: "task",
-          dueDate,
-          reminderMode,
-          repeatType,
+          kind: "idea",
+          dueDate: null,
+          reminderMode: "NONE",
+          repeatType: "none",
+          whyKey: "mentalDump.why.manualIdea",
+          whyVars: undefined,
+          whyLocked: true,
+
+          detectedDateText: null,
+          detectedTimeText: null,
+          detectedReminderText: null,
+          detectedHabitText: null,
+
+          reminderLocked: false,
+          habitLocked: false,
         };
-      });
+      }
+
+      const baseText = (p.title?.trim() || p.original).trim();
+      const fields = computeTaskFieldsFromText(baseText);
+
+      return {
+        ...p,
+        kind: "task",
+        ...fields,
+        whyKey: "mentalDump.why.manualTask",
+        whyVars: undefined,
+        whyLocked: true,
+      };
+    });
+  }
+
+  function setTaskDateFromPicker(itemId: number, yyyymmdd: string) {
+    updatePreviewItem(itemId, (p) => {
+      if (p.kind !== "task") return p;
+
+      const timeStr = p.dueDate ? toLocalHHMM(new Date(p.dueDate)) : "18:00";
+      const iso = buildISOFromLocalParts(yyyymmdd, timeStr);
+
+      const nextReminderMode = iso
+        ? p.reminderMode === "NONE"
+          ? "NONE"
+          : p.reminderMode
+        : "NONE";
+
+      return {
+        ...p,
+        dueDate: iso,
+        reminderMode: nextReminderMode,
+        detectedDateText: t("mentalDump.detectedManual"),
+        detectedReminderText: iso
+          ? p.reminderLocked
+            ? p.detectedReminderText
+            : t("mentalDump.detectedDefault")
+          : null,
+      };
+    });
+  }
+
+  function setTaskTimeFromPicker(itemId: number, hhmm: string) {
+    updatePreviewItem(itemId, (p) => {
+      if (p.kind !== "task") return p;
+      if (!p.dueDate) return p;
+
+      const d = new Date(p.dueDate);
+      const dateStr = toLocalYYYYMMDD(d);
+      const iso = buildISOFromLocalParts(dateStr, hhmm);
+
+      return {
+        ...p,
+        dueDate: iso,
+        detectedTimeText: t("mentalDump.detectedManual"),
+      };
+    });
+  }
+
+  function setTaskReminder(itemId: number, next: ReminderMode) {
+    updatePreviewItem(itemId, (p) => {
+      if (p.kind !== "task") return p;
+      if (!p.dueDate) {
+        return {
+          ...p,
+          reminderMode: "NONE",
+          detectedReminderText: null,
+          reminderLocked: true,
+        };
+      }
+      return {
+        ...p,
+        reminderMode: next,
+        detectedReminderText: t("mentalDump.detectedManual"),
+        reminderLocked: true,
+      };
+    });
+  }
+
+  function setHabitEnabled(itemId: number, enabled: boolean) {
+    updatePreviewItem(itemId, (p) => {
+      if (p.kind !== "task") return p;
+
+      if (!enabled) {
+        return {
+          ...p,
+          repeatType: "none",
+          detectedHabitText: t("mentalDump.detectedManual"),
+          habitLocked: true,
+        };
+      }
+
+      const nextRepeat: RepeatType =
+        p.repeatType === "none" ? "daily" : p.repeatType;
+
+      return {
+        ...p,
+        repeatType: nextRepeat,
+        detectedHabitText: t("mentalDump.detectedManual"),
+        habitLocked: true,
+      };
+    });
+  }
+
+  function setHabitRepeatType(itemId: number, rt: RepeatType) {
+    updatePreviewItem(itemId, (p) => {
+      if (p.kind !== "task") return p;
+      return {
+        ...p,
+        repeatType: rt,
+        detectedHabitText: t("mentalDump.detectedManual"),
+        habitLocked: true,
+      };
+    });
+  }
+
+  function shortDue(item: PreviewItem) {
+    if (!item.dueDate) return t("today.dueNoDate");
+    const d = new Date(item.dueDate);
+    return d.toLocaleString(undefined, {
+      dateStyle: "short",
+      timeStyle: "short",
     });
   }
 
@@ -253,7 +640,6 @@ export default function MentalDumpModal({
     e.preventDefault();
 
     if (previewItems === null) {
-      // FASE 1: construir vista previa
       if (!items.length) {
         handleInternalClose();
         return;
@@ -266,21 +652,32 @@ export default function MentalDumpModal({
         const original = raw.trim();
         if (!original) continue;
 
-        const kind = classifyItem(original);
+        const det = detectWhyForText(original);
 
-        if (kind === "task") {
-          const { dueDate, reminderMode, repeatType } =
-            computeTaskFieldsFromText(original);
+        if (det.kind === "task") {
+          const fields = computeTaskFieldsFromText(original);
 
           next.push({
             id: idCounter++,
             kind: "task",
             original,
-            title: original, // no quitamos fecha/hora
-            dueDate,
-            reminderMode,
-            repeatType,
+            title: original,
+            dueDate: fields.dueDate,
+            reminderMode: fields.reminderMode,
+            repeatType: fields.repeatType,
             selected: true,
+
+            whyKey: det.whyKey,
+            whyVars: det.whyVars,
+            whyLocked: false,
+
+            detectedDateText: fields.detectedDateText,
+            detectedTimeText: fields.detectedTimeText,
+            detectedReminderText: fields.detectedReminderText,
+            detectedHabitText: fields.detectedHabitText,
+
+            reminderLocked: false,
+            habitLocked: false,
           });
         } else {
           next.push({
@@ -292,15 +689,27 @@ export default function MentalDumpModal({
             reminderMode: "NONE",
             repeatType: "none",
             selected: true,
+
+            whyKey: det.whyKey,
+            whyVars: det.whyVars,
+            whyLocked: false,
+
+            detectedDateText: null,
+            detectedTimeText: null,
+            detectedReminderText: null,
+            detectedHabitText: null,
+
+            reminderLocked: false,
+            habitLocked: false,
           });
         }
       }
 
       setPreviewItems(next);
+      setExpandedIds({}); // todo colapsado por defecto
       return;
     }
 
-    // FASE 2: crear en Remi lo que esté seleccionado
     if (!hasSelected) {
       handleInternalClose();
       return;
@@ -340,7 +749,6 @@ export default function MentalDumpModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-3 sm:px-4">
       <div className="relative w-full max-w-lg rounded-3xl border border-slate-100 bg-white p-4 sm:p-6 shadow-[0_18px_40px_rgba(15,23,42,0.45)]">
-        {/* Cerrar */}
         <button
           type="button"
           onClick={handleInternalClose}
@@ -349,7 +757,6 @@ export default function MentalDumpModal({
           <X className="h-5 w-5" />
         </button>
 
-        {/* Contenido */}
         <div className="space-y-4 pt-1">
           <div className="space-y-1">
             <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
@@ -369,7 +776,6 @@ export default function MentalDumpModal({
 
           {previewItems === null ? (
             <>
-              {/* FASE 1: textarea + hint */}
               <div className="rounded-2xl bg-slate-50 px-3 py-2 text-xs sm:text-sm text-slate-600 border border-slate-100 min-h-[60px] sm:min-h-[72px] flex items-center">
                 <p className="leading-snug">{hints[hintIndex]}</p>
               </div>
@@ -387,7 +793,6 @@ export default function MentalDumpModal({
                   />
                 </div>
 
-                {/* Resumen */}
                 <p className="text-xs text-slate-500">
                   {items.length === 0
                     ? t("mentalDump.summaryNone")
@@ -417,137 +822,472 @@ export default function MentalDumpModal({
             </>
           ) : (
             <>
-              {/* FASE 2: vista previa de items */}
-              <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
-                {previewItems.length === 0 && (
-                  <p className="text-xs text-slate-500">
-                    {t("mentalDump.previewNoneSelected")}
-                  </p>
-                )}
+              {/* ✅ LISTA RESUMEN + DETALLE DESPLEGABLE */}
+              <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
+                {previewItems.map((item) => {
+                  const expanded = !!expandedIds[item.id];
 
-                {previewItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2.5"
-                  >
-                    <div className="mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-inner text-[#8F31F3] flex-shrink-0">
-                      {item.kind === "task" ? (
-                        <ListTodo className="h-4 w-4" />
-                      ) : (
-                        <Lightbulb className="h-4 w-4" />
-                      )}
-                    </div>
+                  const whyRaw = t(item.whyKey as any, item.whyVars);
+                  const whyText = interpolateFallback(whyRaw, item.whyVars);
 
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <div className="flex items-start justify-between gap-2">
-                        {/* Switch Task/Idea */}
-                        <div className="flex items-center gap-2">
-                          <div className="inline-flex rounded-full border border-slate-200 bg-white p-0.5">
-                            <button
-                              type="button"
-                              onClick={() => setItemKind(item.id, "task")}
-                              className={[
-                                "rounded-full px-2.5 py-1 text-[11px] font-medium transition",
-                                item.kind === "task"
-                                  ? "bg-[#8F31F3] text-white shadow-sm"
-                                  : "text-slate-600 hover:bg-slate-50",
-                              ].join(" ")}
-                              aria-pressed={item.kind === "task"}
-                            >
-                              {t("mentalDump.previewTaskLabel")}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setItemKind(item.id, "idea")}
-                              className={[
-                                "rounded-full px-2.5 py-1 text-[11px] font-medium transition",
-                                item.kind === "idea"
-                                  ? "bg-[#8F31F3] text-white shadow-sm"
-                                  : "text-slate-600 hover:bg-slate-50",
-                              ].join(" ")}
-                              aria-pressed={item.kind === "idea"}
-                            >
-                              {t("mentalDump.previewIdeaLabel")}
-                            </button>
-                          </div>
+                  const detectedDate =
+                    item.detectedDateText ?? t("mentalDump.detectedDash");
+                  const detectedTime =
+                    item.detectedTimeText ?? t("mentalDump.detectedDash");
+                  const detectedReminder =
+                    item.detectedReminderText ?? t("mentalDump.detectedDash");
+                  const detectedHabit =
+                    item.detectedHabitText ?? t("mentalDump.detectedDash");
+
+                  const kindLabel =
+                    item.kind === "task"
+                      ? t("mentalDump.previewTaskLabel")
+                      : t("mentalDump.previewIdeaLabel");
+
+                  // 🎨 palette Idea (igual que el ejemplo que pasaste)
+                  const ideaBorder = "rgba(251,191,36,0.4)";
+                  const ideaBg = "rgba(251,191,36,0.08)";
+                  const ideaText = "#92400E";
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="rounded-2xl border border-slate-100 bg-slate-50"
+                    >
+                      {/* HEADER (resumen rápido) */}
+                      <button
+                        type="button"
+                        onClick={() => toggleExpanded(item.id)}
+                        className="w-full text-left px-3 py-2.5 flex items-start gap-3"
+                        aria-expanded={expanded}
+                      >
+                        {/* ICON CIRCLE */}
+                        <div
+                          className={[
+                            "mt-1 flex h-8 w-8 items-center justify-center rounded-full shadow-inner flex-shrink-0 border",
+                            item.kind === "task"
+                              ? "bg-white border-slate-200/60 text-[#8F31F3]"
+                              : `bg-[${ideaBg}] border-[${ideaBorder}] text-[${ideaText}]`,
+                          ].join(" ")}
+                          style={
+                            item.kind === "idea"
+                              ? {
+                                  borderColor: "rgba(251,191,36,0.4)",
+                                  background: "#ffffff",
+                                  color: "#92400E",
+                                }
+                              : undefined
+                          }
+                        >
+                          {item.kind === "task" ? (
+                            <ListTodo className="h-4 w-4" />
+                          ) : (
+                            <Lightbulb className="h-4 w-4" />
+                          )}
                         </div>
 
-                        {/* Include */}
-                        <label className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                          <input
-                            type="checkbox"
-                            className="h-3.5 w-3.5 rounded border-slate-300 text-[#8F31F3] focus:ring-[#8F31F3]"
-                            checked={item.selected}
-                            onChange={() =>
-                              setPreviewItems((prev) =>
-                                prev
-                                  ? prev.map((p) =>
-                                      p.id === item.id
-                                        ? { ...p, selected: !p.selected }
-                                        : p
-                                    )
-                                  : prev
-                              )
-                            }
-                          />
-                          {t("mentalDump.previewInclude")}
-                        </label>
-                      </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                {/* PILL KIND */}
+                                <span
+                                  className={[
+                                    "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                                    item.kind === "task"
+                                      ? "bg-white border-[#8F31F3]/25 text-[#8F31F3]"
+                                      : "",
+                                  ].join(" ")}
+                                  style={
+                                    item.kind === "idea"
+                                      ? {
+                                          borderColor: "rgba(251,191,36,0.4)",
+                                          background: "#ffffff",
+                                          color: "#92400E",
+                                        }
+                                      : undefined
+                                  }
+                                >
+                                  {kindLabel}
+                                </span>
 
-                      <input
-                        type="text"
-                        value={item.title}
-                        onChange={(e) => {
-                          const value = e.target.value;
+                                <label
+                                  className="inline-flex items-center gap-1.5 text-[11px] text-slate-500"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    className="h-3.5 w-3.5 rounded border-slate-300 text-[#8F31F3] focus:ring-[#8F31F3]"
+                                    checked={item.selected}
+                                    onChange={() =>
+                                      setPreviewItems((prev) =>
+                                        prev
+                                          ? prev.map((p) =>
+                                              p.id === item.id
+                                                ? { ...p, selected: !p.selected }
+                                                : p
+                                            )
+                                          : prev
+                                      )
+                                    }
+                                  />
+                                  {t("mentalDump.previewInclude")}
+                                </label>
+                              </div>
 
-                          setPreviewItems((prev) => {
-                            if (!prev) return prev;
+                              <div className="mt-1 text-sm font-medium text-slate-900 truncate">
+                                {item.title?.trim() || item.original}
+                              </div>
 
-                            return prev.map((p) => {
-                              if (p.id !== item.id) return p;
+                              {/* chips resumen */}
+                              {item.kind === "task" ? (
+                                <div className="mt-2 flex flex-wrap gap-1.5">
+                                  <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] text-slate-600">
+                                    {shortDue(item)}
+                                  </span>
+                                  <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] text-slate-600">
+                                    {formatReminderMode(item.reminderMode)}
+                                  </span>
+                                  <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] text-slate-600">
+                                    {formatHabit(item.repeatType)}
+                                  </span>
+                                </div>
+                              ) : (
+                                <div className="mt-2 text-[11px] text-slate-500">
+                                  {t("today.dueNoDate")}
+                                </div>
+                              )}
+                            </div>
 
-                              // Si es tarea, recalculamos campos al editar título (mantiene coherencia del preview)
-                              if (p.kind === "task") {
-                                const { dueDate, reminderMode, repeatType } =
-                                  computeTaskFieldsFromText(value);
-                                return {
-                                  ...p,
-                                  title: value,
-                                  dueDate,
-                                  reminderMode,
-                                  repeatType,
-                                };
+                            <div className="mt-0.5 text-slate-400 flex-shrink-0">
+                              {expanded ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+
+                      {/* DETALLE (solo si expanded) */}
+                      {expanded && (
+                        <div className="px-3 pb-3">
+                          <div className="border-t border-slate-200/70 pt-3 space-y-2">
+                            {/* Switch Task/Idea */}
+                            <div className="flex items-start justify-between gap-2">
+                              <div
+                                className={[
+                                  "inline-flex rounded-full border p-0.5",
+                                  item.kind === "idea"
+                                    ? ""
+                                    : "border-slate-200 bg-white",
+                                ].join(" ")}
+                                style={                                  
+                                  item.kind === "idea"
+                                  ? {
+                                    borderColor: "rgba(251,191,36,0.4)",
+                                    background: "#ffffff",
+                                    color: "#92400E",
+                                    }
+                                  : undefined
                               }
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => setItemKind(item.id, "task")}
+                                  className={[
+                                    "rounded-full px-2.5 py-1 text-[11px] font-medium transition",
+                                    item.kind === "task"
+                                      ? "bg-[#8F31F3] text-white shadow-sm"
+                                      : "text-slate-600 hover:bg-slate-50",
+                                  ].join(" ")}
+                                  aria-pressed={item.kind === "task"}
+                                >
+                                  {t("mentalDump.previewTaskLabel")}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setItemKind(item.id, "idea")}
+                                  className={[
+                                    "rounded-full px-2.5 py-1 text-[11px] font-medium transition",
+                                    item.kind === "idea"
+                                      ? "shadow-sm"
+                                      : "text-slate-600 hover:bg-slate-50",
+                                  ].join(" ")}
+                                  style={
+                                    item.kind === "idea"
+                                      ? {
+                                          background: ideaBg,
+                                          color: ideaText,
+                                        }
+                                      : undefined
+                                  }
+                                  aria-pressed={item.kind === "idea"}
+                                >
+                                  {t("mentalDump.previewIdeaLabel")}
+                                </button>
+                              </div>
 
-                              // Si es idea, solo cambiamos el título
-                              return { ...p, title: value };
-                            });
-                          });
-                        }}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#8F31F3]"
-                      />
+                              <button
+                                type="button"
+                                className="text-[11px] text-slate-500 underline-offset-2 hover:underline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleExpanded(item.id);
+                                }}
+                              >
+                                {t("common.close")}
+                              </button>
+                            </div>
 
-                      <p className="text-[11px] text-slate-500">
-                        <span className="font-medium">{t("today.dueLabel")}</span>
-                        {formatDateTime(item.dueDate)}
-                        {item.kind === "task" && (
-                          <>
-                            {" · "}
-                            <span className="font-medium">
-                              {formatHabit(item.repeatType)}
-                            </span>
-                          </>
-                        )}
-                      </p>
+                            {/* Título editable */}
+                            <input
+                              type="text"
+                              value={item.title}
+                              onChange={(e) => {
+                                const value = e.target.value;
+
+                                setPreviewItems((prev) => {
+                                  if (!prev) return prev;
+
+                                  return prev.map((p) => {
+                                    if (p.id !== item.id) return p;
+
+                                    if (p.kind === "task") {
+                                      const fields = computeTaskFieldsFromText(value);
+
+                                      const why = p.whyLocked
+                                        ? { whyKey: p.whyKey, whyVars: p.whyVars }
+                                        : detectWhyForKind(value, "task");
+
+                                      const reminderMode = p.reminderLocked
+                                        ? p.reminderMode
+                                        : p.reminderMode === "NONE"
+                                        ? "NONE"
+                                        : fields.reminderMode;
+
+                                      const detectedReminderText = p.reminderLocked
+                                        ? p.detectedReminderText
+                                        : fields.detectedReminderText;
+
+                                      const repeatType = p.habitLocked
+                                        ? p.repeatType
+                                        : fields.repeatType;
+                                      const detectedHabitText = p.habitLocked
+                                        ? p.detectedHabitText
+                                        : fields.detectedHabitText;
+
+                                      return {
+                                        ...p,
+                                        title: value,
+
+                                        dueDate: fields.dueDate,
+                                        reminderMode,
+                                        repeatType,
+
+                                        whyKey: why.whyKey,
+                                        whyVars: why.whyVars,
+
+                                        detectedDateText: fields.detectedDateText,
+                                        detectedTimeText: fields.detectedTimeText,
+                                        detectedReminderText,
+                                        detectedHabitText,
+                                      };
+                                    }
+
+                                    const why = p.whyLocked
+                                      ? { whyKey: p.whyKey, whyVars: p.whyVars }
+                                      : detectWhyForKind(value, "idea");
+
+                                    return {
+                                      ...p,
+                                      title: value,
+                                      whyKey: why.whyKey,
+                                      whyVars: why.whyVars,
+                                    };
+                                  });
+                                });
+                              }}
+                              className="w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#8F31F3]"
+                            />
+
+                            {/* POR QUÉ */}
+                            <div className="text-[11px] text-slate-500">
+                              <span className="font-medium">
+                                {t("mentalDump.whyLabel")}{" "}
+                              </span>
+                              <span>{whyText}</span>
+                            </div>
+
+                            {item.kind === "task" && (
+                              <div className="space-y-2">
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div className="space-y-1">
+                                    <div className="text-[11px] font-medium text-slate-500">
+                                      {t("mentalDump.dateLabel")}
+                                    </div>
+                                    <input
+                                      type="date"
+                                      value={
+                                        item.dueDate
+                                          ? toLocalYYYYMMDD(new Date(item.dueDate))
+                                          : ""
+                                      }
+                                      onChange={(e) => {
+                                        const v = e.target.value;
+                                        if (!v) {
+                                          updatePreviewItem(item.id, (p) => ({
+                                            ...p,
+                                            dueDate: null,
+                                            reminderMode: "NONE",
+                                            detectedDateText: null,
+                                            detectedTimeText: null,
+                                            detectedReminderText: null,
+                                          }));
+                                          return;
+                                        }
+                                        setTaskDateFromPicker(item.id, v);
+                                      }}
+                                      className="w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#8F31F3]"
+                                    />
+                                    <div className="text-[11px] text-slate-500">
+                                      <span className="font-medium">
+                                        {t("mentalDump.detectedLabel")}{" "}
+                                      </span>
+                                      <span>{detectedDate}</span>
+                                    </div>
+                                  </div>
+
+                                  <div className="space-y-1">
+                                    <div className="text-[11px] font-medium text-slate-500">
+                                      {t("mentalDump.timeLabel")}
+                                    </div>
+                                    <input
+                                      type="time"
+                                      value={
+                                        item.dueDate ? toLocalHHMM(new Date(item.dueDate)) : ""
+                                      }
+                                      onChange={(e) =>
+                                        setTaskTimeFromPicker(item.id, e.target.value)
+                                      }
+                                      disabled={!item.dueDate}
+                                      className="w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-900 disabled:bg-slate-100 disabled:text-slate-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#8F31F3]"
+                                    />
+                                    <div className="text-[11px] text-slate-500">
+                                      <span className="font-medium">
+                                        {t("mentalDump.detectedLabel")}{" "}
+                                      </span>
+                                      <span>{detectedTime}</span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                  <div className="text-[11px] font-medium text-slate-500">
+                                    {t("mentalDump.reminderLabel")}
+                                  </div>
+                                  <select
+                                    value={item.dueDate ? item.reminderMode : "NONE"}
+                                    onChange={(e) =>
+                                      setTaskReminder(item.id, e.target.value as ReminderMode)
+                                    }
+                                    disabled={!item.dueDate}
+                                    className="w-full rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 disabled:bg-slate-100 disabled:text-slate-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#8F31F3]"
+                                  >
+                                    <option value="NONE">{t("mentalDump.reminderOff")}</option>
+                                    <option value="DAILY_UNTIL_DUE">
+                                      {t("mentalDump.reminderDailyUntilDue")}
+                                    </option>
+                                    <option value="DAY_BEFORE_AND_DUE">
+                                      {t("mentalDump.reminderDayBeforeAndDue")}
+                                    </option>
+                                  </select>
+
+                                  <div className="text-[11px] text-slate-500">
+                                    <span className="font-medium">
+                                      {t("mentalDump.detectedLabel")}{" "}
+                                    </span>
+                                    <span>
+                                      {item.dueDate ? detectedReminder : t("mentalDump.detectedDash")}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* HÁBITO manual */}
+                                <div className="space-y-1">
+                                  <div className="flex items-center justify-between">
+                                    <div className="text-[11px] font-medium text-slate-500">
+                                      {t("mentalDump.habitLabel")}
+                                    </div>
+
+                                    <label className="flex items-center gap-2 text-[11px] text-slate-600">
+                                      <input
+                                        type="checkbox"
+                                        className="h-3.5 w-3.5 rounded border-slate-300 text-[#8F31F3] focus:ring-[#8F31F3]"
+                                        checked={item.repeatType !== "none"}
+                                        onChange={(e) =>
+                                          setHabitEnabled(item.id, e.target.checked)
+                                        }
+                                      />
+                                      {item.repeatType !== "none"
+                                        ? t("mentalDump.habitOn")
+                                        : t("mentalDump.habitOff")}
+                                    </label>
+                                  </div>
+
+                                  {item.repeatType !== "none" && (
+                                    <select
+                                      value={item.repeatType}
+                                      onChange={(e) =>
+                                        setHabitRepeatType(item.id, e.target.value as RepeatType)
+                                      }
+                                      className="w-full rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#8F31F3]"
+                                    >
+                                      <option value="daily">{t("mentalDump.habitDaily")}</option>
+                                      <option value="weekly">{t("mentalDump.habitWeekly")}</option>
+                                      <option value="monthly">{t("mentalDump.habitMonthly")}</option>
+                                      <option value="yearly">{t("mentalDump.habitYearly")}</option>
+                                    </select>
+                                  )}
+
+                                  <div className="text-[11px] text-slate-500">
+                                    <span className="font-medium">
+                                      {t("mentalDump.habitDetectedLabel")}{" "}
+                                    </span>
+                                    <span>{detectedHabit}</span>
+                                  </div>
+                                </div>
+
+                                <p className="text-[11px] text-slate-500">
+                                  <span className="font-medium">{t("today.dueLabel")}</span>{" "}
+                                  {formatDateTime(item.dueDate)}
+                                  {" · "}
+                                  <span className="font-medium">
+                                    {t("mentalDump.reminderShortLabel")}
+                                  </span>{" "}
+                                  {formatReminderMode(item.reminderMode)}
+                                  {" · "}
+                                  <span className="font-medium">{formatHabit(item.repeatType)}</span>
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="flex items-center justify-between gap-2 pt-1">
                 <button
                   type="button"
-                  onClick={() => setPreviewItems(null)}
+                  onClick={() => {
+                    setPreviewItems(null);
+                    setExpandedIds({});
+                  }}
                   className="text-[11px] text-slate-500 underline-offset-2 hover:underline"
                   disabled={isSubmitting}
                 >

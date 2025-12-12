@@ -18,7 +18,36 @@ help: "Mach aus dieser Aufgabe eine Gewohnheit, an die Remi dich immer zur gewä
 
  // GERMAN
 mentalDump: {
+  whyLabel: "Warum:",
+  detectedLabel: "Erkannt:",
+  detectedManual: "Manuell",
+  detectedDash: "—",
+  habitDetectedLabel: "Erkannte Gewohnheit:",
+  detectedDefault: "Standard",
+  habitLabel: "Gewohnheit",
+  habitOn: "An",
+  habitOff: "Aus",
+
+  why: {
+    verbTask: "Ich habe „{word}“ erkannt → als Aufgabe markiert.",
+    prefixIdea: "Ich habe „{word}“ erkannt → als Idee markiert.",
+    projectIdea: "Klingt nach Idee/Projekt → als Idee markiert.",
+    defaultTask: "Kein eindeutiger Hinweis → als Aufgabe markiert.",
+    defaultIdea: "Kein eindeutiger Hinweis → als Idee markiert.",
+    manualTask: "Du hast es als Aufgabe markiert.",
+    manualIdea: "Du hast es als Idee markiert.",
+  },
+
+  dateLabel: "Datum",
+  timeLabel: "Uhrzeit",
+  reminderLabel: "Erinnerung",
+  reminderShortLabel: "Hinweis:",
+  reminderOff: "Aus",
+  reminderDailyUntilDue: "Tägliche Benachrichtigung (bis zum Fälligkeitsdatum)",
+  reminderDayBeforeAndDue: "Benachrichtigung (Tag davor + Fälligkeitstag)",
+
   buttonLabel: "Kopf leeren",
+  
 
   title: "Intensiver Gedanken-Download",
   description:

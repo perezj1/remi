@@ -16,7 +16,36 @@ help: "Turn this task into a habit that Remi will always remind you of at the ch
 
 // ENGLISH
 mentalDump: {
-  buttonLabel: "Clear your head",
+  whyLabel: "Why:",
+  detectedLabel: "Detected:",
+  detectedManual: "Manual",
+  detectedDash: "—",
+  habitDetectedLabel: "Detected habit:",
+  detectedDefault: "Default",
+  habitLabel: "Habit",
+  habitOn: "On",
+  habitOff: "Off",
+
+  why: {
+    verbTask: "I detected “{word}” → I marked it as a task.",
+    prefixIdea: "I detected “{word}” → I marked it as an idea.",
+    projectIdea: "It sounds like an idea/project → I marked it as an idea.",
+    defaultTask: "I didn’t see a clear clue → I marked it as a task.",
+    defaultIdea: "I didn’t see a clear clue → I marked it as an idea.",
+    manualTask: "You marked it as a task.",
+    manualIdea: "You marked it as an idea.",
+  },
+
+  dateLabel: "Date",
+  timeLabel: "Time",
+  reminderLabel: "Reminder",
+  reminderShortLabel: "Alert:",
+  reminderOff: "Off",
+  reminderDailyUntilDue: "Daily notification (until the due date)",
+  reminderDayBeforeAndDue: "Notification (day before + due date)",
+
+  buttonLabel: "Clear your mind",
+  
 
   title: "Intensive brain dump",
   description:

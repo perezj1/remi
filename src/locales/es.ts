@@ -15,6 +15,34 @@ export const es = {
 
 
 mentalDump: {
+ whyLabel: "Por qué:",
+  detectedLabel: "Detectado:",
+  detectedManual: "Manual",
+  detectedDash: "—",
+  habitDetectedLabel: "Hábito detectado:",
+    detectedDefault: "Por defecto",
+  habitLabel: "Hábito",
+  habitOn: "On",
+  habitOff: "Off",
+
+  why: {
+    verbTask: "Detecté “{word}” → lo marqué como tarea.",
+    prefixIdea: "Detecté “{word}” → lo marqué como idea.",
+    projectIdea: "Suena a idea/proyecto → lo marqué como idea.",
+    defaultTask: "No vi una pista clara → lo marqué como tarea.",
+    defaultIdea: "No vi una pista clara → lo marqué como idea.",
+    manualTask: "Lo marcaste como tarea.",
+    manualIdea: "Lo marcaste como idea.",
+  },
+
+  dateLabel: "Fecha",
+  timeLabel: "Hora",
+  reminderLabel: "Recordatorio",
+  reminderShortLabel: "Aviso:",
+  reminderOff: "Off",
+  reminderDailyUntilDue: "Notificación diaria (hasta la fecha)",
+  reminderDayBeforeAndDue: "Notificación (día antes + día límite)",
+
   buttonLabel: "Vaciar la cabeza",
 
   title: "Descarga mental intensiva",
