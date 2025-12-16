@@ -91,15 +91,17 @@ mentalDump: {
 
   // Rotierende Hinweise
   hints: {
-    0: "Fang mit dem an, was dir zuerst in den Kopf kommt. Es muss nicht sortiert sein.",
-    1: "Denk an dein Zuhause: Dinge, die repariert, geputzt oder gekauft werden müssen.",
-    2: "Denk an Arbeit oder Studium: Aufgaben, E-Mails, Abgaben, die du nicht vergessen willst.",
-    3: "Denk an deine Gesundheit: Arzttermine, Zahnarzt, Kontrollen oder Untersuchungen.",
-    4: "Denk an Menschen: wem du schreiben, wen du anrufen oder wem du danken möchtest.",
-    5: "Denk an Geld und Papierkram: Rechnungen, Banken, Abos, Dokumente.",
-    6: "Denk an dich: Gewohnheiten, Projekte, Ideen, die nicht verloren gehen sollen.",
-    7: "Du musst nicht perfekt schreiben. Benutz deine normale Sprache: „Zahnarzt am Dienstagmorgen anrufen“.",
-  },
+  0: "Schreib einfach. Remi ordnet und plant alles für dich und erinnert dich, wenn es soweit ist.",
+  1: "Füge Text aus WhatsApp, einer E-Mail oder einer Notiz ein oder sende ihn. Remi macht daraus eine Erinnerung.",
+  2: "Aufgaben, Ideen, Erledigungen… alles passt. Remi ordnet es und erinnert dich, wenn es soweit ist.",
+  3: "Du brauchst kein perfektes Format. Schreib einfach, wie du sprichst.",
+  4: "Hat dir jemand etwas Wichtiges gesagt? Kopieren & einfügen. Remi speichert es für dich.",
+  5: "Schreibe Datum oder Uhrzeit (z. B. „Dienstag 18:00, 17. Januar um 15:00…“). Remi erkennt das.",
+  6: "Schreibe „jeden Tag / jede Woche usw.“, wenn es ein wiederkehrender Habit ist.",
+  7: "Eine Minute hier = ein entspannterer Tag und weniger Vergessenes.",
+  8: "Schneller Tipp: erst schreiben, später bearbeiten.",
+}
+
 },
 
 

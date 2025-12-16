@@ -86,17 +86,27 @@ mentalDump: {
   habitYearly: "Hábito anual",
 
   // Pistas rotatorias (hints)
-  hints: {
-    0: "Empieza por lo primero que te venga a la cabeza. No tiene que estar ordenado.",
+ 
+/*     0: "Tu solo escribe, Remi lo ordena y agenda todo por ti para recordartelo cuando llegue el momento.",
     1: "Piensa en tu casa: cosas por arreglar, limpiar o comprar.",
     2: "Piensa en trabajo o estudios: tareas, mails, entregas que no quieres olvidar.",
     3: "Piensa en tu salud: citas médicas, dentista, revisiones o análisis.",
     4: "Piensa en personas: a quién quieres escribir, llamar o agradecer algo.",
     5: "Piensa en dinero y papeleo: facturas, bancos, suscripciones, documentos.",
     6: "Piensa en ti: hábitos, proyectos, ideas que no quieres que se pierdan.",
-    7:"No hace falta escribir perfecto. Usa tu lenguaje normal: “llamar al dentista el martes por la mañana”.",
+    7:"No hace falta escribir perfecto. Usa tu lenguaje normal: “llamar al dentista el martes por la mañana”.", */
+  hints: {
+  0: "Tú solo escribe, Remi lo ordena y agenda todo por ti para recordartelo cuando llegue el momento.",
+  1: "Pega o envia texto de WhatsApp, un mail o una nota. Remi lo convierte en recordatorio.",
+  2: "Tareas, ideas, recados… todo entra. Remi lo ordena y te lo recuerda cuando llega el momento.",
+  3: "No necesitas formato perfecto. Escribe como hablas.",
+  4: "¿Te dijeron algo importante? Copia y pega. Remi lo guarda por ti.",
+  5: "Escribe fechas u horas (ej: “martes 18:00, 17 de Enero a las 15...”). Remi las detecta.",
+  6: "Escribe “cada día / cada semana, etc” si es un hábito repetitivo.",
+  7: "Un minuto aquí = un dia mas relajado y menos cosas olvidadas.",
+  8: "Consejo rápido: Escribe primero, edita después.",
+}
   
-  },
 },
 
 

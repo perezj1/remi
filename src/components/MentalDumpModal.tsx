@@ -65,6 +65,8 @@ const HINT_KEYS = [
   "mentalDump.hints.4",
   "mentalDump.hints.5",
   "mentalDump.hints.6",
+  "mentalDump.hints.7",
+  "mentalDump.hints.8",
 ];
 
 type PreviewKind = "task" | "idea";

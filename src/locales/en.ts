@@ -88,16 +88,18 @@ mentalDump: {
   habitYearly: "Yearly habit",
 
   // Rotating hints
-  hints: {
-    0: "Start with whatever comes to mind first. It doesn’t need to be in order.",
-    1: "Think about your home: things to fix, clean or buy.",
-    2: "Think about work or studies: tasks, emails, deadlines you don’t want to forget.",
-    3: "Think about your health: doctor appointments, dentist, check-ups or tests.",
-    4: "Think about people: who you want to text, call or thank for something.",
-    5: "Think about money and paperwork: bills, banks, subscriptions, documents.",
-    6: "Think about yourself: habits, projects, ideas you don’t want to lose.",
-    7: "You don’t need to write perfectly. Use your normal language: \"call the dentist on Tuesday morning\".",
-  },
+hints: {
+  0: "Just write. Remi organizes and schedules everything for you, and reminds you when it’s time.",
+  1: "Paste or send text from WhatsApp, an email, or a note. Remi turns it into a reminder.",
+  2: "Tasks, ideas, errands… everything fits. Remi organizes it and reminds you when it’s time.",
+  3: "You don’t need perfect formatting. Write the way you speak.",
+  4: "Did someone tell you something important? Copy & paste. Remi saves it for you.",
+  5: "Write dates or times (e.g., “Tuesday 18:00, January 17 at 15:00…”). Remi detects them.",
+  6: "Write “every day / every week, etc.” if it’s a repeating habit.",
+  7: "One minute here = a calmer day and fewer forgotten things.",
+  8: "Quick tip: write first, edit later.",
+}
+
 },
 
 
