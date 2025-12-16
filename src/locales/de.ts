@@ -99,7 +99,7 @@ mentalDump: {
   5: "Schreibe Datum oder Uhrzeit (z. B. „Dienstag 18:00, 17. Januar um 15:00…“). Remi erkennt das.",
   6: "Schreibe „jeden Tag / jede Woche usw.“, wenn es ein wiederkehrender Habit ist.",
   7: "Eine Minute hier = ein entspannterer Tag und weniger Vergessenes.",
-  8: "Schneller Tipp: erst schreiben, später bearbeiten.",
+  8: "Schneller Tipp: Schreibe „Idee“, um Notizen ohne Erinnerungen zu speichern.",
 }
 
 },

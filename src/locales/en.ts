@@ -97,7 +97,7 @@ hints: {
   5: "Write dates or times (e.g., “Tuesday 18:00, January 17 at 15:00…”). Remi detects them.",
   6: "Write “every day / every week, etc.” if it’s a repeating habit.",
   7: "One minute here = a calmer day and fewer forgotten things.",
-  8: "Quick tip: write first, edit later.",
+  8: "Quick tip: Write “Idea” to save notes without reminders.",
 }
 
 },

@@ -104,7 +104,7 @@ mentalDump: {
   5: "Escribe fechas u horas (ej: “martes 18:00, 17 de Enero a las 15...”). Remi las detecta.",
   6: "Escribe “cada día / cada semana, etc” si es un hábito repetitivo.",
   7: "Un minuto aquí = un dia mas relajado y menos cosas olvidadas.",
-  8: "Consejo rápido: Escribe primero, edita después.",
+  8: "Consejo rápido: Escribe Idea para guardar notas sin recordatorios.",
 }
   
 },
