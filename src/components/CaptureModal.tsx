@@ -226,7 +226,8 @@ export default function CaptureModal({
 
         <button
           className="remi-btn-primary"
-          style={{ flex: 1, background: "#7d59c9"}}
+          style={{ flex: 1, background: "#7d59c9", padding: "14px 18px",  
+    fontSize: 16,    }}
           onClick={handleSave}
           disabled={loading || text.trim().length === 0}
           type="button"
