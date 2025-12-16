@@ -303,21 +303,19 @@ export default function StatusPage() {
 
           {/* NUEVO: Botón Descarga mental intensiva */}
           <button
-            type="button"
-            onClick={() => {
-              // Igual que el botón de crear en BottomNav:
-              // vamos a la home y disparamos un evento global
-              navigate("/");
-              setTimeout(() => {
-                window.dispatchEvent(
-                  new CustomEvent("remi-open-mental-dump")
-                );
-              }, 80);
-            }}
-            className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-violet-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-violet-700 active:bg-violet-800 transition-colors"
-          >
-            {t("mentalDump.title")}
-          </button>
+  type="button"
+  onClick={() => {
+    navigate("/");
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("remi-open-mental-dump"));
+    }, 80);
+  }}
+  className="mt-3 inline-flex w-full items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors active:opacity-90 disabled:opacity-60"
+  style={{ background: "#7d59c9" }}
+>
+  {t("mentalDump.title")}
+</button>
+
         </section>
 
         {/* Lo que hemos conseguido hoy */}

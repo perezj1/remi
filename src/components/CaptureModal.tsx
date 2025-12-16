@@ -1,11 +1,8 @@
 // src/components/CaptureModal.tsx
-import type React from "react";
 import { useState, useEffect, useRef } from "react";
-import { Lightbulb, ListTodo, X } from "lucide-react";
-import type { ReminderMode, RepeatType } from "@/lib/brainItemsApi";
+import { X } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/contexts/I18nContext";
-import { parseDateTimeFromText } from "@/lib/parseDateTimeFromText";
 
 // ✅ NUEVO
 import { useModalUi } from "@/contexts/ModalUiContext";
@@ -13,13 +10,10 @@ import { useModalUi } from "@/contexts/ModalUiContext";
 interface CaptureModalProps {
   open: boolean;
   onClose: () => void;
-  onCreateTask: (
-    title: string,
-    dueDate: string | null,
-    reminderMode: ReminderMode,
-    repeatType: RepeatType
-  ) => Promise<void>;
-  onCreateIdea: (title: string) => Promise<void>;
+
+  /** Abre el MentalDumpModal en modo revisión (preview) con este texto */
+  onOpenReview: (text: string) => void;
+
   /** Cuando es true, se usa como card embebida en Index (sin backdrop) */
   embedded?: boolean;
 
@@ -32,8 +26,6 @@ interface CaptureModalProps {
    */
   initialTextNonce?: number;
 }
-
-type Mode = "choose" | "task";
 
 // Solo las keys; los textos vienen de i18n (reutiliza mentalDump.hints.*)
 const HINT_KEYS = [
@@ -50,13 +42,12 @@ const HINT_KEYS = [
 export default function CaptureModal({
   open,
   onClose,
-  onCreateTask,
-  onCreateIdea,
+  onOpenReview,
   embedded = false,
   initialText,
   initialTextNonce,
 }: CaptureModalProps) {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
 
   // ✅ controla si hay “algún modal abierto” para ocultar BottomNav
   const { setModalOpen } = useModalUi();
@@ -65,45 +56,13 @@ export default function CaptureModal({
   useEffect(() => {
     const isRealModalOpen = open && !embedded;
     setModalOpen(isRealModalOpen);
-
-    return () => {
-      // cleanup por si el componente se desmonta con el modal abierto
-      setModalOpen(false);
-    };
+    return () => setModalOpen(false);
   }, [open, embedded, setModalOpen]);
 
   const [text, setText] = useState("");
-  const textRef = useRef<string>(""); // ✅ leer texto actual sin depender de `text` en effects
-
-  const [mode, setMode] = useState<Mode>("choose");
-  const [dueOption, setDueOption] = useState<"NONE" | "TODAY" | "TOMORROW" | "WEEK">("TODAY");
-  const [customDue, setCustomDue] = useState<string>("");
-
-  // Por defecto: recordatorios diarios hasta la fecha límite
-  const [reminderMode, setReminderMode] = useState<ReminderMode>("DAILY_UNTIL_DUE");
+  const textRef = useRef<string>("");
 
   const [loading, setLoading] = useState(false);
-
-  // Hábito/repetición
-  const [repeatEnabled, setRepeatEnabled] = useState(false);
-  const [repeatType, setRepeatType] = useState<RepeatType>("none");
-
-  // Date/time picker
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedHour, setSelectedHour] = useState<number>(20);
-  const [selectedMinute, setSelectedMinute] = useState<number>(0);
-  const [calendarMonth, setCalendarMonth] = useState<Date>(() => {
-    const d = new Date();
-    d.setDate(1);
-    return d;
-  });
-
-  // Mostrar/ocultar calendario + hora
-  const [isDateTimePickerOpen, setIsDateTimePickerOpen] = useState(false);
-
-  // Flags para no pisar decisiones manuales del usuario
-  const [manualDateOverride, setManualDateOverride] = useState(false);
-  const [manualRepeatOverride, setManualRepeatOverride] = useState(false);
 
   // Evitar pisar el texto si el usuario ya empezó a escribir
   const userEditedRef = useRef(false);
@@ -115,39 +74,7 @@ export default function CaptureModal({
   const hints = HINT_KEYS.map((key) => t(key));
   const totalHints = hints.length;
 
-  // Opciones de rueda
-  const hoursOptions = Array.from({ length: 24 }, (_, i) => i);
-  const minutesOptions = Array.from({ length: 12 }, (_, i) => i * 5);
-
-  // ----------------- helpers fecha/hora -----------------
-  const formatDateTimeLocal = (d: Date) => {
-    const pad = (n: number) => String(n).padStart(2, "0");
-    return (
-      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
-      `T${pad(d.getHours())}:${pad(d.getMinutes())}`
-    );
-  };
-
-  const applyDateTime = (dateBase: Date, hour: number, minute: number) => {
-    const d = new Date(dateBase);
-    d.setHours(hour, minute, 0, 0);
-    setSelectedDate(d);
-    setSelectedHour(hour);
-    setSelectedMinute(minute);
-    setCalendarMonth(new Date(d.getFullYear(), d.getMonth(), 1));
-    setCustomDue(formatDateTimeLocal(d));
-  };
-
-  const applyDateTimeManual = (dateBase: Date, hour: number, minute: number) => {
-    setManualDateOverride(true);
-    applyDateTime(dateBase, hour, minute);
-  };
-
-  const applyDateFromChip = (d: Date) => {
-    applyDateTimeManual(d, d.getHours(), d.getMinutes());
-  };
-
-  // ✅ Aplicar initialText cuando el modal/card sea visible (NO depende de `text`)
+  // ✅ Aplicar initialText cuando el modal/card sea visible
   useEffect(() => {
     const visible = embedded || open;
     if (!visible) return;
@@ -173,79 +100,12 @@ export default function CaptureModal({
     if (nonce !== null) lastInitialAppliedNonceRef.current = nonce;
     lastInitialAppliedRef.current = incoming;
 
-    userEditedRef.current = false; // lo consideramos “texto entrante”
+    userEditedRef.current = false;
     textRef.current = incoming;
     setText(incoming);
   }, [initialText, initialTextNonce, open, embedded]);
 
-  // Si pasamos a "Sin fecha" y hay recordatorios, los reseteamos a NONE
-  useEffect(() => {
-    if (dueOption === "NONE" && reminderMode !== "NONE") {
-      setReminderMode("NONE");
-    }
-    if (dueOption === "NONE") {
-      setCustomDue("");
-      setSelectedDate(null);
-      setManualDateOverride(false);
-    }
-  }, [dueOption, reminderMode]);
-
-  // Si se activa Hábito, forzamos recordatorios a NONE
-  useEffect(() => {
-    if (repeatEnabled && reminderMode !== "NONE") {
-      setReminderMode("NONE");
-    }
-  }, [repeatEnabled, reminderMode]);
-
-  // Sincronizar el date/time picker cuando cambie customDue
-  useEffect(() => {
-    if (!customDue) return;
-    const d = new Date(customDue);
-    if (Number.isNaN(d.getTime())) return;
-    setSelectedDate(d);
-    setSelectedHour(d.getHours());
-    setSelectedMinute(d.getMinutes());
-    setCalendarMonth(new Date(d.getFullYear(), d.getMonth(), 1));
-  }, [customDue]);
-
-  // Si hay fecha seleccionada, el calendario se mueve a ese mes
-  useEffect(() => {
-    if (selectedDate) {
-      const m = new Date(selectedDate);
-      m.setDate(1);
-      setCalendarMonth(m);
-    }
-  }, [selectedDate]);
-
-  // Detectar fecha/hora + hábito desde el texto y actualizar en vivo
-  useEffect(() => {
-    const trimmed = text.trim();
-    if (!trimmed) return;
-
-    const { dueDateISO, repeatHint } = parseDateTimeFromText(trimmed, lang);
-
-    // fecha/hora solo si no hay override manual
-    if (dueDateISO && !manualDateOverride) {
-      const d = new Date(dueDateISO);
-      if (!Number.isNaN(d.getTime())) {
-        applyDateTime(d, d.getHours(), d.getMinutes());
-        if (dueOption === "NONE") setDueOption("TODAY");
-      }
-    }
-
-    // hábito solo si el usuario no lo ha tocado a mano
-    if (!manualRepeatOverride) {
-      if (repeatHint) {
-        setRepeatEnabled(true);
-        setRepeatType(repeatHint as RepeatType);
-      } else {
-        setRepeatEnabled(false);
-        setRepeatType("none");
-      }
-    }
-  }, [text, lang, dueOption, manualDateOverride, manualRepeatOverride]);
-
-  // Rotar hints cada 15s mientras el modal está visible (open o embebido)
+  // Rotar hints cada 15s mientras visible
   useEffect(() => {
     if ((!open && !embedded) || totalHints === 0) return;
 
@@ -260,105 +120,38 @@ export default function CaptureModal({
   // En modo modal respetamos "open". En modo embebido se muestra siempre.
   if (!embedded && !open) return null;
 
-  const resetAndClose = () => {
-    setLoading(false); // ✅ CRÍTICO: evita que se queden desactivados los botones
-
+  const resetOnly = () => {
+    // ✅ IMPORTANTE: NO resetear lastInitialApplied* aquí,
+    // o se volverá a re-aplicar initialText en el embebido (bug)
     setText("");
     textRef.current = "";
-
     userEditedRef.current = false;
-    lastInitialAppliedRef.current = "";
-    lastInitialAppliedNonceRef.current = -1;
+  };
 
-    setMode("choose");
-    setDueOption("TODAY");
-    setCustomDue("");
-    setReminderMode("DAILY_UNTIL_DUE");
-    setRepeatEnabled(false);
-    setRepeatType("none");
-    setSelectedDate(null);
-    setSelectedHour(20);
-    setSelectedMinute(0);
-    setIsDateTimePickerOpen(false);
-    setManualDateOverride(false);
-    setManualRepeatOverride(false);
-
-    // ✅ al cerrar modal real, marcamos “no hay modal”
+  const resetAndClose = () => {
+    resetOnly();
     if (!embedded) setModalOpen(false);
-
     if (!embedded) onClose();
   };
 
-  const getDueDateFromOption = (): string | null => {
-    if (dueOption === "NONE" && !customDue) return null;
-
-    if (customDue) {
-      const d = new Date(customDue);
-      if (!Number.isNaN(d.getTime())) return d.toISOString();
-    }
-
-    const now = new Date();
-    const d = new Date();
-
-    if (dueOption === "TODAY") {
-      d.setHours(20, 0, 0, 0);
-    } else if (dueOption === "TOMORROW") {
-      d.setDate(now.getDate() + 1);
-      d.setHours(9, 0, 0, 0);
-    } else if (dueOption === "WEEK") {
-      d.setDate(now.getDate() + 7);
-      d.setHours(9, 0, 0, 0);
-    } else if (dueOption === "NONE") {
-      return null;
-    }
-
-    return d.toISOString();
-  };
-
-  const handleConfirmTask = async () => {
+  const handleSave = () => {
     const trimmed = text.trim();
-    if (!trimmed || loading) return;
+    if (!trimmed || loading) {
+      if (!trimmed) toast.error(t("capture.toastEmpty") ?? t("capture.toastTaskError"));
+      return;
+    }
 
     setLoading(true);
     try {
-      const dueDateFromOptions = getDueDateFromOption();
-      const { dueDateISO } = parseDateTimeFromText(trimmed, lang);
-
-      // Prioridad:
-      // - si el usuario tocó manualmente fecha/hora => lo manual
-      // - si no => el texto puede rellenar
-      const finalDueDate = manualDateOverride
-        ? dueDateFromOptions
-        : dueDateISO ?? dueDateFromOptions;
-
-      const finalRepeatType: RepeatType = repeatEnabled ? repeatType : "none";
-
-      await onCreateTask(trimmed, finalDueDate, reminderMode, finalRepeatType);
-
-      toast.success(t("capture.toastTaskSaved"));
-      resetAndClose();
-    } catch (err) {
-      console.error(err);
-      toast.error(t("capture.toastTaskError"));
+      onOpenReview(trimmed);
+      // limpiamos el input (en embebido se queda la card; en modal se cierra)
+      if (embedded) {
+        resetOnly();
+      } else {
+        resetAndClose();
+      }
     } finally {
-      setLoading(false); // ✅ SIEMPRE
-    }
-  };
-
-  const handleConfirmIdea = async () => {
-    const trimmed = text.trim();
-    if (!trimmed || loading) return;
-
-    setLoading(true);
-    try {
-      await onCreateIdea(trimmed);
-      toast.success(t("capture.toastIdeaSaved"));
-      resetAndClose();
-    } catch (err) {
-      console.error(err);
-      toast.error(t("capture.toastIdeaError"));
-    } finally {
-      setLoading(false); // ✅ SIEMPRE
+      setLoading(false);
     }
   };
 
@@ -404,92 +197,6 @@ export default function CaptureModal({
     </div>
   );
 
-  const Separator = () => (
-    <div
-      style={{
-        marginTop: 14,
-        marginBottom: 10,
-        height: 1,
-        background: "rgba(226,232,240,0.9)",
-      }}
-    />
-  );
-
-  const remindersDisabled = repeatEnabled;
-
-  // --------- calendario helpers ----------
-  const weekdayLabels = ["L", "M", "X", "J", "V", "S", "D"];
-
-  const buildCalendarDays = (monthDate: Date) => {
-    const year = monthDate.getFullYear();
-    const month = monthDate.getMonth();
-    const firstOfMonth = new Date(year, month, 1);
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    let startWeekDay = firstOfMonth.getDay();
-    startWeekDay = (startWeekDay + 6) % 7;
-
-    const days: { date: Date; isCurrentMonth: boolean }[] = [];
-
-    for (let i = 0; i < startWeekDay; i++) {
-      const d = new Date(year, month, 1 - (startWeekDay - i));
-      days.push({ date: d, isCurrentMonth: false });
-    }
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const d = new Date(year, month, day);
-      days.push({ date: d, isCurrentMonth: true });
-    }
-
-    while (days.length % 7 !== 0) {
-      const last = days[days.length - 1].date;
-      const d = new Date(last);
-      d.setDate(d.getDate() + 1);
-      days.push({ date: d, isCurrentMonth: false });
-    }
-
-    return days;
-  };
-
-  const calendarDays = buildCalendarDays(calendarMonth);
-
-  const isSameDay = (a: Date, b: Date) =>
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate();
-
-  const handleSelectDay = (d: Date) => {
-    if (dueOption === "NONE") return;
-    const merged = new Date(
-      d.getFullYear(),
-      d.getMonth(),
-      d.getDate(),
-      selectedHour,
-      selectedMinute,
-      0,
-      0
-    );
-    applyDateTimeManual(merged, merged.getHours(), merged.getMinutes());
-  };
-
-  const handleHourChange = (h: number) => {
-    const base = selectedDate ?? new Date();
-    applyDateTimeManual(base, h, selectedMinute);
-  };
-
-  const handleMinuteChange = (m: number) => {
-    const base = selectedDate ?? new Date();
-    applyDateTimeManual(base, selectedHour, m);
-  };
-
-  const dateTimePreview =
-    selectedDate && dueOption !== "NONE"
-      ? selectedDate.toLocaleString(undefined, {
-          dateStyle: "medium",
-          timeStyle: "short",
-        })
-      : t("capture.dateTimeNoneShort") ?? t("capture.dueNone");
-
   const body = (
     <div className="remi-modal-body">
       <textarea
@@ -504,539 +211,29 @@ export default function CaptureModal({
         }}
       />
 
-      {/* Paso 1: elegir tarea o idea */}
-      {mode === "choose" && (
-        <div
-          style={{
-            marginTop: 18,
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 14,
-          }}
+      <div className="remi-modal-footer" style={{ display: "flex", gap: 10, marginTop: 14 }}>
+        {!embedded && (
+          <button
+            className="remi-btn-ghost"
+            style={{ flex: 1 }}
+            onClick={resetAndClose}
+            disabled={loading}
+            type="button"
+          >
+            {t("common.cancel")}
+          </button>
+        )}
+
+        <button
+          className="remi-btn-primary"
+          style={{ flex: 1, background: "#7d59c9"}}
+          onClick={handleSave}
+          disabled={loading || text.trim().length === 0}
+          type="button"
         >
-          {/* IDEA */}
-          <button
-            onClick={handleConfirmIdea}
-            disabled={loading}
-            type="button"
-            style={{
-              padding: "10px 10px",
-              fontSize: 14,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 10,
-              borderRadius: 999,
-              border: "1px solid rgba(251,191,36,0.4)",
-              background: "rgba(251,191,36,0.08)",
-              color: "#92400E",
-              cursor: loading ? "default" : "pointer",
-            }}
-          >
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: "999px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "rgba(251,191,36,0.15)",
-                color: "#F59E0B",
-              }}
-            >
-              <Lightbulb size={18} />
-            </div>
-            <span>{t("capture.ideaButton")}</span>
-          </button>
-
-          {/* TAREA */}
-          <button
-            onClick={() => setMode("task")}
-            disabled={loading}
-            type="button"
-            style={{
-              padding: "10px 10px",
-              fontSize: 14,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 10,
-              borderRadius: 999,
-              border: "1px solid rgba(143,49,243,0.5)",
-              background: "rgba(143,49,243,0.08)",
-              color: "#4C1D95",
-              cursor: loading ? "default" : "pointer",
-            }}
-          >
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: "999px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "rgba(143,49,243,0.08)",
-                color: "#7d59c9",
-              }}
-            >
-              <ListTodo size={18} />
-            </div>
-            <span>{t("capture.taskButton")}</span>
-          </button>
-        </div>
-      )}
-
-      {/* Paso 2: configuración de tarea */}
-      {mode === "task" && (
-        <>
-          {/* FECHA LÍMITE */}
-          <div style={{ marginTop: 10 }}>
-            <p className="remi-modal-sub" style={{ marginBottom: 4 }}>
-              {t("capture.dueLabel")}
-            </p>
-            <div className="remi-chip-row">
-              <Chip
-                label={t("capture.dueToday")}
-                active={dueOption === "TODAY"}
-                onClick={() => {
-                  const d = new Date();
-                  d.setHours(20, 0, 0, 0);
-                  setDueOption("TODAY");
-                  applyDateFromChip(d);
-                }}
-              />
-              <Chip
-                label={t("capture.dueTomorrow")}
-                active={dueOption === "TOMORROW"}
-                onClick={() => {
-                  const now = new Date();
-                  const d = new Date();
-                  d.setDate(now.getDate() + 1);
-                  d.setHours(9, 0, 0, 0);
-                  setDueOption("TOMORROW");
-                  applyDateFromChip(d);
-                }}
-              />
-              <Chip
-                label={t("capture.dueWeek")}
-                active={dueOption === "WEEK"}
-                onClick={() => {
-                  const now = new Date();
-                  const d = new Date();
-                  d.setDate(now.getDate() + 7);
-                  d.setHours(9, 0, 0, 0);
-                  setDueOption("WEEK");
-                  applyDateFromChip(d);
-                }}
-              />
-              <Chip
-                label={t("capture.dueNone")}
-                active={dueOption === "NONE"}
-                disabled={repeatEnabled}
-                onClick={() => {
-                  setDueOption("NONE");
-                  setCustomDue("");
-                  setSelectedDate(null);
-                  setManualDateOverride(false);
-                }}
-              />
-            </div>
-
-            <div style={{ marginTop: 8 }}>
-              <p className="remi-modal-sub" style={{ fontSize: 11, marginTop: 4 }}>
-                {t("capture.dueHint")}
-              </p>
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (dueOption === "NONE") return;
-                  setIsDateTimePickerOpen((prev) => !prev);
-                }}
-                disabled={dueOption === "NONE"}
-                style={{
-                  marginTop: 10,
-                  width: "100%",
-                  borderRadius: 14,
-                  border: "1px solid rgba(226,232,240,0.9)",
-                  background: "#ffffff",
-                  padding: "10px 12px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  cursor: dueOption === "NONE" ? "not-allowed" : "pointer",
-                  opacity: dueOption === "NONE" ? 0.6 : 1,
-                }}
-              >
-                <div style={{ display: "flex", flexDirection: "column", gap: 2, textAlign: "left" }}>
-                  <span
-                    style={{
-                      fontSize: 11,
-                      textTransform: "uppercase",
-                      letterSpacing: 0.04,
-                      color: "#9ca3af",
-                    }}
-                  >
-                    {t("capture.dateTimeLabel") ?? t("capture.dueLabel")}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 500,
-                      color: selectedDate && dueOption !== "NONE" ? "#111827" : "#9ca3af",
-                    }}
-                  >
-                    {dateTimePreview}
-                  </span>
-                </div>
-                <span
-                  style={{
-                    fontSize: 18,
-                    color: "#6b7280",
-                    transform: isDateTimePickerOpen ? "rotate(180deg)" : "rotate(0deg)",
-                    transition: "transform 0.15s ease-out",
-                  }}
-                >
-                  ▾
-                </span>
-              </button>
-
-              {isDateTimePickerOpen && dueOption !== "NONE" && (
-                <div
-                  style={{
-                    marginTop: 10,
-                    borderRadius: 18,
-                    border: "1px solid rgba(226,232,240,0.9)",
-                    background: "#f9fafb",
-                    padding: 12,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: 8,
-                    }}
-                  >
-                    <span style={{ fontSize: 12, fontWeight: 500, color: "#64748b" }}>
-                      {calendarMonth.toLocaleString(undefined, { month: "long", year: "numeric" })}
-                    </span>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const d = new Date(calendarMonth);
-                          d.setMonth(d.getMonth() - 1);
-                          setCalendarMonth(d);
-                        }}
-                        style={{
-                          width: 26,
-                          height: 26,
-                          borderRadius: 999,
-                          border: "none",
-                          background: "#e5e7eb",
-                          fontSize: 14,
-                          color: "#4b5563",
-                        }}
-                      >
-                        ‹
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const d = new Date(calendarMonth);
-                          d.setMonth(d.getMonth() + 1);
-                          setCalendarMonth(d);
-                        }}
-                        style={{
-                          width: 26,
-                          height: 26,
-                          borderRadius: 999,
-                          border: "none",
-                          background: "#e5e7eb",
-                          fontSize: 14,
-                          color: "#4b5563",
-                        }}
-                      >
-                        ›
-                      </button>
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(7, 1fr)",
-                      fontSize: 10,
-                      textTransform: "uppercase",
-                      color: "#9ca3af",
-                      marginBottom: 4,
-                      gap: 2,
-                    }}
-                  >
-                    {weekdayLabels.map((w) => (
-                      <div key={w} style={{ textAlign: "center", paddingBottom: 2 }}>
-                        {w}
-                      </div>
-                    ))}
-                  </div>
-
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, marginBottom: 10 }}>
-                    {calendarDays.map((cell, idx) => {
-                      const isSelected = !!(selectedDate && isSameDay(cell.date, selectedDate));
-                      const isToday = isSameDay(cell.date, new Date());
-                      const isCurrent = cell.isCurrentMonth;
-
-                      let bg = "transparent";
-                      let color = "#64748b";
-                      let fontWeight = 400;
-                      let border = "none";
-
-                      if (!isCurrent) color = "#cbd5f5";
-                      if (isToday && !isSelected) border = "1px solid rgba(125,89,201,0.35)";
-                      if (isSelected) {
-                        bg = "#7d59c9";
-                        color = "#ffffff";
-                        fontWeight = 600;
-                      }
-
-                      return (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => handleSelectDay(cell.date)}
-                          style={{
-                            width: "100%",
-                            height: 32,
-                            borderRadius: 999,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: 12,
-                            background: bg,
-                            color,
-                            fontWeight,
-                            border,
-                          }}
-                        >
-                          {cell.date.getDate()}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <div style={{ display: "flex", justifyContent: "center", marginTop: 4 }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 24,
-                        padding: "16px 24px",
-                        borderRadius: 24,
-                        background: "#ffffff",
-                        boxShadow: "0 8px 20px rgba(15,23,42,0.08)",
-                      }}
-                    >
-                      <div style={{ textAlign: "center" }}>
-                        <div
-                          style={{
-                            fontSize: 10,
-                            textTransform: "uppercase",
-                            color: "#9ca3af",
-                            marginBottom: 4,
-                          }}
-                        >
-                          {t("capture.timeHour") ?? "Hora"}
-                        </div>
-                        <TimeWheel values={hoursOptions} selected={selectedHour} onChange={handleHourChange} />
-                      </div>
-
-                      <div style={{ fontSize: 22, fontWeight: 500, color: "#64748b", marginTop: 18 }}>:</div>
-
-                      <div style={{ textAlign: "center" }}>
-                        <div
-                          style={{
-                            fontSize: 10,
-                            textTransform: "uppercase",
-                            color: "#9ca3af",
-                            marginBottom: 4,
-                          }}
-                        >
-                          {t("capture.timeMinute") ?? "Min"}
-                        </div>
-                        <TimeWheel values={minutesOptions} selected={selectedMinute} onChange={handleMinuteChange} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* RECORDATORIOS */}
-          <Separator />
-
-          <div>
-            <p className="remi-modal-sub" style={{ marginBottom: 4 }}>
-              {t("capture.remindersLabel")}
-            </p>
-
-            {remindersDisabled && (
-              <p className="remi-modal-sub" style={{ fontSize: 11, opacity: 0.75, marginBottom: 4 }}>
-                {t("capture.remindersDisabledByHabit") ?? ""}
-              </p>
-            )}
-
-            <select
-              className="remi-input"
-              style={{
-                borderRadius: 14,
-                opacity: remindersDisabled ? 0.6 : 1,
-                cursor: remindersDisabled ? "not-allowed" : "pointer",
-              }}
-              value={reminderMode}
-              disabled={remindersDisabled}
-              onChange={(e) => setReminderMode(e.target.value as ReminderMode)}
-            >
-              <option value="NONE">{t("capture.remindersNone")}</option>
-
-              {dueOption !== "NONE" && (
-                <>
-                  <option value="ON_DUE_DATE">{t("capture.remindersOnDue")}</option>
-                  <option value="DAY_BEFORE_AND_DUE">{t("capture.remindersDayBeforeAndDue")}</option>
-                  <option value="DAILY_UNTIL_DUE">{t("capture.remindersDailyUntilDue")}</option>
-                </>
-              )}
-
-              {dueOption === "NONE" && <option value="DAILY_UNTIL_DUE">{t("capture.remindersDailyUntilDue")}</option>}
-            </select>
-          </div>
-
-          {/* HÁBITO */}
-          <Separator />
-
-          <div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
-              }}
-            >
-              <div>
-                <p className="remi-modal-sub" style={{ marginBottom: 2 }}>
-                  {t("repeat.label")}
-                </p>
-                <p className="remi-modal-sub" style={{ fontSize: 11, opacity: 0.8 }}>
-                  {t("repeat.help")}
-                </p>
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const next = !repeatEnabled;
-                    setManualRepeatOverride(true);
-
-                    if (!next) {
-                      setRepeatType("none");
-                    } else {
-                      if (dueOption === "NONE" || !selectedDate) {
-                        const base = new Date();
-                        base.setHours(selectedHour, selectedMinute, 0, 0);
-                        setDueOption("TODAY");
-                        applyDateFromChip(base);
-                      }
-                      setReminderMode("NONE");
-                      if (repeatType === "none") setRepeatType("daily");
-                    }
-
-                    setRepeatEnabled(next);
-                  }}
-                  style={{
-                    width: 50,
-                    height: 26,
-                    borderRadius: 999,
-                    border: "1px solid rgba(148,163,184,0.8)",
-                    backgroundColor: repeatEnabled ? "rgba(34,197,94,0.18)" : "#e5e7eb",
-                    padding: 3,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: repeatEnabled ? "flex-end" : "flex-start",
-                    cursor: "pointer",
-                    transition: "background-color 0.18s ease, justify-content 0.18s ease",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 18,
-                      height: 18,
-                      borderRadius: 999,
-                      backgroundColor: repeatEnabled ? "#22c55e" : "#ffffff",
-                      boxShadow: "0 2px 4px rgba(15,23,42,0.25), 0 0 0 1px rgba(148,163,184,0.35)",
-                      transition: "background-color 0.18s ease",
-                    }}
-                  />
-                </button>
-              </div>
-            </div>
-
-            {repeatEnabled && (
-              <div className="remi-chip-row" style={{ marginTop: 8, flexWrap: "wrap", rowGap: 8 }}>
-                <Chip
-                  label={t("repeat.options.daily")}
-                  active={repeatType === "daily"}
-                  onClick={() => {
-                    setRepeatType("daily");
-                    setManualRepeatOverride(true);
-                  }}
-                />
-                <Chip
-                  label={t("repeat.options.weekly")}
-                  active={repeatType === "weekly"}
-                  onClick={() => {
-                    setRepeatType("weekly");
-                    setManualRepeatOverride(true);
-                  }}
-                />
-                <Chip
-                  label={t("repeat.options.monthly")}
-                  active={repeatType === "monthly"}
-                  onClick={() => {
-                    setRepeatType("monthly");
-                    setManualRepeatOverride(true);
-                  }}
-                />
-                <Chip
-                  label={t("repeat.options.yearly")}
-                  active={repeatType === "yearly"}
-                  onClick={() => {
-                    setRepeatType("yearly");
-                    setManualRepeatOverride(true);
-                  }}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* BOTONES FOOTER */}
-          <Separator />
-
-          <div className="remi-modal-footer" style={{ display: "flex", gap: 10, marginTop: 4 }}>
-            <button className="remi-btn-ghost" style={{ flex: 1 }} onClick={() => setMode("choose")} disabled={loading}>
-              {t("capture.back")}
-            </button>
-            <button className="remi-btn-primary" style={{ flex: 1 }} onClick={handleConfirmTask} disabled={loading}>
-              {t("capture.saveTask")}
-            </button>
-          </div>
-        </>
-      )}
+          {t("common.save") ?? t("capture.saveTask") ?? "Guardar"}
+        </button>
+      </div>
     </div>
   );
 
@@ -1064,123 +261,6 @@ export default function CaptureModal({
       <div className="remi-modal-card">
         {header}
         {body}
-      </div>
-    </div>
-  );
-}
-
-/* ------------ Chip ------------ */
-
-interface ChipProps {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-  disabled?: boolean;
-}
-
-function Chip({ label, active, onClick, disabled }: ChipProps) {
-  return (
-    <button
-      type="button"
-      className={`remi-chip ${active ? "remi-chip--active" : ""}`}
-      onClick={disabled ? undefined : onClick}
-      disabled={disabled}
-      style={{
-        opacity: disabled ? 0.45 : 1,
-        cursor: disabled ? "not-allowed" : "pointer",
-      }}
-    >
-      {label}
-    </button>
-  );
-}
-
-/* ------------ TimeWheel ------------ */
-
-interface TimeWheelProps {
-  values: number[];
-  selected: number;
-  onChange: (value: number) => void;
-}
-
-function TimeWheel({ values, selected, onChange }: TimeWheelProps) {
-  const itemHeight = 32;
-  const visibleItems = 3;
-  const ref = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const idx = values.indexOf(selected);
-    if (idx === -1 || !ref.current) return;
-    const target = idx * itemHeight;
-    ref.current.scrollTo({ top: target, behavior: "smooth" });
-  }, [selected, values]);
-
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const scrollTop = e.currentTarget.scrollTop;
-    const idx = Math.round(scrollTop / itemHeight);
-    const clamped = Math.min(Math.max(idx, 0), values.length - 1);
-    const value = values[clamped];
-    if (value !== selected) onChange(value);
-  };
-
-  return (
-    <div
-      style={{
-        position: "relative",
-        width: 96,
-        height: itemHeight * visibleItems,
-        borderRadius: 999,
-        background: "#ffffff",
-        overflow: "hidden",
-      }}
-    >
-      {/* banda central */}
-      <div
-        style={{
-          position: "absolute",
-          top: "50%",
-          left: 0,
-          right: 0,
-          height: itemHeight,
-          transform: "translateY(-50%)",
-          borderTop: "1px solid rgba(148,163,184,0.35)",
-          borderBottom: "1px solid rgba(148,163,184,0.35)",
-          pointerEvents: "none",
-        }}
-      />
-
-      <div
-        ref={ref}
-        onScroll={handleScroll}
-        className="remi-timewheel-scroll"
-        style={{
-          height: "100%",
-          overflowY: "scroll",
-          scrollSnapType: "y mandatory",
-          paddingTop: ((visibleItems - 1) / 2) * itemHeight,
-          paddingBottom: ((visibleItems - 1) / 2) * itemHeight,
-        }}
-      >
-        {values.map((v) => {
-          const isActive = v === selected;
-          return (
-            <div
-              key={v}
-              style={{
-                height: itemHeight,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                scrollSnapAlign: "center",
-                fontSize: isActive ? 22 : 16,
-                fontWeight: isActive ? 600 : 400,
-                color: isActive ? "#111827" : "#9ca3af",
-              }}
-            >
-              {String(v).padStart(2, "0")}
-            </div>
-          );
-        })}
       </div>
     </div>
   );

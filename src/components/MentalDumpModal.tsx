@@ -1,6 +1,6 @@
 // src/components/MentalDumpModal.tsx
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { X, ListTodo, Lightbulb, ChevronDown, ChevronUp } from "lucide-react";
 import type { ReminderMode, RepeatType } from "@/lib/brainItemsApi";
 import { useI18n } from "@/contexts/I18nContext";
@@ -19,6 +19,15 @@ export interface MentalDumpModalProps {
     repeatType: RepeatType
   ) => Promise<void>;
   onCreateIdea: (title: string) => Promise<void>;
+
+  /** ✅ NUEVO: texto para prefijar */
+  initialText?: string;
+
+  /** ✅ NUEVO: para forzar re-aplicar el texto aunque sea igual */
+  initialTextNonce?: number;
+
+  /** ✅ NUEVO: si true, abre directamente en preview */
+  autoPreview?: boolean;
 }
 
 // Verbos de acción para clasificar como "tarea" (de momento en ES)
@@ -92,7 +101,7 @@ interface PreviewItem {
   detectedReminderText: string | null;
   detectedHabitText: string | null;
 
-  // locks: si el user toca manualmente, no machacamos al editar título
+  // locks
   reminderLocked: boolean;
   habitLocked: boolean;
 }
@@ -124,11 +133,6 @@ function normalizeFirstWord(raw: string) {
     .replace(/[^a-záéíóúüñ]/g, "");
 }
 
-/**
- * Fallback interpolation:
- * - Si tu t() no sustituye vars (o el texto trae "(word)" / "{word}"),
- *   lo sustituimos aquí igualmente.
- */
 function interpolateFallback(text: string, vars?: Record<string, any>) {
   if (!vars) return text;
   let out = text;
@@ -145,7 +149,67 @@ function interpolateFallback(text: string, vars?: Record<string, any>) {
   return out;
 }
 
-/** Intento ligero de encontrar “qué parte” del texto activó fecha/hora/hábito (ES/EN/DE). */
+/** ✅ Toggle reutilizable (tipo iOS) */
+type ToggleSwitchProps = {
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  label?: string;
+  disabled?: boolean;
+  size?: "sm" | "md";
+  stopPropagation?: boolean;
+};
+
+function ToggleSwitch({
+  checked,
+  onChange,
+  label,
+  disabled,
+  size = "sm",
+  stopPropagation = true,
+}: ToggleSwitchProps) {
+  const h = size === "md" ? "h-6" : "h-5";
+  const w = size === "md" ? "w-11" : "w-9";
+  const dot = size === "md" ? "h-5 w-5" : "h-4 w-4";
+  const translate = size === "md" ? "translate-x-5" : "translate-x-4";
+
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={(e) => {
+        if (stopPropagation) e.stopPropagation();
+        if (!disabled) onChange(!checked);
+      }}
+      className={[
+        "inline-flex items-center gap-2 select-none",
+        disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer",
+      ].join(" ")}
+    >
+      {label ? <span className="text-[11px] text-slate-500">{label}</span> : null}
+
+      <span
+        className={[
+          "relative inline-flex items-center rounded-full transition-colors",
+          h,
+          w,
+          checked ? "bg-[#8F31F3]" : "bg-slate-200",
+        ].join(" ")}
+      >
+        <span
+          className={[
+            "absolute left-0.5 top-0.5 rounded-full bg-white shadow transition-transform",
+            dot,
+            checked ? translate : "translate-x-0",
+          ].join(" ")}
+        />
+      </span>
+    </button>
+  );
+}
+
+/** Señales detectadas (date/time/habit/reminder) */
 function detectDateSignal(text: string): string | null {
   const s = text.toLowerCase();
 
@@ -337,13 +401,14 @@ export default function MentalDumpModal({
   onClose,
   onCreateTask,
   onCreateIdea,
+  initialText,
+  initialTextNonce,
+  autoPreview,
 }: MentalDumpModalProps) {
   const { t, lang } = useI18n();
 
-  // ✅ NUEVO
   const { setModalOpen } = useModalUi();
 
-  // ✅ NUEVO: cuando el modal está abierto, ocultamos BottomNav
   useEffect(() => {
     setModalOpen(open);
     return () => setModalOpen(false);
@@ -354,10 +419,13 @@ export default function MentalDumpModal({
   const [hintIndex, setHintIndex] = useState(0);
   const [previewItems, setPreviewItems] = useState<PreviewItem[] | null>(null);
 
-  // ✅ accordion: items colapsados y se despliegan al click
   const [expandedIds, setExpandedIds] = useState<Record<number, boolean>>({});
 
   const hints = HINT_KEYS.map((key) => t(key));
+
+  // ✅ para no re-aplicar el mismo texto si re-renderiza
+  const lastAppliedTextRef = useRef<string>("");
+  const lastAppliedNonceRef = useRef<number>(-1);
 
   useEffect(() => {
     if (!open) return;
@@ -379,20 +447,21 @@ export default function MentalDumpModal({
     }
   }, [open]);
 
-  const items = useMemo(() => {
-    if (!dumpText.trim()) return [];
-    return dumpText
+  const splitItems = (text: string) => {
+    if (!text.trim()) return [];
+    return text
       .split(/\n|,/g)
       .map((part) => part.trim())
       .filter((part) => part.length > 0);
-  }, [dumpText]);
+  };
+
+  const items = useMemo(() => splitItems(dumpText), [dumpText]);
 
   const handleInternalClose = () => {
     setDumpText("");
     setPreviewItems(null);
     setIsSubmitting(false);
     setExpandedIds({});
-    // ✅ extra seguridad
     setModalOpen(false);
     onClose();
   };
@@ -482,6 +551,104 @@ export default function MentalDumpModal({
       detectedHabitText,
     };
   }
+
+  function buildPreviewFromText(fullText: string): PreviewItem[] {
+    const parts = splitItems(fullText);
+    const next: PreviewItem[] = [];
+    let idCounter = 1;
+
+    for (const raw of parts) {
+      const original = raw.trim();
+      if (!original) continue;
+
+      const det = detectWhyForText(original);
+
+      if (det.kind === "task") {
+        const fields = computeTaskFieldsFromText(original);
+
+        next.push({
+          id: idCounter++,
+          kind: "task",
+          original,
+          title: original,
+          dueDate: fields.dueDate,
+          reminderMode: fields.reminderMode,
+          repeatType: fields.repeatType,
+          selected: true,
+
+          whyKey: det.whyKey,
+          whyVars: det.whyVars,
+          whyLocked: false,
+
+          detectedDateText: fields.detectedDateText,
+          detectedTimeText: fields.detectedTimeText,
+          detectedReminderText: fields.detectedReminderText,
+          detectedHabitText: fields.detectedHabitText,
+
+          reminderLocked: false,
+          habitLocked: false,
+        });
+      } else {
+        next.push({
+          id: idCounter++,
+          kind: "idea",
+          original,
+          title: original,
+          dueDate: null,
+          reminderMode: "NONE",
+          repeatType: "none",
+          selected: true,
+
+          whyKey: det.whyKey,
+          whyVars: det.whyVars,
+          whyLocked: false,
+
+          detectedDateText: null,
+          detectedTimeText: null,
+          detectedReminderText: null,
+          detectedHabitText: null,
+
+          reminderLocked: false,
+          habitLocked: false,
+        });
+      }
+    }
+
+    return next;
+  }
+
+  // ✅ NUEVO: al abrir, si llega initialText, precargarlo
+  useEffect(() => {
+    if (!open) return;
+
+    const incoming = (initialText ?? "").trim();
+    if (!incoming) return;
+
+    const nonce = typeof initialTextNonce === "number" ? initialTextNonce : null;
+
+    const shouldApply =
+      nonce !== null
+        ? nonce > lastAppliedNonceRef.current
+        : incoming !== lastAppliedTextRef.current;
+
+    if (!shouldApply) return;
+
+    if (nonce !== null) lastAppliedNonceRef.current = nonce;
+    lastAppliedTextRef.current = incoming;
+
+    // aplicamos el texto
+    setDumpText(incoming);
+
+    // si queremos abrir en preview directamente
+    if (autoPreview) {
+      const built = buildPreviewFromText(incoming);
+      setPreviewItems(built);
+      setExpandedIds({});
+    } else {
+      setPreviewItems(null);
+      setExpandedIds({});
+    }
+  }, [open, initialText, initialTextNonce, autoPreview]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function updatePreviewItem(itemId: number, fn: (p: PreviewItem) => PreviewItem) {
     setPreviewItems((prev) => {
@@ -653,68 +820,9 @@ export default function MentalDumpModal({
         return;
       }
 
-      const next: PreviewItem[] = [];
-      let idCounter = 1;
-
-      for (const raw of items) {
-        const original = raw.trim();
-        if (!original) continue;
-
-        const det = detectWhyForText(original);
-
-        if (det.kind === "task") {
-          const fields = computeTaskFieldsFromText(original);
-
-          next.push({
-            id: idCounter++,
-            kind: "task",
-            original,
-            title: original,
-            dueDate: fields.dueDate,
-            reminderMode: fields.reminderMode,
-            repeatType: fields.repeatType,
-            selected: true,
-
-            whyKey: det.whyKey,
-            whyVars: det.whyVars,
-            whyLocked: false,
-
-            detectedDateText: fields.detectedDateText,
-            detectedTimeText: fields.detectedTimeText,
-            detectedReminderText: fields.detectedReminderText,
-            detectedHabitText: fields.detectedHabitText,
-
-            reminderLocked: false,
-            habitLocked: false,
-          });
-        } else {
-          next.push({
-            id: idCounter++,
-            kind: "idea",
-            original,
-            title: original,
-            dueDate: null,
-            reminderMode: "NONE",
-            repeatType: "none",
-            selected: true,
-
-            whyKey: det.whyKey,
-            whyVars: det.whyVars,
-            whyLocked: false,
-
-            detectedDateText: null,
-            detectedTimeText: null,
-            detectedReminderText: null,
-            detectedHabitText: null,
-
-            reminderLocked: false,
-            habitLocked: false,
-          });
-        }
-      }
-
+      const next = buildPreviewFromText(dumpText);
       setPreviewItems(next);
-      setExpandedIds({}); // todo colapsado por defecto
+      setExpandedIds({});
       return;
     }
 
@@ -807,28 +915,20 @@ export default function MentalDumpModal({
                       )}`}
                 </p>
 
-                <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:justify-end">
-                  <button
-                    type="button"
-                    onClick={handleInternalClose}
-                    className="inline-flex items-center justify-center rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
-                    disabled={isSubmitting}
-                  >
-                    {t("common.cancel")}
-                  </button>
-                  <button
-                    type="submit"
-                    className="inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-tr from-[#8F31F3] to-[#b069ff] shadow-md hover:shadow-lg disabled:opacity-60"
-                    disabled={isSubmitting || items.length === 0}
-                  >
-                    {primaryLabel}
-                  </button>
-                </div>
+                {/* ✅ sin “Cancelar” (solo X para cerrar) */}
+                <button
+  type="submit"
+  className="w-full inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:opacity-60"
+  style={{ background: "#7d59c9" }}
+  disabled={isSubmitting || items.length === 0}
+>
+  {primaryLabel}
+</button>
+
               </form>
             </>
           ) : (
             <>
-              {/* ✅ LISTA RESUMEN + DETALLE DESPLEGABLE */}
               <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
                 {previewItems.map((item) => {
                   const expanded = !!expandedIds[item.id];
@@ -847,7 +947,6 @@ export default function MentalDumpModal({
                       ? t("mentalDump.previewTaskLabel")
                       : t("mentalDump.previewIdeaLabel");
 
-                  // 🎨 palette Idea
                   const ideaBorder = "rgba(251,191,36,0.4)";
                   const ideaBg = "rgba(251,191,36,0.08)";
                   const ideaText = "#92400E";
@@ -857,14 +956,20 @@ export default function MentalDumpModal({
                       key={item.id}
                       className="rounded-2xl border border-slate-100 bg-slate-50"
                     >
-                      {/* HEADER (resumen rápido) */}
-                      <button
-                        type="button"
-                        onClick={() => toggleExpanded(item.id)}
-                        className="w-full text-left px-3 py-2.5 flex items-start gap-3"
+                      {/* ✅ IMPORTANTE: ya no es <button> para poder meter toggles dentro sin HTML inválido */}
+                      <div
+                        role="button"
+                        tabIndex={0}
                         aria-expanded={expanded}
+                        onClick={() => toggleExpanded(item.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            toggleExpanded(item.id);
+                          }
+                        }}
+                        className="w-full text-left px-3 py-2.5 flex items-start gap-3"
                       >
-                        {/* ICON CIRCLE */}
                         <div
                           className={[
                             "mt-1 flex h-8 w-8 items-center justify-center rounded-full shadow-inner flex-shrink-0 border",
@@ -893,7 +998,6 @@ export default function MentalDumpModal({
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
                               <div className="flex items-center gap-2">
-                                {/* PILL KIND */}
                                 <span
                                   className={[
                                     "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium",
@@ -913,36 +1017,12 @@ export default function MentalDumpModal({
                                 >
                                   {kindLabel}
                                 </span>
-
-                                <label
-                                  className="inline-flex items-center gap-1.5 text-[11px] text-slate-500"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    className="h-3.5 w-3.5 rounded border-slate-300 text-[#8F31F3] focus:ring-[#8F31F3]"
-                                    checked={item.selected}
-                                    onChange={() =>
-                                      setPreviewItems((prev) =>
-                                        prev
-                                          ? prev.map((p) =>
-                                              p.id === item.id
-                                                ? { ...p, selected: !p.selected }
-                                                : p
-                                            )
-                                          : prev
-                                      )
-                                    }
-                                  />
-                                  {t("mentalDump.previewInclude")}
-                                </label>
                               </div>
 
                               <div className="mt-1 text-sm font-medium text-slate-900 truncate">
                                 {item.title?.trim() || item.original}
                               </div>
 
-                              {/* chips resumen */}
                               {item.kind === "task" ? (
                                 <div className="mt-2 flex flex-wrap gap-1.5">
                                   <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] text-slate-600">
@@ -962,22 +1042,40 @@ export default function MentalDumpModal({
                               )}
                             </div>
 
-                            <div className="mt-0.5 text-slate-400 flex-shrink-0">
-                              {expanded ? (
-                                <ChevronUp className="h-4 w-4" />
-                              ) : (
-                                <ChevronDown className="h-4 w-4" />
-                              )}
+                            {/* ✅ DERECHA: toggle Guardar + chevron */}
+                            <div className="mt-0.5 flex items-center gap-3 flex-shrink-0">
+                              <ToggleSwitch
+                                checked={item.selected}
+                                disabled={isSubmitting}
+                                label={t("mentalDump.previewInclude")}
+                                onChange={() =>
+                                  setPreviewItems((prev) =>
+                                    prev
+                                      ? prev.map((p) =>
+                                          p.id === item.id
+                                            ? { ...p, selected: !p.selected }
+                                            : p
+                                        )
+                                      : prev
+                                  )
+                                }
+                              />
+
+                              <span className="text-slate-400">
+                                {expanded ? (
+                                  <ChevronUp className="h-4 w-4" />
+                                ) : (
+                                  <ChevronDown className="h-4 w-4" />
+                                )}
+                              </span>
                             </div>
                           </div>
                         </div>
-                      </button>
+                      </div>
 
-                      {/* DETALLE (solo si expanded) */}
                       {expanded && (
                         <div className="px-3 pb-3">
                           <div className="border-t border-slate-200/70 pt-3 space-y-2">
-                            {/* Switch Task/Idea */}
                             <div className="flex items-start justify-between gap-2">
                               <div
                                 className="inline-flex rounded-full border border-slate-200 bg-white p-0.5"
@@ -1001,7 +1099,9 @@ export default function MentalDumpModal({
                                   onClick={() => setItemKind(item.id, "idea")}
                                   className={[
                                     "rounded-full px-2.5 py-1 text-[11px] font-medium transition",
-                                    item.kind === "idea" ? "shadow-sm" : "text-slate-600 hover:bg-slate-50",
+                                    item.kind === "idea"
+                                      ? "shadow-sm"
+                                      : "text-slate-600 hover:bg-slate-50",
                                   ].join(" ")}
                                   style={
                                     item.kind === "idea"
@@ -1026,7 +1126,6 @@ export default function MentalDumpModal({
                               </button>
                             </div>
 
-                            {/* Título editable */}
                             <input
                               type="text"
                               value={item.title}
@@ -1097,7 +1196,6 @@ export default function MentalDumpModal({
                               className="w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#8F31F3]"
                             />
 
-                            {/* POR QUÉ */}
                             <div className="text-[11px] text-slate-500">
                               <span className="font-medium">{t("mentalDump.whyLabel")} </span>
                               <span>{whyText}</span>
@@ -1112,7 +1210,11 @@ export default function MentalDumpModal({
                                     </div>
                                     <input
                                       type="date"
-                                      value={item.dueDate ? toLocalYYYYMMDD(new Date(item.dueDate)) : ""}
+                                      value={
+                                        item.dueDate
+                                          ? toLocalYYYYMMDD(new Date(item.dueDate))
+                                          : ""
+                                      }
                                       onChange={(e) => {
                                         const v = e.target.value;
                                         if (!v) {
@@ -1145,7 +1247,9 @@ export default function MentalDumpModal({
                                     <input
                                       type="time"
                                       value={item.dueDate ? toLocalHHMM(new Date(item.dueDate)) : ""}
-                                      onChange={(e) => setTaskTimeFromPicker(item.id, e.target.value)}
+                                      onChange={(e) =>
+                                        setTaskTimeFromPicker(item.id, e.target.value)
+                                      }
                                       disabled={!item.dueDate}
                                       className="w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-900 disabled:bg-slate-100 disabled:text-slate-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#8F31F3]"
                                     />
@@ -1164,13 +1268,19 @@ export default function MentalDumpModal({
                                   </div>
                                   <select
                                     value={item.dueDate ? item.reminderMode : "NONE"}
-                                    onChange={(e) => setTaskReminder(item.id, e.target.value as ReminderMode)}
+                                    onChange={(e) =>
+                                      setTaskReminder(item.id, e.target.value as ReminderMode)
+                                    }
                                     disabled={!item.dueDate}
                                     className="w-full rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 disabled:bg-slate-100 disabled:text-slate-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#8F31F3]"
                                   >
                                     <option value="NONE">{t("mentalDump.reminderOff")}</option>
-                                    <option value="DAILY_UNTIL_DUE">{t("mentalDump.reminderDailyUntilDue")}</option>
-                                    <option value="DAY_BEFORE_AND_DUE">{t("mentalDump.reminderDayBeforeAndDue")}</option>
+                                    <option value="DAILY_UNTIL_DUE">
+                                      {t("mentalDump.reminderDailyUntilDue")}
+                                    </option>
+                                    <option value="DAY_BEFORE_AND_DUE">
+                                      {t("mentalDump.reminderDayBeforeAndDue")}
+                                    </option>
                                   </select>
 
                                   <div className="text-[11px] text-slate-500">
@@ -1178,35 +1288,43 @@ export default function MentalDumpModal({
                                       {t("mentalDump.detectedLabel")}{" "}
                                     </span>
                                     <span>
-                                      {item.dueDate ? detectedReminder : t("mentalDump.detectedDash")}
+                                      {item.dueDate
+                                        ? detectedReminder
+                                        : t("mentalDump.detectedDash")}
                                     </span>
                                   </div>
                                 </div>
 
-                                {/* HÁBITO manual */}
                                 <div className="space-y-1">
                                   <div className="flex items-center justify-between">
                                     <div className="text-[11px] font-medium text-slate-500">
                                       {t("mentalDump.habitLabel")}
                                     </div>
 
-                                    <label className="flex items-center gap-2 text-[11px] text-slate-600">
-                                      <input
-                                        type="checkbox"
-                                        className="h-3.5 w-3.5 rounded border-slate-300 text-[#8F31F3] focus:ring-[#8F31F3]"
+                                    {/* ✅ Off/On como toggle */}
+                                    <div onClick={(e) => e.stopPropagation()}>
+                                      <ToggleSwitch
                                         checked={item.repeatType !== "none"}
-                                        onChange={(e) => setHabitEnabled(item.id, e.target.checked)}
+                                        disabled={isSubmitting}
+                                        label={
+                                          item.repeatType !== "none"
+                                            ? t("mentalDump.habitOn")
+                                            : t("mentalDump.habitOff")
+                                        }
+                                        onChange={(next) => setHabitEnabled(item.id, next)}
                                       />
-                                      {item.repeatType !== "none"
-                                        ? t("mentalDump.habitOn")
-                                        : t("mentalDump.habitOff")}
-                                    </label>
+                                    </div>
                                   </div>
 
                                   {item.repeatType !== "none" && (
                                     <select
                                       value={item.repeatType}
-                                      onChange={(e) => setHabitRepeatType(item.id, e.target.value as RepeatType)}
+                                      onChange={(e) =>
+                                        setHabitRepeatType(
+                                          item.id,
+                                          e.target.value as RepeatType
+                                        )
+                                      }
                                       className="w-full rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#8F31F3]"
                                     >
                                       <option value="daily">{t("mentalDump.habitDaily")}</option>
@@ -1245,34 +1363,41 @@ export default function MentalDumpModal({
                 })}
               </div>
 
-              <div className="flex items-center justify-between gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPreviewItems(null);
-                    setExpandedIds({});
-                  }}
-                  className="text-[11px] text-slate-500 underline-offset-2 hover:underline"
-                  disabled={isSubmitting}
-                >
-                  {t("mentalDump.previewBackToEdit")}
-                </button>
+              <div className="pt-2">
+                <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+                  {/* ✅ BOTÓN PRINCIPAL GRANDE */}
+                  <button
+  type="submit"
+  className="w-full inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:opacity-60"
+  style={{ background: "#7d59c9" }}
+  disabled={isSubmitting || !hasSelected}
+>
+  {primaryLabel}
+</button>
 
-                <form onSubmit={handleSubmit} className="flex gap-2">
+                  {/* ❌ Cancelar oculto (comentado a propósito) */}
+                  {/*
                   <button
                     type="button"
                     onClick={handleInternalClose}
-                    className="inline-flex items-center justify-center rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                    className="w-full inline-flex items-center justify-center rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
                     disabled={isSubmitting}
                   >
                     {t("common.cancel")}
                   </button>
+                  */}
+
+                  {/* ✅ DEBAJO: volver a editar */}
                   <button
-                    type="submit"
-                    className="inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-tr from-[#8F31F3] to-[#b069ff] shadow-md hover:shadow-lg disabled:opacity-60"
-                    disabled={isSubmitting || !hasSelected}
+                    type="button"
+                    onClick={() => {
+                      setPreviewItems(null);
+                      setExpandedIds({});
+                    }}
+                    className="w-full text-[11px] text-slate-500 underline-offset-2 hover:underline"
+                    disabled={isSubmitting}
                   >
-                    {primaryLabel}
+                    {t("mentalDump.previewBackToEdit")}
                   </button>
                 </form>
               </div>

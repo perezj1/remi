@@ -31,7 +31,6 @@ import { SHARE_DRAFT_KEY } from "@/pages/ShareTarget";
 import {
   ListTodo,
   Check,
-  SkipForward,
   User,
   Share2,
   Smartphone,
@@ -40,7 +39,6 @@ import {
 
 const AVATAR_KEY = "remi_avatar";
 
-// (ahora mismo no se usa, si algún día lo usas, pásale t() para traducir los textos)
 function formatDueDiff(dueDate: string | null): string | null {
   if (!dueDate) return null;
   const now = new Date();
@@ -129,8 +127,15 @@ export default function TodayPage() {
   const [tasks, setTasks] = useState<BrainItem[]>([]);
   const [ideas, setIdeas] = useState<BrainItem[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [captureOpen, setCaptureOpen] = useState(false);
+
   const [mentalDumpOpen, setMentalDumpOpen] = useState(false);
+
+  // ✅ NUEVO: texto para abrir MentalDumpModal directamente en preview
+  const [mentalDumpInitialText, setMentalDumpInitialText] = useState<string>("");
+  const [mentalDumpInitialNonce, setMentalDumpInitialNonce] = useState(0);
+
   const [profileOpen, setProfileOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [statusSummary, setStatusSummary] =
@@ -146,13 +151,20 @@ export default function TodayPage() {
 
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
 
-  // filtro de lista (Hoy / Semana / Todo / Sin fecha)
+  // filtro de lista
   const [filter, setFilter] = useState<FilterMode>("TODAY");
 
-  // 👉 contador total de tareas activas (para la cabecera)
   const activeTasksCount = tasks.length;
 
-  // ---------- ✅ Leer draft compartido cuando llegamos desde /share-target ----------
+  // ✅ abrir revisión desde CaptureModal
+  const openReviewFromCapture = (text: string) => {
+    setMentalDumpInitialText(text);
+    setMentalDumpInitialNonce((n) => n + 1);
+    setMentalDumpOpen(true);
+    setCaptureOpen(false); // por si venía del modal +
+  };
+
+  // ---------- Leer draft compartido cuando llegamos desde /share-target ----------
   useEffect(() => {
     if (!user || typeof window === "undefined") return;
 
@@ -175,14 +187,11 @@ export default function TodayPage() {
         return;
       }
 
-      // Ponemos el texto como prefill (sin pisar lo que el usuario escriba después)
       setShareDraftText(text);
       setShareDraftNonce((n) => n + 1);
 
-      // ✅ MICRO-FIX: borrar el draft tras leerlo (evita que se rellene al recargar)
       sessionStorage.removeItem(SHARE_DRAFT_KEY);
 
-      // Limpiamos el ?shared=1
       if (hasSharedFlag) navigate("/", { replace: true });
     } catch (e) {
       console.error("Invalid share draft JSON", e);
@@ -191,7 +200,7 @@ export default function TodayPage() {
     }
   }, [user?.id, location.search, navigate]);
 
-  // ---------- Cargar tareas, ideas y resumen de estado ----------
+  // ---------- Cargar tareas, ideas y resumen ----------
   useEffect(() => {
     if (!user) return;
     setLoading(true);
@@ -215,7 +224,7 @@ export default function TodayPage() {
     })();
   }, [user, t]);
 
-  // ---------- Porcentaje de "Mente despejada" (mismas reglas que Status) ----------
+  // ---------- mente despejada ----------
   const mindClearPercent = useMemo(() => {
     if (!statusSummary) return 10;
 
@@ -229,7 +238,6 @@ export default function TodayPage() {
         ? statusSummary.daysSinceLastActivity
         : null;
 
-    // 1) Base por cantidad de cosas delegadas en Remi
     const baseClear = (() => {
       if (items <= 0) return 10;
 
@@ -242,38 +250,26 @@ export default function TodayPage() {
       return Math.min(100, 30 + Math.round(Math.log10(items + 1) * 35));
     })();
 
-    // 2) Ajuste por días desde la última actividad
     let multiplier: number;
 
-    if (daysSince == null) {
-      multiplier = 0.5;
-    } else if (daysSince <= 0) {
-      multiplier = 1;
-    } else if (daysSince === 1) {
-      multiplier = 0.8;
-    } else if (daysSince === 2) {
-      multiplier = 0.7;
-    } else if (daysSince === 3) {
-      multiplier = 0.6;
-    } else {
-      multiplier = 0.5;
-    }
+    if (daysSince == null) multiplier = 0.5;
+    else if (daysSince <= 0) multiplier = 1;
+    else if (daysSince === 1) multiplier = 0.8;
+    else if (daysSince === 2) multiplier = 0.7;
+    else if (daysSince === 3) multiplier = 0.6;
+    else multiplier = 0.5;
 
     const value = Math.round(baseClear * multiplier);
-
     return Math.max(10, Math.min(100, value));
   }, [statusSummary]);
 
-  // ---------- Comprobar si ya tiene suscripción push ----------
+  // ---------- comprobar push ----------
   useEffect(() => {
     if (!user || typeof window === "undefined" || !("Notification" in window)) {
       return;
     }
 
-    // Si el usuario ya bloqueó notificaciones, no insistimos
-    if (Notification.permission === "denied") {
-      return;
-    }
+    if (Notification.permission === "denied") return;
 
     const checkSubscription = async () => {
       try {
@@ -288,10 +284,7 @@ export default function TodayPage() {
           return;
         }
 
-        // Si no hay fila, mostramos el popup para activar notificaciones
-        if (!data) {
-          setShowPushModal(true);
-        }
+        if (!data) setShowPushModal(true);
       } catch (err) {
         console.error("Unexpected error checking push subscription", err);
       }
@@ -300,7 +293,7 @@ export default function TodayPage() {
     void checkSubscription();
   }, [user?.id]);
 
-  // ---------- Avatar desde profiles + fallback localStorage/metadata ----------
+  // ---------- Avatar ----------
   useEffect(() => {
     if (!user) {
       setAvatarUrl(null);
@@ -324,21 +317,25 @@ export default function TodayPage() {
     setAvatarUrl(finalUrl ?? null);
   }, [user, profile]);
 
-  // Escuchar el evento global del botón + de la BottomNav (Capture)
+  // botón + (Capture)
   useEffect(() => {
     const handler = () => setCaptureOpen(true);
     window.addEventListener("remi-open-capture", handler);
     return () => window.removeEventListener("remi-open-capture", handler);
   }, []);
 
-  // escuchar el evento para la Descarga mental
+  // Descarga mental (manual)
   useEffect(() => {
-    const handler = () => setMentalDumpOpen(true);
+    const handler = () => {
+      setMentalDumpInitialText(""); // ✅ para que NO auto-preview
+      setMentalDumpInitialNonce((n) => n + 1);
+      setMentalDumpOpen(true);
+    };
     window.addEventListener("remi-open-mental-dump", handler);
     return () => window.removeEventListener("remi-open-mental-dump", handler);
   }, []);
 
-  // Cerrar el menú de perfil al hacer clic fuera
+  // cerrar menú perfil al click fuera
   useEffect(() => {
     if (!profileOpen) return;
 
@@ -357,7 +354,7 @@ export default function TodayPage() {
     };
   }, [profileOpen]);
 
-  // ---------- Agrupar tareas por fecha + separar "Sin fecha" ----------
+  // ---------- Agrupar tareas ----------
   const {
     dateGroups,
     noDateTasks,
@@ -420,36 +417,29 @@ export default function TodayPage() {
 
         if (!group.items.includes(task)) {
           group.items.push(task);
-          if (isSameDay(dMid, todayMid)) {
-            todayCountLocal += 1;
-          }
+          if (isSameDay(dMid, todayMid)) todayCountLocal += 1;
         }
       };
 
       for (const task of tasks) {
         const mode = (task as any).reminder_mode as ReminderMode | undefined;
 
-        // --- TAREAS SIN FECHA ---
         if (!task.due_date) {
           noDate.push(task);
           continue;
         }
 
-        // --- TAREAS CON FECHA LÍMITE ---
         const due = new Date(task.due_date as string);
         const dueMid = new Date(due.getFullYear(), due.getMonth(), due.getDate());
 
-        // 1) Siempre se muestran el día de la fecha límite
         addTaskToDate(dueMid, task);
 
-        // 2) Día antes + día de due date
         if (mode === "DAY_BEFORE_AND_DUE") {
           const dayBefore = new Date(dueMid);
           dayBefore.setDate(dayBefore.getDate() - 1);
           addTaskToDate(dayBefore, task);
         }
 
-        // 3) Recordar a diario hasta due date (desde hoy hasta el día anterior)
         if (mode === "DAILY_UNTIL_DUE") {
           const todayMidTime = todayMid.getTime();
           const dueMidTime = dueMid.getTime();
@@ -479,7 +469,6 @@ export default function TodayPage() {
       };
     }, [tasks, t]);
 
-  // Grupos filtrados según el modo (Hoy / Semana / Todo / Sin fecha)
   const filteredDateGroups = useMemo(() => {
     if (filter === "NO_DATE") return [];
 
@@ -507,14 +496,14 @@ export default function TodayPage() {
         return time >= todayMid.getTime() && time <= weekEndMid.getTime();
       }
 
-      return true; // ALL
+      return true;
     });
   }, [dateGroups, filter]);
 
   const hasVisibleDatedTasks = filteredDateGroups.some((g) => g.items.length > 0);
   const hasNoDateTasks = noDateTasks.length > 0;
 
-  // ---------- creación / actualización de tareas / ideas ----------
+  // ---------- crear ----------
   const handleCreateTask = async (
     title: string,
     dueDate: string | null,
@@ -553,7 +542,7 @@ export default function TodayPage() {
     toast.success(t("today.postponeDayToast"));
   };
 
-  // ---------- activar notificaciones push ----------
+  // ---------- push ----------
   const handleEnablePush = async () => {
     if (!user) return;
 
@@ -570,7 +559,6 @@ export default function TodayPage() {
     }
   };
 
-  // ---------- datos de usuario / perfil para UI ----------
   const displayName =
     (profile?.display_name && profile.display_name.trim() !== ""
       ? profile.display_name
@@ -604,7 +592,6 @@ export default function TodayPage() {
     }
   };
 
-  // reabrir el banner de instalación
   const handleInstallApp = () => {
     setProfileOpen(false);
     if (typeof window === "undefined") return;
@@ -633,6 +620,8 @@ export default function TodayPage() {
       {label}
     </button>
   );
+
+  const shouldAutoPreview = mentalDumpInitialText.trim().length > 0;
 
   return (
     <div className="remi-page">
@@ -794,8 +783,7 @@ export default function TodayPage() {
             open={true}
             embedded
             onClose={() => {}}
-            onCreateTask={handleCreateTask}
-            onCreateIdea={handleCreateIdea}
+            onOpenReview={openReviewFromCapture}
             initialText={shareDraftText}
             initialTextNonce={shareDraftNonce}
           />
@@ -828,7 +816,7 @@ export default function TodayPage() {
           </div>
         </div>
 
-        {/* lista de tareas agrupadas por fecha */}
+        {/* lista */}
         <div className="remi-task-list">
           {loading && (
             <div className="remi-task-row">
@@ -927,33 +915,35 @@ export default function TodayPage() {
                         }}
                       >
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          {/* ✅ APLAZAR +1 DÍA (con texto explicativo) */}                          
-                          <button
-  type="button"
-  onClick={() => handlePostpone(task, "DAY")}
-  title={t("today.actionPostpone1dTitle") || "Aplazar: añade 1 día a la fecha límite"}
-  aria-label={t("today.actionPostpone1dTitle") || "Aplazar: añade 1 día a la fecha límite"}
-  style={{
-    width: 30,
-    height: 30,
-    borderRadius: "999px",
-    border: "1px solid #C6CDD7",   // borde (como la imagen)
-    background: "#FFFFFF",         // fondo blanco (como la imagen)
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    padding: 0,
-  }}
->
-  <CalendarPlus size={16} color="#747B88" />  {/* icono (como la imagen) */}
-</button>
+                          {hasDue && (
+                            <button
+                              type="button"
+                              onClick={() => handlePostpone(task, "DAY")}
+                              title={
+                                t("today.actionPostpone1dTitle") ||
+                                "Aplazar: añade 1 día a la fecha límite"
+                              }
+                              aria-label={
+                                t("today.actionPostpone1dTitle") ||
+                                "Aplazar: añade 1 día a la fecha límite"
+                              }
+                              style={{
+                                width: 30,
+                                height: 30,
+                                borderRadius: "999px",
+                                border: "1px solid #C6CDD7",
+                                background: "#FFFFFF",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                cursor: "pointer",
+                                padding: 0,
+                              }}
+                            >
+                              <CalendarPlus size={16} color="#747B88" />
+                            </button>
+                          )}
 
-
-
-
-
-                          {/* ✅ DONE igual que antes (sin texto) */}
                           <button
                             type="button"
                             onClick={() => handleDone(task)}
@@ -1058,7 +1048,6 @@ export default function TodayPage() {
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        {/* ✅ SIN FECHA: NO MOSTRAR APLAZAR +1 DÍA */}
                         <button
                           type="button"
                           onClick={() => handleDone(task)}
@@ -1109,12 +1098,11 @@ export default function TodayPage() {
         </div>
       )}
 
-      {/* Modal flotante del botón + */}
+      {/* Modal flotante del botón + (Capture) */}
       <CaptureModal
         open={captureOpen}
         onClose={() => setCaptureOpen(false)}
-        onCreateTask={handleCreateTask}
-        onCreateIdea={handleCreateIdea}
+        onOpenReview={openReviewFromCapture}
         initialText={shareDraftText}
         initialTextNonce={shareDraftNonce}
       />
@@ -1125,6 +1113,9 @@ export default function TodayPage() {
         onClose={() => setMentalDumpOpen(false)}
         onCreateTask={handleCreateTask}
         onCreateIdea={handleCreateIdea}
+        initialText={mentalDumpInitialText}
+        initialTextNonce={mentalDumpInitialNonce}
+        autoPreview={shouldAutoPreview}
       />
     </div>
   );
