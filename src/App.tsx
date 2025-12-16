@@ -7,6 +7,7 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
+
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { I18nProvider, useI18n } from "@/contexts/I18nContext";
 import type { RemiLocale } from "@/locales";
@@ -24,7 +25,10 @@ import StatusPage from "@/pages/Status";
 import ScrollToTop from "@/components/ScrollToTop";
 import LandingPage from "@/pages/Landing";
 
-// ✅ NUEVO: página que recibe el share_target
+// ✅ Provider + hook para ocultar BottomNav cuando hay modales abiertos
+import { ModalUiProvider, useModalUi } from "@/contexts/ModalUiContext";
+
+// ✅ Share Target (pública)
 import ShareTargetPage from "@/pages/ShareTarget";
 
 // ---- RUTAS PROTEGIDAS ----
@@ -49,6 +53,9 @@ function AppRoutes() {
   const { lang, setLang } = useI18n();
   const location = useLocation();
 
+  // ✅ lee si hay algún modal abierto
+  const { isAnyModalOpen } = useModalUi();
+
   React.useEffect(() => {
     const pLang = (((profile as any)?.language ?? null) as RemiLocale | null);
 
@@ -63,16 +70,18 @@ function AppRoutes() {
 
   // Ocultar bottom nav en rutas públicas/“técnicas”
   const pathname = location.pathname.toLowerCase();
-  const hideBottomNav =
+  const hideBottomNavRoute =
     pathname.startsWith("/landing") || pathname.startsWith("/share-target");
+
+  // ✅ Ocultar también si hay un modal abierto
+  const hideBottomNav = hideBottomNavRoute || isAnyModalOpen;
 
   return (
     <>
-      {/* Siempre que cambie la ruta, pone el scroll arriba */}
       <ScrollToTop />
 
       <Routes>
-        {/* ✅ Share Target (pública): Android "Compartir → Remi" entra aquí */}
+        {/* Share Target (pública) */}
         <Route path="/share-target" element={<ShareTargetPage />} />
 
         {/* Auth */}
@@ -91,7 +100,7 @@ function AppRoutes() {
           }
         />
 
-        {/* Bandeja de entrada (Todo) */}
+        {/* Bandeja */}
         <Route
           path="/inbox"
           element={
@@ -148,7 +157,7 @@ function AppRoutes() {
         <Route path="*" element={<NotFound />} />
       </Routes>
 
-      {/* Bottom nav solo si hay usuario y NO estamos en /landing o /share-target */}
+      {/* Bottom nav solo si hay usuario y no está oculto por ruta o modal */}
       {user && !hideBottomNav && <BottomNav />}
 
       <InstallPrompt />
@@ -161,7 +170,9 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <I18nProvider>
-          <AppRoutes />
+          <ModalUiProvider>
+            <AppRoutes />
+          </ModalUiProvider>
         </I18nProvider>
       </AuthProvider>
     </BrowserRouter>

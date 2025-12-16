@@ -6,6 +6,9 @@ import type { ReminderMode, RepeatType } from "@/lib/brainItemsApi";
 import { useI18n } from "@/contexts/I18nContext";
 import { parseDateTimeFromText } from "@/lib/parseDateTimeFromText";
 
+// ✅ NUEVO
+import { useModalUi } from "@/contexts/ModalUiContext";
+
 export interface MentalDumpModalProps {
   open: boolean;
   onClose: () => void;
@@ -337,6 +340,15 @@ export default function MentalDumpModal({
 }: MentalDumpModalProps) {
   const { t, lang } = useI18n();
 
+  // ✅ NUEVO
+  const { setModalOpen } = useModalUi();
+
+  // ✅ NUEVO: cuando el modal está abierto, ocultamos BottomNav
+  useEffect(() => {
+    setModalOpen(open);
+    return () => setModalOpen(false);
+  }, [open, setModalOpen]);
+
   const [dumpText, setDumpText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hintIndex, setHintIndex] = useState(0);
@@ -380,6 +392,8 @@ export default function MentalDumpModal({
     setPreviewItems(null);
     setIsSubmitting(false);
     setExpandedIds({});
+    // ✅ extra seguridad
+    setModalOpen(false);
     onClose();
   };
 
@@ -443,10 +457,8 @@ export default function MentalDumpModal({
 
     let reminderMode: ReminderMode = "NONE";
     if (dueDate) {
-      if (reminderHint === "DAY_BEFORE_AND_DUE")
-        reminderMode = "DAY_BEFORE_AND_DUE";
-      else if (reminderHint === "DAILY_UNTIL_DUE")
-        reminderMode = "DAILY_UNTIL_DUE";
+      if (reminderHint === "DAY_BEFORE_AND_DUE") reminderMode = "DAY_BEFORE_AND_DUE";
+      else if (reminderHint === "DAILY_UNTIL_DUE") reminderMode = "DAILY_UNTIL_DUE";
       else reminderMode = "DAILY_UNTIL_DUE";
     }
 
@@ -471,10 +483,7 @@ export default function MentalDumpModal({
     };
   }
 
-  function updatePreviewItem(
-    itemId: number,
-    fn: (p: PreviewItem) => PreviewItem
-  ) {
+  function updatePreviewItem(itemId: number, fn: (p: PreviewItem) => PreviewItem) {
     setPreviewItems((prev) => {
       if (!prev) return prev;
       return prev.map((p) => (p.id === itemId ? fn(p) : p));
@@ -601,8 +610,7 @@ export default function MentalDumpModal({
         };
       }
 
-      const nextRepeat: RepeatType =
-        p.repeatType === "none" ? "daily" : p.repeatType;
+      const nextRepeat: RepeatType = p.repeatType === "none" ? "daily" : p.repeatType;
 
       return {
         ...p,
@@ -763,9 +771,7 @@ export default function MentalDumpModal({
               {t("index.clearMind")}
             </p>
             <h2 className="text-lg sm:text-xl font-semibold text-slate-900">
-              {previewItems === null
-                ? t("mentalDump.title")
-                : t("mentalDump.previewTitle")}
+              {previewItems === null ? t("mentalDump.title") : t("mentalDump.previewTitle")}
             </h2>
             <p className="mt-1 text-sm leading-relaxed text-slate-600">
               {previewItems === null
@@ -830,21 +836,18 @@ export default function MentalDumpModal({
                   const whyRaw = t(item.whyKey as any, item.whyVars);
                   const whyText = interpolateFallback(whyRaw, item.whyVars);
 
-                  const detectedDate =
-                    item.detectedDateText ?? t("mentalDump.detectedDash");
-                  const detectedTime =
-                    item.detectedTimeText ?? t("mentalDump.detectedDash");
+                  const detectedDate = item.detectedDateText ?? t("mentalDump.detectedDash");
+                  const detectedTime = item.detectedTimeText ?? t("mentalDump.detectedDash");
                   const detectedReminder =
                     item.detectedReminderText ?? t("mentalDump.detectedDash");
-                  const detectedHabit =
-                    item.detectedHabitText ?? t("mentalDump.detectedDash");
+                  const detectedHabit = item.detectedHabitText ?? t("mentalDump.detectedDash");
 
                   const kindLabel =
                     item.kind === "task"
                       ? t("mentalDump.previewTaskLabel")
                       : t("mentalDump.previewIdeaLabel");
 
-                  // 🎨 palette Idea (igual que el ejemplo que pasaste)
+                  // 🎨 palette Idea
                   const ideaBorder = "rgba(251,191,36,0.4)";
                   const ideaBg = "rgba(251,191,36,0.08)";
                   const ideaText = "#92400E";
@@ -867,14 +870,14 @@ export default function MentalDumpModal({
                             "mt-1 flex h-8 w-8 items-center justify-center rounded-full shadow-inner flex-shrink-0 border",
                             item.kind === "task"
                               ? "bg-white border-slate-200/60 text-[#8F31F3]"
-                              : `bg-[${ideaBg}] border-[${ideaBorder}] text-[${ideaText}]`,
+                              : "",
                           ].join(" ")}
                           style={
                             item.kind === "idea"
                               ? {
-                                  borderColor: "rgba(251,191,36,0.4)",
+                                  borderColor: ideaBorder,
                                   background: "#ffffff",
-                                  color: "#92400E",
+                                  color: ideaText,
                                 }
                               : undefined
                           }
@@ -901,9 +904,9 @@ export default function MentalDumpModal({
                                   style={
                                     item.kind === "idea"
                                       ? {
-                                          borderColor: "rgba(251,191,36,0.4)",
+                                          borderColor: ideaBorder,
                                           background: "#ffffff",
-                                          color: "#92400E",
+                                          color: ideaText,
                                         }
                                       : undefined
                                   }
@@ -977,21 +980,7 @@ export default function MentalDumpModal({
                             {/* Switch Task/Idea */}
                             <div className="flex items-start justify-between gap-2">
                               <div
-                                className={[
-                                  "inline-flex rounded-full border p-0.5",
-                                  item.kind === "idea"
-                                    ? ""
-                                    : "border-slate-200 bg-white",
-                                ].join(" ")}
-                                style={                                  
-                                  item.kind === "idea"
-                                  ? {
-                                    borderColor: "rgba(251,191,36,0.4)",
-                                    background: "#ffffff",
-                                    color: "#92400E",
-                                    }
-                                  : undefined
-                              }
+                                className="inline-flex rounded-full border border-slate-200 bg-white p-0.5"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <button
@@ -1012,16 +1001,11 @@ export default function MentalDumpModal({
                                   onClick={() => setItemKind(item.id, "idea")}
                                   className={[
                                     "rounded-full px-2.5 py-1 text-[11px] font-medium transition",
-                                    item.kind === "idea"
-                                      ? "shadow-sm"
-                                      : "text-slate-600 hover:bg-slate-50",
+                                    item.kind === "idea" ? "shadow-sm" : "text-slate-600 hover:bg-slate-50",
                                   ].join(" ")}
                                   style={
                                     item.kind === "idea"
-                                      ? {
-                                          background: ideaBg,
-                                          color: ideaText,
-                                        }
+                                      ? { background: ideaBg, color: ideaText }
                                       : undefined
                                   }
                                   aria-pressed={item.kind === "idea"}
@@ -1115,9 +1099,7 @@ export default function MentalDumpModal({
 
                             {/* POR QUÉ */}
                             <div className="text-[11px] text-slate-500">
-                              <span className="font-medium">
-                                {t("mentalDump.whyLabel")}{" "}
-                              </span>
+                              <span className="font-medium">{t("mentalDump.whyLabel")} </span>
                               <span>{whyText}</span>
                             </div>
 
@@ -1130,11 +1112,7 @@ export default function MentalDumpModal({
                                     </div>
                                     <input
                                       type="date"
-                                      value={
-                                        item.dueDate
-                                          ? toLocalYYYYMMDD(new Date(item.dueDate))
-                                          : ""
-                                      }
+                                      value={item.dueDate ? toLocalYYYYMMDD(new Date(item.dueDate)) : ""}
                                       onChange={(e) => {
                                         const v = e.target.value;
                                         if (!v) {
@@ -1166,12 +1144,8 @@ export default function MentalDumpModal({
                                     </div>
                                     <input
                                       type="time"
-                                      value={
-                                        item.dueDate ? toLocalHHMM(new Date(item.dueDate)) : ""
-                                      }
-                                      onChange={(e) =>
-                                        setTaskTimeFromPicker(item.id, e.target.value)
-                                      }
+                                      value={item.dueDate ? toLocalHHMM(new Date(item.dueDate)) : ""}
+                                      onChange={(e) => setTaskTimeFromPicker(item.id, e.target.value)}
                                       disabled={!item.dueDate}
                                       className="w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-900 disabled:bg-slate-100 disabled:text-slate-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#8F31F3]"
                                     />
@@ -1190,19 +1164,13 @@ export default function MentalDumpModal({
                                   </div>
                                   <select
                                     value={item.dueDate ? item.reminderMode : "NONE"}
-                                    onChange={(e) =>
-                                      setTaskReminder(item.id, e.target.value as ReminderMode)
-                                    }
+                                    onChange={(e) => setTaskReminder(item.id, e.target.value as ReminderMode)}
                                     disabled={!item.dueDate}
                                     className="w-full rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 disabled:bg-slate-100 disabled:text-slate-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#8F31F3]"
                                   >
                                     <option value="NONE">{t("mentalDump.reminderOff")}</option>
-                                    <option value="DAILY_UNTIL_DUE">
-                                      {t("mentalDump.reminderDailyUntilDue")}
-                                    </option>
-                                    <option value="DAY_BEFORE_AND_DUE">
-                                      {t("mentalDump.reminderDayBeforeAndDue")}
-                                    </option>
+                                    <option value="DAILY_UNTIL_DUE">{t("mentalDump.reminderDailyUntilDue")}</option>
+                                    <option value="DAY_BEFORE_AND_DUE">{t("mentalDump.reminderDayBeforeAndDue")}</option>
                                   </select>
 
                                   <div className="text-[11px] text-slate-500">
@@ -1227,9 +1195,7 @@ export default function MentalDumpModal({
                                         type="checkbox"
                                         className="h-3.5 w-3.5 rounded border-slate-300 text-[#8F31F3] focus:ring-[#8F31F3]"
                                         checked={item.repeatType !== "none"}
-                                        onChange={(e) =>
-                                          setHabitEnabled(item.id, e.target.checked)
-                                        }
+                                        onChange={(e) => setHabitEnabled(item.id, e.target.checked)}
                                       />
                                       {item.repeatType !== "none"
                                         ? t("mentalDump.habitOn")
@@ -1240,9 +1206,7 @@ export default function MentalDumpModal({
                                   {item.repeatType !== "none" && (
                                     <select
                                       value={item.repeatType}
-                                      onChange={(e) =>
-                                        setHabitRepeatType(item.id, e.target.value as RepeatType)
-                                      }
+                                      onChange={(e) => setHabitRepeatType(item.id, e.target.value as RepeatType)}
                                       className="w-full rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#8F31F3]"
                                     >
                                       <option value="daily">{t("mentalDump.habitDaily")}</option>

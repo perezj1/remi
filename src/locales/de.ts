@@ -219,7 +219,11 @@ status: {
 
     title: "Kopf leeren",
 subtitle: "Schreib alles auf, was dir durch den Kopf geht, damit du es nicht vergisst.",
-textareaPlaceholder:   "Z.B.: Erinnere mich daran, vor dem 12. Dezember um 13:00 Uhr ein Geburtstagsgeschenk zu kaufen, die von meinen Freunden empfohlene Serie anzusehen...",
+textareaPlaceholder:   "Beispiele:\n" +
+    "Glühbirne im Flur morgen um 10 wechseln\n" +
+    "Mama am Sonntag anrufen\n" +
+    "Jeden Montag um 14:00 Remi benutzen\n" +
+    "Idee: Reise nach Italien im Frühling",
 
   ideaButton: "Idee",
   taskButton: "Aufgabe",

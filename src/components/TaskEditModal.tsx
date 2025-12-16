@@ -11,6 +11,9 @@ import {
 } from "@/lib/brainItemsApi";
 import { parseDateTimeFromText } from "@/lib/parseDateTimeFromText";
 
+// ✅ NUEVO
+import { useModalUi } from "@/contexts/ModalUiContext";
+
 interface TaskEditModalProps {
   open: boolean;
   task: BrainItem | null; // debe ser type === "task"
@@ -27,6 +30,15 @@ export default function TaskEditModal({
   onUpdated,
 }: TaskEditModalProps) {
   const { t, lang } = useI18n();
+
+  // ✅ NUEVO
+  const { setModalOpen } = useModalUi();
+
+  // ✅ NUEVO: cuando el modal está abierto, ocultamos BottomNav
+  useEffect(() => {
+    setModalOpen(open);
+    return () => setModalOpen(false);
+  }, [open, setModalOpen]);
 
   // ✅ Hooks SIEMPRE arriba (antes de cualquier early return)
   const hoursOptions = useMemo(() => Array.from({ length: 24 }, (_, i) => i), []);
@@ -239,13 +251,7 @@ export default function TaskEditModal({
         setRepeatType("none");
       }
     }
-  }, [
-    title,
-    lang,
-    manualDateOverride,
-    manualRepeatOverride,
-    applyDateTime,
-  ]);
+  }, [title, lang, manualDateOverride, manualRepeatOverride, applyDateTime]);
 
   // ✅ Early return DESPUÉS de todos los hooks
   if (!open || !task) return null;
@@ -253,6 +259,8 @@ export default function TaskEditModal({
 
   const handleClose = () => {
     if (loading) return;
+    // ✅ extra seguridad
+    setModalOpen(false);
     onClose();
   };
 
@@ -305,7 +313,7 @@ export default function TaskEditModal({
       const dueISO =
         dueOption === "NONE"
           ? null
-          : (localDateTimeInputToISO(dueDateTime) ?? getDueDateFromOption());
+          : localDateTimeInputToISO(dueDateTime) ?? getDueDateFromOption();
 
       const finalRepeatType: RepeatType = repeatEnabled ? repeatType : "none";
       const finalReminderMode: ReminderMode =
@@ -320,6 +328,8 @@ export default function TaskEditModal({
       );
 
       onUpdated(updated);
+      // ✅ extra seguridad
+      setModalOpen(false);
       onClose();
     } catch (err) {
       console.error("Error updating task", err);
@@ -398,7 +408,7 @@ export default function TaskEditModal({
   const dateTimePreview =
     hasDue && selectedDate
       ? selectedDate.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
-      : (t("capture.dateTimeNoneShort") ?? t("tasks.clearDueDate") ?? "—");
+      : t("capture.dateTimeNoneShort") ?? t("tasks.clearDueDate") ?? "—";
 
   const remindersDisabled = repeatEnabled || !hasDue;
 
@@ -415,7 +425,8 @@ export default function TaskEditModal({
               {t("tasks.editTitle") || "Edit task"}
             </h2>
             <p className="mt-1 text-xs text-slate-500">
-              {t("tasks.editSubtitle") || "Update text, date & time, reminders and repeat."}
+              {t("tasks.editSubtitle") ||
+                "Update text, date & time, reminders and repeat."}
             </p>
           </div>
 
@@ -803,7 +814,6 @@ export default function TaskEditModal({
                     if (!next) {
                       setRepeatType("none");
                     } else {
-                      // si no hay fecha, ponemos una base consistente
                       if (dueOption === "NONE" || !selectedDate) {
                         const base = new Date();
                         base.setHours(selectedHour, selectedMinute, 0, 0);

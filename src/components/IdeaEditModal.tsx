@@ -1,5 +1,6 @@
 // src/components/IdeaEditModal.tsx
-import { useEffect, useState, useRef } from "react";
+import type React from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
 import {
@@ -10,6 +11,9 @@ import {
   convertIdeaToTask,
 } from "@/lib/brainItemsApi";
 
+// ✅ NUEVO
+import { useModalUi } from "@/contexts/ModalUiContext";
+
 interface IdeaEditModalProps {
   open: boolean;
   idea: BrainItem | null; // debe ser type === "idea"
@@ -17,6 +21,8 @@ interface IdeaEditModalProps {
   onUpdated: (updated: BrainItem) => void;
   onConverted: (convertedTask: BrainItem) => void;
 }
+
+type DueOption = "NONE" | "TODAY" | "TOMORROW" | "WEEK" | "CUSTOM";
 
 export default function IdeaEditModal({
   open,
@@ -27,18 +33,52 @@ export default function IdeaEditModal({
 }: IdeaEditModalProps) {
   const { t } = useI18n();
 
+  // ✅ NUEVO
+  const { setModalOpen } = useModalUi();
+
+  // ✅ NUEVO: cuando el modal está abierto, ocultamos BottomNav
+  useEffect(() => {
+    setModalOpen(open);
+    return () => setModalOpen(false);
+  }, [open, setModalOpen]);
+
+  // ✅ Hooks siempre arriba
+  const hoursOptions = useMemo(
+    () => Array.from({ length: 24 }, (_, i) => i),
+    []
+  );
+  const minutesOptions = useMemo(
+    () => Array.from({ length: 12 }, (_, i) => i * 5),
+    []
+  );
+
+  const weekdayLabels = useMemo(() => {
+    const raw = t("tasks.weekdayLabels");
+    if (typeof raw === "string" && raw.includes("|")) {
+      const parts = raw
+        .split("|")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (parts.length === 7) return parts;
+    }
+    return ["L", "M", "X", "J", "V", "S", "D"];
+  }, [t]);
+
   const [title, setTitle] = useState("");
-  const [dueDateTime, setDueDateTime] = useState<string>("");
-  const [reminderMode, setReminderMode] =
-    useState<ReminderMode>("NONE");
+
+  // “Convert to task” step
   const [showTaskOptions, setShowTaskOptions] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Repetición
+  // Due / Reminder / Repeat (igual que TaskEditModal)
+  const [dueOption, setDueOption] = useState<DueOption>("CUSTOM");
+  const [dueDateTime, setDueDateTime] = useState<string>(""); // datetime-local
+  const [reminderMode, setReminderMode] = useState<ReminderMode>("NONE");
+
   const [repeatEnabled, setRepeatEnabled] = useState(false);
   const [repeatType, setRepeatType] = useState<RepeatType>("none");
 
-  // --- Date / Time picker estilo CaptureModal ---
+  // Date/time picker (cerrado por defecto)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedHour, setSelectedHour] = useState<number>(20);
   const [selectedMinute, setSelectedMinute] = useState<number>(0);
@@ -47,36 +87,17 @@ export default function IdeaEditModal({
     d.setDate(1);
     return d;
   });
+  const [isDateTimePickerOpen, setIsDateTimePickerOpen] = useState(false);
 
-  const hoursOptions = Array.from({ length: 24 }, (_, i) => i);
-  const minutesOptions = Array.from({ length: 12 }, (_, i) => i * 5);
-
-  const formatDateTimeLocal = (d: Date) => {
+  const formatDateTimeLocal = useCallback((d: Date) => {
     const pad = (n: number) => String(n).padStart(2, "0");
     return (
       `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
       `T${pad(d.getHours())}:${pad(d.getMinutes())}`
     );
-  };
+  }, []);
 
-  const applyDateTime = (dateBase: Date, hour: number, minute: number) => {
-    const d = new Date(dateBase);
-    d.setHours(hour, minute, 0, 0);
-    setSelectedDate(d);
-    setSelectedHour(hour);
-    setSelectedMinute(minute);
-    setCalendarMonth(new Date(d.getFullYear(), d.getMonth(), 1));
-    setDueDateTime(formatDateTimeLocal(d));
-  };
-
-  const applyDateFromCalendar = (d: Date) => {
-    const baseHour = selectedHour ?? 20;
-    const baseMinute = selectedMinute ?? 0;
-    applyDateTime(d, baseHour, baseMinute);
-  };
-
-  // Helpers ISO <-> datetime-local
-  const isoToLocalDateTimeInput = (iso: string): string => {
+  const isoToLocalDateTimeInput = useCallback((iso: string): string => {
     const d = new Date(iso);
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, "0");
@@ -84,51 +105,85 @@ export default function IdeaEditModal({
     const hours = String(d.getHours()).padStart(2, "0");
     const minutes = String(d.getMinutes()).padStart(2, "0");
     return `${year}-${month}-${day}T${hours}:${minutes}`;
-  };
+  }, []);
 
-  const localDateTimeInputToISO = (value: string): string | null => {
+  const localDateTimeInputToISO = useCallback((value: string): string | null => {
     if (!value) return null;
     const d = new Date(value);
-    if (isNaN(d.getTime())) return null;
+    if (Number.isNaN(d.getTime())) return null;
     return d.toISOString();
-  };
+  }, []);
 
-  // Resetear estado al abrir/cerrar o cambiar idea
+  const applyDateTime = useCallback(
+    (
+      dateBase: Date,
+      hour: number,
+      minute: number,
+      option: DueOption = "CUSTOM"
+    ) => {
+      const d = new Date(dateBase);
+      d.setHours(hour, minute, 0, 0);
+      setSelectedDate(d);
+      setSelectedHour(hour);
+      setSelectedMinute(minute);
+      setCalendarMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+      setDueDateTime(formatDateTimeLocal(d));
+      setDueOption(option);
+    },
+    [formatDateTimeLocal]
+  );
+
+  const applyDateFromChip = useCallback(
+    (d: Date, option: DueOption) => {
+      applyDateTime(d, d.getHours(), d.getMinutes(), option);
+    },
+    [applyDateTime]
+  );
+
+  // Reset / init
   useEffect(() => {
     if (!open || !idea) {
       setTitle("");
+      setShowTaskOptions(false);
+      setLoading(false);
+
+      setDueOption("CUSTOM");
       setDueDateTime("");
       setReminderMode("NONE");
-      setShowTaskOptions(false);
+
       setRepeatEnabled(false);
       setRepeatType("none");
-      setLoading(false);
+
       setSelectedDate(null);
       setSelectedHour(20);
       setSelectedMinute(0);
       const d = new Date();
       d.setDate(1);
       setCalendarMonth(d);
+
+      setIsDateTimePickerOpen(false);
       return;
     }
 
     setTitle(idea.title ?? "");
-    setReminderMode(idea.reminder_mode || "NONE");
+
+    const rm = (idea.reminder_mode || "NONE") as ReminderMode;
+    setReminderMode(rm);
 
     if (idea.due_date) {
       const local = isoToLocalDateTimeInput(idea.due_date);
       setDueDateTime(local);
+      setDueOption("CUSTOM");
 
       const d = new Date(local);
-      if (!isNaN(d.getTime())) {
+      if (!Number.isNaN(d.getTime())) {
         setSelectedDate(d);
         setSelectedHour(d.getHours());
         setSelectedMinute(d.getMinutes());
-        const m = new Date(d);
-        m.setDate(1);
-        setCalendarMonth(m);
+        setCalendarMonth(new Date(d.getFullYear(), d.getMonth(), 1));
       }
     } else {
+      setDueOption("NONE");
       setDueDateTime("");
       setSelectedDate(null);
       setSelectedHour(20);
@@ -136,30 +191,51 @@ export default function IdeaEditModal({
       const d = new Date();
       d.setDate(1);
       setCalendarMonth(d);
+      setReminderMode("NONE");
     }
 
     setRepeatEnabled(false);
     setRepeatType("none");
+
+    // Importante: el calendario debe empezar cerrado
+    setIsDateTimePickerOpen(false);
+
     setShowTaskOptions(false);
     setLoading(false);
-  }, [open, idea]);
+  }, [open, idea, isoToLocalDateTimeInput]);
 
-  // Ajustar reminder cuando no hay fecha
+  // Si no hay fecha, forzamos reminders a NONE (igual que tasks)
   useEffect(() => {
-    const hasDue = !!dueDateTime;
-    if (
-      !hasDue &&
-      (reminderMode === "ON_DUE_DATE" ||
-        reminderMode === "DAY_BEFORE_AND_DUE")
-    ) {
-      setReminderMode("NONE");
+    const hasDue = dueOption !== "NONE" && !!(dueDateTime || selectedDate);
+    if (!hasDue && reminderMode !== "NONE") setReminderMode("NONE");
+  }, [dueDateTime, dueOption, reminderMode, selectedDate]);
+
+  // Si se activa hábito, recordatorios a NONE (igual que tasks)
+  useEffect(() => {
+    if (repeatEnabled && reminderMode !== "NONE") setReminderMode("NONE");
+  }, [repeatEnabled, reminderMode]);
+
+  // Sync picker cuando cambie dueDateTime
+  useEffect(() => {
+    if (!dueDateTime) {
+      setSelectedDate(null);
+      return;
     }
-  }, [dueDateTime, reminderMode]);
+    const d = new Date(dueDateTime);
+    if (Number.isNaN(d.getTime())) return;
+    setSelectedDate(d);
+    setSelectedHour(d.getHours());
+    setSelectedMinute(d.getMinutes());
+    setCalendarMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+  }, [dueDateTime]);
 
   if (!open || !idea) return null;
+  if (idea.type !== "idea") return null;
 
   const handleClose = () => {
     if (loading) return;
+    // ✅ extra seguridad
+    setModalOpen(false);
     onClose();
   };
 
@@ -169,19 +245,61 @@ export default function IdeaEditModal({
       setLoading(true);
       const updated = await updateIdeaTitle(idea.id, title.trim());
       onUpdated(updated);
+      // ✅ extra seguridad
+      setModalOpen(false);
       onClose();
     } catch (err) {
       console.error("Error updating idea title", err);
-      alert(t("ideas.updateError"));
+      alert(t("ideas.updateError") || "Error updating idea");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleClearDueDate = () => {
+    setDueOption("NONE");
+    setDueDateTime("");
+    setSelectedDate(null);
+    setReminderMode("NONE");
+    setRepeatEnabled(false);
+    setRepeatType("none");
+    setIsDateTimePickerOpen(false);
+  };
+
+  const getDueDateFromOption = (): string | null => {
+    if (dueOption === "NONE" && !dueDateTime) return null;
+
+    if (dueDateTime) {
+      const d = new Date(dueDateTime);
+      if (!Number.isNaN(d.getTime())) return d.toISOString();
+    }
+
+    const now = new Date();
+    const d = new Date();
+
+    if (dueOption === "TODAY") {
+      d.setHours(20, 0, 0, 0);
+    } else if (dueOption === "TOMORROW") {
+      d.setDate(now.getDate() + 1);
+      d.setHours(9, 0, 0, 0);
+    } else if (dueOption === "WEEK") {
+      d.setDate(now.getDate() + 7);
+      d.setHours(9, 0, 0, 0);
+    } else if (dueOption === "CUSTOM") {
+      if (selectedDate) return selectedDate.toISOString();
+      return null;
+    } else if (dueOption === "NONE") {
+      return null;
+    }
+
+    return d.toISOString();
+  };
+
   const handleConvertClick = async () => {
-    // Primer clic: mostrar opciones
+    // 1er click: mostrar opciones (y calendario cerrado)
     if (!showTaskOptions) {
       setShowTaskOptions(true);
+      setIsDateTimePickerOpen(false);
       return;
     }
 
@@ -189,37 +307,39 @@ export default function IdeaEditModal({
 
     try {
       setLoading(true);
-      const dueISO = localDateTimeInputToISO(dueDateTime);
-      const finalRepeatType: RepeatType = repeatEnabled
-        ? repeatType
-        : "none";
+
+      const dueISO =
+        dueOption === "NONE"
+          ? null
+          : localDateTimeInputToISO(dueDateTime) ?? getDueDateFromOption();
+
+      const finalRepeatType: RepeatType = repeatEnabled ? repeatType : "none";
+      const finalReminderMode: ReminderMode =
+        repeatEnabled || !dueISO ? "NONE" : reminderMode;
 
       const converted = await convertIdeaToTask(
         idea.id,
         title.trim(),
         dueISO,
-        reminderMode,
+        finalReminderMode,
         finalRepeatType
       );
+
       onConverted(converted);
+      // ✅ extra seguridad
+      setModalOpen(false);
       onClose();
     } catch (err) {
       console.error("Error converting idea to task", err);
-      alert(t("ideas.convertError"));
+      alert(t("ideas.convertError") || "Error converting to task");
     } finally {
       setLoading(false);
     }
   };
 
-  const hasDueDate = !!dueDateTime;
+  const Separator = () => <div className="mt-3 mb-2 h-px bg-slate-200" />;
 
-  const Separator = () => (
-    <div className="mt-3 mb-2 h-px bg-slate-200" />
-  );
-
-  // --- helpers calendario ---
-  const weekdayLabels = ["L", "M", "X", "J", "V", "S", "D"];
-
+  // --- calendario helpers (igual que tasks) ---
   const buildCalendarDays = (monthDate: Date) => {
     const year = monthDate.getFullYear();
     const month = monthDate.getMonth();
@@ -259,34 +379,56 @@ export default function IdeaEditModal({
     a.getDate() === b.getDate();
 
   const handleSelectDay = (d: Date) => {
-    applyDateFromCalendar(d);
+    const merged = new Date(
+      d.getFullYear(),
+      d.getMonth(),
+      d.getDate(),
+      selectedHour,
+      selectedMinute,
+      0,
+      0
+    );
+    applyDateTime(merged, merged.getHours(), merged.getMinutes(), "CUSTOM");
   };
 
   const handleHourChange = (h: number) => {
     const base = selectedDate ?? new Date();
-    applyDateTime(base, h, selectedMinute);
+    applyDateTime(base, h, selectedMinute, "CUSTOM");
   };
 
   const handleMinuteChange = (m: number) => {
     const base = selectedDate ?? new Date();
-    applyDateTime(base, selectedHour, m);
+    applyDateTime(base, selectedHour, m, "CUSTOM");
   };
+
+  const hasDue = dueOption !== "NONE" && !!(dueDateTime || selectedDate);
+
+  const dateTimePreview =
+    hasDue && selectedDate
+      ? selectedDate.toLocaleString(undefined, {
+          dateStyle: "medium",
+          timeStyle: "short",
+        })
+      : t("capture.dateTimeNoneShort") ??
+        t("tasks.clearDueDate") ??
+        "—";
+
+  const remindersDisabled = repeatEnabled || !hasDue;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/35 px-4 py-4 flex items-center justify-center">
-      {/* modal más pequeño con scroll interno */}
       <div className="mx-auto w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl max-h-[80vh] overflow-y-auto">
         {/* Cabecera */}
         <div className="mb-3 flex items-start justify-between gap-2">
           <div>
             <p className="text-[11px] font-medium uppercase tracking-wide text-violet-500">
-              {t("ideas.editLabel")}
+              {t("ideas.editLabel") || "Edit"}
             </p>
             <h2 className="text-base font-semibold text-slate-900">
-              {t("ideas.editTitle")}
+              {t("ideas.editTitle") || "Edit idea"}
             </h2>
             <p className="mt-1 text-xs text-slate-500">
-              {t("ideas.editSubtitle")}
+              {t("ideas.editSubtitle") || "Update text or convert to a task."}
             </p>
           </div>
 
@@ -295,305 +437,421 @@ export default function IdeaEditModal({
             onClick={handleClose}
             disabled={loading}
             className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200"
+            aria-label="Close"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Campo de texto */}
+        {/* Texto */}
         <div className="mt-2">
           <label className="mb-1 block text-xs font-medium text-slate-600">
-            {t("ideas.fieldTitle")}
+            {t("ideas.fieldTitle") || "Idea"}
           </label>
           <textarea
             className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none ring-0 focus:border-violet-400 focus:bg-white focus:ring-1 focus:ring-violet-300"
             rows={3}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder={t("ideas.fieldTitlePlaceholder")}
+            placeholder={t("ideas.fieldTitlePlaceholder") || "Write your idea..."}
           />
         </div>
 
-        {/* Opciones extra cuando queremos convertir en tarea */}
+        {/* Opciones (solo cuando convertimos) */}
         {showTaskOptions && (
           <div className="mt-3 rounded-2xl bg-slate-50 px-3 py-3">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-              {t("ideas.taskOptionsTitle")}
+              {t("ideas.taskOptionsTitle") ||
+                (t("tasks.optionsTitle") as any) ||
+                "Options"}
             </p>
 
-            {/* Fecha y hora límite (calendario + ruedas) */}
+            {/* Fecha y hora */}
             <div className="mt-2">
-              <label className="mb-1 block text-xs font-medium text-slate-600">
-                {t("ideas.dueDateLabel")}
-              </label>
+              <div className="flex items-center justify-between gap-2">
+                <label className="mb-1 block text-xs font-medium text-slate-600">
+                  {t("tasks.dueDateLabel") ||
+                    t("ideas.dueDateLabel") ||
+                    "Date & time"}
+                </label>
 
+                <button
+                  type="button"
+                  onClick={handleClearDueDate}
+                  disabled={loading}
+                  className="text-[11px] text-slate-500 hover:text-slate-700 underline-offset-2 hover:underline"
+                >
+                  {t("tasks.clearDueDate") || "Clear"}
+                </button>
+              </div>
+
+              {/* Chips */}
               <div
+                className="remi-chip-row"
+                style={{ marginTop: 8, flexWrap: "wrap", rowGap: 8 }}
+              >
+                <Chip
+                  label={t("capture.dueToday") || "Today"}
+                  active={dueOption === "TODAY"}
+                  onClick={() => {
+                    const d = new Date();
+                    d.setHours(20, 0, 0, 0);
+                    applyDateFromChip(d, "TODAY");
+                  }}
+                />
+                <Chip
+                  label={t("capture.dueTomorrow") || "Tomorrow"}
+                  active={dueOption === "TOMORROW"}
+                  onClick={() => {
+                    const now = new Date();
+                    const d = new Date();
+                    d.setDate(now.getDate() + 1);
+                    d.setHours(9, 0, 0, 0);
+                    applyDateFromChip(d, "TOMORROW");
+                  }}
+                />
+                <Chip
+                  label={t("capture.dueWeek") || "In a week"}
+                  active={dueOption === "WEEK"}
+                  onClick={() => {
+                    const now = new Date();
+                    const d = new Date();
+                    d.setDate(now.getDate() + 7);
+                    d.setHours(9, 0, 0, 0);
+                    applyDateFromChip(d, "WEEK");
+                  }}
+                />
+                <Chip
+                  label={t("capture.dueNone") || "No date"}
+                  active={dueOption === "NONE"}
+                  disabled={repeatEnabled}
+                  onClick={handleClearDueDate}
+                />
+              </div>
+
+              {/* Preview + desplegable */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (dueOption === "NONE") return;
+                  setIsDateTimePickerOpen((p) => !p);
+                }}
+                disabled={dueOption === "NONE"}
                 style={{
-                  marginTop: 6,
-                  borderRadius: 16,
+                  marginTop: 10,
+                  width: "100%",
+                  borderRadius: 14,
                   border: "1px solid rgba(226,232,240,0.9)",
-                  background: "#f9fafb",
-                  padding: 10,
+                  background: "#ffffff",
+                  padding: "10px 12px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  cursor: dueOption === "NONE" ? "not-allowed" : "pointer",
+                  opacity: dueOption === "NONE" ? 0.6 : 1,
                 }}
               >
-                {/* Cabecera calendario */}
                 <div
                   style={{
                     display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: 8,
+                    flexDirection: "column",
+                    gap: 2,
+                    textAlign: "left",
                   }}
                 >
                   <span
                     style={{
-                      fontSize: 12,
-                      fontWeight: 500,
-                      color: "#64748b",
+                      fontSize: 11,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.04,
+                      color: "#9ca3af",
                     }}
                   >
-                    {calendarMonth.toLocaleString(undefined, {
-                      month: "long",
-                      year: "numeric",
-                    })}
+                    {t("capture.dateTimeLabel") ??
+                      t("tasks.dueDateLabel") ??
+                      "Date & time"}
                   </span>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = new Date(calendarMonth);
-                        d.setMonth(d.getMonth() - 1);
-                        setCalendarMonth(d);
-                      }}
-                      style={{
-                        width: 26,
-                        height: 26,
-                        borderRadius: 999,
-                        border: "none",
-                        background: "#e5e7eb",
-                        fontSize: 14,
-                        color: "#4b5563",
-                      }}
-                    >
-                      ‹
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = new Date(calendarMonth);
-                        d.setMonth(d.getMonth() + 1);
-                        setCalendarMonth(d);
-                      }}
-                      style={{
-                        width: 26,
-                        height: 26,
-                        borderRadius: 999,
-                        border: "none",
-                        background: "#e5e7eb",
-                        fontSize: 14,
-                        color: "#4b5563",
-                      }}
-                    >
-                      ›
-                    </button>
-                  </div>
+                  <span
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 500,
+                      color: hasDue ? "#111827" : "#9ca3af",
+                    }}
+                  >
+                    {dateTimePreview}
+                  </span>
                 </div>
-
-                {/* Días semana */}
-                <div
+                <span
                   style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(7, 1fr)",
-                    fontSize: 10,
-                    textTransform: "uppercase",
-                    color: "#9ca3af",
-                    marginBottom: 4,
-                    gap: 2,
+                    fontSize: 18,
+                    color: "#6b7280",
+                    transform: isDateTimePickerOpen
+                      ? "rotate(180deg)"
+                      : "rotate(0deg)",
+                    transition: "transform 0.15s ease-out",
                   }}
                 >
-                  {weekdayLabels.map((w) => (
-                    <div
-                      key={w}
-                      style={{ textAlign: "center", paddingBottom: 2 }}
-                    >
-                      {w}
-                    </div>
-                  ))}
-                </div>
+                  ▾
+                </span>
+              </button>
 
-                {/* Celdas calendario */}
+              {isDateTimePickerOpen && dueOption !== "NONE" && (
                 <div
                   style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(7, 1fr)",
-                    gap: 2,
-                    marginBottom: 8,
+                    marginTop: 10,
+                    borderRadius: 18,
+                    border: "1px solid rgba(226,232,240,0.9)",
+                    background: "#f9fafb",
+                    padding: 12,
                   }}
                 >
-                  {calendarDays.map((cell, idx) => {
-                    const isSelected =
-                      selectedDate && isSameDay(cell.date, selectedDate);
-                    const isToday = isSameDay(cell.date, new Date());
-                    const isCurrent = cell.isCurrentMonth;
-
-                    let bg = "transparent";
-                    let color = "#64748b";
-                    let fontWeight = 400;
-                    let border = "none";
-
-                    if (!isCurrent) {
-                      color = "#cbd5f5";
-                    }
-                    if (isToday && !isSelected) {
-                      border = "1px solid rgba(125,89,201,0.35)";
-                    }
-                    if (isSelected) {
-                      bg = "#7d59c9";
-                      color = "#ffffff";
-                      fontWeight = 600;
-                    }
-
-                    return (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => handleSelectDay(cell.date)}
-                        style={{
-                          width: "100%",
-                          height: 30,
-                          borderRadius: 999,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: 12,
-                          background: bg,
-                          color,
-                          fontWeight,
-                          border,
-                        }}
-                      >
-                        {cell.date.getDate()}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Time picker estilo rueda dentro de un bloque blanco */}
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    marginTop: 2,
-                  }}
-                >
+                  {/* Header calendario */}
                   <div
                     style={{
                       display: "flex",
+                      justifyContent: "space-between",
                       alignItems: "center",
-                      gap: 20,
-                      padding: "12px 18px",
-                      borderRadius: 20,
-                      background: "#ffffff",
-                      boxShadow: "0 8px 20px rgba(15,23,42,0.08)",
+                      marginBottom: 8,
                     }}
                   >
-                    {/* Horas */}
-                    <div style={{ textAlign: "center" }}>
-                      <div
-                        style={{
-                          fontSize: 10,
-                          textTransform: "uppercase",
-                          color: "#9ca3af",
-                          marginBottom: 4,
-                        }}
-                      >
-                        {t("capture.timeHour") ?? "Hora"}
-                      </div>
-                      <TimeWheel
-                        values={hoursOptions}
-                        selected={selectedHour}
-                        onChange={handleHourChange}
-                      />
-                    </div>
-
-                    <div
+                    <span
                       style={{
-                        fontSize: 20,
+                        fontSize: 12,
                         fontWeight: 500,
                         color: "#64748b",
-                        marginTop: 14,
                       }}
                     >
-                      :
+                      {calendarMonth.toLocaleString(undefined, {
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </span>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const d = new Date(calendarMonth);
+                          d.setMonth(d.getMonth() - 1);
+                          setCalendarMonth(d);
+                        }}
+                        style={{
+                          width: 26,
+                          height: 26,
+                          borderRadius: 999,
+                          border: "none",
+                          background: "#e5e7eb",
+                          fontSize: 14,
+                          color: "#4b5563",
+                        }}
+                        aria-label="Previous month"
+                      >
+                        ‹
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const d = new Date(calendarMonth);
+                          d.setMonth(d.getMonth() + 1);
+                          setCalendarMonth(d);
+                        }}
+                        style={{
+                          width: 26,
+                          height: 26,
+                          borderRadius: 999,
+                          border: "none",
+                          background: "#e5e7eb",
+                          fontSize: 14,
+                          color: "#4b5563",
+                        }}
+                        aria-label="Next month"
+                      >
+                        ›
+                      </button>
                     </div>
+                  </div>
 
-                    {/* Minutos */}
-                    <div style={{ textAlign: "center" }}>
+                  {/* Labels */}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(7, 1fr)",
+                      fontSize: 10,
+                      textTransform: "uppercase",
+                      color: "#9ca3af",
+                      marginBottom: 4,
+                      gap: 2,
+                    }}
+                  >
+                    {weekdayLabels.map((w) => (
+                      <div
+                        key={w}
+                        style={{ textAlign: "center", paddingBottom: 2 }}
+                      >
+                        {w}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Días */}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(7, 1fr)",
+                      gap: 2,
+                      marginBottom: 10,
+                    }}
+                  >
+                    {calendarDays.map((cell, idx) => {
+                      const isSelected = !!(
+                        selectedDate && isSameDay(cell.date, selectedDate)
+                      );
+                      const isToday = isSameDay(cell.date, new Date());
+                      const isCurrent = cell.isCurrentMonth;
+
+                      let bg = "transparent";
+                      let color = "#64748b";
+                      let fontWeight = 400;
+                      let border = "none";
+
+                      if (!isCurrent) color = "#cbd5f5";
+                      if (isToday && !isSelected)
+                        border = "1px solid rgba(125,89,201,0.35)";
+                      if (isSelected) {
+                        bg = "#7d59c9";
+                        color = "#ffffff";
+                        fontWeight = 600;
+                      }
+
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleSelectDay(cell.date)}
+                          style={{
+                            width: "100%",
+                            height: 32,
+                            borderRadius: 999,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 12,
+                            background: bg,
+                            color,
+                            fontWeight,
+                            border,
+                          }}
+                        >
+                          {cell.date.getDate()}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Time wheels */}
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      marginTop: 4,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 24,
+                        padding: "16px 24px",
+                        borderRadius: 24,
+                        background: "#ffffff",
+                        boxShadow: "0 8px 20px rgba(15,23,42,0.08)",
+                      }}
+                    >
+                      <div style={{ textAlign: "center" }}>
+                        <div
+                          style={{
+                            fontSize: 10,
+                            textTransform: "uppercase",
+                            color: "#9ca3af",
+                            marginBottom: 4,
+                          }}
+                        >
+                          {t("capture.timeHour") ?? "Hour"}
+                        </div>
+                        <TimeWheel
+                          values={hoursOptions}
+                          selected={selectedHour}
+                          onChange={handleHourChange}
+                        />
+                      </div>
+
                       <div
                         style={{
-                          fontSize: 10,
-                          textTransform: "uppercase",
-                          color: "#9ca3af",
-                          marginBottom: 4,
+                          fontSize: 22,
+                          fontWeight: 500,
+                          color: "#64748b",
+                          marginTop: 18,
                         }}
                       >
-                        {t("capture.timeMinute") ?? "Min"}
+                        :
                       </div>
-                      <TimeWheel
-                        values={minutesOptions}
-                        selected={selectedMinute}
-                        onChange={handleMinuteChange}
-                      />
+
+                      <div style={{ textAlign: "center" }}>
+                        <div
+                          style={{
+                            fontSize: 10,
+                            textTransform: "uppercase",
+                            color: "#9ca3af",
+                            marginBottom: 4,
+                          }}
+                        >
+                          {t("capture.timeMinute") ?? "Min"}
+                        </div>
+                        <TimeWheel
+                          values={minutesOptions}
+                          selected={selectedMinute}
+                          onChange={handleMinuteChange}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
-            {/* Separador entre FECHA y RECORDATORIOS */}
             <Separator />
 
-            {/* Modo de recordatorio */}
+            {/* Recordatorios */}
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-600">
-                {t("ideas.reminderLabel")}
+                {t("tasks.reminderLabel") ||
+                  t("ideas.reminderLabel") ||
+                  "Reminders"}
               </label>
+
               <select
                 className="w-full rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-900 outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-300"
                 value={reminderMode}
-                onChange={(e) =>
-                  setReminderMode(e.target.value as ReminderMode)
-                }
+                disabled={remindersDisabled}
+                onChange={(e) => setReminderMode(e.target.value as ReminderMode)}
+                style={{
+                  opacity: remindersDisabled ? 0.6 : 1,
+                  cursor: remindersDisabled ? "not-allowed" : "pointer",
+                }}
               >
-                {hasDueDate ? (
-                  <>
-                    <option value="NONE">
-                      {t("ideas.reminder.none")}
-                    </option>
-                    <option value="ON_DUE_DATE">
-                      {t("ideas.reminder.onDue")}
-                    </option>
-                    <option value="DAY_BEFORE_AND_DUE">
-                      {t("ideas.reminder.dayBeforeAndDue")}
-                    </option>
-                    <option value="DAILY_UNTIL_DUE">
-                      {t("ideas.reminder.dailyUntilDue")}
-                    </option>
-                  </>
-                ) : (
-                  <>
-                    <option value="NONE">
-                      {t("ideas.reminder.none")}
-                    </option>
-                    <option value="DAILY_UNTIL_DUE">
-                      {t("ideas.reminder.dailyUntilDue")}
-                    </option>
-                  </>
-                )}
+                <option value="NONE">{t("tasks.reminder.none") || "None"}</option>
+                <option value="ON_DUE_DATE">
+                  {t("tasks.reminder.onDue") || "On due date"}
+                </option>
+                <option value="DAY_BEFORE_AND_DUE">
+                  {t("tasks.reminder.dayBeforeAndDue") ||
+                    "Day before + due date"}
+                </option>
+                <option value="DAILY_UNTIL_DUE">
+                  {t("tasks.reminder.dailyUntilDue") || "Daily until due"}
+                </option>
               </select>
             </div>
 
-            {/* Separador entre RECORDATORIOS y REPETIR */}
             <Separator />
 
             {/* Repetir */}
@@ -601,7 +859,10 @@ export default function IdeaEditModal({
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-medium text-slate-700">
-                    {t("repeat.label")}
+                    {t("repeat.label") || "Repeat"}
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    {t("repeat.help") || ""}
                   </p>
                 </div>
 
@@ -610,12 +871,20 @@ export default function IdeaEditModal({
                     type="button"
                     onClick={() => {
                       const next = !repeatEnabled;
-                      setRepeatEnabled(next);
+
                       if (!next) {
                         setRepeatType("none");
-                      } else if (repeatType === "none") {
-                        setRepeatType("daily");
+                      } else {
+                        if (dueOption === "NONE" || !selectedDate) {
+                          const base = new Date();
+                          base.setHours(selectedHour, selectedMinute, 0, 0);
+                          applyDateFromChip(base, "TODAY");
+                        }
+                        setReminderMode("NONE");
+                        if (repeatType === "none") setRepeatType("daily");
                       }
+
+                      setRepeatEnabled(next);
                     }}
                     className={`flex h-6 w-12 items-center rounded-full border px-[3px] transition-colors ${
                       repeatEnabled
@@ -632,36 +901,35 @@ export default function IdeaEditModal({
                 </div>
               </div>
 
-                 {repeatEnabled && (
+              {repeatEnabled && (
                 <div className="mt-2 flex flex-wrap gap-2">
                   <RepeatChip
-                    label={t("repeat.options.daily")}
+                    label={t("repeat.options.daily") || "Daily"}
                     active={repeatType === "daily"}
                     onClick={() => setRepeatType("daily")}
                   />
                   <RepeatChip
-                    label={t("repeat.options.weekly")}
+                    label={t("repeat.options.weekly") || "Weekly"}
                     active={repeatType === "weekly"}
                     onClick={() => setRepeatType("weekly")}
                   />
                   <RepeatChip
-                    label={t("repeat.options.monthly")}
+                    label={t("repeat.options.monthly") || "Monthly"}
                     active={repeatType === "monthly"}
                     onClick={() => setRepeatType("monthly")}
                   />
                   <RepeatChip
-                    label={t("repeat.options.yearly")}
+                    label={t("repeat.options.yearly") || "Yearly"}
                     active={repeatType === "yearly"}
                     onClick={() => setRepeatType("yearly")}
                   />
                 </div>
               )}
-              
             </div>
           </div>
         )}
 
-        {/* Botones de acción */}
+        {/* Botones */}
         <div className="mt-4 flex flex-col gap-2 sm:flex-row">
           <button
             type="button"
@@ -669,7 +937,7 @@ export default function IdeaEditModal({
             disabled={loading || !title.trim()}
             className="flex-1 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm disabled:opacity-60"
           >
-            {t("ideas.saveAsIdea")}
+            {t("ideas.saveAsIdea") || "Save as idea"}
           </button>
 
           <button
@@ -679,16 +947,42 @@ export default function IdeaEditModal({
             className="flex-1 rounded-full bg-[#7d59c9] px-4 py-2 text-xs font-semibold text-white shadow-md disabled:opacity-60"
           >
             {showTaskOptions
-              ? t("ideas.confirmConvert")
-              : t("ideas.convertToTask")}
+              ? t("ideas.confirmConvert") || "Convert"
+              : t("ideas.convertToTask") || "Convert to task"}
           </button>
         </div>
 
         <p className="mt-3 text-[10px] text-slate-400">
-          {t("ideas.footerHint")}
+          {t("ideas.footerHint") || "You can edit this anytime."}
         </p>
       </div>
     </div>
+  );
+}
+
+/* ------------ Chips ------------ */
+
+interface ChipProps {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  disabled?: boolean;
+}
+
+function Chip({ label, active, onClick, disabled }: ChipProps) {
+  return (
+    <button
+      type="button"
+      className={`remi-chip ${active ? "remi-chip--active" : ""}`}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      style={{
+        opacity: disabled ? 0.45 : 1,
+        cursor: disabled ? "not-allowed" : "pointer",
+      }}
+    >
+      {label}
+    </button>
   );
 }
 
@@ -703,9 +997,7 @@ function RepeatChip({ label, active, onClick }: RepeatChipProps) {
     <button
       type="button"
       onClick={onClick}
-      className={`remi-chip text-[11px] ${
-        active ? "remi-chip--active" : ""
-      }`}
+      className={`remi-chip text-[11px] ${active ? "remi-chip--active" : ""}`}
     >
       {label}
     </button>
@@ -737,9 +1029,7 @@ function TimeWheel({ values, selected, onChange }: TimeWheelProps) {
     const idx = Math.round(scrollTop / itemHeight);
     const clamped = Math.min(Math.max(idx, 0), values.length - 1);
     const value = values[clamped];
-    if (value !== selected) {
-      onChange(value);
-    }
+    if (value !== selected) onChange(value);
   };
 
   return (
@@ -753,7 +1043,6 @@ function TimeWheel({ values, selected, onChange }: TimeWheelProps) {
         overflow: "hidden",
       }}
     >
-      {/* banda central */}
       <div
         style={{
           position: "absolute",

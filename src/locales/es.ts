@@ -216,7 +216,11 @@ capture: {
 
   title: "Vaciar la cabeza",
 subtitle: "Escribe todo lo que tengas en mente para no olvidarlo.",
-  textareaPlaceholder: "Ej: Recuerdame comprar regalo de cumpleaños antes del 12 de Diciembre a las 13:00, Ver la serie recomendada por mis amigos...",
+  textareaPlaceholder:     "Ejemplos:\n" +
+    "Cambiar bombilla del pasillo mañana a las 10\n" +
+    "Llamar a mamá el domingo\n" +
+    "Todos los lunes a las 14:00 usar Remi\n" +
+    "Idea viaje a Italia en primavera",
 
   ideaButton: "Idea",
   taskButton: "Tarea",

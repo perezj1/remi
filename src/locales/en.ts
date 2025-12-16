@@ -216,7 +216,11 @@ capture: {
 
   title: "Empty your mind",
 subtitle: "Write down whatever is on your mind so you don't forget it.",
-textareaPlaceholder:   "E.g.: Remind me to buy a birthday present before December 12th at 1:00 pm, watch the series my friends recommended...",
+textareaPlaceholder:  "Examples:\n" +
+    "Change hallway light bulb tomorrow at 10\n" +
+    "Call mum on Sunday\n" +
+    "Use Remi every Monday at 14:00\n" +
+    "Trip idea to Italy in spring",
 
   ideaButton: "Idea",
   taskButton: "Task",

@@ -7,6 +7,9 @@ import { toast } from "sonner";
 import { useI18n } from "@/contexts/I18nContext";
 import { parseDateTimeFromText } from "@/lib/parseDateTimeFromText";
 
+// ✅ NUEVO
+import { useModalUi } from "@/contexts/ModalUiContext";
+
 interface CaptureModalProps {
   open: boolean;
   onClose: () => void;
@@ -55,17 +58,32 @@ export default function CaptureModal({
 }: CaptureModalProps) {
   const { t, lang } = useI18n();
 
+  // ✅ NUEVO: controla si hay “algún modal abierto” para ocultar BottomNav
+  const { setModalOpen } = useModalUi();
+
+  // ✅ NUEVO: cuando este modal real está abierto => ocultar BottomNav
+  useEffect(() => {
+    const isRealModalOpen = open && !embedded;
+    setModalOpen(isRealModalOpen);
+
+    return () => {
+      // cleanup por si el componente se desmonta con el modal abierto
+      setModalOpen(false);
+    };
+  }, [open, embedded, setModalOpen]);
+
   const [text, setText] = useState("");
   const textRef = useRef<string>(""); // ✅ leer texto actual sin depender de `text` en effects
 
   const [mode, setMode] = useState<Mode>("choose");
-  const [dueOption, setDueOption] = useState<"NONE" | "TODAY" | "TOMORROW" | "WEEK">(
-    "TODAY"
-  );
+  const [dueOption, setDueOption] = useState<
+    "NONE" | "TODAY" | "TOMORROW" | "WEEK"
+  >("TODAY");
   const [customDue, setCustomDue] = useState<string>("");
 
   // Por defecto: recordatorios diarios hasta la fecha límite
-  const [reminderMode, setReminderMode] = useState<ReminderMode>("DAILY_UNTIL_DUE");
+  const [reminderMode, setReminderMode] =
+    useState<ReminderMode>("DAILY_UNTIL_DUE");
 
   const [loading, setLoading] = useState(false);
 
@@ -266,6 +284,9 @@ export default function CaptureModal({
     setManualDateOverride(false);
     setManualRepeatOverride(false);
 
+    // ✅ NUEVO: al cerrar modal real, marcamos “no hay modal”
+    if (!embedded) setModalOpen(false);
+
     if (!embedded) onClose();
   };
 
@@ -307,7 +328,10 @@ export default function CaptureModal({
       // Prioridad:
       // - si el usuario tocó manualmente fecha/hora => lo manual
       // - si no => el texto puede rellenar
-      const finalDueDate = manualDateOverride ? dueDateFromOptions : dueDateISO ?? dueDateFromOptions;
+      const finalDueDate = manualDateOverride
+        ? dueDateFromOptions
+        : dueDateISO ?? dueDateFromOptions;
+
       const finalRepeatType: RepeatType = repeatEnabled ? repeatType : "none";
 
       await onCreateTask(trimmed, finalDueDate, reminderMode, finalRepeatType);
@@ -459,7 +483,10 @@ export default function CaptureModal({
 
   const dateTimePreview =
     selectedDate && dueOption !== "NONE"
-      ? selectedDate.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
+      ? selectedDate.toLocaleString(undefined, {
+          dateStyle: "medium",
+          timeStyle: "short",
+        })
       : t("capture.dateTimeNoneShort") ?? t("capture.dueNone");
 
   const body = (
@@ -617,7 +644,10 @@ export default function CaptureModal({
             </div>
 
             <div style={{ marginTop: 8 }}>
-              <p className="remi-modal-sub" style={{ fontSize: 11, marginTop: 4 }}>
+              <p
+                className="remi-modal-sub"
+                style={{ fontSize: 11, marginTop: 4 }}
+              >
                 {t("capture.dueHint")}
               </p>
 
@@ -642,7 +672,14 @@ export default function CaptureModal({
                   opacity: dueOption === "NONE" ? 0.6 : 1,
                 }}
               >
-                <div style={{ display: "flex", flexDirection: "column", gap: 2, textAlign: "left" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                    textAlign: "left",
+                  }}
+                >
                   <span
                     style={{
                       fontSize: 11,
@@ -657,7 +694,10 @@ export default function CaptureModal({
                     style={{
                       fontSize: 13,
                       fontWeight: 500,
-                      color: selectedDate && dueOption !== "NONE" ? "#111827" : "#9ca3af",
+                      color:
+                        selectedDate && dueOption !== "NONE"
+                          ? "#111827"
+                          : "#9ca3af",
                     }}
                   >
                     {dateTimePreview}
@@ -667,7 +707,9 @@ export default function CaptureModal({
                   style={{
                     fontSize: 18,
                     color: "#6b7280",
-                    transform: isDateTimePickerOpen ? "rotate(180deg)" : "rotate(0deg)",
+                    transform: isDateTimePickerOpen
+                      ? "rotate(180deg)"
+                      : "rotate(0deg)",
                     transition: "transform 0.15s ease-out",
                   }}
                 >
@@ -693,8 +735,17 @@ export default function CaptureModal({
                       marginBottom: 8,
                     }}
                   >
-                    <span style={{ fontSize: 12, fontWeight: 500, color: "#64748b" }}>
-                      {calendarMonth.toLocaleString(undefined, { month: "long", year: "numeric" })}
+                    <span
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 500,
+                        color: "#64748b",
+                      }}
+                    >
+                      {calendarMonth.toLocaleString(undefined, {
+                        month: "long",
+                        year: "numeric",
+                      })}
                     </span>
                     <div style={{ display: "flex", gap: 8 }}>
                       <button
@@ -750,7 +801,10 @@ export default function CaptureModal({
                     }}
                   >
                     {weekdayLabels.map((w) => (
-                      <div key={w} style={{ textAlign: "center", paddingBottom: 2 }}>
+                      <div
+                        key={w}
+                        style={{ textAlign: "center", paddingBottom: 2 }}
+                      >
                         {w}
                       </div>
                     ))}
@@ -765,7 +819,9 @@ export default function CaptureModal({
                     }}
                   >
                     {calendarDays.map((cell, idx) => {
-                      const isSelected = !!(selectedDate && isSameDay(cell.date, selectedDate));
+                      const isSelected = !!(
+                        selectedDate && isSameDay(cell.date, selectedDate)
+                      );
                       const isToday = isSameDay(cell.date, new Date());
                       const isCurrent = cell.isCurrentMonth;
 
@@ -775,7 +831,8 @@ export default function CaptureModal({
                       let border = "none";
 
                       if (!isCurrent) color = "#cbd5f5";
-                      if (isToday && !isSelected) border = "1px solid rgba(125,89,201,0.35)";
+                      if (isToday && !isSelected)
+                        border = "1px solid rgba(125,89,201,0.35)";
                       if (isSelected) {
                         bg = "#7d59c9";
                         color = "#ffffff";
@@ -807,7 +864,13 @@ export default function CaptureModal({
                     })}
                   </div>
 
-                  <div style={{ display: "flex", justifyContent: "center", marginTop: 4 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      marginTop: 4,
+                    }}
+                  >
                     <div
                       style={{
                         display: "flex",
@@ -830,10 +893,21 @@ export default function CaptureModal({
                         >
                           {t("capture.timeHour") ?? "Hora"}
                         </div>
-                        <TimeWheel values={hoursOptions} selected={selectedHour} onChange={handleHourChange} />
+                        <TimeWheel
+                          values={hoursOptions}
+                          selected={selectedHour}
+                          onChange={handleHourChange}
+                        />
                       </div>
 
-                      <div style={{ fontSize: 22, fontWeight: 500, color: "#64748b", marginTop: 18 }}>
+                      <div
+                        style={{
+                          fontSize: 22,
+                          fontWeight: 500,
+                          color: "#64748b",
+                          marginTop: 18,
+                        }}
+                      >
                         :
                       </div>
 
@@ -848,7 +922,11 @@ export default function CaptureModal({
                         >
                           {t("capture.timeMinute") ?? "Min"}
                         </div>
-                        <TimeWheel values={minutesOptions} selected={selectedMinute} onChange={handleMinuteChange} />
+                        <TimeWheel
+                          values={minutesOptions}
+                          selected={selectedMinute}
+                          onChange={handleMinuteChange}
+                        />
                       </div>
                     </div>
                   </div>
@@ -866,7 +944,14 @@ export default function CaptureModal({
             </p>
 
             {remindersDisabled && (
-              <p className="remi-modal-sub" style={{ fontSize: 11, opacity: 0.75, marginBottom: 4 }}>
+              <p
+                className="remi-modal-sub"
+                style={{
+                  fontSize: 11,
+                  opacity: 0.75,
+                  marginBottom: 4,
+                }}
+              >
                 {t("capture.remindersDisabledByHabit") ?? ""}
               </p>
             )}
@@ -887,13 +972,19 @@ export default function CaptureModal({
               {dueOption !== "NONE" && (
                 <>
                   <option value="ON_DUE_DATE">{t("capture.remindersOnDue")}</option>
-                  <option value="DAY_BEFORE_AND_DUE">{t("capture.remindersDayBeforeAndDue")}</option>
-                  <option value="DAILY_UNTIL_DUE">{t("capture.remindersDailyUntilDue")}</option>
+                  <option value="DAY_BEFORE_AND_DUE">
+                    {t("capture.remindersDayBeforeAndDue")}
+                  </option>
+                  <option value="DAILY_UNTIL_DUE">
+                    {t("capture.remindersDailyUntilDue")}
+                  </option>
                 </>
               )}
 
               {dueOption === "NONE" && (
-                <option value="DAILY_UNTIL_DUE">{t("capture.remindersDailyUntilDue")}</option>
+                <option value="DAILY_UNTIL_DUE">
+                  {t("capture.remindersDailyUntilDue")}
+                </option>
               )}
             </select>
           </div>
@@ -902,12 +993,22 @@ export default function CaptureModal({
           <Separator />
 
           <div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+              }}
+            >
               <div>
                 <p className="remi-modal-sub" style={{ marginBottom: 2 }}>
                   {t("repeat.label")}
                 </p>
-                <p className="remi-modal-sub" style={{ fontSize: 11, opacity: 0.8 }}>
+                <p
+                  className="remi-modal-sub"
+                  style={{ fontSize: 11, opacity: 0.8 }}
+                >
                   {t("repeat.help")}
                 </p>
               </div>
@@ -939,13 +1040,16 @@ export default function CaptureModal({
                     height: 26,
                     borderRadius: 999,
                     border: "1px solid rgba(148,163,184,0.8)",
-                    backgroundColor: repeatEnabled ? "rgba(34,197,94,0.18)" : "#e5e7eb",
+                    backgroundColor: repeatEnabled
+                      ? "rgba(34,197,94,0.18)"
+                      : "#e5e7eb",
                     padding: 3,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: repeatEnabled ? "flex-end" : "flex-start",
                     cursor: "pointer",
-                    transition: "background-color 0.18s ease, justify-content 0.18s ease",
+                    transition:
+                      "background-color 0.18s ease, justify-content 0.18s ease",
                   }}
                 >
                   <div
@@ -964,7 +1068,10 @@ export default function CaptureModal({
             </div>
 
             {repeatEnabled && (
-              <div className="remi-chip-row" style={{ marginTop: 8, flexWrap: "wrap", rowGap: 8 }}>
+              <div
+                className="remi-chip-row"
+                style={{ marginTop: 8, flexWrap: "wrap", rowGap: 8 }}
+              >
                 <Chip
                   label={t("repeat.options.daily")}
                   active={repeatType === "daily"}
@@ -1004,11 +1111,24 @@ export default function CaptureModal({
           {/* BOTONES FOOTER */}
           <Separator />
 
-          <div className="remi-modal-footer" style={{ display: "flex", gap: 10, marginTop: 4 }}>
-            <button className="remi-btn-ghost" style={{ flex: 1 }} onClick={() => setMode("choose")} disabled={loading}>
+          <div
+            className="remi-modal-footer"
+            style={{ display: "flex", gap: 10, marginTop: 4 }}
+          >
+            <button
+              className="remi-btn-ghost"
+              style={{ flex: 1 }}
+              onClick={() => setMode("choose")}
+              disabled={loading}
+            >
               {t("capture.back")}
             </button>
-            <button className="remi-btn-primary" style={{ flex: 1 }} onClick={handleConfirmTask} disabled={loading}>
+            <button
+              className="remi-btn-primary"
+              style={{ flex: 1 }}
+              onClick={handleConfirmTask}
+              disabled={loading}
+            >
               {t("capture.saveTask")}
             </button>
           </div>
