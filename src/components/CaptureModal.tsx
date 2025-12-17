@@ -24,6 +24,14 @@ const TIP_KEYS = [
   "capture.tips.3",
 ];
 
+// ✅ Umbral para considerar “nueva sesión” de dictado (solté y volví a pulsar)
+const NEW_LINE_GAP_MS = 1200;
+
+// ✅ Normaliza espacios del chunk que llega del dictado (evita saltos raros)
+function normalizeChunk(s: string) {
+  return (s || "").replace(/\s+/g, " ").trim();
+}
+
 export default function CaptureModal({
   open,
   onClose,
@@ -54,9 +62,11 @@ export default function CaptureModal({
   const lastInitialAppliedRef = useRef<string>("");
   const lastInitialAppliedNonceRef = useRef<number>(-1);
 
+  // ✅ Para agrupar dictado en una misma línea mientras se habla
+  const lastDictationAppendAtRef = useRef<number>(0);
+
   /* ───────────────────────────────
      Tips (1 línea, rotativos)
-     -> MISMO FORMATO QUE HINTS
   ─────────────────────────────── */
   const tips = TIP_KEYS.map((key) => t(key)).filter(Boolean);
   const totalTips = tips.length;
@@ -114,19 +124,43 @@ export default function CaptureModal({
     const handler = (ev: Event) => {
       const ce = ev as CustomEvent<{ text?: unknown }>;
       const raw = ce?.detail?.text;
-      const incoming = typeof raw === "string" ? raw.trim() : "";
+
+      // ⚠️ No uses trim() “a pelo” porque te quita espacios útiles.
+      // Normalizamos para evitar saltos/duplicados raros.
+      const incoming = typeof raw === "string" ? normalizeChunk(raw) : "";
       if (!incoming) return;
 
       userEditedRef.current = true;
 
+      const now = Date.now();
       const current = textRef.current ?? "";
-      const needsNewLine =
-        current.trim().length > 0 && !current.endsWith("\n");
 
-      const next = current + (needsNewLine ? "\n" : "") + incoming;
+      // ✅ Regla:
+      // - Si ha pasado “bastante” tiempo desde el último append de dictado,
+      //   lo tratamos como nueva sesión (solté y volví a pulsar) → NUEVA LÍNEA.
+      // - Si no, seguimos en la MISMA línea → espacio.
+      const gap = now - (lastDictationAppendAtRef.current || 0);
+      const isNewSession = gap > NEW_LINE_GAP_MS;
+
+      let sep = "";
+      if (current.length === 0) {
+        sep = "";
+      } else if (current.endsWith("\n")) {
+        // ya estamos al inicio de línea
+        sep = "";
+      } else if (isNewSession) {
+        sep = "\n";
+      } else {
+        // misma sesión -> separar con espacio
+        sep = " ";
+      }
+
+      const next = current + sep + incoming;
 
       textRef.current = next;
       setText(next);
+
+      lastDictationAppendAtRef.current = now;
     };
 
     window.addEventListener(CAPTURE_APPEND_EVENT, handler as EventListener);
@@ -143,6 +177,7 @@ export default function CaptureModal({
     setText("");
     textRef.current = "";
     userEditedRef.current = false;
+    lastDictationAppendAtRef.current = 0; // ✅ reset sesión dictado
   };
 
   const resetAndClose = () => {
@@ -211,26 +246,27 @@ export default function CaptureModal({
           const v = e.target.value;
           textRef.current = v;
           setText(v);
+
+          // ✅ si el usuario edita manualmente, cortamos “sesión” de dictado
+          lastDictationAppendAtRef.current = 0;
         }}
       />
 
-      {/* ── CONSEJO PEQUEÑO (zona marcada en rojo) ── */}
       {/* Zona fija de tips (no mueve el layout) */}
-<div
-  style={{
-    marginTop: 6,
-    marginBottom: 6,
-    minHeight: 16,        // ← ALTURA FIJA (clave)
-    fontSize: 11,
-    color: "#9ca3af",
-    lineHeight: "16px",   // ← coincide con minHeight
-    userSelect: "none",
-    overflow: "hidden",
-  }}
->
-  {text.trim().length === 0 && totalTips > 0 ? tips[tipIndex] : ""}
-</div>
-
+      <div
+        style={{
+          marginTop: 6,
+          marginBottom: 6,
+          minHeight: 16,
+          fontSize: 11,
+          color: "#9ca3af",
+          lineHeight: "16px",
+          userSelect: "none",
+          overflow: "hidden",
+        }}
+      >
+        {text.trim().length === 0 && totalTips > 0 ? tips[tipIndex] : ""}
+      </div>
 
       <div
         className="remi-modal-footer"

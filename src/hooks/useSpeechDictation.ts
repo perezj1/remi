@@ -5,15 +5,11 @@ export type DictationStatus = "idle" | "listening" | "error" | "unsupported";
 
 export type DictationChunk = {
   /**
-   * ✅ IMPORTANTE (fix anti-duplicados):
-   * - finalText e interimText son DELTAS (solo lo nuevo desde el último evento),
-   *   no el texto completo acumulado.
-   * Esto evita que, si tu UI hace "append", se duplique toda la frase en cada tick.
-   *
-   * Nota: Los deltas pueden venir con un espacio inicial si corresponde.
+   * ✅ finalText: SOLO lo nuevo que acaba de quedar FINAL (para append)
+   * ✅ interimText: el texto INTERIM actual (para mostrar/reemplazar, NO append)
    */
-  finalText: string; // delta final desde el último evento
-  interimText: string; // delta interim desde el último evento
+  finalText: string;
+  interimText: string;
 };
 
 type Options = {
@@ -46,9 +42,6 @@ function normalizeDictationText(raw: string, bcp47: string) {
   return s;
 }
 
-/**
- * Intenta mantener el “look” del texto original (mayúsculas iniciales, etc.).
- */
 function restoreCase(original: string, normalizedLower: string) {
   const hasUpper = /[A-ZÁÉÍÓÚÜÑÄÖ]/.test(original);
   if (!hasUpper) return normalizedLower;
@@ -76,39 +69,16 @@ function escapeRegExp(str: string) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/** Colapsa espacios repetidos para comparaciones estables */
-function normalizeSpaces(s: string) {
+function normSpaces(s: string) {
   return (s || "").replace(/\s+/g, " ").trim();
 }
 
-/**
- * ✅ Devuelve SOLO el delta entre "prevFull" y "nextFull".
- * - Si nextFull empieza por prevFull → devuelve lo nuevo (tail).
- * - Si no (reset raro del engine) → devuelve nextFull entero.
- *
- * Además:
- * - Mantiene un espacio inicial si corresponde (para que el append quede bien).
- */
-function deltaFromPrefix(prevFull: string, nextFull: string) {
-  const prev = normalizeSpaces(prevFull);
-  const next = normalizeSpaces(nextFull);
-
-  if (!next) return "";
-  if (!prev) return next;
-
-  // Caso típico estable: prev es prefijo de next
-  if (next.startsWith(prev)) {
-    const tail = next.slice(prev.length); // puede empezar con espacio o vacío
-    // Si tail es solo espacios, lo consideramos vacío
-    if (!tail.trim()) return "";
-    // Asegura que si es una continuación de palabra/frase, haya un espacio inicial
-    // (slice suele dejarlo si existía; pero por seguridad)
-    return tail.startsWith(" ") ? tail : " " + tail;
-  }
-
-  // Si el engine resetea o cambia el buffer, devolvemos todo el next
-  // (con espacio inicial para que al hacer append no pegues palabras)
-  return next.startsWith(" ") ? next : " " + next;
+function joinWithSpace(a: string, b: string) {
+  const A = (a || "").trim();
+  const B = (b || "").trim();
+  if (!A) return B;
+  if (!B) return A;
+  return `${A} ${B}`;
 }
 
 /* -------------------------
@@ -221,7 +191,7 @@ function normalizeEs(s: string) {
     "1"
   );
 
-  // números 0..59
+  // números 0..59 (prioriza compuestos)
   out = out.replace(/\btreinta y uno\b/g, "31");
   out = out.replace(/\btreinta y dos\b/g, "32");
   out = out.replace(/\btreinta y tres\b/g, "33");
@@ -455,7 +425,7 @@ function enWordsToNumber_0_99(phrase: string): number | null {
 }
 
 /* -------------------------
-   Deutsch (alemán)
+   Deutsch
 ------------------------- */
 
 const DE_NUM_0_59: Record<string, string> = {
@@ -572,7 +542,6 @@ function deWordsToNumber_0_99(phrase: string): number | null {
   if (DE_NUM_0_59[p] != null) return Number(DE_NUM_0_59[p]);
 
   const compact = p.replace(/\s+/g, "");
-
   const m = compact.match(
     /^(ein|eins|zwei|drei|vier|fünf|funf|sechs|sieben|acht|neun)und(sechzig|siebzig|achtzig|neunzig)$/
   );
@@ -631,9 +600,14 @@ export function useSpeechDictation(opts: Options = {}) {
 
   const isSupported = !!SpeechRecognitionCtor;
 
-  // ✅ Guardamos el “full interim” y “full final” de la sesión para calcular deltas
-  const lastInterimFullRef = useRef<string>("");
-  const lastFinalFullRef = useRef<string>("");
+  /**
+   * ✅ Guardamos qué resultados ya emitimos como FINAL (por índice)
+   * En Android a veces reescribe el buffer completo: esto evita repetirlo.
+   */
+  const finalByIndexRef = useRef<Map<number, string>>(new Map());
+
+  /** Último interim emitido (para no spamear UI) */
+  const lastInterimRef = useRef<string>("");
 
   const ensureRecognition = useCallback(() => {
     if (!SpeechRecognitionCtor) return null;
@@ -662,9 +636,9 @@ export function useSpeechDictation(opts: Options = {}) {
       const effectiveLang = langOverride || lang;
       rec.lang = effectiveLang;
 
-      // Reset de sesión (CLAVE)
-      lastInterimFullRef.current = "";
-      lastFinalFullRef.current = "";
+      // Reset sesión
+      finalByIndexRef.current = new Map();
+      lastInterimRef.current = "";
 
       rec.onstart = () => setStatus("listening");
 
@@ -675,61 +649,68 @@ export function useSpeechDictation(opts: Options = {}) {
 
       rec.onend = () => {
         setStatus((s) => (s === "error" ? "error" : "idle"));
-        lastInterimFullRef.current = "";
-        lastFinalFullRef.current = "";
+        // ojo: no borramos finales aquí porque la UI ya los tiene;
+        // pero como reinicias en start(), está ok.
+        lastInterimRef.current = "";
       };
 
       rec.onresult = (event: any) => {
-        /**
-         * ✅ CLAVE DEL FIX:
-         * NO uses solo event.resultIndex para construir “full”.
-         * En algunos Android/WebView el motor reusa resultados y el “prefijo” deja de cuadrar,
-         * lo que hace que el delta sea “todo” cada vez (y tu UI lo apendea).
-         *
-         * Construimos full recorriendo TODOS los results actuales.
-         */
-        let interimFull = "";
-        let finalFull = "";
+        const finalMap = finalByIndexRef.current;
+
+        // 1) Emitir SOLO nuevas partes finales
+        let newlyFinal = "";
 
         for (let i = 0; i < event.results.length; i++) {
           const res = event.results[i];
-          const rawTranscript = (res?.[0]?.transcript || "").trim();
-          if (!rawTranscript) continue;
+          if (!res) continue;
 
-          const transcript = normalizeDictationText(rawTranscript, effectiveLang);
-          if (!transcript) continue;
+          const raw = (res[0]?.transcript || "").trim();
+          const transcript = raw ? normalizeDictationText(raw, effectiveLang) : "";
+          const t = normSpaces(transcript);
+          if (!t) continue;
 
-          if (res.isFinal) finalFull += (finalFull ? " " : "") + transcript;
-          else interimFull += (interimFull ? " " : "") + transcript;
+          if (res.isFinal) {
+            const prev = finalMap.get(i);
+            // Solo si ese índice no estaba final, o cambió de verdad
+            if (!prev || prev !== t) {
+              finalMap.set(i, t);
+              newlyFinal = joinWithSpace(newlyFinal, t);
+            }
+          }
         }
 
-        const prevFinalFull = lastFinalFullRef.current;
-        const prevInterimFull = lastInterimFullRef.current;
+        // 2) Interim “actual”: cogemos el último NO-final (lo más estable para UI)
+        let currentInterim = "";
+        for (let i = event.results.length - 1; i >= 0; i--) {
+          const res = event.results[i];
+          if (!res || res.isFinal) continue;
+          const raw = (res[0]?.transcript || "").trim();
+          const transcript = raw ? normalizeDictationText(raw, effectiveLang) : "";
+          currentInterim = normSpaces(transcript);
+          if (currentInterim) break;
+        }
 
-        const finalDelta = deltaFromPrefix(prevFinalFull, finalFull);
-        const interimDelta = deltaFromPrefix(prevInterimFull, interimFull);
+        // Si algo pasó a final, limpiamos interim para que no “reempaquete” texto
+        if (newlyFinal) currentInterim = "";
 
-        // Actualizamos refs de forma estable
-        lastFinalFullRef.current = normalizeSpaces(finalFull);
-
-        // Si hay final, normalmente el motor “mueve” parte del interim a final:
-        // reseteamos interim para no repetirlo en el siguiente tick.
-        if (normalizeSpaces(finalDelta)) {
-          lastInterimFullRef.current = "";
+        // Evitar spamear el mismo interim
+        if (currentInterim === lastInterimRef.current) {
+          // no cambios
         } else {
-          lastInterimFullRef.current = normalizeSpaces(interimFull);
+          lastInterimRef.current = currentInterim;
         }
 
+        // Emitir (final = append, interim = replace)
         onText({
-          finalText: finalDelta,
-          interimText: interimDelta,
+          finalText: newlyFinal, // SOLO lo nuevo final
+          interimText: lastInterimRef.current, // estado interim actual
         });
       };
 
       try {
         rec.start();
       } catch {
-        // ignore (start mientras ya está iniciando)
+        // ignore
       }
     },
     [SpeechRecognitionCtor, ensureRecognition, lang]
