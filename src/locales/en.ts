@@ -215,7 +215,7 @@ installPrompt: {
 },
 
 
-ccapture: {
+capture: {
   tips: {
     0: "Tip: Say or type “idea” to create notes without reminders",
     1: "Tip: You can paste text from other apps",
