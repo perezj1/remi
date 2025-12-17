@@ -220,7 +220,7 @@ status: {
 
 capture: {
   tips: {
-    0: "Tipp: Starte mit „Idee“, um Notizen ohne Erinnerung zu erstellen",
+    0: "Tipp: Sage oder schreibe „Idee“, um Notizen ohne Erinnerung zu erstellen",
     1: "Tipp: Du kannst Text aus anderen Apps einfügen",
     2: "Tipp: Mach dir keine Sorgen um das Format – schreibe, wie du sprichst",
     3: "Tipp: Halte das Mikrofon gedrückt, um zu diktieren",

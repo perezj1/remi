@@ -24,7 +24,7 @@ mentalDump: {
   habitLabel: "Hábito",
   habitOn: "On",
   habitOff: "Off",
-  
+
   detectedReminder: {
     DAY_BEFORE_AND_DUE: "Detecté “{word}” → lo marqué como: día antes + día límite.",
     DAILY_UNTIL_DUE: "Detecté “{word}” → lo marqué como: diario hasta la fecha límite.",
@@ -229,10 +229,10 @@ status: {
 
 capture: {
    tips: {
-    0: "Consejo: empieza diciendo “idea” para crear notas sin recordatorio",
-    1: "Consejo: puedes pegar texto de otras aplicaciones",
-    2: "Consejo: no te preocupes por el formato, escribe como hablas",
-    3: "Consejo: mantén pulsado el micrófono para dictar",
+    0: "Consejo: Di o escribe “idea” para crear notas sin recordatorio",
+    1: "Consejo: Puedes pegar texto de otras aplicaciones",
+    2: "Consejo: No te preocupes por el formato, escribe como hablas",
+    3: "Consejo: Mantén pulsado el micrófono para dictar",
   },
   
   repeatOn: "Activado",

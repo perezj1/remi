@@ -217,10 +217,10 @@ installPrompt: {
 
 ccapture: {
   tips: {
-    0: "Tip: start by saying “idea” to create notes without a reminder",
-    1: "Tip: you can paste text from other apps",
-    2: "Tip: don’t worry about formatting—write like you speak",
-    3: "Tip: press and hold the microphone to dictate",
+    0: "Tip: Say or type “idea” to create notes without reminders",
+    1: "Tip: You can paste text from other apps",
+    2: "Tip: Don’t worry about formatting—write like you speak",
+    3: "Tip: Press and hold the microphone to dictate",
   },
 
   repeatOn: "On",
