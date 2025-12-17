@@ -1,3 +1,4 @@
+// src/lib/useSpeechDictation.ts
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export type DictationStatus = "idle" | "listening" | "error" | "unsupported";
@@ -8,8 +9,10 @@ export type DictationChunk = {
    * - finalText e interimText son DELTAS (solo lo nuevo desde el último evento),
    *   no el texto completo acumulado.
    * Esto evita que, si tu UI hace "append", se duplique toda la frase en cada tick.
+   *
+   * Nota: Los deltas pueden venir con un espacio inicial si corresponde.
    */
-  finalText: string;   // delta final desde el último evento
+  finalText: string; // delta final desde el último evento
   interimText: string; // delta interim desde el último evento
 };
 
@@ -73,26 +76,39 @@ function escapeRegExp(str: string) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+/** Colapsa espacios repetidos para comparaciones estables */
+function normalizeSpaces(s: string) {
+  return (s || "").replace(/\s+/g, " ").trim();
+}
+
 /**
  * ✅ Devuelve SOLO el delta entre "prevFull" y "nextFull".
  * - Si nextFull empieza por prevFull → devuelve lo nuevo (tail).
  * - Si no (reset raro del engine) → devuelve nextFull entero.
+ *
+ * Además:
+ * - Mantiene un espacio inicial si corresponde (para que el append quede bien).
  */
 function deltaFromPrefix(prevFull: string, nextFull: string) {
-  const prev = (prevFull || "").trim();
-  const next = (nextFull || "").trim();
-  if (!next) return "";
+  const prev = normalizeSpaces(prevFull);
+  const next = normalizeSpaces(nextFull);
 
+  if (!next) return "";
   if (!prev) return next;
 
-  // Caso típico: "se" -> "se insertan" (next empieza por prev)
+  // Caso típico estable: prev es prefijo de next
   if (next.startsWith(prev)) {
-    const tail = next.slice(prev.length).trimStart();
-    return tail;
+    const tail = next.slice(prev.length); // puede empezar con espacio o vacío
+    // Si tail es solo espacios, lo consideramos vacío
+    if (!tail.trim()) return "";
+    // Asegura que si es una continuación de palabra/frase, haya un espacio inicial
+    // (slice suele dejarlo si existía; pero por seguridad)
+    return tail.startsWith(" ") ? tail : " " + tail;
   }
 
-  // Caso alternativo: a veces el engine cambia y no mantiene prefijo.
-  return next;
+  // Si el engine resetea o cambia el buffer, devolvemos todo el next
+  // (con espacio inicial para que al hacer append no pegues palabras)
+  return next.startsWith(" ") ? next : " " + next;
 }
 
 /* -------------------------
@@ -664,37 +680,56 @@ export function useSpeechDictation(opts: Options = {}) {
       };
 
       rec.onresult = (event: any) => {
+        /**
+         * ✅ CLAVE DEL FIX:
+         * NO uses solo event.resultIndex para construir “full”.
+         * En algunos Android/WebView el motor reusa resultados y el “prefijo” deja de cuadrar,
+         * lo que hace que el delta sea “todo” cada vez (y tu UI lo apendea).
+         *
+         * Construimos full recorriendo TODOS los results actuales.
+         */
         let interimFull = "";
         let finalFull = "";
 
-        for (let i = event.resultIndex; i < event.results.length; i++) {
+        for (let i = 0; i < event.results.length; i++) {
           const res = event.results[i];
-          const rawTranscript = (res[0]?.transcript || "").trim();
+          const rawTranscript = (res?.[0]?.transcript || "").trim();
           if (!rawTranscript) continue;
 
           const transcript = normalizeDictationText(rawTranscript, effectiveLang);
+          if (!transcript) continue;
 
           if (res.isFinal) finalFull += (finalFull ? " " : "") + transcript;
           else interimFull += (interimFull ? " " : "") + transcript;
         }
 
-        // ✅ Convertimos "full" a "delta" para evitar duplicados en UIs que hacen append
-        const finalDelta = deltaFromPrefix(lastFinalFullRef.current, finalFull);
-        const interimDelta = deltaFromPrefix(lastInterimFullRef.current, interimFull);
+        const prevFinalFull = lastFinalFullRef.current;
+        const prevInterimFull = lastInterimFullRef.current;
 
-        // Actualizamos refs SOLO si hay algo (si no, mantenemos el último prefijo)
-        if (finalFull.trim()) lastFinalFullRef.current = finalFull.trim();
-        if (interimFull.trim()) lastInterimFullRef.current = interimFull.trim();
-        if (!interimFull.trim()) lastInterimFullRef.current = ""; // si no hay interim, reset
+        const finalDelta = deltaFromPrefix(prevFinalFull, finalFull);
+        const interimDelta = deltaFromPrefix(prevInterimFull, interimFull);
 
-        // Emitimos deltas (pueden ser "")
-        onText({ finalText: finalDelta, interimText: interimDelta });
+        // Actualizamos refs de forma estable
+        lastFinalFullRef.current = normalizeSpaces(finalFull);
+
+        // Si hay final, normalmente el motor “mueve” parte del interim a final:
+        // reseteamos interim para no repetirlo en el siguiente tick.
+        if (normalizeSpaces(finalDelta)) {
+          lastInterimFullRef.current = "";
+        } else {
+          lastInterimFullRef.current = normalizeSpaces(interimFull);
+        }
+
+        onText({
+          finalText: finalDelta,
+          interimText: interimDelta,
+        });
       };
 
       try {
         rec.start();
       } catch {
-        // ignore
+        // ignore (start mientras ya está iniciando)
       }
     },
     [SpeechRecognitionCtor, ensureRecognition, lang]
