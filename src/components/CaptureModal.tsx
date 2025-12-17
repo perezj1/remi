@@ -285,26 +285,26 @@ export default function CaptureModal({
   const body = (
     <div className="remi-modal-body">
       <textarea
-        className="remi-modal-textarea"
-        placeholder={[
-          t("capture.textareaPlaceholder"),
-          "",
-          t("capture.exampleVoice"),
-          t("capture.examplePaste"),
-          t("capture.exampleIdea"),
-        ].join("\n")}
-        value={text}
-        onChange={(e) => {
-          userEditedRef.current = true;
-          const v = e.target.value;
-          textRef.current = v;
-          setText(v);
+  className="remi-modal-textarea text-[16px] leading-[22px] md:text-[14px] md:leading-[20px]"
+  placeholder={[
+    t("capture.textareaPlaceholder"),
+    "",
+    t("capture.exampleVoice"),
+    t("capture.examplePaste"),
+    t("capture.exampleIdea"),
+  ].join("\n")}
+  value={text}
+  onChange={(e) => {
+    userEditedRef.current = true;
+    const v = e.target.value;
+    textRef.current = v;
+    setText(v);
 
-          // ✅ el usuario tocó el texto: corta sesión de dictado
-          lastDictationAppendAtRef.current = 0;
-          lastDictationBufferRef.current = "";
-        }}
-      />
+    // ✅ el usuario tocó el texto: corta sesión de dictado
+    lastDictationAppendAtRef.current = 0;
+    lastDictationBufferRef.current = "";
+  }}
+/>
 
       {/* ✅ Zona fija de tips (2 líneas, altura fija, NO mueve layout) */}
       <div

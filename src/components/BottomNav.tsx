@@ -1,6 +1,14 @@
 // src/components/BottomNav.tsx
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Brain, ListTodo, Lightbulb, Mic, type LucideIcon } from "lucide-react";
+import {
+  Home,
+  Brain,
+  ListTodo,
+  Lightbulb,
+  Mic,
+  Plus,
+  type LucideIcon,
+} from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
 import { useMemo, useRef } from "react";
 import { toast } from "sonner";
@@ -21,12 +29,27 @@ const OPEN_CAPTURE_EVENT = "remi-open-capture";
 // ✅ texto pendiente cuando dictas desde otras páginas (para no perder el evento)
 const NAV_DICTATION_KEY = "remi_nav_dictation_pending_v1";
 
+function detectIOS() {
+  // iPhone/iPad/iPod + iPadOS (que a veces reporta MacIntel)
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  const platform = (navigator as any).platform || "";
+  const maxTouchPoints = (navigator as any).maxTouchPoints || 0;
+
+  const isAppleMobile = /iPad|iPhone|iPod/.test(ua);
+  const isIpadOS = platform === "MacIntel" && maxTouchPoints > 1;
+
+  return isAppleMobile || isIpadOS;
+}
+
 export default function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { t, lang } = useI18n();
 
   const { pathname } = location;
+
+  const isIOS = useMemo(() => detectIOS(), []);
 
   const activeUiLang: UiLang = useMemo(() => {
     const l = (lang as any) as string;
@@ -37,13 +60,21 @@ export default function BottomNav() {
     return speechLangByUiLang[activeUiLang] ?? "es-ES";
   }, [activeUiLang]);
 
-  const { isSupported, status, error, start, stop } = useSpeechDictation({
+  // ✅ en iOS NO usamos dictado por botón: el botón central será "+"
+  const {
+    isSupported,
+    status,
+    error,
+    start,
+    stop,
+  } = useSpeechDictation({
     lang: activeSpeechLang,
     continuous: false,
     interimResults: false,
   });
 
-  const isListening = status === "listening";
+  const dictationEnabled = !isIOS && isSupported;
+  const isListening = dictationEnabled && status === "listening";
   const startedRef = useRef(false);
 
   const vibrateTiny = () => {
@@ -62,6 +93,16 @@ export default function BottomNav() {
 
   const openCaptureModal = () => {
     window.dispatchEvent(new CustomEvent(OPEN_CAPTURE_EVENT));
+  };
+
+  const openCaptureFromNav = () => {
+    // Siempre abre el capture modal en Index
+    if (pathname !== "/") {
+      navigate("/");
+      setTimeout(() => openCaptureModal(), 120);
+    } else {
+      openCaptureModal();
+    }
   };
 
   // ✅ Manejo único del texto final (no perderlo al navegar)
@@ -92,7 +133,7 @@ export default function BottomNav() {
   };
 
   const handleStart = async () => {
-    if (!isSupported) return;
+    if (!dictationEnabled) return;
     if (startedRef.current) return;
 
     // ✅ 1) pedir permiso SOLO al iniciar (click/press)
@@ -110,7 +151,6 @@ export default function BottomNav() {
         return;
       }
 
-      // denied / cancelado / bloqueado
       toast.error(
         "No se pudo usar el micrófono. Activa el permiso del micrófono para este sitio en los ajustes del navegador."
       );
@@ -156,9 +196,12 @@ export default function BottomNav() {
           active={pathname === "/status"}
         />
 
-        {/* Botón central: Mic (mantener pulsado) */}
+        {/* Botón central:
+            - iOS => "+"
+            - resto => Mic (mantener pulsado)
+        */}
         <div style={{ position: "relative" }}>
-          {isListening ? (
+          {!isIOS && isListening ? (
             <>
               <span
                 style={{
@@ -184,56 +227,77 @@ export default function BottomNav() {
             </>
           ) : null}
 
-          <button
-            className="flex h-14 w-14 items-center justify-center rounded-full border-1 border-white bg-[#7d59c9] text-white shadow-[0_8px_20px_rgba(143,49,243,0.2)] -translate-y-0"
-            type="button"
-            disabled={!isSupported}
-            onPointerDown={(e) => {
-              e.preventDefault();
-              handleStart();
-            }}
-            onPointerUp={(e) => {
-              e.preventDefault();
-              handleStop();
-            }}
-            onPointerCancel={(e) => {
-              e.preventDefault();
-              handleStop();
-            }}
-            onPointerLeave={(e) => {
-              if (isListening) {
+          {isIOS ? (
+            <button
+              className="flex h-14 w-14 items-center justify-center rounded-full border-1 border-white bg-[#7d59c9] text-white shadow-[0_8px_20px_rgba(143,49,243,0.2)] -translate-y-0"
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                openCaptureFromNav();
+              }}
+              aria-label="Añadir"
+              title="Añadir"
+              style={{
+                touchAction: "manipulation",
+                userSelect: "none",
+                transform: "scale(1)",
+                transition: "transform 120ms ease, opacity 120ms ease",
+              }}
+            >
+              <Plus className="w-7 h-7" />
+            </button>
+          ) : (
+            <button
+              className="flex h-14 w-14 items-center justify-center rounded-full border-1 border-white bg-[#7d59c9] text-white shadow-[0_8px_20px_rgba(143,49,243,0.2)] -translate-y-0"
+              type="button"
+              disabled={!dictationEnabled}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                handleStart();
+              }}
+              onPointerUp={(e) => {
                 e.preventDefault();
                 handleStop();
+              }}
+              onPointerCancel={(e) => {
+                e.preventDefault();
+                handleStop();
+              }}
+              onPointerLeave={(e) => {
+                if (isListening) {
+                  e.preventDefault();
+                  handleStop();
+                }
+              }}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                handleStart();
+              }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                handleStop();
+              }}
+              aria-label={
+                !dictationEnabled
+                  ? "Dictado no compatible"
+                  : "Mantén apretado para hablar"
               }
-            }}
-            onTouchStart={(e) => {
-              e.preventDefault();
-              handleStart();
-            }}
-            onTouchEnd={(e) => {
-              e.preventDefault();
-              handleStop();
-            }}
-            aria-label={
-              !isSupported
-                ? "Dictado no compatible"
-                : "Mantén apretado para hablar"
-            }
-            title={
-              !isSupported
-                ? "Dictado no compatible"
-                : "Mantén apretado para hablar"
-            }
-            style={{
-              touchAction: "none",
-              userSelect: "none",
-              opacity: !isSupported ? 0.5 : 1,
-              transform: isListening ? "scale(1.03)" : "scale(1)",
-              transition: "transform 120ms ease, opacity 120ms ease",
-            }}
-          >
-            <Mic className="w-7 h-7" />
-          </button>
+              title={
+                !dictationEnabled
+                  ? "Dictado no compatible"
+                  : "Mantén apretado para hablar"
+              }
+              style={{
+                touchAction: "none",
+                userSelect: "none",
+                opacity: !dictationEnabled ? 0.5 : 1,
+                transform: isListening ? "scale(1.03)" : "scale(1)",
+                transition: "transform 120ms ease, opacity 120ms ease",
+              }}
+            >
+              <Mic className="w-7 h-7" />
+            </button>
+          )}
         </div>
 
         <NavItem
@@ -251,7 +315,8 @@ export default function BottomNav() {
         />
       </div>
 
-      {error ? (
+      {/* En iOS ocultamos el error de dictado porque no usamos dictado por botón */}
+      {!isIOS && error ? (
         <div
           style={{
             marginTop: 8,
@@ -290,7 +355,11 @@ function NavItem({ to, label, active, icon: Icon }: NavItemProps) {
       to={to}
       className="flex h-12 w-12 items-center justify-center rounded-full transition"
     >
-      <Icon className={`w-6 h-6 ${active ? "text-[#7d59c9]" : "text-neutral-800"}`} />
+      <Icon
+        className={`w-6 h-6 ${
+          active ? "text-[#7d59c9]" : "text-neutral-800"
+        }`}
+      />
       <span className="sr-only">{label}</span>
     </Link>
   );
