@@ -24,6 +24,11 @@ mentalDump: {
   habitLabel: "Hábito",
   habitOn: "On",
   habitOff: "Off",
+  
+  detectedReminder: {
+    DAY_BEFORE_AND_DUE: "Detecté “{word}” → lo marqué como: día antes + día límite.",
+    DAILY_UNTIL_DUE: "Detecté “{word}” → lo marqué como: diario hasta la fecha límite.",
+  },
 
   why: {
     verbTask: "Detecté “{word}” → lo marqué como tarea.",
@@ -33,7 +38,11 @@ mentalDump: {
     defaultIdea: "No vi una pista clara → lo marqué como idea.",
     manualTask: "Lo marcaste como tarea.",
     manualIdea: "Lo marcaste como idea.",
-  },
+      },
+
+  
+    
+  
 
   dateLabel: "Fecha",
   timeLabel: "Hora",
@@ -43,7 +52,7 @@ mentalDump: {
   reminderDailyUntilDue: "Notificación diaria (hasta la fecha)",
   reminderDayBeforeAndDue: "Notificación (día antes + día límite)",
 
-  buttonLabel: "Vaciar la cabeza",
+  buttonLabel: "Vacía tu mente",
 
   title: "Descarga mental intensiva",
   description:
@@ -137,7 +146,10 @@ mentalDump: {
   bottomNav: {
   today: "Hoy",
   inbox: "Bandeja",
-  status: "status"
+  status: "status",
+  holdToTalk: "Mantén pulsado",
+  listening: "Escuchando…",
+  dictationNotSupported: "Dictado no compatible",
 },
 
 installPrompt: {
@@ -216,6 +228,13 @@ status: {
 
 
 capture: {
+   tips: {
+    0: "Consejo: empieza diciendo “idea” para crear notas sin recordatorio",
+    1: "Consejo: puedes pegar texto de otras aplicaciones",
+    2: "Consejo: no te preocupes por el formato, escribe como hablas",
+    3: "Consejo: mantén pulsado el micrófono para dictar",
+  },
+  
   repeatOn: "Activado",
   repeatOff: "Desactivado",
   remindersDisabledByHabit:"Los hábitos crean recordatorios propios usando la fecha y hora seleccionadas.",
@@ -224,13 +243,16 @@ capture: {
   dateTimeLabel: "Fecha y hora",
     dateTimeNoneShort: "Sin fecha ni hora",
 
-  title: "Vaciar la cabeza",
-subtitle: "Escribe todo lo que tengas en mente para no olvidarlo.",
-  textareaPlaceholder:     "Ejemplos:\n" +
-    "Cambiar bombilla del pasillo mañana a las 10\n" +
-    "Llamar a mamá el domingo\n" +
-    "Todos los lunes a las 14:00 usar Remi\n" +
-    "Idea viaje a Italia en primavera",
+  title: "Vacía tu mente",
+  subtitle: "Habla, escribe o pega texto. Remi se encarga.",
+  examplesTitle: "Ejemplos:",
+  exampleVoice: "🎤 “Llamar a mamá el domingo”",
+  examplePaste: "📋 “Todos los martes a las 18 quedamos”",
+  exampleIdea: "💡 Idea: viaje a Italia en primavera",
+  holdToTalk: "Mantén pulsado para hablar",
+  listening: "Escuchando…",
+
+  textareaPlaceholder: "Ejemplos:",
 
   ideaButton: "Idea",
   taskButton: "Tarea",

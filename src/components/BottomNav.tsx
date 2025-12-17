@@ -2,39 +2,129 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
-  Plus,
   Brain,
   ListTodo,
   Lightbulb,
-  // Inbox, // (lo dejamos importable por si lo necesitas luego)
+  Mic,
   type LucideIcon,
 } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
+import { useMemo, useRef } from "react";
+import { useSpeechDictation } from "@/hooks/useSpeechDictation";
+
+type UiLang = "es" | "en" | "de";
+
+const speechLangByUiLang: Record<UiLang, string> = {
+  es: "es-ES",
+  en: "en-US",
+  de: "de-DE",
+};
+
+const CAPTURE_APPEND_EVENT = "remi-capture-append";
+const OPEN_CAPTURE_EVENT = "remi-open-capture";
+
+// ✅ texto pendiente cuando dictas desde otras páginas (para no perder el evento)
+const NAV_DICTATION_KEY = "remi_nav_dictation_pending_v1";
 
 export default function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   const { pathname } = location;
 
-  const handleCreateClick = () => {
-    // Siempre abrimos el modal en la pantalla de Hoy
-    navigate("/");
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent("remi-open-capture"));
-    }, 80);
+  const activeUiLang: UiLang = useMemo(() => {
+    const l = (lang as any) as string;
+    return l === "de" || l === "en" || l === "es" ? (l as UiLang) : "es";
+  }, [lang]);
+
+  const activeSpeechLang = useMemo(() => {
+    return speechLangByUiLang[activeUiLang] ?? "es-ES";
+  }, [activeUiLang]);
+
+  const { isSupported, status, error, start, stop } = useSpeechDictation({
+    lang: activeSpeechLang,
+    continuous: true,
+    interimResults: true,
+  });
+
+  const isListening = status === "listening";
+  const startedRef = useRef(false);
+
+  const vibrateTiny = () => {
+    try {
+      if (navigator.vibrate) navigator.vibrate(18);
+    } catch {
+      // ignore
+    }
   };
 
-  // Rutas dedicadas para tareas e ideas
+  const emitAppend = (text: string) => {
+    window.dispatchEvent(
+      new CustomEvent(CAPTURE_APPEND_EVENT, { detail: { text } })
+    );
+  };
+
+  const openCaptureModal = () => {
+    window.dispatchEvent(new CustomEvent(OPEN_CAPTURE_EVENT));
+  };
+
+  // ✅ Manejo único del texto final (no perderlo al navegar)
+  const handleFinalText = (raw: string) => {
+    const clean = raw.trim();
+    if (!clean) return;
+
+    // Si estamos ya en Index, inyectamos directo al CaptureModal embebido
+    if (pathname === "/") {
+      emitAppend(clean);
+      return;
+    }
+
+    // En otras páginas: guardamos dictado pendiente para Index
+    try {
+      sessionStorage.setItem(NAV_DICTATION_KEY, clean);
+    } catch {
+      // fallback: si storage falla, intentamos emitir (puede perderse, pero no rompe)
+      emitAppend(clean);
+    }
+
+    // Navegamos a Index y abrimos modal flotante
+    navigate("/");
+
+    // Esperamos un poco para que Index monte y registre listeners
+    setTimeout(() => {
+      openCaptureModal();
+    }, 120);
+  };
+
+  const handleStart = () => {
+    if (!isSupported) return;
+    if (startedRef.current) return;
+    startedRef.current = true;
+
+    vibrateTiny();
+
+    start(
+      ({ finalText }) => {
+        if (finalText && finalText.trim()) {
+          handleFinalText(finalText);
+        }
+      },
+      activeSpeechLang
+    );
+  };
+
+  const handleStop = () => {
+    startedRef.current = false;
+    stop();
+  };
+
   const isTasksActive = pathname === "/tasks";
   const isIdeasActive = pathname === "/ideas";
 
   return (
     <nav className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2">
-      {/* Píldora blanca */}
       <div className="flex items-center gap-4 rounded-full bg-white px-4 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.18)]">
-        {/* Botón: Hoy */}
         <NavItem
           to="/"
           label={t("bottomNav.today")}
@@ -42,7 +132,6 @@ export default function BottomNav() {
           active={pathname === "/"}
         />
 
-        {/* Botón: Status */}
         <NavItem
           to="/status"
           label={t("bottomNav.status")}
@@ -50,16 +139,86 @@ export default function BottomNav() {
           active={pathname === "/status"}
         />
 
-        {/* Botón central: + morado REMI */}
-        <button
-          className="flex h-14 w-14 items-center justify-center rounded-full border-1 border-white bg-[#7d59c9] text-white shadow-[0_8px_20px_rgba(143,49,243,0.2)] -translate-y-0"
-          onClick={handleCreateClick}
-          type="button"
-        >
-          <Plus className="w-7 h-7" />
-        </button>
+        {/* Botón central: Mic (mantener pulsado) */}
+        <div style={{ position: "relative" }}>
+          {isListening ? (
+            <>
+              <span
+                style={{
+                  position: "absolute",
+                  inset: -12,
+                  borderRadius: 999,
+                  background: "rgba(125,89,201,0.18)",
+                  animation: "remiPulse 1.2s ease-out infinite",
+                  pointerEvents: "none",
+                }}
+              />
+              <span
+                style={{
+                  position: "absolute",
+                  inset: -22,
+                  borderRadius: 999,
+                  background: "rgba(125,89,201,0.10)",
+                  animation: "remiPulse 1.2s ease-out infinite",
+                  animationDelay: "0.25s",
+                  pointerEvents: "none",
+                }}
+              />
+            </>
+          ) : null}
 
-        {/* Botón: Tareas (página /tasks) */}
+          <button
+            className="flex h-14 w-14 items-center justify-center rounded-full border-1 border-white bg-[#7d59c9] text-white shadow-[0_8px_20px_rgba(143,49,243,0.2)] -translate-y-0"
+            type="button"
+            disabled={!isSupported}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              handleStart();
+            }}
+            onPointerUp={(e) => {
+              e.preventDefault();
+              handleStop();
+            }}
+            onPointerCancel={(e) => {
+              e.preventDefault();
+              handleStop();
+            }}
+            onPointerLeave={(e) => {
+              if (isListening) {
+                e.preventDefault();
+                handleStop();
+              }
+            }}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              handleStart();
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              handleStop();
+            }}
+            aria-label={
+              !isSupported
+                ? "Dictado no compatible"
+                : "Mantén apretado para hablar"
+            }
+            title={
+              !isSupported
+                ? "Dictado no compatible"
+                : "Mantén apretado para hablar"
+            }
+            style={{
+              touchAction: "none",
+              userSelect: "none",
+              opacity: !isSupported ? 0.5 : 1,
+              transform: isListening ? "scale(1.03)" : "scale(1)",
+              transition: "transform 120ms ease, opacity 120ms ease",
+            }}
+          >
+            <Mic className="w-7 h-7" />
+          </button>
+        </div>
+
         <NavItem
           to="/tasks"
           label={t("bottomNav.tasks")}
@@ -67,24 +226,36 @@ export default function BottomNav() {
           active={isTasksActive}
         />
 
-        {/* Botón: Ideas (página /ideas) */}
         <NavItem
           to="/ideas"
           label={t("bottomNav.ideas")}
           icon={Lightbulb}
           active={isIdeasActive}
         />
-
-        {/* Botón: Bandeja (oculto, por si lo quieres recuperar más tarde) */}
-        {/*
-        <NavItem
-          to="/inbox"
-          label={t("bottomNav.inbox")}
-          icon={Inbox}
-          active={pathname === "/inbox"}
-        />
-        */}
       </div>
+
+      {error ? (
+        <div
+          style={{
+            marginTop: 8,
+            textAlign: "center",
+            fontSize: 11,
+            color: "#b91c1c",
+          }}
+        >
+          {String(error)}
+        </div>
+      ) : null}
+
+      <style>
+        {`
+          @keyframes remiPulse {
+            0% { transform: scale(0.92); opacity: 0.9; }
+            70% { transform: scale(1.25); opacity: 0.0; }
+            100% { transform: scale(1.25); opacity: 0.0; }
+          }
+        `}
+      </style>
     </nav>
   );
 }
@@ -107,7 +278,6 @@ function NavItem({ to, label, active, icon: Icon }: NavItemProps) {
           active ? "text-[#7d59c9]" : "text-neutral-800"
         }`}
       />
-      {/* Etiqueta solo para accesibilidad */}
       <span className="sr-only">{label}</span>
     </Link>
   );

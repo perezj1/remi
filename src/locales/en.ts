@@ -26,6 +26,11 @@ mentalDump: {
   habitOn: "On",
   habitOff: "Off",
 
+detectedReminder: {
+  DAY_BEFORE_AND_DUE: "I detected “{word}” → I marked it as: day before + due date.",
+  DAILY_UNTIL_DUE: "I detected “{word}” → I marked it as: daily until the due date.",
+},
+
   why: {
     verbTask: "I detected “{word}” → I marked it as a task.",
     prefixIdea: "I detected “{word}” → I marked it as an idea.",
@@ -129,7 +134,10 @@ hints: {
   bottomNav: {
   today: "Today",
   inbox: "Inbox",
-  status: "status"
+  status: "status",
+  holdToTalk: "Hold to talk",
+  listening: "Listening…",
+  dictationNotSupported: "Dictation not supported",
 },
 
 installPrompt: {
@@ -207,22 +215,32 @@ installPrompt: {
 },
 
 
-capture: {
+ccapture: {
+  tips: {
+    0: "Tip: start by saying “idea” to create notes without a reminder",
+    1: "Tip: you can paste text from other apps",
+    2: "Tip: don’t worry about formatting—write like you speak",
+    3: "Tip: press and hold the microphone to dictate",
+  },
+
   repeatOn: "On",
   repeatOff: "Off",
-  remindersDisabledByHabit:"Reminders are disabled when you turn this task into a habit.",
-   timeHour: "Hour",
+  remindersDisabledByHabit: "Habits create their own reminders using the selected date and time.",
+  timeHour: "Hour",
   timeMinute: "Minutes",
   dateTimeLabel: "Date & time",
-    dateTimeNoneShort: "No date or time",
+  dateTimeNoneShort: "No date or time",
 
-  title: "Empty your mind",
-subtitle: "Write down whatever is on your mind so you don't forget it.",
-textareaPlaceholder:  "Examples:\n" +
-    "Change hallway light bulb tomorrow at 10\n" +
-    "Call mum on Sunday\n" +
-    "Use Remi every Monday at 14:00\n" +
-    "Trip idea to Italy in spring",
+  title: "Clear your mind",
+  subtitle: "Speak, write, or paste text. Remi takes care of it.",
+  examplesTitle: "Examples:",
+  exampleVoice: "🎤 “Call mom on Sunday”",
+  examplePaste: "📋 “Every Tuesday at 18:00 we meet up”",
+  exampleIdea: "💡 Idea: trip to Italy in spring",
+  holdToTalk: "Press and hold to talk",
+  listening: "Listening…",
+
+  textareaPlaceholder: "Examples:",
 
   ideaButton: "Idea",
   taskButton: "Task",

@@ -475,14 +475,14 @@ export default function IdeaEditModal({
                     "Date & time"}
                 </label>
 
-                <button
+               {/*  <button
                   type="button"
                   onClick={handleClearDueDate}
                   disabled={loading}
                   className="text-[11px] text-slate-500 hover:text-slate-700 underline-offset-2 hover:underline"
                 >
                   {t("tasks.clearDueDate") || "Clear"}
-                </button>
+                </button> */}
               </div>
 
               {/* Chips */}
@@ -530,27 +530,36 @@ export default function IdeaEditModal({
               </div>
 
               {/* Preview + desplegable */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (dueOption === "NONE") return;
-                  setIsDateTimePickerOpen((p) => !p);
-                }}
-                disabled={dueOption === "NONE"}
-                style={{
-                  marginTop: 10,
-                  width: "100%",
-                  borderRadius: 14,
-                  border: "1px solid rgba(226,232,240,0.9)",
-                  background: "#ffffff",
-                  padding: "10px 12px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  cursor: dueOption === "NONE" ? "not-allowed" : "pointer",
-                  opacity: dueOption === "NONE" ? 0.6 : 1,
-                }}
-              >
+              {/* Preview + desplegable */}
+<button
+  type="button"
+  onClick={() => {
+    // ✅ Si estaba en "sin fecha", reactivamos el modo fecha y abrimos el picker
+    if (dueOption === "NONE") {
+      setDueOption("CUSTOM");
+      // NO seteamos dueDateTime aquí: el usuario debe elegir día/hora/minuto
+      setIsDateTimePickerOpen(true);
+      return;
+    }
+
+    setIsDateTimePickerOpen((p) => !p);
+  }}
+  disabled={loading}
+  style={{
+    marginTop: 10,
+    width: "100%",
+    borderRadius: 14,
+    border: "1px solid rgba(226,232,240,0.9)",
+    background: "#ffffff",
+    padding: "10px 12px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    cursor: loading ? "not-allowed" : "pointer",
+    opacity: loading ? 0.6 : 1,
+  }}
+>
+
                 <div
                   style={{
                     display: "flex",

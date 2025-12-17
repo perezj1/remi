@@ -14,6 +14,10 @@ import { parseDateTimeFromText } from "@/lib/parseDateTimeFromText";
 // ✅ NUEVO
 import { useModalUi } from "@/contexts/ModalUiContext";
 
+// ✅ OFFLINE
+import { toast } from "sonner";
+import { makeOpId, queueAdd } from "@/lib/offlineQueue";
+
 interface TaskEditModalProps {
   open: boolean;
   task: BrainItem | null; // debe ser type === "task"
@@ -304,35 +308,88 @@ export default function TaskEditModal({
     return d.toISOString();
   };
 
+  const enqueueOfflineUpdate = (payload: {
+    title: string;
+    dueISO: string | null;
+    finalReminderMode: ReminderMode;
+    finalRepeatType: RepeatType;
+  }) => {
+    // 1) Guardar en cola
+    queueAdd({
+      id: makeOpId(),
+      type: "UPDATE_TASK",
+      createdAt: Date.now(),
+      userId: task.user_id,
+      taskId: task.id,
+      title: payload.title,
+      dueDate: payload.dueISO,
+      reminderMode: payload.finalReminderMode,
+      repeatType: payload.finalRepeatType,
+    });
+
+    // 2) UI optimista (para que “se vea” editado al instante)
+    const optimistic: BrainItem = {
+      ...task,
+      title: payload.title,
+      due_date: payload.dueISO,
+      reminder_mode: payload.finalReminderMode,
+      repeat_type: payload.finalRepeatType,
+      updated_at: new Date().toISOString(),
+    };
+
+    onUpdated(optimistic);
+
+    toast.success(
+      t("offline.savedLocally") || "Guardado sin conexión. Se sincronizará al volver la señal."
+    );
+
+    // 3) Cerrar
+    setModalOpen(false);
+    onClose();
+  };
+
   const handleSave = async () => {
-    if (!title.trim()) return;
+    const trimmed = title.trim();
+    if (!trimmed) return;
+
+    const dueISO =
+      dueOption === "NONE"
+        ? null
+        : localDateTimeInputToISO(dueDateTime) ?? getDueDateFromOption();
+
+    const finalRepeatType: RepeatType = repeatEnabled ? repeatType : "none";
+    const finalReminderMode: ReminderMode =
+      repeatEnabled || !dueISO ? "NONE" : reminderMode;
+
+    // ✅ Si está offline, encolamos y hacemos UI optimista
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      enqueueOfflineUpdate({ title: trimmed, dueISO, finalReminderMode, finalRepeatType });
+      return;
+    }
 
     try {
       setLoading(true);
 
-      const dueISO =
-        dueOption === "NONE"
-          ? null
-          : localDateTimeInputToISO(dueDateTime) ?? getDueDateFromOption();
-
-      const finalRepeatType: RepeatType = repeatEnabled ? repeatType : "none";
-      const finalReminderMode: ReminderMode =
-        repeatEnabled || !dueISO ? "NONE" : reminderMode;
-
       const updated = await updateTask(
         task.id,
-        title.trim(),
+        trimmed,
         dueISO,
         finalReminderMode,
         finalRepeatType
       );
 
       onUpdated(updated);
-      // ✅ extra seguridad
       setModalOpen(false);
       onClose();
     } catch (err) {
       console.error("Error updating task", err);
+
+      // ✅ Si falló por red (o te quedaste sin señal en medio), encolamos
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        enqueueOfflineUpdate({ title: trimmed, dueISO, finalReminderMode, finalRepeatType });
+        return;
+      }
+
       alert(t("tasks.updateError") || "Error updating task");
     } finally {
       setLoading(false);
@@ -425,8 +482,7 @@ export default function TaskEditModal({
               {t("tasks.editTitle") || "Edit task"}
             </h2>
             <p className="mt-1 text-xs text-slate-500">
-              {t("tasks.editSubtitle") ||
-                "Update text, date & time, reminders and repeat."}
+              {t("tasks.editSubtitle") || "Update text, date & time, reminders and repeat."}
             </p>
           </div>
 
@@ -468,14 +524,14 @@ export default function TaskEditModal({
                 {t("tasks.dueDateLabel") || "Date & time"}
               </label>
 
-              <button
+              {/* <button
                 type="button"
                 onClick={handleClearDueDate}
                 disabled={loading}
                 className="text-[11px] text-slate-500 hover:text-slate-700 underline-offset-2 hover:underline"
               >
                 {t("tasks.clearDueDate") || "Clear"}
-              </button>
+              </button> */}
             </div>
 
             {/* Chips */}
@@ -519,60 +575,70 @@ export default function TaskEditModal({
               />
             </div>
 
+            
             {/* Preview + desplegable */}
-            <button
-              type="button"
-              onClick={() => {
-                if (dueOption === "NONE") return;
-                setIsDateTimePickerOpen((p) => !p);
-              }}
-              disabled={dueOption === "NONE"}
-              style={{
-                marginTop: 10,
-                width: "100%",
-                borderRadius: 14,
-                border: "1px solid rgba(226,232,240,0.9)",
-                background: "#ffffff",
-                padding: "10px 12px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                cursor: dueOption === "NONE" ? "not-allowed" : "pointer",
-                opacity: dueOption === "NONE" ? 0.6 : 1,
-              }}
-            >
-              <div style={{ display: "flex", flexDirection: "column", gap: 2, textAlign: "left" }}>
-                <span
-                  style={{
-                    fontSize: 11,
-                    textTransform: "uppercase",
-                    letterSpacing: 0.04,
-                    color: "#9ca3af",
-                  }}
-                >
-                  {t("capture.dateTimeLabel") ?? t("tasks.dueDateLabel") ?? "Date & time"}
-                </span>
-                <span
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 500,
-                    color: hasDue ? "#111827" : "#9ca3af",
-                  }}
-                >
-                  {dateTimePreview}
-                </span>
-              </div>
-              <span
-                style={{
-                  fontSize: 18,
-                  color: "#6b7280",
-                  transform: isDateTimePickerOpen ? "rotate(180deg)" : "rotate(0deg)",
-                  transition: "transform 0.15s ease-out",
-                }}
-              >
-                ▾
-              </span>
-            </button>
+<button
+  type="button"
+  onClick={() => {
+    // ✅ Si estaba en "sin fecha", reactivamos el modo fecha y abrimos el picker
+    if (dueOption === "NONE") {
+      setManualDateOverride(true);
+      setDueOption("CUSTOM");
+      // Importante: NO seteamos dueDateTime aquí (para no crear una fecha "sin querer")
+      setIsDateTimePickerOpen(true);
+      return;
+    }
+
+    setIsDateTimePickerOpen((p) => !p);
+  }}
+  disabled={loading}
+  style={{
+    marginTop: 10,
+    width: "100%",
+    borderRadius: 14,
+    border: "1px solid rgba(226,232,240,0.9)",
+    background: "#ffffff",
+    padding: "10px 12px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    cursor: loading ? "not-allowed" : "pointer",
+    opacity: loading ? 0.6 : 1,
+  }}
+>
+  <div style={{ display: "flex", flexDirection: "column", gap: 2, textAlign: "left" }}>
+    <span
+      style={{
+        fontSize: 11,
+        textTransform: "uppercase",
+        letterSpacing: 0.04,
+        color: "#9ca3af",
+      }}
+    >
+      {t("capture.dateTimeLabel") ?? t("tasks.dueDateLabel") ?? "Date & time"}
+    </span>
+    <span
+      style={{
+        fontSize: 13,
+        fontWeight: 500,
+        color: hasDue ? "#111827" : "#9ca3af",
+      }}
+    >
+      {dateTimePreview}
+    </span>
+  </div>
+  <span
+    style={{
+      fontSize: 18,
+      color: "#6b7280",
+      transform: isDateTimePickerOpen ? "rotate(180deg)" : "rotate(0deg)",
+      transition: "transform 0.15s ease-out",
+    }}
+  >
+    ▾
+  </span>
+</button>
+
 
             {isDateTimePickerOpen && dueOption !== "NONE" && (
               <div
@@ -796,12 +862,8 @@ export default function TaskEditModal({
           <div>
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-medium text-slate-700">
-                  {t("repeat.label") || "Repeat"}
-                </p>
-                <p className="text-[11px] text-slate-500">
-                  {t("repeat.help") || ""}
-                </p>
+                <p className="text-xs font-medium text-slate-700">{t("repeat.label") || "Repeat"}</p>
+                <p className="text-[11px] text-slate-500">{t("repeat.help") || ""}</p>
               </div>
 
               <div className="flex items-center gap-2">

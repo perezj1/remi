@@ -31,6 +31,10 @@ import { ModalUiProvider, useModalUi } from "@/contexts/ModalUiContext";
 // ✅ Share Target (pública)
 import ShareTargetPage from "@/pages/ShareTarget";
 
+// ✅ OFFLINE SYNC
+import { syncOfflineQueue } from "@/lib/syncOfflineQueue";
+import { toast } from "sonner";
+
 // ---- RUTAS PROTEGIDAS ----
 function RequireAuth({ children }: { children: JSX.Element }) {
   const { user } = useAuth();
@@ -56,6 +60,7 @@ function AppRoutes() {
   // ✅ lee si hay algún modal abierto
   const { isAnyModalOpen } = useModalUi();
 
+  // ✅ Idioma desde perfil
   React.useEffect(() => {
     const pLang = (((profile as any)?.language ?? null) as RemiLocale | null);
 
@@ -63,6 +68,44 @@ function AppRoutes() {
       setLang(pLang);
     }
   }, [profile, lang, setLang]);
+
+  // ✅ OFFLINE: sincroniza al entrar (si hay red) y cuando vuelva la señal
+  React.useEffect(() => {
+    if (!user?.id) return;
+
+    let cancelled = false;
+
+    const runSync = async (reason: "mount" | "online") => {
+      if (cancelled) return;
+
+      // Si no hay red, no hacemos nada (syncOfflineQueue ya lo comprueba también)
+      if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+
+      try {
+        await syncOfflineQueue(user.id);
+
+        // Toast opcional: solo cuando vuelve la red (para no molestar en cada mount)
+        if (reason === "online") {
+          toast.success("Sincronizado ✅");
+        }
+      } catch (e) {
+        // No romper nada: solo log
+        console.error("[App] syncOfflineQueue failed:", e);
+      }
+    };
+
+    // 1) al montar
+    runSync("mount");
+
+    // 2) al volver la señal
+    const onOnline = () => runSync("online");
+    window.addEventListener("online", onOnline);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("online", onOnline);
+    };
+  }, [user?.id]);
 
   type LocationState = { from?: string };
   const state = location.state as LocationState | null;

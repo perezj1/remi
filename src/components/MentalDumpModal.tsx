@@ -312,23 +312,29 @@ function detectReminderSignal(
   if (reminderHint === "DAY_BEFORE_AND_DUE") {
     const before =
       s.match(
-        /\b(antes\s+de|un\s+d[ií]a\s+antes|day\s+before|the\s+day\s+before|vorher|einen\s+tag\s+vorher)\b/i
+        /\b(la\s+v[ií]spera|el\s+d[ií]a\s+anterior|d[ií]a\s+anterior|el\s+d[ií]a\s+de\s+antes|d[ií]a\s+de\s+antes|el\s+d[ií]a\s+antes|d[ií]a\s+antes|un\s+d[ií]a\s+(?:de\s+)?antes|1\s*d[ií]a\s+(?:de\s+)?antes|day\s+before|the\s+day\s+before|the\s+previous\s+day|vorher|einen\s+tag\s+vorher|einen\s+tag\s+davor|am\s+vortag|am\s+tag\s+davor)\b/i
       )?.[0] ?? null;
-    if (before) return before;
-    return reminderHint;
+
+    return before; // ✅ nunca devuelvas el enum
   }
 
   if (reminderHint === "DAILY_UNTIL_DUE") {
-    const daily =
+    const until =
       s.match(
-        /\b(cada\s+d[ií]a|a\s+diario|daily|every\s+day|täglich|jeden\s+tag)\b/i
+        /\b(todos\s+los\s+d[ií]as\s+hasta|cada\s+d[ií]a\s+hasta|diariamente\s+hasta|a\s+diario\s+hasta|every\s+day\s+until|each\s+day\s+until|daily\s+until|jeden\s+tag\s+bis|t[äa]glich\s+bis|taeglich\s+bis)\b/i
       )?.[0] ?? null;
-    if (daily) return daily;
-    return reminderHint;
+
+    // fallback: si dice “cada día” sin “hasta”, igualmente sirve como señal
+    const daily =
+      s.match(/\b(cada\s+d[ií]a|a\s+diario|daily|every\s+day|t[äa]glich|taeglich|jeden\s+tag)\b/i)?.[0] ??
+      null;
+
+    return until ?? daily;
   }
 
   return null;
 }
+
 
 function detectWhyForText(text: string): {
   kind: PreviewKind;

@@ -39,6 +39,9 @@ import {
 
 const AVATAR_KEY = "remi_avatar";
 
+// ✅ debe coincidir con BottomNav.tsx
+const NAV_DICTATION_KEY = "remi_nav_dictation_pending_v1";
+
 function formatDueDiff(dueDate: string | null): string | null {
   if (!dueDate) return null;
   const now = new Date();
@@ -130,9 +133,13 @@ export default function TodayPage() {
 
   const [captureOpen, setCaptureOpen] = useState(false);
 
+  // ✅ prefill específico para el CaptureModal flotante (mic / botón central)
+  const [captureInitialText, setCaptureInitialText] = useState<string | null>(null);
+  const [captureInitialNonce, setCaptureInitialNonce] = useState(0);
+
   const [mentalDumpOpen, setMentalDumpOpen] = useState(false);
 
-  // ✅ NUEVO: texto para abrir MentalDumpModal directamente en preview
+  // ✅ texto para abrir MentalDumpModal directamente en preview
   const [mentalDumpInitialText, setMentalDumpInitialText] = useState<string>("");
   const [mentalDumpInitialNonce, setMentalDumpInitialNonce] = useState(0);
 
@@ -141,27 +148,24 @@ export default function TodayPage() {
   const [statusSummary, setStatusSummary] =
     useState<RemiStatusSummary | null>(null);
 
-  // ✅ Share draft -> prefill en CaptureModal
+  // ✅ Share draft -> prefill en CaptureModal (embebido y/o fallback)
   const [shareDraftText, setShareDraftText] = useState<string | null>(null);
   const [shareDraftNonce, setShareDraftNonce] = useState(0);
 
-  // popup para activar notificaciones push
   const [showPushModal, setShowPushModal] = useState(false);
   const [registeringPush, setRegisteringPush] = useState(false);
 
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
 
-  // filtro de lista
   const [filter, setFilter] = useState<FilterMode>("TODAY");
 
   const activeTasksCount = tasks.length;
 
-  // ✅ abrir revisión desde CaptureModal
   const openReviewFromCapture = (text: string) => {
     setMentalDumpInitialText(text);
     setMentalDumpInitialNonce((n) => n + 1);
     setMentalDumpOpen(true);
-    setCaptureOpen(false); // por si venía del modal +
+    setCaptureOpen(false);
   };
 
   // ---------- Leer draft compartido cuando llegamos desde /share-target ----------
@@ -317,17 +321,60 @@ export default function TodayPage() {
     setAvatarUrl(finalUrl ?? null);
   }, [user, profile]);
 
-  // botón + (Capture)
+  // ✅ botón central / mic: abrir CaptureModal + prefill
   useEffect(() => {
-    const handler = () => setCaptureOpen(true);
-    window.addEventListener("remi-open-capture", handler);
-    return () => window.removeEventListener("remi-open-capture", handler);
+    const handler = (ev: Event) => {
+      // 1) siempre abrimos modal
+      setCaptureOpen(true);
+
+      // 2) prioridad: texto pendiente guardado desde otras páginas
+      let pending: string | null = null;
+      try {
+        pending = sessionStorage.getItem(NAV_DICTATION_KEY);
+      } catch {
+        pending = null;
+      }
+
+      if (pending && pending.trim().length > 0) {
+        const clean = pending.trim();
+
+        // consumimos (para que no se repita)
+        try {
+          sessionStorage.removeItem(NAV_DICTATION_KEY);
+        } catch {
+          // ignore
+        }
+
+        setCaptureInitialText(clean);
+        setCaptureInitialNonce(Date.now());
+        return;
+      }
+
+      // 3) fallback: event.detail.initialText (si alguien lo emite así)
+      const ce = ev as CustomEvent<any>;
+      const incomingText =
+        typeof ce?.detail?.initialText === "string" ? ce.detail.initialText : null;
+      const incomingNonce =
+        typeof ce?.detail?.nonce === "number" ? ce.detail.nonce : null;
+
+      if (incomingText && incomingText.trim().length > 0) {
+        setCaptureInitialText(incomingText.trim());
+        setCaptureInitialNonce(incomingNonce ?? Date.now());
+      } else {
+        // 4) sin texto -> limpio prefill
+        setCaptureInitialText(null);
+        setCaptureInitialNonce((n) => n + 1);
+      }
+    };
+
+    window.addEventListener("remi-open-capture", handler as EventListener);
+    return () => window.removeEventListener("remi-open-capture", handler as EventListener);
   }, []);
 
   // Descarga mental (manual)
   useEffect(() => {
     const handler = () => {
-      setMentalDumpInitialText(""); // ✅ para que NO auto-preview
+      setMentalDumpInitialText("");
       setMentalDumpInitialNonce((n) => n + 1);
       setMentalDumpOpen(true);
     };
@@ -355,27 +402,15 @@ export default function TodayPage() {
   }, [profileOpen]);
 
   // ---------- Agrupar tareas ----------
-  const {
-    dateGroups,
-    noDateTasks,
-    todayCount,
-  }: { dateGroups: DateGroup[]; noDateTasks: BrainItem[]; todayCount: number } =
+  const { dateGroups, noDateTasks, todayCount }: { dateGroups: DateGroup[]; noDateTasks: BrainItem[]; todayCount: number } =
     useMemo(() => {
       if (tasks.length === 0) {
         return { dateGroups: [], noDateTasks: [], todayCount: 0 };
       }
 
       const today = new Date();
-      const todayMid = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate()
-      );
-      const tomorrowMid = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate() + 1
-      );
+      const todayMid = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const tomorrowMid = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
 
       const todayIso = todayMid.toISOString().slice(0, 10);
 
@@ -384,11 +419,7 @@ export default function TodayPage() {
       let todayCountLocal = 0;
 
       const addTaskToDate = (dateMid: Date, task: BrainItem) => {
-        const dMid = new Date(
-          dateMid.getFullYear(),
-          dateMid.getMonth(),
-          dateMid.getDate()
-        );
+        const dMid = new Date(dateMid.getFullYear(), dateMid.getMonth(), dateMid.getDate());
         const iso = dMid.toISOString().slice(0, 10);
 
         let group = groupsMap.get(iso);
@@ -406,12 +437,7 @@ export default function TodayPage() {
             });
           }
 
-          group = {
-            key: iso,
-            label,
-            items: [],
-            dateMs: dMid.getTime(),
-          };
+          group = { key: iso, label, items: [], dateMs: dMid.getTime() };
           groupsMap.set(iso, group);
         }
 
@@ -448,11 +474,7 @@ export default function TodayPage() {
             let cursor = new Date(todayMid);
             while (cursor.getTime() < dueMidTime) {
               addTaskToDate(cursor, task);
-              cursor = new Date(
-                cursor.getFullYear(),
-                cursor.getMonth(),
-                cursor.getDate() + 1
-              );
+              cursor = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() + 1);
             }
           }
         }
@@ -462,40 +484,22 @@ export default function TodayPage() {
         .filter((g) => g.items.length > 0)
         .sort((a, b) => (a.dateMs ?? 0) - (b.dateMs ?? 0));
 
-      return {
-        dateGroups: dateGroupsArr,
-        noDateTasks: noDate,
-        todayCount: todayCountLocal,
-      };
+      return { dateGroups: dateGroupsArr, noDateTasks: noDate, todayCount: todayCountLocal };
     }, [tasks, t]);
 
   const filteredDateGroups = useMemo(() => {
     if (filter === "NO_DATE") return [];
 
     const today = new Date();
-    const todayMid = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate()
-    );
-    const weekEndMid = new Date(
-      todayMid.getFullYear(),
-      todayMid.getMonth(),
-      todayMid.getDate() + 7
-    );
+    const todayMid = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const weekEndMid = new Date(todayMid.getFullYear(), todayMid.getMonth(), todayMid.getDate() + 7);
 
     return dateGroups.filter((group) => {
       if (!group.dateMs) return false;
       const time = group.dateMs;
 
-      if (filter === "TODAY") {
-        return isSameDay(new Date(time), todayMid);
-      }
-
-      if (filter === "WEEK") {
-        return time >= todayMid.getTime() && time <= weekEndMid.getTime();
-      }
-
+      if (filter === "TODAY") return isSameDay(new Date(time), todayMid);
+      if (filter === "WEEK") return time >= todayMid.getTime() && time <= weekEndMid.getTime();
       return true;
     });
   }, [dateGroups, filter]);
@@ -511,13 +515,7 @@ export default function TodayPage() {
     repeatType: RepeatType
   ) => {
     if (!user) return;
-    const created = await createTask(
-      user.id,
-      title,
-      dueDate,
-      reminderMode,
-      repeatType
-    );
+    const created = await createTask(user.id, title, dueDate, reminderMode, repeatType);
     setTasks((prev) => [...prev, created]);
   };
 
@@ -610,8 +608,7 @@ export default function TodayPage() {
         padding: "6px 12px",
         borderRadius: 999,
         border: "none",
-        background:
-          filter === mode ? "rgba(143,49,243,0.18)" : "rgba(248,250,252,1)",
+        background: filter === mode ? "rgba(143,49,243,0.18)" : "rgba(248,250,252,1)",
         color: filter === mode ? "#7d59c9" : "#64748b",
         fontWeight: filter === mode ? 600 : 500,
         transition: "background 0.2s ease, color 0.2s ease",
@@ -1098,13 +1095,16 @@ export default function TodayPage() {
         </div>
       )}
 
-      {/* Modal flotante del botón + (Capture) */}
+      {/* Modal flotante del botón central (Capture) */}
       <CaptureModal
         open={captureOpen}
-        onClose={() => setCaptureOpen(false)}
+        onClose={() => {
+          setCaptureOpen(false);
+          setCaptureInitialText(null);
+        }}
         onOpenReview={openReviewFromCapture}
-        initialText={shareDraftText}
-        initialTextNonce={shareDraftNonce}
+        initialText={captureInitialText ?? shareDraftText}
+        initialTextNonce={captureInitialText ? captureInitialNonce : shareDraftNonce}
       />
 
       {/* Modal Descarga mental */}

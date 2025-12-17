@@ -1,5 +1,14 @@
 // src/lib/brainItemsApi.ts
 import { supabase } from "@/integrations/supabase/client";
+import { queueAdd, makeOpId, makeTempItemId } from "@/lib/offlineQueue";
+import {
+  loadCachedTasks,
+  saveCachedTasks,
+  loadCachedIdeas,
+  saveCachedIdeas,
+  loadCachedInbox,
+  saveCachedInbox,
+} from "@/lib/localBrainCache";
 
 export type BrainItemType = "task" | "idea";
 export type BrainItemStatus = "ACTIVE" | "DONE" | "ARCHIVED";
@@ -9,10 +18,8 @@ export type ReminderMode =
   | "DAY_BEFORE_AND_DUE"
   | "DAILY_UNTIL_DUE";
 
-// tipo de repetición
 export type RepeatType = "none" | "daily" | "weekly" | "monthly" | "yearly";
 
-// Offset por defecto para hábitos: minutos antes de la hora
 const DEFAULT_HABIT_OFFSET_MINUTES = 0;
 
 export interface BrainItem {
@@ -20,34 +27,73 @@ export interface BrainItem {
   user_id: string;
   type: BrainItemType;
   title: string;
-  due_date: string | null; // ISO string
+  due_date: string | null;
   reminder_mode: ReminderMode;
   status: BrainItemStatus;
   created_at: string;
   updated_at: string;
   last_notified_at: string | null;
 
-  // CAMPOS DE REPETICIÓN / HÁBITOS
   repeat_type: RepeatType;
-  next_reminder_at: string | null; // ISO string o null (sistema actual)
-  is_habit?: boolean; // true si es hábito
-  habit_offset_minutes?: number; // minutos antes de la hora base
-  next_notification_at?: string | null; // ISO string o null (para edge function nuevo)
+  next_reminder_at: string | null;
+  is_habit?: boolean;
+  habit_offset_minutes?: number;
+  next_notification_at?: string | null;
 }
 
-/**
- * Devuelve la fecha de inicio de hoy en hora local (00:00:00.000)
- */
+function isOffline(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return navigator.onLine === false;
+}
+
+/** cache helpers (sin romper tu estructura) */
+function cacheUpsertTask(userId: string, item: BrainItem) {
+  const list = loadCachedTasks(userId);
+  const idx = list.findIndex((x) => x.id === item.id);
+  if (idx >= 0) list[idx] = item;
+  else list.push(item);
+  // orden similar al fetchActiveTasks
+  list.sort((a, b) => {
+    const ad = a.due_date ? new Date(a.due_date).getTime() : Number.POSITIVE_INFINITY;
+    const bd = b.due_date ? new Date(b.due_date).getTime() : Number.POSITIVE_INFINITY;
+    if (ad !== bd) return ad - bd;
+    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+  });
+  saveCachedTasks(userId, list);
+
+  // inbox también (si lo usas)
+  const inbox = loadCachedInbox(userId);
+  const i2 = inbox.findIndex((x) => x.id === item.id);
+  if (i2 >= 0) inbox[i2] = item;
+  else inbox.unshift(item);
+  saveCachedInbox(userId, inbox);
+}
+
+function cacheUpsertIdea(userId: string, item: BrainItem) {
+  const list = loadCachedIdeas(userId);
+  const idx = list.findIndex((x) => x.id === item.id);
+  if (idx >= 0) list[idx] = item;
+  else list.unshift(item);
+  saveCachedIdeas(userId, list);
+
+  const inbox = loadCachedInbox(userId);
+  const i2 = inbox.findIndex((x) => x.id === item.id);
+  if (i2 >= 0) inbox[i2] = item;
+  else inbox.unshift(item);
+  saveCachedInbox(userId, inbox);
+}
+
+function cacheRemoveTask(userId: string, taskId: string) {
+  saveCachedTasks(userId, loadCachedTasks(userId).filter((x) => x.id !== taskId));
+  saveCachedInbox(userId, loadCachedInbox(userId).filter((x) => x.id !== taskId));
+}
+
 function getTodayStart(): Date {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
   return d;
 }
 
-/**
- * Calcula la hora de notificación de un hábito aplicando un offset
- * (ej: dueDate = 10:00, offset = 120 -> 08:00).
- */
 function computeHabitNotificationTime(
   dueDateIso: string | null,
   offsetMinutes: number
@@ -64,69 +110,80 @@ export async function fetchActiveTasks(userId: string): Promise<BrainItem[]> {
   const todayStart = getTodayStart();
   const todayIso = todayStart.toISOString();
 
-  const { data, error } = await supabase
-    .from("brain_items")
-    .select("*")
-    .eq("user_id", userId)
-    .eq("type", "task")
-    .eq("status", "ACTIVE")
-    // Solo tareas:
-    // - sin fecha (due_date IS NULL)
-    // - o con due_date >= inicio de hoy
-    .or(`due_date.is.null,due_date.gte.${todayIso}`)
-    .order("due_date", { ascending: true, nullsFirst: false })
-    .order("created_at", { ascending: true });
+  try {
+    const { data, error } = await supabase
+      .from("brain_items")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("type", "task")
+      .eq("status", "ACTIVE")
+      .or(`due_date.is.null,due_date.gte.${todayIso}`)
+      .order("due_date", { ascending: true, nullsFirst: false })
+      .order("created_at", { ascending: true });
 
-  if (error) throw error;
-  return data as BrainItem[];
+    if (error) throw error;
+
+    const tasks = (data ?? []) as BrainItem[];
+    saveCachedTasks(userId, tasks);
+    return tasks;
+  } catch (e) {
+    if (isOffline()) return loadCachedTasks(userId);
+    throw e;
+  }
 }
 
 export async function fetchInboxItems(userId: string): Promise<BrainItem[]> {
-  const { data, error } = await supabase
-    .from("brain_items")
-    .select("*")
-    .eq("user_id", userId)
-    .neq("status", "ARCHIVED")
-    .order("created_at", { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from("brain_items")
+      .select("*")
+      .eq("user_id", userId)
+      .neq("status", "ARCHIVED")
+      .order("created_at", { ascending: false });
 
-  if (error) throw error;
+    if (error) throw error;
 
-  const items = (data ?? []) as BrainItem[];
-  const todayStart = getTodayStart();
+    const items = (data ?? []) as BrainItem[];
+    const todayStart = getTodayStart();
 
-  // Filtramos aquí para no liarnos con combinaciones AND/OR en Supabase:
-  // - Todas las ideas se mantienen.
-  // - Tareas sin fecha se mantienen.
-  // - Tareas con fecha solo si due_date >= hoy.
-  const filtered = items.filter((item) => {
-    if (item.type === "idea") return true;
+    const filtered = items.filter((item) => {
+      if (item.type === "idea") return true;
+      if (item.type === "task") {
+        if (!item.due_date) return true;
+        const due = new Date(item.due_date);
+        return due >= todayStart;
+      }
+      return true;
+    });
 
-    if (item.type === "task") {
-      if (!item.due_date) return true;
-      const due = new Date(item.due_date);
-      return due >= todayStart;
-    }
-
-    return true;
-  });
-
-  return filtered;
+    saveCachedInbox(userId, filtered);
+    return filtered;
+  } catch (e) {
+    if (isOffline()) return loadCachedInbox(userId);
+    throw e;
+  }
 }
 
 export async function fetchActiveIdeas(userId: string): Promise<BrainItem[]> {
-  const { data, error } = await supabase
-    .from("brain_items")
-    .select("*")
-    .eq("user_id", userId)
-    .eq("type", "idea")
-    .neq("status", "ARCHIVED")
-    .order("created_at", { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from("brain_items")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("type", "idea")
+      .neq("status", "ARCHIVED")
+      .order("created_at", { ascending: false });
 
-  if (error) throw error;
-  return data as BrainItem[];
+    if (error) throw error;
+
+    const ideas = (data ?? []) as BrainItem[];
+    saveCachedIdeas(userId, ideas);
+    return ideas;
+  } catch (e) {
+    if (isOffline()) return loadCachedIdeas(userId);
+    throw e;
+  }
 }
-
-// 👇 A partir de aquí: soporte para repetición y next_reminder_at
 
 export async function createTask(
   userId: string,
@@ -138,70 +195,142 @@ export async function createTask(
   const hasHabit = repeatType !== "none";
   const habitOffsetMinutes = hasHabit ? DEFAULT_HABIT_OFFSET_MINUTES : 0;
 
-  // Para hábitos, calculamos la primera notificación aplicando el offset.
   const habitNotification =
     hasHabit && dueDate
       ? computeHabitNotificationTime(dueDate, habitOffsetMinutes)
       : null;
 
-  // next_reminder_at lo usamos para el sistema actual de notificaciones.
   const nextReminderAt = habitNotification;
-
-  // next_notification_at queda listo por si el Edge Function nuevo lo usa.
   const nextNotificationAt = habitNotification;
 
-  const { data, error } = await supabase
-    .from("brain_items")
-    .insert({
+  try {
+    if (isOffline()) throw new Error("offline");
+
+    const { data, error } = await supabase
+      .from("brain_items")
+      .insert({
+        user_id: userId,
+        type: "task",
+        title,
+        due_date: dueDate,
+        reminder_mode: reminderMode,
+        repeat_type: repeatType,
+        next_reminder_at: nextReminderAt,
+        is_habit: hasHabit,
+        habit_offset_minutes: habitOffsetMinutes,
+        next_notification_at: nextNotificationAt,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    const created = data as BrainItem;
+    cacheUpsertTask(userId, created);
+    return created;
+  } catch (e) {
+    // ✅ OFFLINE: optimistic create + cola
+    const nowIso = new Date().toISOString();
+    const tempId = makeTempItemId();
+
+    const localItem: BrainItem = {
+      id: tempId,
       user_id: userId,
       type: "task",
       title,
       due_date: dueDate,
       reminder_mode: reminderMode,
+      status: "ACTIVE",
+      created_at: nowIso,
+      updated_at: nowIso,
+      last_notified_at: null,
       repeat_type: repeatType,
       next_reminder_at: nextReminderAt,
       is_habit: hasHabit,
       habit_offset_minutes: habitOffsetMinutes,
       next_notification_at: nextNotificationAt,
-    })
-    .select()
-    .single();
+    };
 
-  if (error) throw error;
-  return data as BrainItem;
+    cacheUpsertTask(userId, localItem);
+
+    queueAdd({
+      id: makeOpId(),
+      type: "CREATE_TASK",
+      createdAt: Date.now(),
+      userId,
+      clientTempId: tempId,
+      title,
+      dueDate,
+      reminderMode,
+      repeatType,
+    });
+
+    return localItem;
+  }
 }
 
-export async function createIdea(
-  userId: string,
-  title: string
-): Promise<BrainItem> {
-  const { data, error } = await supabase
-    .from("brain_items")
-    .insert({
+export async function createIdea(userId: string, title: string): Promise<BrainItem> {
+  try {
+    if (isOffline()) throw new Error("offline");
+
+    const { data, error } = await supabase
+      .from("brain_items")
+      .insert({
+        user_id: userId,
+        type: "idea",
+        title,
+        repeat_type: "none",
+        next_reminder_at: null,
+        is_habit: false,
+        habit_offset_minutes: 0,
+        next_notification_at: null,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    const created = data as BrainItem;
+    cacheUpsertIdea(userId, created);
+    return created;
+  } catch (e) {
+    const nowIso = new Date().toISOString();
+    const tempId = makeTempItemId();
+
+    const localItem: BrainItem = {
+      id: tempId,
       user_id: userId,
       type: "idea",
       title,
-      // ideas nuevas: sin repetición ni next_reminder_at
+      due_date: null,
+      reminder_mode: "NONE",
+      status: "ACTIVE",
+      created_at: nowIso,
+      updated_at: nowIso,
+      last_notified_at: null,
       repeat_type: "none",
       next_reminder_at: null,
       is_habit: false,
       habit_offset_minutes: 0,
       next_notification_at: null,
-    })
-    .select()
-    .single();
+    };
 
-  if (error) throw error;
-  return data as BrainItem;
+    cacheUpsertIdea(userId, localItem);
+
+    queueAdd({
+      id: makeOpId(),
+      type: "CREATE_IDEA",
+      createdAt: Date.now(),
+      userId,
+      clientTempId: tempId,
+      title,
+    });
+
+    return localItem;
+  }
 }
 
-/**
- * Actualizar solo el título de una idea (se mantiene como idea).
- */
-export async function updateIdeaTitle(
-  id: string,
-  title: string
-): Promise<BrainItem> {
+export async function updateIdeaTitle(id: string, title: string): Promise<BrainItem> {
   const { data, error } = await supabase
     .from("brain_items")
     .update({
@@ -217,11 +346,6 @@ export async function updateIdeaTitle(
   return data as BrainItem;
 }
 
-/**
- * NUEVO: Actualizar una tarea (texto, fecha, recordatorio, repetición)
- * - recalcula is_habit / habit_offset_minutes
- * - recalcula next_reminder_at / next_notification_at
- */
 export async function updateTask(
   id: string,
   title: string,
@@ -232,53 +356,79 @@ export async function updateTask(
   const hasHabit = repeatType !== "none";
   const habitOffsetMinutes = hasHabit ? DEFAULT_HABIT_OFFSET_MINUTES : 0;
 
-  // Si NO hay fecha, no tiene sentido ON_DUE_DATE / DAY_BEFORE...
   const safeReminderMode: ReminderMode =
     !dueDate &&
     (reminderMode === "ON_DUE_DATE" || reminderMode === "DAY_BEFORE_AND_DUE")
       ? "NONE"
       : reminderMode;
 
-  // Para hábitos calculamos la notificación con offset
   const habitNotification =
     hasHabit && dueDate
       ? computeHabitNotificationTime(dueDate, habitOffsetMinutes)
       : null;
 
-  // IMPORTANTE:
-  // - Hábitos: next_* con offset
-  // - No hábitos: alineado con postponeTask (next_* = dueDate)
   const nextReminderAt = hasHabit ? habitNotification : dueDate;
   const nextNotificationAt = hasHabit ? habitNotification : dueDate;
 
-  const { data, error } = await supabase
-    .from("brain_items")
-    .update({
-      title,
-      due_date: dueDate,
-      reminder_mode: safeReminderMode,
-      repeat_type: repeatType,
-      next_reminder_at: nextReminderAt,
-      is_habit: hasHabit,
-      habit_offset_minutes: habitOffsetMinutes,
-      next_notification_at: nextNotificationAt,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", id)
-    .eq("type", "task")
-    .select()
-    .single();
+  try {
+    if (isOffline()) throw new Error("offline");
 
-  if (error) throw error;
-  return data as BrainItem;
+    const { data, error } = await supabase
+      .from("brain_items")
+      .update({
+        title,
+        due_date: dueDate,
+        reminder_mode: safeReminderMode,
+        repeat_type: repeatType,
+        next_reminder_at: nextReminderAt,
+        is_habit: hasHabit,
+        habit_offset_minutes: habitOffsetMinutes,
+        next_notification_at: nextNotificationAt,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .eq("type", "task")
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    const updated = data as BrainItem;
+    cacheUpsertTask(updated.user_id, updated);
+    return updated;
+  } catch (e) {
+    // ✅ OFFLINE: actualizar cache + encolar
+    // Intentamos encontrar el userId desde cache; si no, asumimos que viene del caller (no lo tenemos aquí).
+    // Como mínimo, actualizamos donde esté.
+    const allUsersGuess = (typeof window !== "undefined") ? [/* no conocemos userId aquí */] : [];
+    // Mejor: buscamos en cache de inbox para encontrar el user.
+    let userId = "";
+    try {
+      // si está en inbox de algún user, no podemos saberlo. En tu app siempre hay un user activo:
+      // => encolamos igual con userId vacío no sirve. Así que: guardamos userId en op desde el caller
+      // Pero tu caller no lo pasa.
+      // SOLUCIÓN práctica: tomamos userId del item cacheado en tasks si existe.
+      // (tu app guarda cache por userId, pero aquí no lo sabemos). Por eso: usamos el userId del item si viene del backend,
+      // y si es tempId, normalmente lo has creado con userId y está en cache del usuario activo.
+    } catch {}
+
+    // ✅ En tu app, updateTask se llama desde UI ya teniendo el user actual.
+    // La forma más estable: el UI debe seguir usando los estados en memoria.
+    // Para no romper nada: encolamos con userId del item cacheado en "inbox" del usuario activo (si existe).
+    // Aquí no podemos acceder al user activo. Así que: el fix real es encolar con userId desde donde lo llamas.
+    // PERO tú ya estás usando estas funciones en Index con user.id, y updateTask normalmente se usa en TaskEditModal
+    // que también tiene user en contexto. Si me pasas ese archivo, lo ajusto.
+    //
+    // Mientras tanto: hacemos un fallback seguro -> NO encolamos si no podemos determinar userId.
+    // => Si quieres 100% offline update, necesito que el caller me pase userId o que exportemos updateTaskForUser.
+    // ✅ Como me pediste "sin romper nada", no invento: aquí devuelvo un error si no se puede encolar.
+    throw e;
+  }
 }
 
 /**
- * Convertir una idea existente en tarea:
- * - cambia type a "task"
- * - actualiza el título
- * - asigna due_date y reminder_mode
- * - asigna repeat_type y next_reminder_at / next_notification_at (si es hábito)
+ * ConvertIdeaToTask se mantiene online por ahora.
+ * (si lo quieres offline también, lo hacemos con el mismo patrón que create+update)
  */
 export async function convertIdeaToTask(
   id: string,
@@ -318,62 +468,73 @@ export async function convertIdeaToTask(
     .single();
 
   if (error) throw error;
-  return data as BrainItem;
+
+  const converted = data as BrainItem;
+  cacheUpsertTask(converted.user_id, converted);
+  return converted;
 }
 
-export async function setTaskStatus(
-  id: string,
-  status: BrainItemStatus
-): Promise<BrainItem> {
-  const { data, error } = await supabase
-    .from("brain_items")
-    .update({
-      status,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", id)
-    .select()
-    .single();
+export async function setTaskStatus(id: string, status: BrainItemStatus): Promise<BrainItem> {
+  try {
+    if (isOffline()) throw new Error("offline");
 
-  if (error) throw error;
-  return data as BrainItem;
+    const { data, error } = await supabase
+      .from("brain_items")
+      .update({
+        status,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    const updated = data as BrainItem;
+
+    // si se marca DONE, tu UI suele removerlo de lista ACTIVE
+    if (status === "DONE") cacheRemoveTask(updated.user_id, updated.id);
+    else cacheUpsertTask(updated.user_id, updated);
+
+    return updated;
+  } catch (e) {
+    // ✅ OFFLINE: aquí también necesitas userId para cache por usuario
+    // (lo podemos resolver en el caller). Sin eso, no puedo actualizar cache con seguridad.
+    throw e;
+  }
 }
 
-export async function postponeTask(
-  id: string,
-  newDueDate: string | null
-): Promise<BrainItem> {
-  // Lógica simple:
-  // - movemos due_date
-  // - alineamos next_reminder_at y next_notification_at con la nueva due_date
-  const { data, error } = await supabase
-    .from("brain_items")
-    .update({
-      due_date: newDueDate,
-      next_reminder_at: newDueDate,
-      next_notification_at: newDueDate,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", id)
-    .select()
-    .single();
+export async function postponeTask(id: string, newDueDate: string | null): Promise<BrainItem> {
+  try {
+    if (isOffline()) throw new Error("offline");
 
-  if (error) throw error;
-  return data as BrainItem;
+    const { data, error } = await supabase
+      .from("brain_items")
+      .update({
+        due_date: newDueDate,
+        next_reminder_at: newDueDate,
+        next_notification_at: newDueDate,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    const updated = data as BrainItem;
+    cacheUpsertTask(updated.user_id, updated);
+    return updated;
+  } catch (e) {
+    throw e;
+  }
 }
 
-/**
- * Borrar definitivamente un BrainItem de la base de datos.
- */
 export async function deleteBrainItem(id: string): Promise<void> {
   const { error } = await supabase.from("brain_items").delete().eq("id", id);
   if (error) throw error;
 }
 
-/**
- * Resumen para la página de "Status" de Remi.
- * Usa tareas e ideas + tabla brain_activity_days para la racha y actividad.
- */
 export type RemiStatusSummary = {
   todayTotal: number;
   todayDone: number;
@@ -386,9 +547,7 @@ export type RemiStatusSummary = {
   daysSinceLastActivity: number | null;
 };
 
-export async function fetchRemiStatusSummary(
-  userId: string
-): Promise<RemiStatusSummary> {
+export async function fetchRemiStatusSummary(userId: string): Promise<RemiStatusSummary> {
   const now = new Date();
 
   const startOfDay = (d: Date) => {
@@ -415,11 +574,8 @@ export async function fetchRemiStatusSummary(
 
   const MAX_STREAK_DAYS = 60;
   const streakWindowStart = new Date(todayStart);
-  streakWindowStart.setDate(
-    streakWindowStart.getDate() - (MAX_STREAK_DAYS - 1)
-  );
+  streakWindowStart.setDate(streakWindowStart.getDate() - (MAX_STREAK_DAYS - 1));
 
-  // 1) Tareas de hoy (por due_date)
   const { data: todayTasksRaw, error: todayError } = await supabase
     .from("brain_items")
     .select("id, status")
@@ -431,13 +587,11 @@ export async function fetchRemiStatusSummary(
 
   if (todayError) throw todayError;
 
-  const todayTasks =
-    (todayTasksRaw ?? []) as Pick<BrainItem, "id" | "status">[];
+  const todayTasks = (todayTasksRaw ?? []) as Pick<BrainItem, "id" | "status">[];
 
   const todayTotal = todayTasks.length;
   const todayDone = todayTasks.filter((t) => t.status === "DONE").length;
 
-  // 2) Total tareas almacenadas
   const { count: totalTasksStored, error: totalTasksError } = await supabase
     .from("brain_items")
     .select("*", { count: "exact", head: true })
@@ -447,7 +601,6 @@ export async function fetchRemiStatusSummary(
 
   if (totalTasksError) throw totalTasksError;
 
-  // 3) Total ideas almacenadas
   const { count: totalIdeasStored, error: totalIdeasError } = await supabase
     .from("brain_items")
     .select("*", { count: "exact", head: true })
@@ -461,7 +614,6 @@ export async function fetchRemiStatusSummary(
   const totalIdeas = totalIdeasStored ?? 0;
   const totalItemsStored = totalTasks + totalIdeas;
 
-  // 4) Días activos en la ventana de racha
   const startDateKey = formatLocalDateKey(streakWindowStart);
   const endDateKey = formatLocalDateKey(todayStart);
 
@@ -480,7 +632,6 @@ export async function fetchRemiStatusSummary(
   const activityDays = new Set<string>();
   for (const row of activity) activityDays.add(row.day);
 
-  // 5) racha consecutiva
   let streakDays = 0;
   for (let offset = 0; offset < MAX_STREAK_DAYS; offset++) {
     const d = new Date(todayStart);
@@ -490,12 +641,11 @@ export async function fetchRemiStatusSummary(
     else break;
   }
 
-  // 6) Semana actual (lunes–domingo)
   let weekActiveDays = 0;
   const weekActivitySlots: boolean[] = [];
 
   const todayLocal = new Date(todayStart);
-  const jsDay = todayLocal.getDay(); // 0 domingo, 1 lunes...
+  const jsDay = todayLocal.getDay();
   const diffToMonday = (jsDay + 6) % 7;
 
   const mondayStart = new Date(todayLocal);
@@ -512,7 +662,6 @@ export async function fetchRemiStatusSummary(
     if (hasActivity) weekActiveDays += 1;
   }
 
-  // 7) días desde última actividad
   let daysSinceLastActivity: number | null = null;
   if (activity.length > 0) {
     let lastDate: Date | null = null;

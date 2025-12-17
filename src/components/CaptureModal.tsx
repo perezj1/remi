@@ -1,42 +1,27 @@
-// src/components/CaptureModal.tsx
 import { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/contexts/I18nContext";
-
-// ✅ NUEVO
 import { useModalUi } from "@/contexts/ModalUiContext";
 
 interface CaptureModalProps {
   open: boolean;
   onClose: () => void;
-
-  /** Abre el MentalDumpModal en modo revisión (preview) con este texto */
   onOpenReview: (text: string) => void;
-
-  /** Cuando es true, se usa como card embebida en Index (sin backdrop) */
   embedded?: boolean;
-
-  /** Texto que llega desde fuera (Share Target / copiar-pegar desde otras apps) */
   initialText?: string;
-
-  /**
-   * Cambia cuando llega un nuevo share.
-   * Permite re-aplicar aunque el texto sea idéntico.
-   */
   initialTextNonce?: number;
 }
 
-// Solo las keys; los textos vienen de i18n (reutiliza mentalDump.hints.*)
-const HINT_KEYS = [
-  "mentalDump.hints.0",
-  "mentalDump.hints.7",
-  "mentalDump.hints.1",
-  "mentalDump.hints.2",
-  "mentalDump.hints.3",
-  "mentalDump.hints.4",
-  "mentalDump.hints.5",
-  "mentalDump.hints.6",
+// Evento global para dictado -> append al textarea
+const CAPTURE_APPEND_EVENT = "remi-capture-append";
+
+// Keys de tips (igual que los hints, indexados)
+const TIP_KEYS = [
+  "capture.tips.0",
+  "capture.tips.1",
+  "capture.tips.2",
+  "capture.tips.3",
 ];
 
 export default function CaptureModal({
@@ -48,11 +33,11 @@ export default function CaptureModal({
   initialTextNonce,
 }: CaptureModalProps) {
   const { t } = useI18n();
-
-  // ✅ controla si hay “algún modal abierto” para ocultar BottomNav
   const { setModalOpen } = useModalUi();
 
-  // ✅ cuando este modal real está abierto => ocultar BottomNav
+  /* ───────────────────────────────
+     Modal open state
+  ─────────────────────────────── */
   useEffect(() => {
     const isRealModalOpen = open && !embedded;
     setModalOpen(isRealModalOpen);
@@ -64,17 +49,33 @@ export default function CaptureModal({
 
   const [loading, setLoading] = useState(false);
 
-  // Evitar pisar el texto si el usuario ya empezó a escribir
+  // Evitar pisar texto del usuario
   const userEditedRef = useRef(false);
   const lastInitialAppliedRef = useRef<string>("");
   const lastInitialAppliedNonceRef = useRef<number>(-1);
 
-  // Hints dinámicos
-  const [hintIndex, setHintIndex] = useState(0);
-  const hints = HINT_KEYS.map((key) => t(key));
-  const totalHints = hints.length;
+  /* ───────────────────────────────
+     Tips (1 línea, rotativos)
+     -> MISMO FORMATO QUE HINTS
+  ─────────────────────────────── */
+  const tips = TIP_KEYS.map((key) => t(key)).filter(Boolean);
+  const totalTips = tips.length;
+  const [tipIndex, setTipIndex] = useState(0);
 
-  // ✅ Aplicar initialText cuando el modal/card sea visible
+  useEffect(() => {
+    if ((!open && !embedded) || totalTips === 0) return;
+
+    setTipIndex(0);
+    const interval = setInterval(() => {
+      setTipIndex((prev) => (prev + 1) % totalTips);
+    }, 12000);
+
+    return () => clearInterval(interval);
+  }, [open, embedded, totalTips]);
+
+  /* ───────────────────────────────
+     Aplicar initialText
+  ─────────────────────────────── */
   useEffect(() => {
     const visible = embedded || open;
     if (!visible) return;
@@ -82,17 +83,15 @@ export default function CaptureModal({
     const incoming = (initialText ?? "").trim();
     if (!incoming) return;
 
-    const nonce = typeof initialTextNonce === "number" ? initialTextNonce : null;
+    const nonce =
+      typeof initialTextNonce === "number" ? initialTextNonce : null;
 
-    // (A) Si hay nonce: solo aplicamos si es nuevo
     if (nonce !== null) {
       if (nonce <= lastInitialAppliedNonceRef.current) return;
     } else {
-      // (B) Sin nonce: evitamos re-aplicar el mismo string
       if (incoming === lastInitialAppliedRef.current) return;
     }
 
-    // No pisamos si el usuario ya escribió (salvo textarea vacío)
     const currentText = (textRef.current ?? "").trim();
     const canOverwrite = !userEditedRef.current || currentText === "";
     if (!canOverwrite) return;
@@ -105,24 +104,42 @@ export default function CaptureModal({
     setText(incoming);
   }, [initialText, initialTextNonce, open, embedded]);
 
-  // Rotar hints cada 15s mientras visible
+  /* ───────────────────────────────
+     Escuchar dictado global
+  ─────────────────────────────── */
   useEffect(() => {
-    if ((!open && !embedded) || totalHints === 0) return;
+    const visible = embedded || open;
+    if (!visible) return;
 
-    setHintIndex(0);
-    const interval = setInterval(() => {
-      setHintIndex((prev) => (prev + 1) % totalHints);
-    }, 15000);
+    const handler = (ev: Event) => {
+      const ce = ev as CustomEvent<{ text?: unknown }>;
+      const raw = ce?.detail?.text;
+      const incoming = typeof raw === "string" ? raw.trim() : "";
+      if (!incoming) return;
 
-    return () => clearInterval(interval);
-  }, [open, embedded, totalHints]);
+      userEditedRef.current = true;
 
-  // En modo modal respetamos "open". En modo embebido se muestra siempre.
+      const current = textRef.current ?? "";
+      const needsNewLine =
+        current.trim().length > 0 && !current.endsWith("\n");
+
+      const next = current + (needsNewLine ? "\n" : "") + incoming;
+
+      textRef.current = next;
+      setText(next);
+    };
+
+    window.addEventListener(CAPTURE_APPEND_EVENT, handler as EventListener);
+    return () =>
+      window.removeEventListener(CAPTURE_APPEND_EVENT, handler as EventListener);
+  }, [open, embedded]);
+
   if (!embedded && !open) return null;
 
+  /* ───────────────────────────────
+     Helpers
+  ─────────────────────────────── */
   const resetOnly = () => {
-    // ✅ IMPORTANTE: NO resetear lastInitialApplied* aquí,
-    // o se volverá a re-aplicar initialText en el embebido (bug)
     setText("");
     textRef.current = "";
     userEditedRef.current = false;
@@ -137,51 +154,28 @@ export default function CaptureModal({
   const handleSave = () => {
     const trimmed = text.trim();
     if (!trimmed || loading) {
-      if (!trimmed) toast.error(t("capture.toastEmpty") ?? t("capture.toastTaskError"));
+      if (!trimmed) toast.error(t("capture.toastEmpty"));
       return;
     }
 
     setLoading(true);
     try {
       onOpenReview(trimmed);
-      // limpiamos el input (en embebido se queda la card; en modal se cierra)
-      if (embedded) {
-        resetOnly();
-      } else {
-        resetAndClose();
-      }
+      if (embedded) resetOnly();
+      else resetAndClose();
     } finally {
       setLoading(false);
     }
   };
 
+  /* ───────────────────────────────
+     Header
+  ─────────────────────────────── */
   const header = (
     <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="remi-modal-title">{t("capture.title")}</div>
         <div className="remi-modal-sub">{t("capture.subtitle")}</div>
-
-        {totalHints > 0 && (
-          <div
-            className="remi-hint-banner"
-            style={{
-              marginTop: 8,
-              padding: "6px 10px",
-              borderRadius: 12,
-              background: "#f9fafb",
-              border: "1px solid rgba(226,232,240,0.9)",
-              fontSize: 11,
-              color: "#4b5563",
-              maxWidth: 420,
-              height: 40,
-              display: "flex",
-              alignItems: "center",
-              overflow: "hidden",
-            }}
-          >
-            {hints[hintIndex]}
-          </div>
-        )}
       </div>
 
       {!embedded && (
@@ -197,11 +191,20 @@ export default function CaptureModal({
     </div>
   );
 
+  /* ───────────────────────────────
+     Body
+  ─────────────────────────────── */
   const body = (
     <div className="remi-modal-body">
       <textarea
         className="remi-modal-textarea"
-        placeholder={t("capture.textareaPlaceholder")}
+        placeholder={[
+          t("capture.textareaPlaceholder"),
+          "",
+          t("capture.exampleVoice"),
+          t("capture.examplePaste"),
+          t("capture.exampleIdea"),
+        ].join("\n")}
         value={text}
         onChange={(e) => {
           userEditedRef.current = true;
@@ -211,7 +214,28 @@ export default function CaptureModal({
         }}
       />
 
-      <div className="remi-modal-footer" style={{ display: "flex", gap: 10, marginTop: 14 }}>
+      {/* ── CONSEJO PEQUEÑO (zona marcada en rojo) ── */}
+      {/* Zona fija de tips (no mueve el layout) */}
+<div
+  style={{
+    marginTop: 6,
+    marginBottom: 6,
+    minHeight: 16,        // ← ALTURA FIJA (clave)
+    fontSize: 11,
+    color: "#9ca3af",
+    lineHeight: "16px",   // ← coincide con minHeight
+    userSelect: "none",
+    overflow: "hidden",
+  }}
+>
+  {text.trim().length === 0 && totalTips > 0 ? tips[tipIndex] : ""}
+</div>
+
+
+      <div
+        className="remi-modal-footer"
+        style={{ display: "flex", gap: 10, marginTop: 14 }}
+      >
         {!embedded && (
           <button
             className="remi-btn-ghost"
@@ -226,19 +250,22 @@ export default function CaptureModal({
 
         <button
           className="remi-btn-primary"
-          style={{ flex: 1, background: "#7d59c9", padding: "14px 18px",  
-    fontSize: 16,    }}
+          style={{
+            flex: 1,
+            background: "#7d59c9",
+            padding: "4px 10px",
+            fontSize: 14,
+          }}
           onClick={handleSave}
           disabled={loading || text.trim().length === 0}
           type="button"
         >
-          {t("common.save") ?? t("capture.saveTask") ?? "Guardar"}
+          {t("common.save")}
         </button>
       </div>
     </div>
   );
 
-  // Versión card embebida para Index
   if (embedded) {
     return (
       <div
@@ -256,7 +283,6 @@ export default function CaptureModal({
     );
   }
 
-  // Versión modal flotante con backdrop
   return (
     <div className="remi-modal-backdrop">
       <div className="remi-modal-card">

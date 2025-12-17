@@ -28,6 +28,11 @@ mentalDump: {
   habitOn: "An",
   habitOff: "Aus",
 
+detectedReminder: {
+  DAY_BEFORE_AND_DUE: "Ich habe „{word}“ erkannt → ich habe es markiert als: einen Tag vorher + Fälligkeitsdatum.",
+  DAILY_UNTIL_DUE: "Ich habe „{word}“ erkannt → ich habe es markiert als: täglich bis zum Fälligkeitsdatum.",
+},
+
   why: {
     verbTask: "Ich habe „{word}“ erkannt → als Aufgabe markiert.",
     prefixIdea: "Ich habe „{word}“ erkannt → als Idee markiert.",
@@ -131,7 +136,10 @@ appName: "REMI",
   bottomNav: {
   today: "Heute",
   inbox: "Posteingang",
-  status: "status"
+  status: "status",
+    holdToTalk: "Gedrückt halten",
+  listening: "Hört zu…",
+  dictationNotSupported: "Diktat nicht unterstützt",
 },
 
 installPrompt: {
@@ -210,22 +218,32 @@ status: {
 
 
 
-  capture: {
+capture: {
+  tips: {
+    0: "Tipp: Starte mit „Idee“, um Notizen ohne Erinnerung zu erstellen",
+    1: "Tipp: Du kannst Text aus anderen Apps einfügen",
+    2: "Tipp: Mach dir keine Sorgen um das Format – schreibe, wie du sprichst",
+    3: "Tipp: Halte das Mikrofon gedrückt, um zu diktieren",
+  },
+
   repeatOn: "An",
   repeatOff: "Aus",
-   remindersDisabledByHabit:"Erinnerungen werden deaktiviert, wenn du diese Aufgabe in eine Gewohnheit verwandelst.",
-    timeHour: "Stunde",
+  remindersDisabledByHabit: "Gewohnheiten erstellen eigene Erinnerungen anhand des ausgewählten Datums und der Uhrzeit.",
+  timeHour: "Stunden",
   timeMinute: "Minuten",
-  dateTimeLabel: "Datum & Uhrzeit",
-    dateTimeNoneShort: "Kein Datum / keine Uhrzeit",
+  dateTimeLabel: "Datum und Uhrzeit",
+  dateTimeNoneShort: "Kein Datum und keine Uhrzeit",
 
-    title: "Kopf leeren",
-subtitle: "Schreib alles auf, was dir durch den Kopf geht, damit du es nicht vergisst.",
-textareaPlaceholder:   "Beispiele:\n" +
-    "Glühbirne im Flur morgen um 10 wechseln\n" +
-    "Mama am Sonntag anrufen\n" +
-    "Jeden Montag um 14:00 Remi benutzen\n" +
-    "Idee: Reise nach Italien im Frühling",
+  title: "Leere deinen Kopf",
+  subtitle: "Sprich, schreibe oder füge Text ein. Remi kümmert sich darum.",
+  examplesTitle: "Beispiele:",
+  exampleVoice: "🎤 „Mama am Sonntag anrufen“",
+  examplePaste: "📋 „Jeden Dienstag um 18:00 treffen wir uns“",
+  exampleIdea: "💡 Idee: Italienreise im Frühling",
+  holdToTalk: "Gedrückt halten zum Sprechen",
+  listening: "Höre zu…",
+
+  textareaPlaceholder: "Beispiele:",
 
   ideaButton: "Idee",
   taskButton: "Aufgabe",
