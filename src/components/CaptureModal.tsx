@@ -24,12 +24,52 @@ const TIP_KEYS = [
   "capture.tips.3",
 ];
 
-// ✅ Umbral para considerar “nueva sesión” de dictado (solté y volví a pulsar)
+// Umbral para considerar “nueva sesión” de dictado (solté y volví a pulsar)
 const NEW_LINE_GAP_MS = 1200;
 
-// ✅ Normaliza espacios del chunk que llega del dictado (evita saltos raros)
-function normalizeChunk(s: string) {
+/** Normaliza espacios para comparar buffers de dictado */
+function normalizeForCompare(s: string) {
   return (s || "").replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Devuelve SOLO lo nuevo que trae nextFull respecto a prevFull.
+ * Casos típicos Android:
+ *  - prev="test" next="test número"  -> "número"
+ *  - prev="test número" next="test número 1" -> "1"
+ * Si next se repite o “retrocede”, devuelve "".
+ */
+function deltaFromGrowingBuffer(prevFull: string, nextFull: string) {
+  const prev = normalizeForCompare(prevFull);
+  const next = normalizeForCompare(nextFull);
+
+  if (!next) return "";
+  if (!prev) return next;
+  if (next === prev) return "";
+
+  // Caso ideal: next contiene prev al inicio (crece)
+  if (next.startsWith(prev)) {
+    const tail = next.slice(prev.length).trim();
+    return tail;
+  }
+
+  // A veces el motor “retrocede” (next más corto)
+  if (prev.startsWith(next)) {
+    return "";
+  }
+
+  // Fallback: intenta solapamiento (suffix(prev) == prefix(next))
+  const max = Math.min(prev.length, next.length);
+  for (let k = max; k >= 3; k--) {
+    if (prev.endsWith(next.slice(0, k))) {
+      const tail = next.slice(k).trim();
+      return tail;
+    }
+  }
+
+  // Si no podemos asegurar nada, mejor NO apendar todo (evita duplicados masivos)
+  // Puedes cambiar esto a `return next` si prefieres “algo” antes que nada.
+  return "";
 }
 
 export default function CaptureModal({
@@ -62,8 +102,9 @@ export default function CaptureModal({
   const lastInitialAppliedRef = useRef<string>("");
   const lastInitialAppliedNonceRef = useRef<number>(-1);
 
-  // ✅ Para agrupar dictado en una misma línea mientras se habla
+  // ✅ Estado para dictado: agrupar “sesiones” y calcular deltas
   const lastDictationAppendAtRef = useRef<number>(0);
+  const lastDictationBufferRef = useRef<string>(""); // último “full transcript” recibido en la sesión
 
   /* ───────────────────────────────
      Tips (1 línea, rotativos)
@@ -125,42 +166,52 @@ export default function CaptureModal({
       const ce = ev as CustomEvent<{ text?: unknown }>;
       const raw = ce?.detail?.text;
 
-      // ⚠️ No uses trim() “a pelo” porque te quita espacios útiles.
-      // Normalizamos para evitar saltos/duplicados raros.
-      const incoming = typeof raw === "string" ? normalizeChunk(raw) : "";
-      if (!incoming) return;
+      const incomingFull = typeof raw === "string" ? raw : "";
+      const incomingNorm = normalizeForCompare(incomingFull);
+      if (!incomingNorm) return;
 
       userEditedRef.current = true;
 
       const now = Date.now();
       const current = textRef.current ?? "";
-
-      // ✅ Regla:
-      // - Si ha pasado “bastante” tiempo desde el último append de dictado,
-      //   lo tratamos como nueva sesión (solté y volví a pulsar) → NUEVA LÍNEA.
-      // - Si no, seguimos en la MISMA línea → espacio.
       const gap = now - (lastDictationAppendAtRef.current || 0);
       const isNewSession = gap > NEW_LINE_GAP_MS;
 
+      if (isNewSession) {
+        // ✅ nueva sesión: resetea el buffer para que el primer delta sea “todo”
+        lastDictationBufferRef.current = "";
+      }
+
+      // ✅ calcula solo lo NUEVO del buffer creciente
+      const delta = deltaFromGrowingBuffer(
+        lastDictationBufferRef.current,
+        incomingNorm
+      );
+
+      // actualiza buffer/tiempo aunque el delta sea vacío (para estabilizar)
+      lastDictationBufferRef.current = incomingNorm;
+      lastDictationAppendAtRef.current = now;
+
+      if (!delta) return;
+
+      // ✅ separador:
+      // - nueva sesión -> nueva línea (una sola vez)
+      // - misma sesión -> espacio
       let sep = "";
       if (current.length === 0) {
         sep = "";
       } else if (current.endsWith("\n")) {
-        // ya estamos al inicio de línea
         sep = "";
       } else if (isNewSession) {
         sep = "\n";
       } else {
-        // misma sesión -> separar con espacio
         sep = " ";
       }
 
-      const next = current + sep + incoming;
+      const next = current + sep + delta;
 
       textRef.current = next;
       setText(next);
-
-      lastDictationAppendAtRef.current = now;
     };
 
     window.addEventListener(CAPTURE_APPEND_EVENT, handler as EventListener);
@@ -177,7 +228,10 @@ export default function CaptureModal({
     setText("");
     textRef.current = "";
     userEditedRef.current = false;
-    lastDictationAppendAtRef.current = 0; // ✅ reset sesión dictado
+
+    // ✅ reset dictado
+    lastDictationAppendAtRef.current = 0;
+    lastDictationBufferRef.current = "";
   };
 
   const resetAndClose = () => {
@@ -247,8 +301,9 @@ export default function CaptureModal({
           textRef.current = v;
           setText(v);
 
-          // ✅ si el usuario edita manualmente, cortamos “sesión” de dictado
+          // ✅ el usuario tocó el texto: corta sesión de dictado
           lastDictationAppendAtRef.current = 0;
+          lastDictationBufferRef.current = "";
         }}
       />
 

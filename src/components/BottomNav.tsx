@@ -44,8 +44,8 @@ export default function BottomNav() {
 
   const { isSupported, status, error, start, stop } = useSpeechDictation({
     lang: activeSpeechLang,
-    continuous: true,
-    interimResults: true,
+    continuous: false,
+    interimResults: false,
   });
 
   const isListening = status === "listening";

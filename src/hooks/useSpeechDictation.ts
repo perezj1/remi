@@ -1,19 +1,15 @@
-// src/lib/useSpeechDictation.ts
+// src/hooks/useSpeechDictation.ts
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export type DictationStatus = "idle" | "listening" | "error" | "unsupported";
 
 export type DictationChunk = {
   /**
-   * ✅ IMPORTANTE (fix anti-duplicados):
-   * - finalText e interimText son DELTAS (solo lo nuevo desde el último evento),
-   *   no el texto completo acumulado.
-   * Esto evita que, si tu UI hace "append", se duplique toda la frase en cada tick.
-   *
-   * Nota: Los deltas pueden venir con un espacio inicial si corresponde.
+   * ✅ finalText: SOLO lo nuevo que acaba de quedar FINAL (para append)
+   * ✅ interimText: el texto INTERIM actual (para mostrar/reemplazar, NO append)
    */
-  finalText: string; // delta final desde el último evento
-  interimText: string; // delta interim desde el último evento
+  finalText: string;
+  interimText: string;
 };
 
 type Options = {
@@ -46,9 +42,6 @@ function normalizeDictationText(raw: string, bcp47: string) {
   return s;
 }
 
-/**
- * Intenta mantener el “look” del texto original (mayúsculas iniciales, etc.).
- */
 function restoreCase(original: string, normalizedLower: string) {
   const hasUpper = /[A-ZÁÉÍÓÚÜÑÄÖ]/.test(original);
   if (!hasUpper) return normalizedLower;
@@ -76,39 +69,74 @@ function escapeRegExp(str: string) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/** Colapsa espacios repetidos para comparaciones estables */
-function normalizeSpaces(s: string) {
+function normSpaces(s: string) {
   return (s || "").replace(/\s+/g, " ").trim();
 }
 
 /**
- * ✅ Devuelve SOLO el delta entre "prevFull" y "nextFull".
- * - Si nextFull empieza por prevFull → devuelve lo nuevo (tail).
- * - Si no (reset raro del engine) → devuelve nextFull entero.
- *
- * Además:
- * - Mantiene un espacio inicial si corresponde (para que el append quede bien).
+ * Une textos finales evitando duplicados por solape:
+ * - Si el acumulado ya termina con el segmento -> no añade nada
+ * - Si hay solape sufijo/prefijo -> añade solo lo que falta
+ * - Si no, añade con espacio
  */
-function deltaFromPrefix(prevFull: string, nextFull: string) {
-  const prev = normalizeSpaces(prevFull);
-  const next = normalizeSpaces(nextFull);
+function appendWithOverlap(acc: string, seg: string) {
+  const A = normSpaces(acc);
+  const S = normSpaces(seg);
+  if (!S) return A;
+  if (!A) return S;
+
+  // redundante
+  if (A.endsWith(S)) return A;
+
+  // caso raro: el nuevo segmento contiene todo el anterior
+  if (S.startsWith(A)) return S;
+
+  // solape sufijo/prefijo
+  const max = Math.min(A.length, S.length);
+  for (let k = max; k >= 3; k--) {
+    if (A.endsWith(S.slice(0, k))) {
+      const tail = S.slice(k);
+      return normSpaces(A + " " + tail);
+    }
+  }
+
+  return normSpaces(A + " " + S);
+}
+
+/**
+ * Delta seguro para buffers "crecientes":
+ * - Si next crece desde prev -> devuelve solo lo nuevo
+ * - Si next no crece (igual o más corto) -> ""
+ * - Si hay solape -> devuelve cola
+ * - Si no podemos asegurar -> ""
+ */
+function deltaFromGrowing(prevFull: string, nextFull: string) {
+  const prev = normSpaces(prevFull);
+  const next = normSpaces(nextFull);
 
   if (!next) return "";
   if (!prev) return next;
+  if (next === prev) return "";
 
-  // Caso típico estable: prev es prefijo de next
   if (next.startsWith(prev)) {
-    const tail = next.slice(prev.length); // puede empezar con espacio o vacío
-    // Si tail es solo espacios, lo consideramos vacío
-    if (!tail.trim()) return "";
-    // Asegura que si es una continuación de palabra/frase, haya un espacio inicial
-    // (slice suele dejarlo si existía; pero por seguridad)
-    return tail.startsWith(" ") ? tail : " " + tail;
+    const tail = next.slice(prev.length).trim();
+    return tail;
   }
 
-  // Si el engine resetea o cambia el buffer, devolvemos todo el next
-  // (con espacio inicial para que al hacer append no pegues palabras)
-  return next.startsWith(" ") ? next : " " + next;
+  // retroceso
+  if (prev.startsWith(next)) return "";
+
+  // solape
+  const max = Math.min(prev.length, next.length);
+  for (let k = max; k >= 3; k--) {
+    if (prev.endsWith(next.slice(0, k))) {
+      const tail = next.slice(k).trim();
+      return tail;
+    }
+  }
+
+  // no seguro -> mejor no duplicar
+  return "";
 }
 
 /* -------------------------
@@ -204,7 +232,6 @@ const ES_MONTHS = [
 function normalizeEs(s: string) {
   let out = s;
 
-  // años típicos: "dos mil veinticinco" => 2025
   out = out.replace(/\bdos mil\b/g, "2000");
   out = out.replace(
     /\b(dos mil)\s+(veinti(?:uno|ún|un|dos|tres|cuatro|cinco|seis|siete|ocho|nueve)|treinta(?: y (?:uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve))?|cuarenta(?: y (?:uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve))?|cincuenta(?: y (?:uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve))?|sesenta(?: y (?:uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve))?|setenta(?: y (?:uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve))?|ochenta(?: y (?:uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve))?|noventa(?: y (?:uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve))?|diez|once|doce|trece|catorce|quince|dieciséis|dieciseis|diecisiete|dieciocho|diecinueve|veinte|treinta|cuarenta|cincuenta|sesenta|setenta|ochenta|noventa)\b/g,
@@ -215,13 +242,11 @@ function normalizeEs(s: string) {
     }
   );
 
-  // "primero de enero" => "1 de enero"
   out = out.replace(
     new RegExp(`\\bprimero\\b(?=\\s+de\\s+(${ES_MONTHS.join("|")}))`, "g"),
     "1"
   );
 
-  // números 0..59
   out = out.replace(/\btreinta y uno\b/g, "31");
   out = out.replace(/\btreinta y dos\b/g, "32");
   out = out.replace(/\btreinta y tres\b/g, "33");
@@ -235,13 +260,11 @@ function normalizeEs(s: string) {
   out = out.replace(/\bcuarenta y\b/g, "40 y");
 
   out = replaceWholeWords(out, ES_NUM_0_59);
-
   return out;
 }
 
 function esWordsToNumber_0_99(phrase: string): number | null {
   const p = phrase.trim().toLowerCase();
-
   if (ES_NUM_0_59[p] != null) return Number(ES_NUM_0_59[p]);
 
   const m = p.match(
@@ -251,15 +274,10 @@ function esWordsToNumber_0_99(phrase: string): number | null {
     const tensWord = m[1];
     const onesWord = m[2];
     const tens =
-      tensWord === "sesenta"
-        ? 60
-        : tensWord === "setenta"
-          ? 70
-          : tensWord === "ochenta"
-            ? 80
-            : tensWord === "noventa"
-              ? 90
-              : 0;
+      tensWord === "sesenta" ? 60 :
+      tensWord === "setenta" ? 70 :
+      tensWord === "ochenta" ? 80 :
+      tensWord === "noventa" ? 90 : 0;
     const ones = onesWord ? Number(ES_NUM_0_59[onesWord] ?? "0") : 0;
     return tens + ones;
   }
@@ -270,24 +288,15 @@ function esWordsToNumber_0_99(phrase: string): number | null {
   }
 
   const tensOnly =
-    p === "treinta"
-      ? 30
-      : p === "cuarenta"
-        ? 40
-        : p === "cincuenta"
-          ? 50
-          : p === "sesenta"
-            ? 60
-            : p === "setenta"
-              ? 70
-              : p === "ochenta"
-                ? 80
-                : p === "noventa"
-                  ? 90
-                  : null;
+    p === "treinta" ? 30 :
+    p === "cuarenta" ? 40 :
+    p === "cincuenta" ? 50 :
+    p === "sesenta" ? 60 :
+    p === "setenta" ? 70 :
+    p === "ochenta" ? 80 :
+    p === "noventa" ? 90 : null;
 
-  if (tensOnly != null) return tensOnly;
-  return null;
+  return tensOnly;
 }
 
 /* -------------------------
@@ -411,51 +420,34 @@ function enWordsToNumber_0_99(phrase: string): number | null {
   const key = p.replace(/-/g, " ");
   if (EN_NUM_0_59[key] != null) return Number(EN_NUM_0_59[key]);
 
-  const m = key.match(
-    /^(sixty|seventy|eighty|ninety)(?:\s+(one|two|three|four|five|six|seven|eight|nine))?$/
-  );
+  const m = key.match(/^(sixty|seventy|eighty|ninety)(?:\s+(one|two|three|four|five|six|seven|eight|nine))?$/);
   if (m) {
     const tensWord = m[1];
     const onesWord = m[2];
     const tens =
-      tensWord === "sixty"
-        ? 60
-        : tensWord === "seventy"
-          ? 70
-          : tensWord === "eighty"
-            ? 80
-            : tensWord === "ninety"
-              ? 90
-              : 0;
+      tensWord === "sixty" ? 60 :
+      tensWord === "seventy" ? 70 :
+      tensWord === "eighty" ? 80 :
+      tensWord === "ninety" ? 90 : 0;
     const ones = onesWord ? Number(EN_NUM_0_59[onesWord] ?? "0") : 0;
     return tens + ones;
   }
 
   const tensOnly =
-    key === "twenty"
-      ? 20
-      : key === "thirty"
-        ? 30
-        : key === "forty"
-          ? 40
-          : key === "fifty"
-            ? 50
-            : key === "sixty"
-              ? 60
-              : key === "seventy"
-                ? 70
-                : key === "eighty"
-                  ? 80
-                  : key === "ninety"
-                    ? 90
-                    : null;
+    key === "twenty" ? 20 :
+    key === "thirty" ? 30 :
+    key === "forty" ? 40 :
+    key === "fifty" ? 50 :
+    key === "sixty" ? 60 :
+    key === "seventy" ? 70 :
+    key === "eighty" ? 80 :
+    key === "ninety" ? 90 : null;
 
-  if (tensOnly != null) return tensOnly;
-  return null;
+  return tensOnly;
 }
 
 /* -------------------------
-   Deutsch (alemán)
+   Deutsch
 ------------------------- */
 
 const DE_NUM_0_59: Record<string, string> = {
@@ -572,42 +564,27 @@ function deWordsToNumber_0_99(phrase: string): number | null {
   if (DE_NUM_0_59[p] != null) return Number(DE_NUM_0_59[p]);
 
   const compact = p.replace(/\s+/g, "");
-
-  const m = compact.match(
-    /^(ein|eins|zwei|drei|vier|fünf|funf|sechs|sieben|acht|neun)und(sechzig|siebzig|achtzig|neunzig)$/
-  );
+  const m = compact.match(/^(ein|eins|zwei|drei|vier|fünf|funf|sechs|sieben|acht|neun)und(sechzig|siebzig|achtzig|neunzig)$/);
   if (m) {
     const onesWord = m[1];
     const tensWord = m[2];
     const ones = Number(DE_NUM_0_59[onesWord] ?? "0");
     const tens =
-      tensWord === "sechzig"
-        ? 60
-        : tensWord === "siebzig"
-          ? 70
-          : tensWord === "achtzig"
-            ? 80
-            : tensWord === "neunzig"
-              ? 90
-              : 0;
+      tensWord === "sechzig" ? 60 :
+      tensWord === "siebzig" ? 70 :
+      tensWord === "achtzig" ? 80 :
+      tensWord === "neunzig" ? 90 : 0;
     return tens + ones;
   }
 
   const tensOnly =
-    compact === "sechzig"
-      ? 60
-      : compact === "siebzig"
-        ? 70
-        : compact === "achtzig"
-          ? 80
-          : compact === "neunzig"
-            ? 90
-            : compact === "fünfzig" || compact === "funfzig"
-              ? 50
-              : null;
+    compact === "sechzig" ? 60 :
+    compact === "siebzig" ? 70 :
+    compact === "achtzig" ? 80 :
+    compact === "neunzig" ? 90 :
+    compact === "fünfzig" || compact === "funfzig" ? 50 : null;
 
-  if (tensOnly != null) return tensOnly;
-  return null;
+  return tensOnly;
 }
 
 /* -------------------------
@@ -631,9 +608,9 @@ export function useSpeechDictation(opts: Options = {}) {
 
   const isSupported = !!SpeechRecognitionCtor;
 
-  // ✅ Guardamos el “full interim” y “full final” de la sesión para calcular deltas
-  const lastInterimFullRef = useRef<string>("");
-  const lastFinalFullRef = useRef<string>("");
+  // ✅ acumulado FINAL estable y último INTERIM para no spamear
+  const lastFinalAccumRef = useRef<string>("");
+  const lastInterimRef = useRef<string>("");
 
   const ensureRecognition = useCallback(() => {
     if (!SpeechRecognitionCtor) return null;
@@ -662,9 +639,9 @@ export function useSpeechDictation(opts: Options = {}) {
       const effectiveLang = langOverride || lang;
       rec.lang = effectiveLang;
 
-      // Reset de sesión (CLAVE)
-      lastInterimFullRef.current = "";
-      lastFinalFullRef.current = "";
+      // Reset sesión
+      lastFinalAccumRef.current = "";
+      lastInterimRef.current = "";
 
       rec.onstart = () => setStatus("listening");
 
@@ -675,64 +652,78 @@ export function useSpeechDictation(opts: Options = {}) {
 
       rec.onend = () => {
         setStatus((s) => (s === "error" ? "error" : "idle"));
-        lastInterimFullRef.current = "";
-        lastFinalFullRef.current = "";
+        lastInterimRef.current = "";
       };
 
       rec.onresult = (event: any) => {
-        /**
-         * ✅ CLAVE DEL FIX:
-         * NO uses solo event.resultIndex para construir “full”.
-         * En algunos Android/WebView el motor reusa resultados y el “prefijo” deja de cuadrar,
-         * lo que hace que el delta sea “todo” cada vez (y tu UI lo apendea).
-         *
-         * Construimos full recorriendo TODOS los results actuales.
-         */
-        let interimFull = "";
-        let finalFull = "";
-
+        // 1) Construye un FINAL acumulado fusionando solapes (evita "test test número test número…")
+        let finalAccum = "";
         for (let i = 0; i < event.results.length; i++) {
           const res = event.results[i];
-          const rawTranscript = (res?.[0]?.transcript || "").trim();
-          if (!rawTranscript) continue;
+          if (!res || !res.isFinal) continue;
 
-          const transcript = normalizeDictationText(rawTranscript, effectiveLang);
-          if (!transcript) continue;
+          const raw = (res[0]?.transcript || "").trim();
+          if (!raw) continue;
 
-          if (res.isFinal) finalFull += (finalFull ? " " : "") + transcript;
-          else interimFull += (interimFull ? " " : "") + transcript;
+          const normalized = normSpaces(normalizeDictationText(raw, effectiveLang));
+          if (!normalized) continue;
+
+          finalAccum = appendWithOverlap(finalAccum, normalized);
         }
 
-        const prevFinalFull = lastFinalFullRef.current;
-        const prevInterimFull = lastInterimFullRef.current;
+        // 2) Interim actual: toma el último NO-final (solo para mostrar, NO append)
+        let interimNow = "";
+        if (interimResults) {
+          for (let i = event.results.length - 1; i >= 0; i--) {
+            const res = event.results[i];
+            if (!res || res.isFinal) continue;
 
-        const finalDelta = deltaFromPrefix(prevFinalFull, finalFull);
-        const interimDelta = deltaFromPrefix(prevInterimFull, interimFull);
+            const raw = (res[0]?.transcript || "").trim();
+            if (!raw) continue;
 
-        // Actualizamos refs de forma estable
-        lastFinalFullRef.current = normalizeSpaces(finalFull);
+            const normalized = normSpaces(normalizeDictationText(raw, effectiveLang));
+            if (normalized) {
+              interimNow = normalized;
+              break;
+            }
+          }
+        }
 
-        // Si hay final, normalmente el motor “mueve” parte del interim a final:
-        // reseteamos interim para no repetirlo en el siguiente tick.
-        if (normalizeSpaces(finalDelta)) {
-          lastInterimFullRef.current = "";
+        // 3) Delta FINAL respecto a lo ya emitido
+        const prevFinal = lastFinalAccumRef.current;
+        const finalDelta = deltaFromGrowing(prevFinal, finalAccum);
+
+        // Solo avanzamos el acumulado si realmente creció (si no, no “retrocedemos”)
+        if (finalAccum && (finalAccum.length >= prevFinal.length)) {
+          lastFinalAccumRef.current = finalAccum;
+        }
+
+        // Si hubo final nuevo, limpiamos interim para que no parezca “duplicado”
+        if (finalDelta) {
+          interimNow = "";
+          lastInterimRef.current = "";
         } else {
-          lastInterimFullRef.current = normalizeSpaces(interimFull);
+          // anti-spam interim
+          if (interimNow === lastInterimRef.current) {
+            interimNow = lastInterimRef.current;
+          } else {
+            lastInterimRef.current = interimNow;
+          }
         }
 
         onText({
-          finalText: finalDelta,
-          interimText: interimDelta,
+          finalText: finalDelta,          // ✅ SOLO lo nuevo final
+          interimText: lastInterimRef.current, // ✅ estado interim
         });
       };
 
       try {
         rec.start();
       } catch {
-        // ignore (start mientras ya está iniciando)
+        // ignore
       }
     },
-    [SpeechRecognitionCtor, ensureRecognition, lang]
+    [SpeechRecognitionCtor, ensureRecognition, lang, interimResults]
   );
 
   const stop = useCallback(() => {
