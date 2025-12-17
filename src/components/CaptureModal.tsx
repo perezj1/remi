@@ -68,7 +68,6 @@ function deltaFromGrowingBuffer(prevFull: string, nextFull: string) {
   }
 
   // Si no podemos asegurar nada, mejor NO apendar todo (evita duplicados masivos)
-  // Puedes cambiar esto a `return next` si prefieres “algo” antes que nada.
   return "";
 }
 
@@ -107,7 +106,7 @@ export default function CaptureModal({
   const lastDictationBufferRef = useRef<string>(""); // último “full transcript” recibido en la sesión
 
   /* ───────────────────────────────
-     Tips (1 línea, rotativos)
+     Tips (2 líneas máx, altura fija)
   ─────────────────────────────── */
   const tips = TIP_KEYS.map((key) => t(key)).filter(Boolean);
   const totalTips = tips.length;
@@ -307,27 +306,25 @@ export default function CaptureModal({
         }}
       />
 
-      {/* Zona fija de tips (no mueve el layout) */}
+      {/* ✅ Zona fija de tips (2 líneas, altura fija, NO mueve layout) */}
       <div
-  style={{
-    marginTop: 6,
-    marginBottom: 6,
-    height: 32,              // ✅ 2 líneas * 16px
-    fontSize: 11,
-    color: "#9ca3af",
-    lineHeight: "16px",
-    userSelect: "none",
-    overflow: "hidden",
-
-    display: "-webkit-box",
-    WebkitLineClamp: 2,      // ✅ máximo 2 líneas
-    WebkitBoxOrient: "vertical",
-  }}
-  aria-live="polite"
->
-  {text.trim().length === 0 && totalTips > 0 ? tips[tipIndex] : "\u00A0"}
-</div>
-
+        style={{
+          marginTop: 6,
+          marginBottom: 6,
+          height: 32, // ✅ fijo: 2 líneas * 16px
+          fontSize: 11,
+          color: "#9ca3af",
+          lineHeight: "16px",
+          userSelect: "none",
+          overflow: "hidden",
+          display: "-webkit-box",
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: "vertical",
+        }}
+        aria-live="polite"
+      >
+        {text.trim().length === 0 && totalTips > 0 ? tips[tipIndex] : "\u00A0"}
+      </div>
 
       <div
         className="remi-modal-footer"

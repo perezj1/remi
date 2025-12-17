@@ -1,16 +1,11 @@
 // src/components/BottomNav.tsx
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import {
-  Home,
-  Brain,
-  ListTodo,
-  Lightbulb,
-  Mic,
-  type LucideIcon,
-} from "lucide-react";
+import { Home, Brain, ListTodo, Lightbulb, Mic, type LucideIcon } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
 import { useMemo, useRef } from "react";
+import { toast } from "sonner";
 import { useSpeechDictation } from "@/hooks/useSpeechDictation";
+import { requestMicPermission } from "@/lib/micPermission";
 
 type UiLang = "es" | "en" | "de";
 
@@ -84,24 +79,46 @@ export default function BottomNav() {
     try {
       sessionStorage.setItem(NAV_DICTATION_KEY, clean);
     } catch {
-      // fallback: si storage falla, intentamos emitir (puede perderse, pero no rompe)
+      // fallback
       emitAppend(clean);
     }
 
     // Navegamos a Index y abrimos modal flotante
     navigate("/");
 
-    // Esperamos un poco para que Index monte y registre listeners
     setTimeout(() => {
       openCaptureModal();
     }, 120);
   };
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (!isSupported) return;
     if (startedRef.current) return;
-    startedRef.current = true;
 
+    // ✅ 1) pedir permiso SOLO al iniciar (click/press)
+    const perm = await requestMicPermission();
+
+    if (!perm.ok) {
+      startedRef.current = false;
+
+      if (perm.reason === "no_https") {
+        toast.error("El micrófono requiere HTTPS (o localhost).");
+        return;
+      }
+      if (perm.reason === "not_supported") {
+        toast.error("Este navegador no soporta micrófono.");
+        return;
+      }
+
+      // denied / cancelado / bloqueado
+      toast.error(
+        "No se pudo usar el micrófono. Activa el permiso del micrófono para este sitio en los ajustes del navegador."
+      );
+      return;
+    }
+
+    // ✅ 2) si ok, empezamos dictado
+    startedRef.current = true;
     vibrateTiny();
 
     start(
@@ -273,11 +290,7 @@ function NavItem({ to, label, active, icon: Icon }: NavItemProps) {
       to={to}
       className="flex h-12 w-12 items-center justify-center rounded-full transition"
     >
-      <Icon
-        className={`w-6 h-6 ${
-          active ? "text-[#7d59c9]" : "text-neutral-800"
-        }`}
-      />
+      <Icon className={`w-6 h-6 ${active ? "text-[#7d59c9]" : "text-neutral-800"}`} />
       <span className="sr-only">{label}</span>
     </Link>
   );
