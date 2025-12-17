@@ -309,19 +309,25 @@ export default function CaptureModal({
 
       {/* Zona fija de tips (no mueve el layout) */}
       <div
-        style={{
-          marginTop: 6,
-          marginBottom: 6,
-          minHeight: 16,
-          fontSize: 11,
-          color: "#9ca3af",
-          lineHeight: "16px",
-          userSelect: "none",
-          overflow: "hidden",
-        }}
-      >
-        {text.trim().length === 0 && totalTips > 0 ? tips[tipIndex] : ""}
-      </div>
+  style={{
+    marginTop: 6,
+    marginBottom: 6,
+    height: 32,              // ✅ 2 líneas * 16px
+    fontSize: 11,
+    color: "#9ca3af",
+    lineHeight: "16px",
+    userSelect: "none",
+    overflow: "hidden",
+
+    display: "-webkit-box",
+    WebkitLineClamp: 2,      // ✅ máximo 2 líneas
+    WebkitBoxOrient: "vertical",
+  }}
+  aria-live="polite"
+>
+  {text.trim().length === 0 && totalTips > 0 ? tips[tipIndex] : "\u00A0"}
+</div>
+
 
       <div
         className="remi-modal-footer"
