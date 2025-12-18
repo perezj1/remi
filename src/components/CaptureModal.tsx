@@ -27,6 +27,20 @@ const TIP_KEYS = [
 // Umbral para considerar “nueva sesión” de dictado (solté y volví a pulsar)
 const NEW_LINE_GAP_MS = 1200;
 
+/** Detecta iOS (iPhone/iPad). Incluye iPadOS 13+ que a veces reporta MacIntel. */
+function isIOSDevice() {
+  if (typeof navigator === "undefined") return false;
+
+  const ua = navigator.userAgent || "";
+  const platform = (navigator as any).platform || "";
+  const maxTouchPoints = navigator.maxTouchPoints || 0;
+
+  const isiOSUA = /iPhone|iPad|iPod/i.test(ua);
+  const isiPadOS = platform === "MacIntel" && maxTouchPoints > 1;
+
+  return isiOSUA || isiPadOS;
+}
+
 /** Normaliza espacios para comparar buffers de dictado */
 function normalizeForCompare(s: string) {
   return (s || "").replace(/\s+/g, " ").trim();
@@ -220,6 +234,8 @@ export default function CaptureModal({
 
   if (!embedded && !open) return null;
 
+  const ios = isIOSDevice();
+
   /* ───────────────────────────────
      Helpers
   ─────────────────────────────── */
@@ -285,26 +301,26 @@ export default function CaptureModal({
   const body = (
     <div className="remi-modal-body">
       <textarea
-  className="remi-modal-textarea text-[16px] leading-[22px] md:text-[14px] md:leading-[20px]"
-  placeholder={[
-    t("capture.textareaPlaceholder"),
-    "",
-    t("capture.exampleVoice"),
-    t("capture.examplePaste"),
-    t("capture.exampleIdea"),
-  ].join("\n")}
-  value={text}
-  onChange={(e) => {
-    userEditedRef.current = true;
-    const v = e.target.value;
-    textRef.current = v;
-    setText(v);
+        className="remi-modal-textarea text-[16px] leading-[22px] md:text-[14px] md:leading-[20px]"
+        placeholder={[
+          ios
+            ? t("capture.textareaPlaceholderIOS")
+            : t("capture.textareaPlaceholder"),
+          "",
+          
+        ].join("\n")}
+        value={text}
+        onChange={(e) => {
+          userEditedRef.current = true;
+          const v = e.target.value;
+          textRef.current = v;
+          setText(v);
 
-    // ✅ el usuario tocó el texto: corta sesión de dictado
-    lastDictationAppendAtRef.current = 0;
-    lastDictationBufferRef.current = "";
-  }}
-/>
+          // ✅ el usuario tocó el texto: corta sesión de dictado
+          lastDictationAppendAtRef.current = 0;
+          lastDictationBufferRef.current = "";
+        }}
+      />
 
       {/* ✅ Zona fija de tips (2 líneas, altura fija, NO mueve layout) */}
       <div

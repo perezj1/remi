@@ -226,6 +226,11 @@ capture: {
     3: "Tipp: Halte das Mikrofon gedrückt, um zu diktieren",
   },
 
+ textareaPlaceholderIOS:
+    "iPhone/iPad: Nutze das Mikrofon der Tastatur zum Diktieren.\n" +
+    "Falls es fehlt: Einstellungen > Allgemein > Tastatur > Diktat aktivieren.\n" +
+    "Falls “nicht verfügbar”: Einstellungen > Datenschutz & Sicherheit > Mikrofon (Browser erlauben).",
+
   repeatOn: "An",
   repeatOff: "Aus",
   remindersDisabledByHabit: "Gewohnheiten erstellen eigene Erinnerungen anhand des ausgewählten Datums und der Uhrzeit.",

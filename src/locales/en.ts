@@ -223,6 +223,11 @@ capture: {
     3: "Tip: Press and hold the microphone to dictate",
   },
 
+ textareaPlaceholderIOS:
+    "iPhone/iPad: use the keyboard microphone to dictate.\n" +
+    "If it’s missing: Settings > General > Keyboard > Enable Dictation.\n" +
+    "If it says “not available”: Settings > Privacy & Security > Microphone (enable your browser).",
+
   repeatOn: "On",
   repeatOff: "Off",
   remindersDisabledByHabit: "Habits create their own reminders using the selected date and time.",

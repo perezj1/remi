@@ -235,6 +235,11 @@ capture: {
     3: "Consejo: Mantén pulsado el micrófono para dictar",
   },
   
+  textareaPlaceholderIOS:
+    "iPhone/iPad: usa el micrófono del teclado para dictar.\n" +
+    "Si no aparece: Ajustes > General > Teclado > Activar dictado.\n" +
+    "Si pone “no disponible”: Ajustes > Privacidad y seguridad > Micrófono (activa tu navegador).",
+
   repeatOn: "Activado",
   repeatOff: "Desactivado",
   remindersDisabledByHabit:"Los hábitos crean recordatorios propios usando la fecha y hora seleccionadas.",

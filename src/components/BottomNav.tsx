@@ -1,5 +1,5 @@
 // src/components/BottomNav.tsx
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
   Brain,
@@ -42,6 +42,18 @@ function detectIOS() {
   return isAppleMobile || isIpadOS;
 }
 
+// ✅ Helpers anti-long-press selection / callout (especialmente iOS)
+const noSelectStyle: React.CSSProperties = {
+  userSelect: "none",
+  WebkitUserSelect: "none",
+  WebkitTouchCallout: "none",
+  WebkitTapHighlightColor: "transparent",
+};
+
+const prevent = (e: any) => {
+  e.preventDefault();
+};
+
 export default function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -61,13 +73,7 @@ export default function BottomNav() {
   }, [activeUiLang]);
 
   // ✅ en iOS NO usamos dictado por botón: el botón central será "+"
-  const {
-    isSupported,
-    status,
-    error,
-    start,
-    stop,
-  } = useSpeechDictation({
+  const { isSupported, status, error, start, stop } = useSpeechDictation({
     lang: activeSpeechLang,
     continuous: false,
     interimResults: false,
@@ -180,8 +186,16 @@ export default function BottomNav() {
   const isIdeasActive = pathname === "/ideas";
 
   return (
-    <nav className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2">
-      <div className="flex items-center gap-4 rounded-full bg-white px-4 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.18)]">
+    <nav
+      className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2"
+      style={noSelectStyle}
+      onContextMenu={prevent}
+    >
+      <div
+        className="flex items-center gap-4 rounded-full bg-white px-4 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
+        style={noSelectStyle}
+        onContextMenu={prevent}
+      >
         <NavItem
           to="/"
           label={t("bottomNav.today")}
@@ -200,7 +214,7 @@ export default function BottomNav() {
             - iOS => "+"
             - resto => Mic (mantener pulsado)
         */}
-        <div style={{ position: "relative" }}>
+        <div style={{ position: "relative", ...noSelectStyle }}>
           {!isIOS && isListening ? (
             <>
               <span
@@ -235,11 +249,17 @@ export default function BottomNav() {
                 e.preventDefault();
                 openCaptureFromNav();
               }}
+              onContextMenu={prevent}
+              onPointerDown={prevent}
+              onMouseDown={prevent}
+              onTouchStart={prevent}
+              draggable={false}
+              onDragStart={prevent}
               aria-label="Añadir"
               title="Añadir"
               style={{
+                ...noSelectStyle,
                 touchAction: "manipulation",
-                userSelect: "none",
                 transform: "scale(1)",
                 transition: "transform 120ms ease, opacity 120ms ease",
               }}
@@ -277,6 +297,10 @@ export default function BottomNav() {
                 e.preventDefault();
                 handleStop();
               }}
+              onContextMenu={prevent}
+              onMouseDown={prevent}
+              draggable={false}
+              onDragStart={prevent}
               aria-label={
                 !dictationEnabled
                   ? "Dictado no compatible"
@@ -288,8 +312,8 @@ export default function BottomNav() {
                   : "Mantén apretado para hablar"
               }
               style={{
+                ...noSelectStyle,
                 touchAction: "none",
-                userSelect: "none",
                 opacity: !dictationEnabled ? 0.5 : 1,
                 transform: isListening ? "scale(1.03)" : "scale(1)",
                 transition: "transform 120ms ease, opacity 120ms ease",
@@ -349,11 +373,31 @@ interface NavItemProps {
   icon: LucideIcon;
 }
 
+/**
+ * ✅ IMPORTANTE:
+ * Usamos <button> + navigate() (en vez de <Link>) para evitar
+ * selección / callout / preview por pulsación larga en iOS.
+ */
 function NavItem({ to, label, active, icon: Icon }: NavItemProps) {
+  const navigate = useNavigate();
+
   return (
-    <Link
-      to={to}
+    <button
+      type="button"
       className="flex h-12 w-12 items-center justify-center rounded-full transition"
+      onClick={() => navigate(to)}
+      onContextMenu={prevent}
+      onPointerDown={prevent}
+      onMouseDown={prevent}
+      onTouchStart={prevent}
+      draggable={false}
+      onDragStart={prevent}
+      aria-label={label}
+      title={label}
+      style={{
+        ...noSelectStyle,
+        touchAction: "manipulation",
+      }}
     >
       <Icon
         className={`w-6 h-6 ${
@@ -361,6 +405,6 @@ function NavItem({ to, label, active, icon: Icon }: NavItemProps) {
         }`}
       />
       <span className="sr-only">{label}</span>
-    </Link>
+    </button>
   );
 }
