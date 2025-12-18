@@ -10,7 +10,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { useSpeechDictation } from "@/hooks/useSpeechDictation";
 import { requestMicPermission } from "@/lib/micPermission";
@@ -25,6 +25,9 @@ const speechLangByUiLang: Record<UiLang, string> = {
 
 const CAPTURE_APPEND_EVENT = "remi-capture-append";
 const OPEN_CAPTURE_EVENT = "remi-open-capture";
+
+// ✅ NUEVO: evento global para indicar si el dictado está escuchando
+export const DICTATION_STATE_EVENT = "remi-dictation-state";
 
 // ✅ texto pendiente cuando dictas desde otras páginas (para no perder el evento)
 const NAV_DICTATION_KEY = "remi_nav_dictation_pending_v1";
@@ -97,6 +100,18 @@ export default function BottomNav() {
     );
   };
 
+  const emitDictationState = (listening: boolean) => {
+    window.dispatchEvent(
+      new CustomEvent(DICTATION_STATE_EVENT, { detail: { listening } })
+    );
+  };
+
+  // ✅ refleja estado listening hacia fuera (CaptureModal lo usará)
+  useEffect(() => {
+    if (isIOS) return; // en iOS no dictamos por botón
+    emitDictationState(isListening);
+  }, [isIOS, isListening]);
+
   const openCaptureModal = () => {
     window.dispatchEvent(new CustomEvent(OPEN_CAPTURE_EVENT));
   };
@@ -147,6 +162,7 @@ export default function BottomNav() {
 
     if (!perm.ok) {
       startedRef.current = false;
+      emitDictationState(false);
 
       if (perm.reason === "no_https") {
         toast.error("El micrófono requiere HTTPS (o localhost).");
@@ -167,6 +183,7 @@ export default function BottomNav() {
     startedRef.current = true;
     vibrateTiny();
 
+    // OJO: el hook cambiará status => useEffect emitirá listening=true automáticamente.
     start(
       ({ finalText }) => {
         if (finalText && finalText.trim()) {
@@ -180,6 +197,7 @@ export default function BottomNav() {
   const handleStop = () => {
     startedRef.current = false;
     stop();
+    emitDictationState(false); // ✅ aseguramos OFF al soltar
   };
 
   const isTasksActive = pathname === "/tasks";
@@ -375,7 +393,7 @@ interface NavItemProps {
 
 /**
  * ✅ IMPORTANTE:
- * Usamos <button> + navigate() (en vez de <Link>) para evitar
+ * Usamos <button> + navigate() (en vez de <a>/<Link>) para evitar
  * selección / callout / preview por pulsación larga en iOS.
  */
 function NavItem({ to, label, active, icon: Icon }: NavItemProps) {

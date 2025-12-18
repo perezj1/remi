@@ -243,6 +243,7 @@ capture: {
   subtitle: "Sprich, schreibe oder füge Text ein. Remi kümmert sich darum.",
   examplesTitle: "Beispiele:",
   exampleVoice: "🎤 „Mama am Sonntag anrufen“",
+  exampleVoiceIOS: '🎤 „Nutze das Mikrofon deiner Tastatur zum Diktieren“',
   examplePaste: "📋 „Jeden Dienstag um 18:00 treffen wir uns“",
   exampleIdea: "💡 Idee: Italienreise im Frühling",
   holdToTalk: "Gedrückt halten zum Sprechen",

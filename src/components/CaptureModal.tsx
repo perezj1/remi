@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/contexts/I18nContext";
@@ -15,6 +15,9 @@ interface CaptureModalProps {
 
 // Evento global para dictado -> append al textarea
 const CAPTURE_APPEND_EVENT = "remi-capture-append";
+
+// ✅ evento global dictado listening (emitido desde BottomNav)
+const DICTATION_STATE_EVENT = "remi-dictation-state";
 
 // Keys de tips (igual que los hints, indexados)
 const TIP_KEYS = [
@@ -39,6 +42,31 @@ function isIOSDevice() {
   const isiPadOS = platform === "MacIntel" && maxTouchPoints > 1;
 
   return isiOSUA || isiPadOS;
+}
+
+/**
+ * Intenta leer el estado del permiso de micrófono SIN lanzar prompt.
+ * - granted / denied / prompt (si el navegador lo expone)
+ * - unknown si no se puede consultar
+ */
+async function getMicPermissionState(): Promise<
+  "granted" | "denied" | "prompt" | "unknown"
+> {
+  try {
+    if (typeof navigator === "undefined") return "unknown";
+    const anyNav = navigator as any;
+    if (!anyNav.permissions?.query) return "unknown";
+
+    // TS: en algunos entornos PermissionName no incluye 'microphone'
+    const res = await anyNav.permissions.query({ name: "microphone" });
+    const state = String(res?.state || "");
+    if (state === "granted" || state === "denied" || state === "prompt") {
+      return state;
+    }
+    return "unknown";
+  } catch {
+    return "unknown";
+  }
 }
 
 /** Normaliza espacios para comparar buffers de dictado */
@@ -96,6 +124,8 @@ export default function CaptureModal({
   const { t } = useI18n();
   const { setModalOpen } = useModalUi();
 
+  const ios = useMemo(() => isIOSDevice(), []);
+
   /* ───────────────────────────────
      Modal open state
   ─────────────────────────────── */
@@ -118,6 +148,55 @@ export default function CaptureModal({
   // ✅ Estado para dictado: agrupar “sesiones” y calcular deltas
   const lastDictationAppendAtRef = useRef<number>(0);
   const lastDictationBufferRef = useRef<string>(""); // último “full transcript” recibido en la sesión
+
+  /* ───────────────────────────────
+     ✅ Estado externo: “Escuchando...”
+     (lo emite BottomNav con remi-dictation-state)
+  ─────────────────────────────── */
+  const [isListeningExternal, setIsListeningExternal] = useState(false);
+
+  useEffect(() => {
+    const visible = embedded || open;
+    if (!visible) return;
+
+    const handler = (ev: Event) => {
+      const ce = ev as CustomEvent<{ listening?: unknown }>;
+      setIsListeningExternal(ce?.detail?.listening === true);
+    };
+
+    window.addEventListener(DICTATION_STATE_EVENT, handler as EventListener);
+    return () =>
+      window.removeEventListener(
+        DICTATION_STATE_EVENT,
+        handler as EventListener
+      );
+  }, [open, embedded]);
+
+  /* ───────────────────────────────
+     iOS: mostrar ayuda SOLO si permiso mic == denied
+  ─────────────────────────────── */
+  const [showIOSMicHelp, setShowIOSMicHelp] = useState(false);
+
+  useEffect(() => {
+    const visible = embedded || open;
+    if (!visible) return;
+    if (!ios) return;
+
+    let alive = true;
+
+    (async () => {
+      const state = await getMicPermissionState();
+
+      // Solo mostramos el texto largo si el navegador confirma DENIED.
+      // Si es "unknown" o "prompt", NO lo mostramos (para no molestar).
+      if (!alive) return;
+      setShowIOSMicHelp(state === "denied");
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [ios, open, embedded]);
 
   /* ───────────────────────────────
      Tips (2 líneas máx, altura fija)
@@ -169,7 +248,7 @@ export default function CaptureModal({
   }, [initialText, initialTextNonce, open, embedded]);
 
   /* ───────────────────────────────
-     Escuchar dictado global
+     Escuchar dictado global (append)
   ─────────────────────────────── */
   useEffect(() => {
     const visible = embedded || open;
@@ -234,8 +313,6 @@ export default function CaptureModal({
 
   if (!embedded && !open) return null;
 
-  const ios = isIOSDevice();
-
   /* ───────────────────────────────
      Helpers
   ─────────────────────────────── */
@@ -273,6 +350,43 @@ export default function CaptureModal({
   };
 
   /* ───────────────────────────────
+     Placeholder (iOS condicional + “Escuchando...” SOLO)
+  ─────────────────────────────── */
+  const placeholder = (() => {
+    const isEmpty = text.trim().length === 0;
+
+    // ✅ PRIORIDAD: si está escuchando y está vacío -> SOLO “Escuchando...”
+    if (isListeningExternal && isEmpty) {
+      return t("capture.listening");
+    }
+
+    // iOS + mic DENIED => solo texto largo
+    if (ios && showIOSMicHelp) {
+      return t("capture.textareaPlaceholderIOS");
+    }
+
+    // iOS + mic ok => ejemplos iOS
+    if (ios && !showIOSMicHelp) {
+      return [
+        t("capture.textareaPlaceholder"),
+        "",
+        t("capture.exampleVoiceIOS"),
+        t("capture.examplePaste"),
+        t("capture.exampleIdea"),
+      ].join("\n");
+    }
+
+    // Android / resto => placeholder actual
+    return [
+      t("capture.textareaPlaceholder"),
+      "",
+      t("capture.exampleVoice"),
+      t("capture.examplePaste"),
+      t("capture.exampleIdea"),
+    ].join("\n");
+  })();
+
+  /* ───────────────────────────────
      Header
   ─────────────────────────────── */
   const header = (
@@ -302,13 +416,7 @@ export default function CaptureModal({
     <div className="remi-modal-body">
       <textarea
         className="remi-modal-textarea text-[16px] leading-[22px] md:text-[14px] md:leading-[20px]"
-        placeholder={[
-          ios
-            ? t("capture.textareaPlaceholderIOS")
-            : t("capture.textareaPlaceholder"),
-          "",
-          
-        ].join("\n")}
+        placeholder={placeholder}
         value={text}
         onChange={(e) => {
           userEditedRef.current = true;
@@ -383,7 +491,7 @@ export default function CaptureModal({
         style={{
           borderRadius: 18,
           background: "#ffffff",
-          boxShadow: "0 14px 35px rgba(15,23,42,0.08)",
+          boxShadow: "0 14px 35px rgba(15, 23, 42, 0.08)",
           padding: "16px 16px 14px",
         }}
       >

@@ -240,6 +240,7 @@ capture: {
   subtitle: "Speak, write, or paste text. Remi takes care of it.",
   examplesTitle: "Examples:",
   exampleVoice: "🎤 “Call mom on Sunday”",
+  exampleVoiceIOS: '🎤 “Use your keyboard microphone to dictate”',
   examplePaste: "📋 “Every Tuesday at 18:00 we meet up”",
   exampleIdea: "💡 Idea: trip to Italy in spring",
   holdToTalk: "Press and hold to talk",

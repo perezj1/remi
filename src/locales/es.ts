@@ -252,6 +252,7 @@ capture: {
   subtitle: "Habla, escribe o pega texto. Remi se encarga.",
   examplesTitle: "Ejemplos:",
   exampleVoice: "🎤 “Llamar a mamá el domingo”",
+  exampleVoiceIOS: "🎤 “Usa el microfono del teclado para dictar”",
   examplePaste: "📋 “Todos los martes a las 18 quedamos”",
   exampleIdea: "💡 Idea: viaje a Italia en primavera",
   holdToTalk: "Mantén pulsado para hablar",
