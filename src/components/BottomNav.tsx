@@ -10,7 +10,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
-import { useMemo, useRef, useEffect } from "react";
+import { useMemo, useRef, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSpeechDictation } from "@/hooks/useSpeechDictation";
 import { requestMicPermission } from "@/lib/micPermission";
@@ -26,7 +26,7 @@ const speechLangByUiLang: Record<UiLang, string> = {
 const CAPTURE_APPEND_EVENT = "remi-capture-append";
 const OPEN_CAPTURE_EVENT = "remi-open-capture";
 
-// ✅ NUEVO: evento global para indicar si el dictado está escuchando
+// ✅ evento global para indicar si el dictado está escuchando
 export const DICTATION_STATE_EVENT = "remi-dictation-state";
 
 // ✅ texto pendiente cuando dictas desde otras páginas (para no perder el evento)
@@ -56,6 +56,45 @@ const noSelectStyle: React.CSSProperties = {
 const prevent = (e: any) => {
   e.preventDefault();
 };
+
+/**
+ * Detecta teclado abierto (móvil) usando VisualViewport cuando existe.
+ * - thresholdPx evita falsos positivos por barras pequeñas.
+ */
+function useKeyboardVisible(thresholdPx = 140) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const vv = window.visualViewport;
+
+    const computeDiff = () => {
+      const vvHeight = vv?.height ?? window.innerHeight;
+      return window.innerHeight - vvHeight;
+    };
+
+    const update = () => {
+      const diff = computeDiff();
+      setVisible(diff > thresholdPx);
+    };
+
+    update();
+
+    if (!vv) {
+      window.addEventListener("resize", update);
+      return () => window.removeEventListener("resize", update);
+    }
+
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, [thresholdPx]);
+
+  return visible;
+}
 
 export default function BottomNav() {
   const location = useLocation();
@@ -183,7 +222,6 @@ export default function BottomNav() {
     startedRef.current = true;
     vibrateTiny();
 
-    // OJO: el hook cambiará status => useEffect emitirá listening=true automáticamente.
     start(
       ({ finalText }) => {
         if (finalText && finalText.trim()) {
@@ -203,11 +241,58 @@ export default function BottomNav() {
   const isTasksActive = pathname === "/tasks";
   const isIdeasActive = pathname === "/ideas";
 
+  /* ─────────────────────────────────────────────
+     ✅ OCULTAR NAVBAR CUANDO HAY TECLADO + CAMPO ENFOCADO (INDEX)
+  ───────────────────────────────────────────── */
+  const keyboardVisible = useKeyboardVisible(140);
+  const [fieldFocused, setFieldFocused] = useState(false);
+
+  useEffect(() => {
+    const isEditableEl = (el: Element | null) => {
+      if (!el) return false;
+      const node = el as HTMLElement;
+      if (node.closest("textarea, input, select, [contenteditable='true']"))
+        return true;
+      return false;
+    };
+
+    const updateFromActive = () => {
+      const ae = document.activeElement as Element | null;
+      setFieldFocused(isEditableEl(ae));
+    };
+
+    const onFocusIn = () => updateFromActive();
+
+    const onFocusOut = () => {
+      // Espera al próximo tick por si el foco salta a otro input
+      setTimeout(updateFromActive, 0);
+    };
+
+    document.addEventListener("focusin", onFocusIn);
+    document.addEventListener("focusout", onFocusOut);
+
+    // init
+    updateFromActive();
+
+    return () => {
+      document.removeEventListener("focusin", onFocusIn);
+      document.removeEventListener("focusout", onFocusOut);
+    };
+  }, []);
+
+  // Solo esconder en Index ("/") cuando hay teclado y un campo enfocado
+  const hideNav = pathname === "/" && keyboardVisible && fieldFocused;
+
   return (
     <nav
-      className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2"
+      className={[
+        "fixed bottom-4 left-1/2 z-50 -translate-x-1/2",
+        "remi-bottomnav",
+        hideNav ? "remi-bottomnav--hidden" : "",
+      ].join(" ")}
       style={noSelectStyle}
       onContextMenu={prevent}
+      aria-hidden={hideNav ? true : undefined}
     >
       <div
         className="flex items-center gap-4 rounded-full bg-white px-4 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
@@ -378,6 +463,17 @@ export default function BottomNav() {
             70% { transform: scale(1.25); opacity: 0.0; }
             100% { transform: scale(1.25); opacity: 0.0; }
           }
+
+          /* ✅ Animación/ocultación de la barra inferior sin romper translate-x de Tailwind */
+          .remi-bottomnav {
+            transition: transform 180ms ease, opacity 180ms ease;
+            will-change: transform, opacity;
+          }
+          .remi-bottomnav.remi-bottomnav--hidden {
+            --tw-translate-y: 140%;
+            opacity: 0;
+            pointer-events: none;
+          }
         `}
       </style>
     </nav>
@@ -418,9 +514,7 @@ function NavItem({ to, label, active, icon: Icon }: NavItemProps) {
       }}
     >
       <Icon
-        className={`w-6 h-6 ${
-          active ? "text-[#7d59c9]" : "text-neutral-800"
-        }`}
+        className={`w-6 h-6 ${active ? "text-[#7d59c9]" : "text-neutral-800"}`}
       />
       <span className="sr-only">{label}</span>
     </button>

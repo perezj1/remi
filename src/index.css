@@ -442,13 +442,14 @@
   border-radius: 18px;
   border: 1px solid var(--remi-border-soft);
   padding: 10px 12px;
-  font-size: 13px;
+  font-size: 16px;   /* ✅ evita el zoom en iOS */
   resize: none;
   min-height: 240px;
   margin-top: 10px;
-  background: #faf9ff;  
-  outline: none; 
+  background: #faf9ff;
+  outline: none;
 }
+
 
 /* chips para fechas */
 .remi-chip-row {
