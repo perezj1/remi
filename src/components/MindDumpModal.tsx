@@ -50,10 +50,6 @@ type Props = {
 
 /* ───────────────────────────────
    ✅ Normalización fuerte (para comparar)
-   - minúsculas
-   - sin acentos
-   - sin puntuación
-   - espacios colapsados
 ─────────────────────────────── */
 function stripDiacritics(s: string) {
   try {
@@ -65,7 +61,6 @@ function stripDiacritics(s: string) {
 function cleanForCompareWord(w: string) {
   const lower = (w || "").toLowerCase();
   const noDia = stripDiacritics(lower);
-  // quita puntuación y símbolos comunes, mantiene letras/números
   const noPunct = noDia.replace(/[^\p{L}\p{N}]+/gu, "");
   return noPunct;
 }
@@ -80,20 +75,12 @@ function splitWordsNorm(s: string) {
 function splitWordsPair(s: string) {
   const orig = splitWordsOriginal(s);
   const norm = orig.map(cleanForCompareWord);
-  // no filtramos orig aquí para poder reconstruir tail con las mismas posiciones;
-  // solo usamos norm filtrando vacíos en comparación mediante funciones de igualdad
   return { orig, norm };
 }
 function normStringForCompare(s: string) {
   return splitWordsNorm(s).join(" ").trim();
 }
-
-/* ───────────────────────────────
-   ✅ Delta seguro por palabras NORMALIZADAS,
-   pero devolviendo palabras ORIGINALES del NEXT
-─────────────────────────────── */
 function wordsEqualNorm(a: string[], b: string[]) {
-  // compara ignorando vacíos en norm
   const A = a.filter(Boolean);
   const B = b.filter(Boolean);
   if (A.length !== B.length) return false;
@@ -118,10 +105,7 @@ function deltaFromGrowingWithOrig(prevText: string, nextText: string) {
   if (!prevN.length) return next.orig.join(" ").trim();
   if (wordsEqualNorm(prevN, nextN)) return "";
 
-  // caso ideal: next empieza con prev
   if (startsWithNorm(nextN, prevN)) {
-    // necesitamos sacar las palabras originales correspondientes al tail.
-    // Para eso, recorremos next.norm (sin filtrar) y contamos cuántas “válidas” hemos consumido.
     let consume = prevN.length;
     const out: string[] = [];
     for (let i = 0; i < next.orig.length; i++) {
@@ -136,16 +120,13 @@ function deltaFromGrowingWithOrig(prevText: string, nextText: string) {
     return out.join(" ").trim();
   }
 
-  // retroceso => nada
   if (startsWithNorm(prevN, nextN)) return "";
 
-  // solape sufijo/prefijo
   const max = Math.min(prevN.length, nextN.length);
   for (let k = max; k >= 1; k--) {
     const prevSuffix = prevN.slice(-k);
     const nextPrefix = nextN.slice(0, k);
     if (wordsEqualNorm(prevSuffix, nextPrefix)) {
-      // tail = next desde k “palabras válidas” en adelante
       let consume = k;
       const out: string[] = [];
       for (let i = 0; i < next.orig.length; i++) {
@@ -161,7 +142,6 @@ function deltaFromGrowingWithOrig(prevText: string, nextText: string) {
     }
   }
 
-  // no seguro => no añadimos (evita duplicados masivos)
   return "";
 }
 
@@ -174,6 +154,19 @@ function getKeyboardOffsetPx() {
   if (!vv) return 0;
   const offset = window.innerHeight - (vv.height + vv.offsetTop);
   return Math.max(0, Math.round(offset));
+}
+
+/* ───────────────────────────────
+   ✅ Haptics (vibrate) si existe
+─────────────────────────────── */
+function hapticTick(ms = 10) {
+  try {
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      (navigator as any).vibrate?.(ms);
+    }
+  } catch {
+    // ignore
+  }
 }
 
 export default function MindDumpModal({
@@ -200,11 +193,15 @@ export default function MindDumpModal({
   const recognitionRef = useRef<any | null>(null);
   const speechSessionIdRef = useRef(0);
 
-  // ✅ por cada índice de resultado, recordamos lo último “final” insertado
+  // ✅ por índice de resultado (dedupe robusto)
   const finalByIndexRef = useRef<Record<number, string>>({});
 
-  // ✅ teclado real
+  // ✅ teclado real (FAB guardar)
   const [kbdOffset, setKbdOffset] = useState(0);
+
+  // ✅ ripple/pressed UI
+  const [talkPressed, setTalkPressed] = useState(false);
+  const [rippleTick, setRippleTick] = useState(0);
 
   const ios = useMemo(() => isIOS(), []);
   const android = useMemo(() => isAndroid(), []);
@@ -248,6 +245,7 @@ export default function MindDumpModal({
     if (!rec) {
       setListening(false);
       setInterim("");
+      setTalkPressed(false);
       return;
     }
     try {
@@ -258,6 +256,7 @@ export default function MindDumpModal({
       recognitionRef.current = null;
       setListening(false);
       setInterim("");
+      setTalkPressed(false);
     }
   };
 
@@ -280,7 +279,6 @@ export default function MindDumpModal({
       rec.interimResults = true;
       rec.lang = speechLangByUiLang[uiLang] || "es-ES";
 
-      // ✅ reset dedupe por sesión
       finalByIndexRef.current = {};
 
       rec.onresult = (event: any) => {
@@ -300,9 +298,6 @@ export default function MindDumpModal({
         }
         setInterim(interimNow);
 
-        // ✅ procesar solo índices desde resultIndex
-        let appendedAnything = false;
-
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const res = event.results[i];
           if (!res || !res.isFinal) continue;
@@ -312,11 +307,8 @@ export default function MindDumpModal({
           if (!nextFinal) continue;
 
           const prevFinalForIndex = finalByIndexRef.current[i] ?? "";
-
-          // delta seguro (comparación normalizada, salida original)
           const delta = deltaFromGrowingWithOrig(prevFinalForIndex, nextFinal);
 
-          // avanzamos lo que sabemos del índice (aunque delta sea vacío)
           finalByIndexRef.current[i] = nextFinal;
 
           if (!delta) continue;
@@ -325,10 +317,12 @@ export default function MindDumpModal({
             const out = prev ?? "";
             const base = out.trim().length === 0 ? BULLET : out;
 
-            // ✅ guard extra: si el final ya termina con ese delta (normalizado), no lo repitas
             const baseNorm = normStringForCompare(base);
             const deltaNorm = normStringForCompare(delta);
-            if (deltaNorm && (baseNorm.endsWith(deltaNorm) || baseNorm.endsWith(" " + deltaNorm))) {
+            if (
+              deltaNorm &&
+              (baseNorm.endsWith(deltaNorm) || baseNorm.endsWith(" " + deltaNorm))
+            ) {
               return base;
             }
 
@@ -346,22 +340,21 @@ export default function MindDumpModal({
 
             return base + delta;
           });
-
-          appendedAnything = true;
         }
 
-        // ✅ NO hacemos focus del textarea jamás (evita teclado)
-        if (appendedAnything) {
-          // nada
-        }
+        // ✅ NO focus => no teclado
       };
 
       rec.onerror = (e: any) => {
         const code = String(e?.error ?? "");
         if (code === "not-allowed" || code === "service-not-allowed") {
-          toast.error(safeT("capture.toast.micDenied", "Permiso de micrófono denegado."));
+          toast.error(
+            safeT("capture.toast.micDenied", "Permiso de micrófono denegado.")
+          );
         } else if (code === "no-speech") {
-          toast.message(safeT("capture.toast.noSpeech", "No detecté voz. Prueba de nuevo."));
+          toast.message(
+            safeT("capture.toast.noSpeech", "No detecté voz. Prueba de nuevo.")
+          );
         } else {
           toast.error(safeT("capture.toast.dictationError", "Error de dictado."));
         }
@@ -371,22 +364,27 @@ export default function MindDumpModal({
         recognitionRef.current = null;
         setListening(false);
         setInterim("");
+        setTalkPressed(false);
       };
 
       rec.onend = () => {
         recognitionRef.current = null;
         setListening(false);
         setInterim("");
+        setTalkPressed(false);
       };
 
       rec.start();
       setListening(true);
       setInterim("");
     } catch {
-      toast.error(safeT("capture.toast.dictationStartError", "No pude iniciar el dictado."));
+      toast.error(
+        safeT("capture.toast.dictationStartError", "No pude iniciar el dictado.")
+      );
       recognitionRef.current = null;
       setListening(false);
       setInterim("");
+      setTalkPressed(false);
     }
   };
 
@@ -395,6 +393,12 @@ export default function MindDumpModal({
     e.preventDefault();
     e.stopPropagation();
 
+    // ✅ haptics + ripple
+    hapticTick(12);
+    setTalkPressed(true);
+    setRippleTick((n) => n + 1);
+
+    // ✅ no teclado al hablar
     blurTextarea();
 
     try {
@@ -407,6 +411,9 @@ export default function MindDumpModal({
 
   const handleTalkUp = (e?: ReactPointerEvent<HTMLButtonElement>) => {
     if (!showTalkButton) return;
+
+    setTalkPressed(false);
+
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -422,13 +429,18 @@ export default function MindDumpModal({
     try {
       if (!navigator.clipboard?.readText) {
         toast.error(
-          safeT("capture.toast.pasteUnavailable", "No puedo pegar aquí (portapapeles no disponible).")
+          safeT(
+            "capture.toast.pasteUnavailable",
+            "No puedo pegar aquí (portapapeles no disponible)."
+          )
         );
         return;
       }
       const clip = await navigator.clipboard.readText();
       if (!clip?.trim()) {
-        toast.message(safeT("capture.toast.clipboardEmpty", "No hay texto en el portapapeles."));
+        toast.message(
+          safeT("capture.toast.clipboardEmpty", "No hay texto en el portapapeles.")
+        );
         return;
       }
       setText((prev) => (prev ? `${prev}\n${clip}` : clip));
@@ -461,15 +473,14 @@ export default function MindDumpModal({
     onClose();
   };
 
-  // sincroniza initialText
   useEffect(() => {
     if (typeof initialTextNonce === "number") setText(initialText ?? "");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialTextNonce]);
 
-  // sincronizar idioma UI global si existe setter
   useEffect(() => {
-    const setLangFn = i18n?.setLang ?? i18n?.setUiLang ?? i18n?.setLanguage ?? null;
+    const setLangFn =
+      i18n?.setLang ?? i18n?.setUiLang ?? i18n?.setLanguage ?? null;
     if (typeof setLangFn === "function") {
       try {
         setLangFn(uiLang);
@@ -478,7 +489,6 @@ export default function MindDumpModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uiLang]);
 
-  // cerrar dropdown al click fuera
   useEffect(() => {
     if (!langOpen) return;
     const onDown = (e: MouseEvent | TouchEvent) => {
@@ -495,24 +505,20 @@ export default function MindDumpModal({
     };
   }, [langOpen]);
 
-  // si el modal se cierra, paramos dictado
   useEffect(() => {
     if (!open) stopDictation();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // cleanup al desmontar
   useEffect(() => {
     return () => stopDictation();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ✅ detectar teclado real (para FAB)
   useEffect(() => {
     if (!open) return;
 
     const update = () => setKbdOffset(getKeyboardOffsetPx());
-
     update();
 
     const vv = window.visualViewport;
@@ -539,12 +545,43 @@ export default function MindDumpModal({
   const showSaveFab = isKeyboardOpen;
   const saveFabBottomPx = Math.max(14, kbdOffset + 14);
 
+  const showTalkActiveRing = listening;
+  const showTalkRipple = talkPressed;
+
   return (
     <div className="fixed inset-0 z-[1000]" onContextMenu={(e) => e.preventDefault()}>
+      {/* ✅ estilos del ripple/anillo */}
+      <style>{`
+        @keyframes remiRipple {
+          from { transform: scale(0); opacity: .35; }
+          to   { transform: scale(2.2); opacity: 0; }
+        }
+        .remi-ripple {
+          position: absolute;
+          inset: -10px;
+          border-radius: 999px;
+          background: rgba(125,89,201,0.22);
+          animation: remiRipple .55s ease-out;
+          pointer-events: none;
+        }
+        @keyframes remiRingPulse {
+          0%   { transform: scale(0.96); opacity: .25; }
+          50%  { transform: scale(1.06); opacity: .45; }
+          100% { transform: scale(0.96); opacity: .25; }
+        }
+        .remi-ring {
+          position: absolute;
+          inset: -6px;
+          border-radius: 999px;
+          border: 2px solid rgba(125,89,201,0.35);
+          animation: remiRingPulse 1.1s ease-in-out infinite;
+          pointer-events: none;
+        }
+      `}</style>
+
       <div className="absolute inset-0" style={{ background: "#ffffff" }} />
 
       <div className="absolute inset-0">
-        {/* top bar */}
         <div
           className="sticky top-0 z-10"
           style={{
@@ -591,7 +628,6 @@ export default function MindDumpModal({
           </div>
         </div>
 
-        {/* body */}
         <div className="px-5 pt-5 pb-44">
           <textarea
             ref={textareaRef}
@@ -609,12 +645,14 @@ export default function MindDumpModal({
 
           {ios && (
             <div className="mt-3 text-xs" style={{ color: REMI_SUB }}>
-              {safeT("capture.iosKeyboardMicHint", "En iPhone: usa el micrófono del teclado para dictar.")}
+              {safeT(
+                "capture.iosKeyboardMicHint",
+                "En iPhone: usa el micrófono del teclado para dictar."
+              )}
             </div>
           )}
         </div>
 
-        {/* bottom flotante */}
         <div
           className="fixed left-0 right-0"
           style={{
@@ -631,7 +669,6 @@ export default function MindDumpModal({
               position: "relative",
             }}
           >
-            {/* dropdown idioma */}
             <div
               data-lang
               data-no-focus
@@ -716,7 +753,6 @@ export default function MindDumpModal({
               )}
             </div>
 
-            {/* pill flotante */}
             <div
               style={{
                 background: "rgba(255,255,255,0.92)",
@@ -760,7 +796,7 @@ export default function MindDumpModal({
                   </div>
                 </div>
 
-                {/* Hablar */}
+                {/* Hablar (con haptics + ripple + ring) */}
                 <div className="flex flex-col items-center justify-center gap-1.5">
                   {showTalkButton ? (
                     <>
@@ -787,13 +823,21 @@ export default function MindDumpModal({
                           WebkitUserSelect: "none",
                           touchAction: "none",
                           cursor: "pointer",
+                          position: "relative",
+                          overflow: "hidden",
                         }}
                         aria-pressed={listening}
                         title={safeT("capture.speakHold", "Mantén pulsado para hablar")}
                         aria-label={safeT("capture.speakHold", "Mantén pulsado para hablar")}
                       >
-                        <Mic className="h-5 w-5" />
+                        {showTalkActiveRing && <span className="remi-ring" />}
+                        {showTalkRipple && <span key={rippleTick} className="remi-ripple" />}
+
+                        <span style={{ position: "relative", zIndex: 2, display: "flex" }}>
+                          <Mic className="h-5 w-5" />
+                        </span>
                       </button>
+
                       <div style={{ fontSize: 11, fontWeight: 800, color: REMI_PURPLE }}>
                         {safeT("common.speak", "Hablar")}
                       </div>
@@ -840,7 +884,7 @@ export default function MindDumpModal({
           </div>
         </div>
 
-        {/* ✅ FAB Guardar encima del teclado (solo si teclado real está abierto) */}
+        {/* FAB Guardar encima del teclado */}
         {showSaveFab && (
           <button
             data-no-focus
