@@ -30,6 +30,24 @@ export interface MentalDumpModalProps {
   autoPreview?: boolean;
 }
 
+// ---------------------------------------------------------------------------
+// ✅ LIMPIEZA de bullets visuales "• " (NO deben guardarse como texto)
+// ---------------------------------------------------------------------------
+function stripVisualBullets(raw: string): string {
+  const normalized = String(raw ?? "").replace(/\r\n/g, "\n");
+  return normalized.replace(/^\s*•\s*/gm, "").trim();
+}
+
+function sanitizeForSplit(raw: string): string {
+  // 1) quitar bullets visuales
+  let s = stripVisualBullets(raw);
+  // 2) normalizar saltos múltiples
+  s = s.replace(/\n{3,}/g, "\n\n");
+  // 3) quitar espacios antes de salto
+  s = s.replace(/[ \t]+\n/g, "\n");
+  return s.trim();
+}
+
 // Verbos de acción para clasificar como "tarea" (de momento en ES)
 const ACTION_VERBS = [
   "llamar",
@@ -324,17 +342,16 @@ function detectReminderSignal(
         /\b(todos\s+los\s+d[ií]as\s+hasta|cada\s+d[ií]a\s+hasta|diariamente\s+hasta|a\s+diario\s+hasta|every\s+day\s+until|each\s+day\s+until|daily\s+until|jeden\s+tag\s+bis|t[äa]glich\s+bis|taeglich\s+bis)\b/i
       )?.[0] ?? null;
 
-    // fallback: si dice “cada día” sin “hasta”, igualmente sirve como señal
     const daily =
-      s.match(/\b(cada\s+d[ií]a|a\s+diario|daily|every\s+day|t[äa]glich|taeglich|jeden\s+tag)\b/i)?.[0] ??
-      null;
+      s.match(
+        /\b(cada\s+d[ií]a|a\s+diario|daily|every\s+day|t[äa]glich|taeglich|jeden\s+tag)\b/i
+      )?.[0] ?? null;
 
     return until ?? daily;
   }
 
   return null;
 }
-
 
 function detectWhyForText(text: string): {
   kind: PreviewKind;
@@ -456,10 +473,11 @@ export default function MentalDumpModal({
   }, [open]);
 
   const splitItems = (text: string) => {
-    if (!text.trim()) return [];
-    return text
+    const cleaned = sanitizeForSplit(text);
+    if (!cleaned) return [];
+    return cleaned
       .split(/\n|,/g)
-      .map((part) => part.trim())
+      .map((part) => stripVisualBullets(part).trim())
       .filter((part) => part.length > 0);
   };
 
@@ -521,7 +539,9 @@ export default function MentalDumpModal({
     | "detectedReminderText"
     | "detectedHabitText"
   > {
-    const parsed = parseDateTimeFromText(text, lang as any, new Date()) as any;
+    const cleanedText = stripVisualBullets(text).trim();
+
+    const parsed = parseDateTimeFromText(cleanedText, lang as any, new Date()) as any;
     const { dueDateISO, repeatHint, reminderHint } = parsed;
 
     const dueDate = dueDateISO ?? null;
@@ -539,15 +559,15 @@ export default function MentalDumpModal({
       else reminderMode = "DAILY_UNTIL_DUE";
     }
 
-    const detectedDateText = detectDateSignal(text);
-    const detectedTimeText = detectTimeSignal(text);
+    const detectedDateText = detectDateSignal(cleanedText);
+    const detectedTimeText = detectTimeSignal(cleanedText);
 
-    const reminderDetectedFromText = detectReminderSignal(text, reminderHint);
+    const reminderDetectedFromText = detectReminderSignal(cleanedText, reminderHint);
     const detectedReminderText = dueDate
       ? reminderDetectedFromText ?? t("mentalDump.detectedDefault")
       : null;
 
-    const detectedHabitText = detectHabitSignal(text);
+    const detectedHabitText = detectHabitSignal(cleanedText);
 
     return {
       dueDate,
@@ -566,7 +586,7 @@ export default function MentalDumpModal({
     let idCounter = 1;
 
     for (const raw of parts) {
-      const original = raw.trim();
+      const original = stripVisualBullets(raw).trim();
       if (!original) continue;
 
       const det = detectWhyForText(original);
@@ -629,7 +649,8 @@ export default function MentalDumpModal({
   useEffect(() => {
     if (!open) return;
 
-    const incoming = (initialText ?? "").trim();
+    const incomingRaw = initialText ?? "";
+    const incoming = stripVisualBullets(incomingRaw).trim(); // ✅ quita "• " si venía del mic
     if (!incoming) return;
 
     const nonce = typeof initialTextNonce === "number" ? initialTextNonce : null;
@@ -694,7 +715,7 @@ export default function MentalDumpModal({
         };
       }
 
-      const baseText = (p.title?.trim() || p.original).trim();
+      const baseText = stripVisualBullets((p.title?.trim() || p.original).trim());
       const fields = computeTaskFieldsFromText(baseText);
 
       return {
@@ -845,14 +866,15 @@ export default function MentalDumpModal({
         if (!item.selected) continue;
 
         if (item.kind === "task") {
-          await onCreateTask(
-            item.title.trim() || item.original,
-            item.dueDate,
-            item.reminderMode,
-            item.repeatType
-          );
+          const title = stripVisualBullets(item.title.trim() || item.original).trim();
+          if (!title) continue;
+
+          await onCreateTask(title, item.dueDate, item.reminderMode, item.repeatType);
         } else {
-          await onCreateIdea(item.title.trim() || item.original);
+          const title = stripVisualBullets(item.title.trim() || item.original).trim();
+          if (!title) continue;
+
+          await onCreateIdea(title);
         }
       }
 
@@ -923,16 +945,14 @@ export default function MentalDumpModal({
                       )}`}
                 </p>
 
-                {/* ✅ sin “Cancelar” (solo X para cerrar) */}
                 <button
-  type="submit"
-  className="w-full inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:opacity-60"
-  style={{ background: "#7d59c9" }}
-  disabled={isSubmitting || items.length === 0}
->
-  {primaryLabel}
-</button>
-
+                  type="submit"
+                  className="w-full inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:opacity-60"
+                  style={{ background: "#7d59c9" }}
+                  disabled={isSubmitting || items.length === 0}
+                >
+                  {primaryLabel}
+                </button>
               </form>
             </>
           ) : (
@@ -960,11 +980,7 @@ export default function MentalDumpModal({
                   const ideaText = "#92400E";
 
                   return (
-                    <div
-                      key={item.id}
-                      className="rounded-2xl border border-slate-100 bg-slate-50"
-                    >
-                      {/* ✅ IMPORTANTE: ya no es <button> para poder meter toggles dentro sin HTML inválido */}
+                    <div key={item.id} className="rounded-2xl border border-slate-100 bg-slate-50">
                       <div
                         role="button"
                         tabIndex={0}
@@ -1050,7 +1066,6 @@ export default function MentalDumpModal({
                               )}
                             </div>
 
-                            {/* ✅ DERECHA: toggle Guardar + chevron */}
                             <div className="mt-0.5 flex items-center gap-3 flex-shrink-0">
                               <ToggleSwitch
                                 checked={item.selected}
@@ -1107,9 +1122,7 @@ export default function MentalDumpModal({
                                   onClick={() => setItemKind(item.id, "idea")}
                                   className={[
                                     "rounded-full px-2.5 py-1 text-[11px] font-medium transition",
-                                    item.kind === "idea"
-                                      ? "shadow-sm"
-                                      : "text-slate-600 hover:bg-slate-50",
+                                    item.kind === "idea" ? "shadow-sm" : "text-slate-600 hover:bg-slate-50",
                                   ].join(" ")}
                                   style={
                                     item.kind === "idea"
@@ -1138,7 +1151,8 @@ export default function MentalDumpModal({
                               type="text"
                               value={item.title}
                               onChange={(e) => {
-                                const value = e.target.value;
+                                const valueRaw = e.target.value;
+                                const value = valueRaw; // (aquí no quitamos bullets para no “saltar” el cursor; se limpian al guardar)
 
                                 setPreviewItems((prev) => {
                                   if (!prev) return prev;
@@ -1163,9 +1177,7 @@ export default function MentalDumpModal({
                                         ? p.detectedReminderText
                                         : fields.detectedReminderText;
 
-                                      const repeatType = p.habitLocked
-                                        ? p.repeatType
-                                        : fields.repeatType;
+                                      const repeatType = p.habitLocked ? p.repeatType : fields.repeatType;
                                       const detectedHabitText = p.habitLocked
                                         ? p.detectedHabitText
                                         : fields.detectedHabitText;
@@ -1218,11 +1230,7 @@ export default function MentalDumpModal({
                                     </div>
                                     <input
                                       type="date"
-                                      value={
-                                        item.dueDate
-                                          ? toLocalYYYYMMDD(new Date(item.dueDate))
-                                          : ""
-                                      }
+                                      value={item.dueDate ? toLocalYYYYMMDD(new Date(item.dueDate)) : ""}
                                       onChange={(e) => {
                                         const v = e.target.value;
                                         if (!v) {
@@ -1241,9 +1249,7 @@ export default function MentalDumpModal({
                                       className="w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#8F31F3]"
                                     />
                                     <div className="text-[11px] text-slate-500">
-                                      <span className="font-medium">
-                                        {t("mentalDump.detectedLabel")}{" "}
-                                      </span>
+                                      <span className="font-medium">{t("mentalDump.detectedLabel")} </span>
                                       <span>{detectedDate}</span>
                                     </div>
                                   </div>
@@ -1255,16 +1261,12 @@ export default function MentalDumpModal({
                                     <input
                                       type="time"
                                       value={item.dueDate ? toLocalHHMM(new Date(item.dueDate)) : ""}
-                                      onChange={(e) =>
-                                        setTaskTimeFromPicker(item.id, e.target.value)
-                                      }
+                                      onChange={(e) => setTaskTimeFromPicker(item.id, e.target.value)}
                                       disabled={!item.dueDate}
                                       className="w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-900 disabled:bg-slate-100 disabled:text-slate-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#8F31F3]"
                                     />
                                     <div className="text-[11px] text-slate-500">
-                                      <span className="font-medium">
-                                        {t("mentalDump.detectedLabel")}{" "}
-                                      </span>
+                                      <span className="font-medium">{t("mentalDump.detectedLabel")} </span>
                                       <span>{detectedTime}</span>
                                     </div>
                                   </div>
@@ -1276,30 +1278,18 @@ export default function MentalDumpModal({
                                   </div>
                                   <select
                                     value={item.dueDate ? item.reminderMode : "NONE"}
-                                    onChange={(e) =>
-                                      setTaskReminder(item.id, e.target.value as ReminderMode)
-                                    }
+                                    onChange={(e) => setTaskReminder(item.id, e.target.value as ReminderMode)}
                                     disabled={!item.dueDate}
                                     className="w-full rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 disabled:bg-slate-100 disabled:text-slate-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#8F31F3]"
                                   >
                                     <option value="NONE">{t("mentalDump.reminderOff")}</option>
-                                    <option value="DAILY_UNTIL_DUE">
-                                      {t("mentalDump.reminderDailyUntilDue")}
-                                    </option>
-                                    <option value="DAY_BEFORE_AND_DUE">
-                                      {t("mentalDump.reminderDayBeforeAndDue")}
-                                    </option>
+                                    <option value="DAILY_UNTIL_DUE">{t("mentalDump.reminderDailyUntilDue")}</option>
+                                    <option value="DAY_BEFORE_AND_DUE">{t("mentalDump.reminderDayBeforeAndDue")}</option>
                                   </select>
 
                                   <div className="text-[11px] text-slate-500">
-                                    <span className="font-medium">
-                                      {t("mentalDump.detectedLabel")}{" "}
-                                    </span>
-                                    <span>
-                                      {item.dueDate
-                                        ? detectedReminder
-                                        : t("mentalDump.detectedDash")}
-                                    </span>
+                                    <span className="font-medium">{t("mentalDump.detectedLabel")} </span>
+                                    <span>{item.dueDate ? detectedReminder : t("mentalDump.detectedDash")}</span>
                                   </div>
                                 </div>
 
@@ -1309,7 +1299,6 @@ export default function MentalDumpModal({
                                       {t("mentalDump.habitLabel")}
                                     </div>
 
-                                    {/* ✅ Off/On como toggle */}
                                     <div onClick={(e) => e.stopPropagation()}>
                                       <ToggleSwitch
                                         checked={item.repeatType !== "none"}
@@ -1327,12 +1316,7 @@ export default function MentalDumpModal({
                                   {item.repeatType !== "none" && (
                                     <select
                                       value={item.repeatType}
-                                      onChange={(e) =>
-                                        setHabitRepeatType(
-                                          item.id,
-                                          e.target.value as RepeatType
-                                        )
-                                      }
+                                      onChange={(e) => setHabitRepeatType(item.id, e.target.value as RepeatType)}
                                       className="w-full rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#8F31F3]"
                                     >
                                       <option value="daily">{t("mentalDump.habitDaily")}</option>
@@ -1343,9 +1327,7 @@ export default function MentalDumpModal({
                                   )}
 
                                   <div className="text-[11px] text-slate-500">
-                                    <span className="font-medium">
-                                      {t("mentalDump.habitDetectedLabel")}{" "}
-                                    </span>
+                                    <span className="font-medium">{t("mentalDump.habitDetectedLabel")} </span>
                                     <span>{detectedHabit}</span>
                                   </div>
                                 </div>
@@ -1354,9 +1336,7 @@ export default function MentalDumpModal({
                                   <span className="font-medium">{t("today.dueLabel")}</span>{" "}
                                   {formatDateTime(item.dueDate)}
                                   {" · "}
-                                  <span className="font-medium">
-                                    {t("mentalDump.reminderShortLabel")}
-                                  </span>{" "}
+                                  <span className="font-medium">{t("mentalDump.reminderShortLabel")}</span>{" "}
                                   {formatReminderMode(item.reminderMode)}
                                   {" · "}
                                   <span className="font-medium">{formatHabit(item.repeatType)}</span>
@@ -1373,29 +1353,17 @@ export default function MentalDumpModal({
 
               <div className="pt-2">
                 <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-                  {/* ✅ BOTÓN PRINCIPAL GRANDE */}
                   <button
-  type="submit"
-  className="w-full inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:opacity-60"
-  style={{ background: "#7d59c9" }}
-  disabled={isSubmitting || !hasSelected}
->
-  {primaryLabel}
-</button>
-
-                  {/* ❌ Cancelar oculto (comentado a propósito) */}
-                  {/*
-                  <button
-                    type="button"
-                    onClick={handleInternalClose}
-                    className="w-full inline-flex items-center justify-center rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
-                    disabled={isSubmitting}
+                    type="submit"
+                    className="w-full inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:opacity-60"
+                    style={{ background: "#7d59c9" }}
+                    disabled={isSubmitting || !hasSelected}
                   >
-                    {t("common.cancel")}
+                    {primaryLabel}
                   </button>
-                  */}
 
-                  {/* ✅ DEBAJO: volver a editar */}
+                  {/* ✅ “volver a editar texto” oculto a propósito */}
+                  {/*
                   <button
                     type="button"
                     onClick={() => {
@@ -1407,6 +1375,7 @@ export default function MentalDumpModal({
                   >
                     {t("mentalDump.previewBackToEdit")}
                   </button>
+                  */}
                 </form>
               </div>
             </>

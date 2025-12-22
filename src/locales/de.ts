@@ -119,6 +119,8 @@ appName: "REMI",
     close: "Schliessen",
     confirm: "Bestätigen",
     loading: "Laden...",
+    paste: "Einfügen",
+    speak: "Sprechen",
 },
 
   index: {
@@ -140,6 +142,9 @@ appName: "REMI",
     holdToTalk: "Gedrückt halten",
   listening: "Hört zu…",
   dictationNotSupported: "Diktat nicht unterstützt",
+  tasks: "Aufgaben",
+    ideas: "Ideen",
+
 },
 
 installPrompt: {
@@ -226,6 +231,27 @@ capture: {
     3: "Tipp: Halte das Mikrofon gedrückt, um zu diktieren",
   },
 
+ paste: {
+    title: "Zuletzt kopierten Text einfügen?",
+    sub: "Tippe auf EINFÜGEN, um es hier einzusetzen.",
+    button: "EINFÜGEN",
+    pasting: "Wird eingefügt…",
+    toastUnavailable: "Einfügen ist hier nicht verfügbar. Lange drücken und manuell einfügen.",
+    toastEmpty: "Zwischenablage ist leer (oder ich kann sie nicht lesen).",
+    toastDenied: "Ich kann die Zwischenablage nicht lesen. Lange drücken und manuell einfügen.",
+  },
+
+toast: {
+      micDenied: "Mikrofonzugriff verweigert.",
+      noSpeech: "Keine Sprache erkannt. Versuch es erneut.",
+      dictationError: "Diktierfehler.",
+      dictationStartError: "Diktat konnte nicht gestartet werden.",
+      pasteUnavailable: "Einfügen nicht möglich (Zwischenablage nicht verfügbar).",
+      clipboardEmpty: "Die Zwischenablage ist leer.",
+      pasteError: "Kein Zugriff auf die Zwischenablage. Halte gedrückt und füge ein.",
+      writeSomething: "Schreib zuerst etwas.",
+    },
+
  textareaPlaceholderIOS:
     "iPhone/iPad: Nutze das Mikrofon der Tastatur zum Diktieren.\n" +
     "Falls es fehlt: Einstellungen > Allgemein > Tastatur > Diktat aktivieren.\n" +
@@ -238,6 +264,9 @@ capture: {
   timeMinute: "Minuten",
   dateTimeLabel: "Datum und Uhrzeit",
   dateTimeNoneShort: "Kein Datum und keine Uhrzeit",
+  placeholder: "Hier schreiben…",
+  iosKeyboardMicHint: "Auf dem iPhone: Verwende das Mikrofon der Tastatur zum Sprechen.",
+speakHold: "Gedrückt halten zum Sprechen",
 
   title: "Leere deinen Kopf",
   subtitle: "Sprich, schreibe oder füge Text ein. Remi kümmert sich darum.",
@@ -346,6 +375,11 @@ tasks: {
   addTask: "Aufgabe hinzufügen",
   streak: "Serie",
   menuInstallApp: "App installieren",
+  actionDoneTitle: "Als erledigt markieren",
+  actionPostpone1d: "+1",
+  actionPostpone1dTitle: "Verschieben: 1 Tag zur Fälligkeit hinzufügen",
+  actionDone: " ",
+  
 
   greeting: "Hallo, {{name}} 👋",
   tasksToday: "Du hast {{count}} aktive Aufgaben",

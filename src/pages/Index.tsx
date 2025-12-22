@@ -25,36 +25,20 @@ import {
 } from "@/lib/brainItemsApi";
 import { supabase } from "@/integrations/supabase/client";
 import { registerPushSubscription } from "@/lib/registerPush";
-import CaptureModal from "@/components/CaptureModal";
+
+// ✅ modal de “Vacía tu mente”
+import MindDumpModal from "@/components/MindDumpModal";
+
+// ✅ modal de revisión/creación
 import MentalDumpModal from "@/components/MentalDumpModal";
+
 import { SHARE_DRAFT_KEY } from "@/pages/ShareTarget";
-import {
-  ListTodo,
-  Check,
-  User,
-  Share2,
-  Smartphone,
-  CalendarPlus,
-} from "lucide-react";
+import { ListTodo, Check, User, Share2, Smartphone, CalendarPlus } from "lucide-react";
 
 const AVATAR_KEY = "remi_avatar";
 
-// ✅ debe coincidir con BottomNav.tsx
+// ✅ debe coincidir con BottomNav.tsx (por si llega texto dictado desde otra pantalla)
 const NAV_DICTATION_KEY = "remi_nav_dictation_pending_v1";
-
-function formatDueDiff(dueDate: string | null): string | null {
-  if (!dueDate) return null;
-  const now = new Date();
-  const due = new Date(dueDate);
-  const diffMs = due.getTime() - now.getTime();
-  const diffHours = diffMs / (1000 * 60 * 60);
-
-  if (diffHours <= -1) return "Vencida";
-  if (diffHours < 0) return "Ahora";
-  if (diffHours < 24) return `${Math.round(diffHours)} h`;
-  const diffDays = Math.round(diffHours / 24);
-  return `${diffDays} d`;
-}
 
 type DateGroup = {
   key: string;
@@ -73,52 +57,13 @@ function isSameDay(a: Date, b: Date): boolean {
   );
 }
 
-type ActionPillProps = {
-  label: string;
-  title: string;
-  icon: JSX.Element;
-  onClick: () => void;
-};
-
-function ActionPill({ label, title, icon, onClick }: ActionPillProps) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      aria-label={title}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 8,
-        height: 30,
-        padding: "0 10px",
-        borderRadius: 999,
-        border: "1px solid rgba(143,49,243,0.30)",
-        background: "rgba(143,49,243,0.10)",
-        color: "#7d59c9",
-        cursor: "pointer",
-        fontSize: 11,
-        fontWeight: 600,
-        transition: "transform 0.08s ease, box-shadow 0.15s ease",
-        boxShadow: "0 6px 16px rgba(15,23,42,0.06)",
-        userSelect: "none",
-        whiteSpace: "nowrap",
-      }}
-      onMouseDown={(e) => {
-        (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.98)";
-      }}
-      onMouseUp={(e) => {
-        (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)";
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)";
-      }}
-    >
-      <span style={{ display: "inline-flex", alignItems: "center" }}>{icon}</span>
-      <span style={{ lineHeight: 1 }}>{label}</span>
-    </button>
-  );
+function isShareEntry(search: string): boolean {
+  try {
+    const params = new URLSearchParams(search);
+    return params.get("shared") === "1";
+  } catch {
+    return false;
+  }
 }
 
 export default function TodayPage() {
@@ -131,15 +76,13 @@ export default function TodayPage() {
   const [ideas, setIdeas] = useState<BrainItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [captureOpen, setCaptureOpen] = useState(false);
+  // ✅ modal inicial (MindDumpModal)
+  const [mindDumpOpen, setMindDumpOpen] = useState(false);
+  const [mindDumpInitialText, setMindDumpInitialText] = useState<string>("");
+  const [mindDumpInitialNonce, setMindDumpInitialNonce] = useState(0);
 
-  // ✅ prefill específico para el CaptureModal flotante (mic / botón central)
-  const [captureInitialText, setCaptureInitialText] = useState<string | null>(null);
-  const [captureInitialNonce, setCaptureInitialNonce] = useState(0);
-
+  // ✅ modal de revisión
   const [mentalDumpOpen, setMentalDumpOpen] = useState(false);
-
-  // ✅ texto para abrir MentalDumpModal directamente en preview
   const [mentalDumpInitialText, setMentalDumpInitialText] = useState<string>("");
   const [mentalDumpInitialNonce, setMentalDumpInitialNonce] = useState(0);
 
@@ -148,36 +91,71 @@ export default function TodayPage() {
   const [statusSummary, setStatusSummary] =
     useState<RemiStatusSummary | null>(null);
 
-  // ✅ Share draft -> prefill en CaptureModal (embebido y/o fallback)
-  const [shareDraftText, setShareDraftText] = useState<string | null>(null);
-  const [shareDraftNonce, setShareDraftNonce] = useState(0);
-
   const [showPushModal, setShowPushModal] = useState(false);
   const [registeringPush, setRegisteringPush] = useState(false);
 
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
 
-  const [filter, setFilter] = useState<FilterMode>("TODAY");
+  // ✅ evita que el “auto-open” abra un modal vacío justo después de “share” (replace URL)
+  const skipNextAutoOpenRef = useRef(false);
+
+  // ✅ Orden requerido: Todo (default), Hoy, Semana, Sin fecha
+  const [filter, setFilter] = useState<FilterMode>("ALL");
 
   const activeTasksCount = tasks.length;
 
-  const openReviewFromCapture = (text: string) => {
+  // ✅ MindDump -> abre revisión (MentalDumpModal)
+  const openReviewFromMindDump = (text: string) => {
     setMentalDumpInitialText(text);
     setMentalDumpInitialNonce((n) => n + 1);
     setMentalDumpOpen(true);
-    setCaptureOpen(false);
+    setMindDumpOpen(false);
   };
+
+  // ✅ Auto-open del MindDumpModal al entrar en "/"
+  // - NO lo dispares si vienes de share (?shared=1) -> lo maneja el effect de share
+  // - NO lo dispares si hay texto pendiente (share/dictado) -> lo maneja el handler específico
+  // - NO lo dispares tras un replace provocado por share (skipNextAutoOpenRef)
+  useEffect(() => {
+    if (location.pathname !== "/") return;
+    if (typeof window === "undefined") return;
+
+    if (isShareEntry(location.search)) return;
+
+    if (skipNextAutoOpenRef.current) {
+      skipNextAutoOpenRef.current = false;
+      return;
+    }
+
+    // Si hay texto pendiente (share/dictado), no abras vacío primero.
+    try {
+      const hasShareDraft = !!sessionStorage.getItem(SHARE_DRAFT_KEY);
+      if (hasShareDraft) return;
+    } catch {}
+    try {
+      const hasNavDictation = !!sessionStorage.getItem(NAV_DICTATION_KEY);
+      if (hasNavDictation) return;
+    } catch {}
+
+    setMindDumpInitialText("");
+    setMindDumpInitialNonce((n) => n + 1);
+    setMindDumpOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.key, location.pathname, location.search]);
 
   // ---------- Leer draft compartido cuando llegamos desde /share-target ----------
   useEffect(() => {
     if (!user || typeof window === "undefined") return;
 
-    const params = new URLSearchParams(location.search);
-    const hasSharedFlag = params.get("shared") === "1";
+    const hasSharedFlag = isShareEntry(location.search);
 
     const raw = sessionStorage.getItem(SHARE_DRAFT_KEY);
     if (!raw) {
-      if (hasSharedFlag) navigate("/", { replace: true });
+      if (hasSharedFlag) {
+        // Evita auto-open vacío tras el replace
+        skipNextAutoOpenRef.current = true;
+        navigate("/", { replace: true });
+      }
       return;
     }
 
@@ -185,22 +163,35 @@ export default function TodayPage() {
       const parsed = JSON.parse(raw) as { text?: unknown; ts?: unknown };
       const text = String(parsed?.text ?? "").trim();
 
+      sessionStorage.removeItem(SHARE_DRAFT_KEY);
+
       if (!text) {
-        sessionStorage.removeItem(SHARE_DRAFT_KEY);
-        if (hasSharedFlag) navigate("/", { replace: true });
+        if (hasSharedFlag) {
+          skipNextAutoOpenRef.current = true;
+          navigate("/", { replace: true });
+        }
         return;
       }
 
-      setShareDraftText(text);
-      setShareDraftNonce((n) => n + 1);
+      // ✅ abrir el MindDumpModal con el texto compartido
+      setMindDumpInitialText(text);
+      setMindDumpInitialNonce((n) => n + 1);
+      setMindDumpOpen(true);
 
-      sessionStorage.removeItem(SHARE_DRAFT_KEY);
-
-      if (hasSharedFlag) navigate("/", { replace: true });
+      // ✅ limpiar el query param ?shared=1 sin disparar auto-open vacío
+      if (hasSharedFlag) {
+        skipNextAutoOpenRef.current = true;
+        navigate("/", { replace: true });
+      }
     } catch (e) {
       console.error("Invalid share draft JSON", e);
-      sessionStorage.removeItem(SHARE_DRAFT_KEY);
-      if (hasSharedFlag) navigate("/", { replace: true });
+      try {
+        sessionStorage.removeItem(SHARE_DRAFT_KEY);
+      } catch {}
+      if (hasSharedFlag) {
+        skipNextAutoOpenRef.current = true;
+        navigate("/", { replace: true });
+      }
     }
   }, [user?.id, location.search, navigate]);
 
@@ -321,13 +312,10 @@ export default function TodayPage() {
     setAvatarUrl(finalUrl ?? null);
   }, [user, profile]);
 
-  // ✅ botón central / mic: abrir CaptureModal + prefill
+  // ✅ “remi-open-capture” ahora abre el MindDumpModal (y puede traer texto pendiente)
   useEffect(() => {
     const handler = (ev: Event) => {
-      // 1) siempre abrimos modal
-      setCaptureOpen(true);
-
-      // 2) prioridad: texto pendiente guardado desde otras páginas
+      // 1) prioridad: texto pendiente (dictado desde otra pantalla)
       let pending: string | null = null;
       try {
         pending = sessionStorage.getItem(NAV_DICTATION_KEY);
@@ -337,46 +325,44 @@ export default function TodayPage() {
 
       if (pending && pending.trim().length > 0) {
         const clean = pending.trim();
-
-        // consumimos (para que no se repita)
         try {
           sessionStorage.removeItem(NAV_DICTATION_KEY);
         } catch {
           // ignore
         }
-
-        setCaptureInitialText(clean);
-        setCaptureInitialNonce(Date.now());
+        setMindDumpInitialText(clean);
+        setMindDumpInitialNonce((n) => n + 1);
+        setMindDumpOpen(true);
         return;
       }
 
-      // 3) fallback: event.detail.initialText (si alguien lo emite así)
+      // 2) fallback: event.detail.initialText
       const ce = ev as CustomEvent<any>;
       const incomingText =
         typeof ce?.detail?.initialText === "string" ? ce.detail.initialText : null;
-      const incomingNonce =
-        typeof ce?.detail?.nonce === "number" ? ce.detail.nonce : null;
 
       if (incomingText && incomingText.trim().length > 0) {
-        setCaptureInitialText(incomingText.trim());
-        setCaptureInitialNonce(incomingNonce ?? Date.now());
+        setMindDumpInitialText(incomingText.trim());
+        setMindDumpInitialNonce((n) => n + 1);
       } else {
-        // 4) sin texto -> limpio prefill
-        setCaptureInitialText(null);
-        setCaptureInitialNonce((n) => n + 1);
+        setMindDumpInitialText("");
+        setMindDumpInitialNonce((n) => n + 1);
       }
+
+      setMindDumpOpen(true);
     };
 
     window.addEventListener("remi-open-capture", handler as EventListener);
-    return () => window.removeEventListener("remi-open-capture", handler as EventListener);
+    return () =>
+      window.removeEventListener("remi-open-capture", handler as EventListener);
   }, []);
 
-  // Descarga mental (manual)
+  // Descarga mental (manual) -> abre MindDumpModal también
   useEffect(() => {
     const handler = () => {
-      setMentalDumpInitialText("");
-      setMentalDumpInitialNonce((n) => n + 1);
-      setMentalDumpOpen(true);
+      setMindDumpInitialText("");
+      setMindDumpInitialNonce((n) => n + 1);
+      setMindDumpOpen(true);
     };
     window.addEventListener("remi-open-mental-dump", handler);
     return () => window.removeEventListener("remi-open-mental-dump", handler);
@@ -402,10 +388,10 @@ export default function TodayPage() {
   }, [profileOpen]);
 
   // ---------- Agrupar tareas ----------
-  const { dateGroups, noDateTasks, todayCount }: { dateGroups: DateGroup[]; noDateTasks: BrainItem[]; todayCount: number } =
+  const { dateGroups, noDateTasks }: { dateGroups: DateGroup[]; noDateTasks: BrainItem[] } =
     useMemo(() => {
       if (tasks.length === 0) {
-        return { dateGroups: [], noDateTasks: [], todayCount: 0 };
+        return { dateGroups: [], noDateTasks: [] };
       }
 
       const today = new Date();
@@ -416,7 +402,6 @@ export default function TodayPage() {
 
       const groupsMap = new Map<string, DateGroup>();
       const noDate: BrainItem[] = [];
-      let todayCountLocal = 0;
 
       const addTaskToDate = (dateMid: Date, task: BrainItem) => {
         const dMid = new Date(dateMid.getFullYear(), dateMid.getMonth(), dateMid.getDate());
@@ -425,11 +410,9 @@ export default function TodayPage() {
         let group = groupsMap.get(iso);
         if (!group) {
           let label: string;
-          if (iso === todayIso) {
-            label = t("inbox.sectionToday");
-          } else if (isSameDay(dMid, tomorrowMid)) {
-            label = t("inbox.sectionTomorrow");
-          } else {
+          if (iso === todayIso) label = t("inbox.sectionToday");
+          else if (isSameDay(dMid, tomorrowMid)) label = t("inbox.sectionTomorrow");
+          else {
             label = dMid.toLocaleDateString(undefined, {
               weekday: "short",
               day: "numeric",
@@ -443,7 +426,6 @@ export default function TodayPage() {
 
         if (!group.items.includes(task)) {
           group.items.push(task);
-          if (isSameDay(dMid, todayMid)) todayCountLocal += 1;
         }
       };
 
@@ -484,7 +466,7 @@ export default function TodayPage() {
         .filter((g) => g.items.length > 0)
         .sort((a, b) => (a.dateMs ?? 0) - (b.dateMs ?? 0));
 
-      return { dateGroups: dateGroupsArr, noDateTasks: noDate, todayCount: todayCountLocal };
+      return { dateGroups: dateGroupsArr, noDateTasks: noDate };
     }, [tasks, t]);
 
   const filteredDateGroups = useMemo(() => {
@@ -500,7 +482,7 @@ export default function TodayPage() {
 
       if (filter === "TODAY") return isSameDay(new Date(time), todayMid);
       if (filter === "WEEK") return time >= todayMid.getTime() && time <= weekEndMid.getTime();
-      return true;
+      return true; // ALL
     });
   }, [dateGroups, filter]);
 
@@ -534,6 +516,7 @@ export default function TodayPage() {
     const base = task.due_date ? new Date(task.due_date) : new Date();
     if (option === "DAY") base.setDate(base.getDate() + 1);
     if (option === "WEEK") base.setDate(base.getDate() + 7);
+
     const updated = await postponeTask(task.id, base.toISOString());
     setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
 
@@ -774,22 +757,10 @@ export default function TodayPage() {
 
       {/* CONTENIDO */}
       <div style={{ padding: "0 18px 18px" }}>
-        {/* FORMULARIO EMBEBIDO */}
-        <div style={{ marginTop: 18, marginBottom: 10 }}>
-          <CaptureModal
-            open={true}
-            embedded
-            onClose={() => {}}
-            onOpenReview={openReviewFromCapture}
-            initialText={shareDraftText}
-            initialTextNonce={shareDraftNonce}
-          />
-        </div>
-
         {/* Filtros */}
         <div
           style={{
-            marginTop: 20,
+            marginTop: 16,
             marginBottom: 8,
             display: "flex",
             justifyContent: "flex-start",
@@ -806,9 +777,10 @@ export default function TodayPage() {
               borderRadius: 999,
             }}
           >
+            {/* ✅ Orden requerido: Todo (default), Hoy, Semana, Sin fecha */}
+            {renderFilterButton("ALL", t("today.tabsAll") || "Todo")}
             {renderFilterButton("TODAY", t("today.tabsToday") || "Hoy")}
             {renderFilterButton("WEEK", t("today.tabsWeek") || "Semana")}
-            {renderFilterButton("ALL", t("today.tabsAll") || "Todo")}
             {renderFilterButton("NO_DATE", t("today.tabsNoDate") || "Sin fecha")}
           </div>
         </div>
@@ -971,10 +943,7 @@ export default function TodayPage() {
 
           {!loading &&
             hasNoDateTasks &&
-            (filter === "ALL" ||
-              filter === "TODAY" ||
-              filter === "WEEK" ||
-              filter === "NO_DATE") && (
+            (filter === "ALL" || filter === "TODAY" || filter === "WEEK" || filter === "NO_DATE") && (
               <div>
                 <p className="mt-3 mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
                   {t("inbox.sectionNoDate")}
@@ -1095,19 +1064,16 @@ export default function TodayPage() {
         </div>
       )}
 
-      {/* Modal flotante del botón central (Capture) */}
-      <CaptureModal
-        open={captureOpen}
-        onClose={() => {
-          setCaptureOpen(false);
-          setCaptureInitialText(null);
-        }}
-        onOpenReview={openReviewFromCapture}
-        initialText={captureInitialText ?? shareDraftText}
-        initialTextNonce={captureInitialText ? captureInitialNonce : shareDraftNonce}
+      {/* ✅ MODAL NUEVO */}
+      <MindDumpModal
+        open={mindDumpOpen}
+        onClose={() => setMindDumpOpen(false)}
+        onOpenReview={openReviewFromMindDump}
+        initialText={mindDumpInitialText}
+        initialTextNonce={mindDumpInitialNonce}
       />
 
-      {/* Modal Descarga mental */}
+      {/* ✅ MODAL DE REVISIÓN / CREACIÓN */}
       <MentalDumpModal
         open={mentalDumpOpen}
         onClose={() => setMentalDumpOpen(false)}

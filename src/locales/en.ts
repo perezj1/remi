@@ -117,6 +117,8 @@ hints: {
     close: "Close",
     confirm: "Confirm",
     loading: "Loading...",
+    paste: "Paste",
+    speak: "Speak",
   },
 
   index: {
@@ -138,6 +140,8 @@ hints: {
   holdToTalk: "Hold to talk",
   listening: "Listening…",
   dictationNotSupported: "Dictation not supported",
+   tasks: "Tasks",
+    ideas: "Ideas",
 },
 
 installPrompt: {
@@ -223,6 +227,27 @@ capture: {
     3: "Tip: Press and hold the microphone to dictate",
   },
 
+ paste: {
+    title: "Paste what you last copied?",
+    sub: "Tap PASTE to insert it here.",
+    button: "PASTE",
+    pasting: "Pasting…",
+    toastUnavailable: "Paste isn’t available here. Long-press and paste manually.",
+    toastEmpty: "Clipboard is empty (or I can’t read it).",
+    toastDenied: "I can’t read the clipboard. Long-press and paste manually.",
+  },
+
+   toast: {
+      micDenied: "Microphone permission denied.",
+      noSpeech: "I didn’t catch any speech. Try again.",
+      dictationError: "Dictation error.",
+      dictationStartError: "I couldn’t start dictation.",
+      pasteUnavailable: "Paste isn’t available here (clipboard not available).",
+      clipboardEmpty: "Your clipboard is empty.",
+      pasteError: "I couldn’t access the clipboard. Press and hold, then paste.",
+      writeSomething: "Write something first.",
+    },
+
  textareaPlaceholderIOS:
     "iPhone/iPad: use the keyboard microphone to dictate.\n" +
     "If it’s missing: Settings > General > Keyboard > Enable Dictation.\n" +
@@ -235,6 +260,8 @@ capture: {
   timeMinute: "Minutes",
   dateTimeLabel: "Date & time",
   dateTimeNoneShort: "No date or time",
+  placeholder: "Write here…",
+  
 
   title: "Clear your mind",
   subtitle: "Speak, write, or paste text. Remi takes care of it.",
@@ -245,6 +272,8 @@ capture: {
   exampleIdea: "💡 Idea: trip to Italy in spring",
   holdToTalk: "Press and hold to talk",
   listening: "Listening…",
+  iosKeyboardMicHint: "On iPhone: use the keyboard microphone to speak.",
+speakHold: "Hold to talk",
 
   textareaPlaceholder: "Examples:",
 
@@ -342,6 +371,11 @@ tasks: {
     addTask: "Add task",
     streak: "Streak",
     menuInstallApp: "Install app",
+    actionDoneTitle: "Mark as done",
+      actionPostpone1d: "+1",
+  actionPostpone1dTitle: "Postpone: add 1 day to the due date",
+  actionDone: " ",
+  
     
 
   greeting: "Hi, {{name}} 👋",

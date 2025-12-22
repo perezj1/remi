@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/contexts/I18nContext";
 import { useModalUi } from "@/contexts/ModalUiContext";
+import PasteBanner from "@/components/PasteBanner";
 
 interface CaptureModalProps {
   open: boolean;
@@ -173,6 +174,17 @@ export default function CaptureModal({
   }, [open, embedded]);
 
   /* ───────────────────────────────
+     ✅ Banner "Pegar" (estado local)
+  ─────────────────────────────── */
+  const [pasteBannerDismissed, setPasteBannerDismissed] = useState(false);
+
+  // Cuando el modal se “abre” (o se vuelve visible), volvemos a permitir mostrar el banner
+  useEffect(() => {
+    const visible = embedded || open;
+    if (visible) setPasteBannerDismissed(false);
+  }, [open, embedded]);
+
+  /* ───────────────────────────────
      iOS: mostrar ayuda SOLO si permiso mic == denied
   ─────────────────────────────── */
   const [showIOSMicHelp, setShowIOSMicHelp] = useState(false);
@@ -324,6 +336,9 @@ export default function CaptureModal({
     // ✅ reset dictado
     lastDictationAppendAtRef.current = 0;
     lastDictationBufferRef.current = "";
+
+    // ✅ reset banner pegar
+    setPasteBannerDismissed(false);
   };
 
   const resetAndClose = () => {
@@ -386,6 +401,16 @@ export default function CaptureModal({
     ].join("\n");
   })();
 
+  // ✅ Mostrar banner solo si:
+  // - textarea vacío
+  // - no está escuchando (para no estorbar el dictado)
+  // - no fue cerrado con X
+  const showPasteBanner =
+    (embedded || open) &&
+    !pasteBannerDismissed &&
+    !isListeningExternal &&
+    text.trim().length === 0;
+
   /* ───────────────────────────────
      Header
   ─────────────────────────────── */
@@ -427,6 +452,30 @@ export default function CaptureModal({
           // ✅ el usuario tocó el texto: corta sesión de dictado
           lastDictationAppendAtRef.current = 0;
           lastDictationBufferRef.current = "";
+        }}
+      />
+
+      {/* ✅ Banner "Pegar" (componente) */}
+      <PasteBanner
+        show={showPasteBanner}
+        onDismiss={() => setPasteBannerDismissed(true)}
+        disabled={loading}
+        onInsert={(clip) => {
+          userEditedRef.current = true;
+
+          const current = textRef.current ?? "";
+          const sep = current.length === 0 || current.endsWith("\n") ? "" : "\n";
+          const next = current + sep + clip;
+
+          textRef.current = next;
+          setText(next);
+
+          // ✅ corta sesión de dictado
+          lastDictationAppendAtRef.current = 0;
+          lastDictationBufferRef.current = "";
+
+          // ✅ cerrar banner tras pegar
+          setPasteBannerDismissed(true);
         }}
       />
 

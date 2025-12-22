@@ -26,10 +26,10 @@ const speechLangByUiLang: Record<UiLang, string> = {
 const CAPTURE_APPEND_EVENT = "remi-capture-append";
 const OPEN_CAPTURE_EVENT = "remi-open-capture";
 
-// ✅ evento global para indicar si el dictado está escuchando
+// ✅ evento global para indicar si el dictado está escuchando (por si vuelves a activarlo)
 export const DICTATION_STATE_EVENT = "remi-dictation-state";
 
-// ✅ texto pendiente cuando dictas desde otras páginas (para no perder el evento)
+// ✅ texto pendiente cuando dictas desde otras páginas (por si vuelves a activarlo)
 const NAV_DICTATION_KEY = "remi_nav_dictation_pending_v1";
 
 function detectIOS() {
@@ -53,8 +53,9 @@ const noSelectStyle: React.CSSProperties = {
   WebkitTapHighlightColor: "transparent",
 };
 
+// ✅ Evita warning: "Unable to preventDefault inside passive event listener"
 const prevent = (e: any) => {
-  e.preventDefault();
+  if (e?.cancelable) e.preventDefault();
 };
 
 /**
@@ -114,128 +115,136 @@ export default function BottomNav() {
     return speechLangByUiLang[activeUiLang] ?? "es-ES";
   }, [activeUiLang]);
 
-  // ✅ en iOS NO usamos dictado por botón: el botón central será "+"
-  const { isSupported, status, error, start, stop } = useSpeechDictation({
-    lang: activeSpeechLang,
-    continuous: false,
-    interimResults: false,
-  });
+  /**
+   * ✅ IMPORTANTE:
+   * El modal ya no se abre automáticamente en Index, así que el botón central
+   * ahora debe ser "+" también en Android para abrir el nuevo modal.
+   *
+   * Dejamos el dictado COMENTADO (sin borrarlo) por si quieres reactivarlo
+   * más adelante con otro flujo.
+   */
 
-  const dictationEnabled = !isIOS && isSupported;
-  const isListening = dictationEnabled && status === "listening";
-  const startedRef = useRef(false);
-
-  const vibrateTiny = () => {
-    try {
-      if (navigator.vibrate) navigator.vibrate(18);
-    } catch {
-      // ignore
-    }
-  };
-
-  const emitAppend = (text: string) => {
-    window.dispatchEvent(
-      new CustomEvent(CAPTURE_APPEND_EVENT, { detail: { text } })
-    );
-  };
-
-  const emitDictationState = (listening: boolean) => {
-    window.dispatchEvent(
-      new CustomEvent(DICTATION_STATE_EVENT, { detail: { listening } })
-    );
-  };
-
-  // ✅ refleja estado listening hacia fuera (CaptureModal lo usará)
-  useEffect(() => {
-    if (isIOS) return; // en iOS no dictamos por botón
-    emitDictationState(isListening);
-  }, [isIOS, isListening]);
+  // // ✅ Dictado por voz (guardado para futuro)
+  // const { isSupported, status, error, start, stop } = useSpeechDictation({
+  //   lang: activeSpeechLang,
+  //   continuous: false,
+  //   interimResults: false,
+  // });
+  //
+  // const dictationEnabled = !isIOS && isSupported;
+  // const isListening = dictationEnabled && status === "listening";
+  // const startedRef = useRef(false);
+  //
+  // const vibrateTiny = () => {
+  //   try {
+  //     if (navigator.vibrate) navigator.vibrate(18);
+  //   } catch {
+  //     // ignore
+  //   }
+  // };
+  //
+  // const emitAppend = (text: string) => {
+  //   window.dispatchEvent(
+  //     new CustomEvent(CAPTURE_APPEND_EVENT, { detail: { text } })
+  //   );
+  // };
+  //
+  // const emitDictationState = (listening: boolean) => {
+  //   window.dispatchEvent(
+  //     new CustomEvent(DICTATION_STATE_EVENT, { detail: { listening } })
+  //   );
+  // };
+  //
+  // // ✅ refleja estado listening hacia fuera (CaptureModal lo usará)
+  // useEffect(() => {
+  //   if (isIOS) return; // en iOS no dictamos por botón
+  //   emitDictationState(isListening);
+  // }, [isIOS, isListening]);
+  //
+  // // ✅ Manejo único del texto final (no perderlo al navegar)
+  // const handleFinalText = (raw: string) => {
+  //   const clean = raw.trim();
+  //   if (!clean) return;
+  //
+  //   // Si estamos ya en Index, inyectamos directo al CaptureModal embebido
+  //   if (pathname === "/") {
+  //     emitAppend(clean);
+  //     return;
+  //   }
+  //
+  //   // En otras páginas: guardamos dictado pendiente para Index
+  //   try {
+  //     sessionStorage.setItem(NAV_DICTATION_KEY, clean);
+  //   } catch {
+  //     // fallback
+  //     emitAppend(clean);
+  //   }
+  //
+  //   // Navegamos a Index y abrimos modal flotante
+  //   navigate("/");
+  //
+  //   setTimeout(() => {
+  //     openCaptureModal();
+  //   }, 120);
+  // };
+  //
+  // const handleStart = async () => {
+  //   if (!dictationEnabled) return;
+  //   if (startedRef.current) return;
+  //
+  //   // ✅ pedir permiso SOLO al iniciar (gesto del usuario)
+  //   const perm = await requestMicPermission();
+  //
+  //   if (!perm.ok) {
+  //     startedRef.current = false;
+  //     emitDictationState(false);
+  //
+  //     if (perm.reason === "no_https") {
+  //       toast.error("El micrófono requiere HTTPS (o localhost).");
+  //       return;
+  //     }
+  //     if (perm.reason === "not_supported") {
+  //       toast.error("Este navegador no soporta micrófono.");
+  //       return;
+  //     }
+  //
+  //     toast.error(
+  //       "No se pudo usar el micrófono. Activa el permiso del micrófono para este sitio en los ajustes del navegador."
+  //     );
+  //     return;
+  //   }
+  //
+  //   startedRef.current = true;
+  //   vibrateTiny();
+  //
+  //   start(
+  //     ({ finalText }) => {
+  //       if (finalText && finalText.trim()) {
+  //         handleFinalText(finalText);
+  //       }
+  //     },
+  //     activeSpeechLang
+  //   );
+  // };
+  //
+  // const handleStop = () => {
+  //   startedRef.current = false;
+  //   stop();
+  //   emitDictationState(false); // ✅ aseguramos OFF al soltar
+  // };
 
   const openCaptureModal = () => {
     window.dispatchEvent(new CustomEvent(OPEN_CAPTURE_EVENT));
   };
 
   const openCaptureFromNav = () => {
-    // Siempre abre el capture modal en Index
+    // Abre el nuevo modal en Index siempre
     if (pathname !== "/") {
       navigate("/");
       setTimeout(() => openCaptureModal(), 120);
     } else {
       openCaptureModal();
     }
-  };
-
-  // ✅ Manejo único del texto final (no perderlo al navegar)
-  const handleFinalText = (raw: string) => {
-    const clean = raw.trim();
-    if (!clean) return;
-
-    // Si estamos ya en Index, inyectamos directo al CaptureModal embebido
-    if (pathname === "/") {
-      emitAppend(clean);
-      return;
-    }
-
-    // En otras páginas: guardamos dictado pendiente para Index
-    try {
-      sessionStorage.setItem(NAV_DICTATION_KEY, clean);
-    } catch {
-      // fallback
-      emitAppend(clean);
-    }
-
-    // Navegamos a Index y abrimos modal flotante
-    navigate("/");
-
-    setTimeout(() => {
-      openCaptureModal();
-    }, 120);
-  };
-
-  const handleStart = async () => {
-    if (!dictationEnabled) return;
-    if (startedRef.current) return;
-
-    // ✅ 1) pedir permiso SOLO al iniciar (click/press)
-    const perm = await requestMicPermission();
-
-    if (!perm.ok) {
-      startedRef.current = false;
-      emitDictationState(false);
-
-      if (perm.reason === "no_https") {
-        toast.error("El micrófono requiere HTTPS (o localhost).");
-        return;
-      }
-      if (perm.reason === "not_supported") {
-        toast.error("Este navegador no soporta micrófono.");
-        return;
-      }
-
-      toast.error(
-        "No se pudo usar el micrófono. Activa el permiso del micrófono para este sitio en los ajustes del navegador."
-      );
-      return;
-    }
-
-    // ✅ 2) si ok, empezamos dictado
-    startedRef.current = true;
-    vibrateTiny();
-
-    start(
-      ({ finalText }) => {
-        if (finalText && finalText.trim()) {
-          handleFinalText(finalText);
-        }
-      },
-      activeSpeechLang
-    );
-  };
-
-  const handleStop = () => {
-    startedRef.current = false;
-    stop();
-    emitDictationState(false); // ✅ aseguramos OFF al soltar
   };
 
   const isTasksActive = pathname === "/tasks";
@@ -251,9 +260,7 @@ export default function BottomNav() {
     const isEditableEl = (el: Element | null) => {
       if (!el) return false;
       const node = el as HTMLElement;
-      if (node.closest("textarea, input, select, [contenteditable='true']"))
-        return true;
-      return false;
+      return !!node.closest("textarea, input, select, [contenteditable='true']");
     };
 
     const updateFromActive = () => {
@@ -313,118 +320,38 @@ export default function BottomNav() {
           active={pathname === "/status"}
         />
 
-        {/* Botón central:
-            - iOS => "+"
-            - resto => Mic (mantener pulsado)
+        {/* ✅ Botón central:
+            - Ahora SIEMPRE es "+"
+            - Abre el nuevo modal en Index (igual que en iPhone)
         */}
         <div style={{ position: "relative", ...noSelectStyle }}>
-          {!isIOS && isListening ? (
-            <>
-              <span
-                style={{
-                  position: "absolute",
-                  inset: -12,
-                  borderRadius: 999,
-                  background: "rgba(125,89,201,0.18)",
-                  animation: "remiPulse 1.2s ease-out infinite",
-                  pointerEvents: "none",
-                }}
-              />
-              <span
-                style={{
-                  position: "absolute",
-                  inset: -22,
-                  borderRadius: 999,
-                  background: "rgba(125,89,201,0.10)",
-                  animation: "remiPulse 1.2s ease-out infinite",
-                  animationDelay: "0.25s",
-                  pointerEvents: "none",
-                }}
-              />
-            </>
-          ) : null}
+          <button
+            className="flex h-14 w-14 items-center justify-center rounded-full border-1 border-white bg-[#7d59c9] text-white shadow-[0_8px_20px_rgba(143,49,243,0.2)] -translate-y-0"
+            type="button"
+            onClick={(e) => {
+              if (e.cancelable) e.preventDefault();
+              openCaptureFromNav();
+            }}
+            onContextMenu={prevent}
+            onPointerDown={prevent}
+            onMouseDown={prevent}
+            draggable={false}
+            onDragStart={prevent}
+            aria-label="Añadir"
+            title="Añadir"
+            style={{
+              ...noSelectStyle,
+              touchAction: "manipulation",
+              transform: "scale(1)",
+              transition: "transform 120ms ease, opacity 120ms ease",
+            }}
+          >
+            <Plus className="w-7 h-7" />
+          </button>
 
-          {isIOS ? (
-            <button
-              className="flex h-14 w-14 items-center justify-center rounded-full border-1 border-white bg-[#7d59c9] text-white shadow-[0_8px_20px_rgba(143,49,243,0.2)] -translate-y-0"
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                openCaptureFromNav();
-              }}
-              onContextMenu={prevent}
-              onPointerDown={prevent}
-              onMouseDown={prevent}
-              onTouchStart={prevent}
-              draggable={false}
-              onDragStart={prevent}
-              aria-label="Añadir"
-              title="Añadir"
-              style={{
-                ...noSelectStyle,
-                touchAction: "manipulation",
-                transform: "scale(1)",
-                transition: "transform 120ms ease, opacity 120ms ease",
-              }}
-            >
-              <Plus className="w-7 h-7" />
-            </button>
-          ) : (
-            <button
-              className="flex h-14 w-14 items-center justify-center rounded-full border-1 border-white bg-[#7d59c9] text-white shadow-[0_8px_20px_rgba(143,49,243,0.2)] -translate-y-0"
-              type="button"
-              disabled={!dictationEnabled}
-              onPointerDown={(e) => {
-                e.preventDefault();
-                handleStart();
-              }}
-              onPointerUp={(e) => {
-                e.preventDefault();
-                handleStop();
-              }}
-              onPointerCancel={(e) => {
-                e.preventDefault();
-                handleStop();
-              }}
-              onPointerLeave={(e) => {
-                if (isListening) {
-                  e.preventDefault();
-                  handleStop();
-                }
-              }}
-              onTouchStart={(e) => {
-                e.preventDefault();
-                handleStart();
-              }}
-              onTouchEnd={(e) => {
-                e.preventDefault();
-                handleStop();
-              }}
-              onContextMenu={prevent}
-              onMouseDown={prevent}
-              draggable={false}
-              onDragStart={prevent}
-              aria-label={
-                !dictationEnabled
-                  ? "Dictado no compatible"
-                  : "Mantén apretado para hablar"
-              }
-              title={
-                !dictationEnabled
-                  ? "Dictado no compatible"
-                  : "Mantén apretado para hablar"
-              }
-              style={{
-                ...noSelectStyle,
-                touchAction: "none",
-                opacity: !dictationEnabled ? 0.5 : 1,
-                transform: isListening ? "scale(1.03)" : "scale(1)",
-                transition: "transform 120ms ease, opacity 120ms ease",
-              }}
-            >
+          {/* ✅ Dejado como recordatorio visual del icono Mic (no usado ahora)
               <Mic className="w-7 h-7" />
-            </button>
-          )}
+          */}
         </div>
 
         <NavItem
@@ -442,19 +369,12 @@ export default function BottomNav() {
         />
       </div>
 
-      {/* En iOS ocultamos el error de dictado porque no usamos dictado por botón */}
-      {!isIOS && error ? (
-        <div
-          style={{
-            marginTop: 8,
-            textAlign: "center",
-            fontSize: 11,
-            color: "#b91c1c",
-          }}
-        >
+      {/* Dictado comentado => no mostramos errores */}
+      {/* {!isIOS && error ? (
+        <div style={{ marginTop: 8, textAlign: "center", fontSize: 11, color: "#b91c1c" }}>
           {String(error)}
         </div>
-      ) : null}
+      ) : null} */}
 
       <style>
         {`
@@ -503,7 +423,6 @@ function NavItem({ to, label, active, icon: Icon }: NavItemProps) {
       onContextMenu={prevent}
       onPointerDown={prevent}
       onMouseDown={prevent}
-      onTouchStart={prevent}
       draggable={false}
       onDragStart={prevent}
       aria-label={label}

@@ -38,10 +38,7 @@ mentalDump: {
     defaultIdea: "No vi una pista clara → lo marqué como idea.",
     manualTask: "Lo marcaste como tarea.",
     manualIdea: "Lo marcaste como idea.",
-      },
-
-  
-    
+      },    
   
 
   dateLabel: "Fecha",
@@ -129,6 +126,8 @@ mentalDump: {
     close: "Cerrar",
     confirm: "Confirmar",
     loading: "Cargando...",
+    speak: "Hablar",
+    paste: "Pegar",
   },
 
   index: {
@@ -150,6 +149,8 @@ mentalDump: {
   holdToTalk: "Mantén pulsado",
   listening: "Escuchando…",
   dictationNotSupported: "Dictado no compatible",
+     tasks: "Tareas",
+    ideas: "Ideas",
 },
 
 installPrompt: {
@@ -235,6 +236,29 @@ capture: {
     3: "Consejo: Mantén pulsado el micrófono para dictar",
   },
   
+paste: {
+    title: "¿Pegar lo último copiado?",
+    sub: "Toca PEGAR para insertarlo aquí.",
+    button: "PEGAR",
+    pasting: "Pegando…",
+    toastUnavailable: "Pegar no está disponible aquí. Mantén pulsado y pega manualmente.",
+    toastEmpty: "El portapapeles está vacío (o no puedo leerlo).",
+    toastDenied: "No puedo leer el portapapeles. Mantén pulsado y pega manualmente.",
+  },
+
+ toast: {
+      micDenied: "Permiso de micrófono denegado.",
+      noSpeech: "No detecté voz. Prueba de nuevo.",
+      dictationError: "Error de dictado.",
+      dictationStartError: "No pude iniciar el dictado.",
+      pasteUnavailable: "No puedo pegar aquí (portapapeles no disponible).",
+      clipboardEmpty: "No hay texto en el portapapeles.",
+      pasteError: "No pude acceder al portapapeles. Mantén pulsado y pega.",
+      writeSomething: "Escribe algo primero.",
+    },
+
+
+
   textareaPlaceholderIOS:
     "iPhone/iPad: usa el micrófono del teclado para dictar.\n" +
     "Si no aparece: Ajustes > General > Teclado > Activar dictado.\n" +
@@ -247,6 +271,8 @@ capture: {
   timeMinute: "Minutos",
   dateTimeLabel: "Fecha y hora",
     dateTimeNoneShort: "Sin fecha ni hora",
+    placeholder: "Toca para escribir",
+
 
   title: "Vacía tu mente",
   subtitle: "Habla, escribe o pega texto. Remi se encarga.",
@@ -257,7 +283,9 @@ capture: {
   exampleIdea: "💡 Idea: viaje a Italia en primavera",
   holdToTalk: "Mantén pulsado para hablar",
   listening: "Escuchando…",
-
+    iosKeyboardMicHint: "En iPhone: usa el micrófono del teclado para hablar.",
+ speakHold: "Mantén pulsado para hablar",
+ 
   textareaPlaceholder: "Ejemplos:",
 
   ideaButton: "Idea",
