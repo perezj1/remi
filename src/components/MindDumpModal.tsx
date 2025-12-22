@@ -48,6 +48,89 @@ type Props = {
   initialTextNonce?: number;
 };
 
+/* ───────────────────────────────
+   ✅ Anti-duplicados robusto (por palabras)
+─────────────────────────────── */
+function normSpaces(s: string) {
+  return (s || "").replace(/\s+/g, " ").trim();
+}
+function tokenizeWords(s: string) {
+  const t = normSpaces(s);
+  return t ? t.split(" ").filter(Boolean) : [];
+}
+function wordsEqual(a: string[], b: string[]) {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
+function startsWithWords(full: string[], prefix: string[]) {
+  if (prefix.length > full.length) return false;
+  for (let i = 0; i < prefix.length; i++) if (full[i] !== prefix[i]) return false;
+  return true;
+}
+function appendWithOverlapWords(acc: string, seg: string) {
+  const A = tokenizeWords(acc);
+  const S = tokenizeWords(seg);
+
+  if (!S.length) return A.join(" ");
+  if (!A.length) return S.join(" ");
+
+  // A termina exactamente con S
+  if (S.length <= A.length && wordsEqual(A.slice(-S.length), S)) return A.join(" ");
+
+  // S empieza con A
+  if (A.length <= S.length && wordsEqual(S.slice(0, A.length), A)) return S.join(" ");
+
+  // Solape sufijo/prefijo por palabras
+  const max = Math.min(A.length, S.length);
+  for (let k = max; k >= 1; k--) {
+    if (wordsEqual(A.slice(-k), S.slice(0, k))) {
+      return [...A, ...S.slice(k)].join(" ").trim();
+    }
+  }
+
+  return [...A, ...S].join(" ").trim();
+}
+function deltaFromGrowingWords(prevFull: string, nextFull: string) {
+  const prev = tokenizeWords(prevFull);
+  const next = tokenizeWords(nextFull);
+
+  if (!next.length) return "";
+  if (!prev.length) return next.join(" ");
+  if (wordsEqual(prev, next)) return "";
+
+  // next empieza con prev => devuelve cola
+  if (startsWithWords(next, prev)) return next.slice(prev.length).join(" ").trim();
+
+  // retroceso
+  if (startsWithWords(prev, next)) return "";
+
+  // solape suffix(prev)==prefix(next)
+  const max = Math.min(prev.length, next.length);
+  for (let k = max; k >= 1; k--) {
+    if (wordsEqual(prev.slice(-k), next.slice(0, k))) {
+      return next.slice(k).join(" ").trim();
+    }
+  }
+
+  return "";
+}
+
+/* ───────────────────────────────
+   ✅ VisualViewport helper (botón guardar encima del teclado)
+─────────────────────────────── */
+function getKeyboardBottomOffsetPx(): number {
+  if (typeof window === "undefined") return 0;
+
+  const vv = (window as any).visualViewport as VisualViewport | undefined;
+  if (!vv) return 0;
+
+  // Layout viewport height ~ window.innerHeight
+  // Visual viewport height se reduce cuando aparece el teclado.
+  const keyboardHeight = Math.max(0, window.innerHeight - (vv.height + vv.offsetTop));
+  return keyboardHeight;
+}
+
 export default function MindDumpModal({
   open,
   onClose,
@@ -72,10 +155,19 @@ export default function MindDumpModal({
   const recognitionRef = useRef<any | null>(null);
   const speechSessionIdRef = useRef(0);
 
+  // ✅ buffers por sesión (para calcular delta FINAL sin duplicados)
+  const lastFinalAccumRef = useRef<string>("");
+
   const ios = useMemo(() => isIOS(), []);
   const android = useMemo(() => isAndroid(), []);
   const SpeechRecognitionCtor = useMemo(() => getSpeechRecognitionCtor(), []);
   const showTalkButton = android && !!SpeechRecognitionCtor;
+
+  // ✅ teclado: SOLO aparece cuando el usuario toca el textarea
+  const [isTextFocused, setIsTextFocused] = useState(false);
+
+  // ✅ guardar flotante encima del teclado
+  const [kbdOffset, setKbdOffset] = useState(0);
 
   const safeT = (key: string, fallback: string) => {
     try {
@@ -88,8 +180,6 @@ export default function MindDumpModal({
       return fallback;
     }
   };
-
-  const focusTextarea = () => textareaRef.current?.focus();
 
   // ✅ guía visual en el textarea
   const BULLET = "• ";
@@ -138,63 +228,73 @@ export default function MindDumpModal({
       rec.interimResults = true;
       rec.lang = speechLangByUiLang[uiLang] || "es-ES";
 
+      // ✅ reset buffers de sesión (clave para anti-duplicados)
+      lastFinalAccumRef.current = "";
+
       rec.onresult = (event: any) => {
         if (mySessionId !== speechSessionIdRef.current) return;
 
-        let finalChunk = "";
-        let interimChunk = "";
-
-        for (let i = event.resultIndex; i < event.results.length; i++) {
+        // 1) FINAL acumulado estable
+        let finalAccum = "";
+        for (let i = 0; i < event.results.length; i++) {
           const res = event.results[i];
-          const transcript = String(res?.[0]?.transcript ?? "");
-          if (!transcript) continue;
-          if (res.isFinal) finalChunk += transcript;
-          else interimChunk += transcript;
+          if (!res || !res.isFinal) continue;
+          const raw = String(res?.[0]?.transcript ?? "");
+          const chunk = normSpaces(raw);
+          if (!chunk) continue;
+          finalAccum = appendWithOverlapWords(finalAccum, chunk);
         }
 
-        setInterim(interimChunk.trim());
+        // 2) Interim actual (UI)
+        let interimNow = "";
+        for (let i = event.results.length - 1; i >= 0; i--) {
+          const res = event.results[i];
+          if (!res || res.isFinal) continue;
+          const raw = String(res?.[0]?.transcript ?? "");
+          const chunk = normSpaces(raw);
+          if (chunk) {
+            interimNow = chunk;
+            break;
+          }
+        }
+        setInterim(interimNow);
 
-        if (finalChunk.trim()) {
-          const incoming = finalChunk.trim();
+        // 3) Delta FINAL seguro
+        const prevFinal = lastFinalAccumRef.current;
+        const finalDelta = deltaFromGrowingWords(prevFinal, finalAccum);
+        if (finalAccum) lastFinalAccumRef.current = finalAccum;
+        if (!finalDelta) return;
 
-          setText((prev) => {
-            const out = prev ?? "";
-            const base = out.trim().length === 0 ? BULLET : out;
+        const incoming = finalDelta;
 
-            if (
-              base.endsWith(BULLET) ||
-              base.endsWith("\n" + BULLET) ||
-              base.endsWith("\n\n" + BULLET)
-            ) {
-              return base + incoming;
-            }
+        setText((prev) => {
+          const out = prev ?? "";
+          const base = out.trim().length === 0 ? BULLET : out;
 
-            if (base.length > 0 && !base.endsWith("\n") && !base.endsWith(" ")) {
-              return base + " " + incoming;
-            }
-
+          if (
+            base.endsWith(BULLET) ||
+            base.endsWith("\n" + BULLET) ||
+            base.endsWith("\n\n" + BULLET)
+          ) {
             return base + incoming;
-          });
+          }
 
-          setTimeout(() => {
-            const el = textareaRef.current;
-            if (!el) return;
-            el.focus();
-            el.selectionStart = el.selectionEnd = el.value.length;
-          }, 0);
-        }
+          if (base.length > 0 && !base.endsWith("\n") && !base.endsWith(" ")) {
+            return base + " " + incoming;
+          }
+
+          return base + incoming;
+        });
+
+        // ❌ IMPORTANTE: no focus aquí (no abrir teclado)
       };
 
       rec.onerror = (e: any) => {
         const code = String(e?.error ?? "");
         if (code === "not-allowed" || code === "service-not-allowed") {
-          toast.error(
-            safeT("capture.toast.micDenied", "Permiso de micrófono denegado.")
-          );
+          toast.error(safeT("capture.toast.micDenied", "Permiso de micrófono denegado."));
         } else if (code === "no-speech") {
-          toast.message(
-            safeT("capture.toast.noSpeech", "No detecté voz. Prueba de nuevo.")
-          );
+          toast.message(safeT("capture.toast.noSpeech", "No detecté voz. Prueba de nuevo."));
         } else {
           toast.error(safeT("capture.toast.dictationError", "Error de dictado."));
         }
@@ -215,11 +315,9 @@ export default function MindDumpModal({
       rec.start();
       setListening(true);
       setInterim("");
-      focusTextarea();
+      // ❌ no focusTextarea()
     } catch {
-      toast.error(
-        safeT("capture.toast.dictationStartError", "No pude iniciar el dictado.")
-      );
+      toast.error(safeT("capture.toast.dictationStartError", "No pude iniciar el dictado."));
       recognitionRef.current = null;
       setListening(false);
       setInterim("");
@@ -235,9 +333,10 @@ export default function MindDumpModal({
       (e.currentTarget as any)?.setPointerCapture?.(e.pointerId);
     } catch {}
 
-    // ✅ cada sesión de voz crea un nuevo item: doble salto + bullet
+    // ✅ cada sesión crea nuevo item con bullet
     setText((prev) => ensureNewBulletBlock(prev ?? ""));
 
+    // ✅ dictado sin abrir teclado
     startDictationNewSession();
   };
 
@@ -272,19 +371,10 @@ export default function MindDumpModal({
         return;
       }
       setText((prev) => (prev ? `${prev}\n${clip}` : clip));
-
-      setTimeout(() => {
-        const el = textareaRef.current;
-        if (!el) return;
-        el.focus();
-        el.selectionStart = el.selectionEnd = el.value.length;
-      }, 0);
+      // ❌ no focus (no abrir teclado)
     } catch {
       toast.error(
-        safeT(
-          "capture.toast.pasteError",
-          "No pude acceder al portapapeles. Mantén pulsado y pega."
-        )
+        safeT("capture.toast.pasteError", "No pude acceder al portapapeles. Mantén pulsado y pega.")
       );
     }
   };
@@ -294,7 +384,6 @@ export default function MindDumpModal({
     const trimmed = text.trim();
     if (!trimmed) {
       toast.message(safeT("capture.toast.writeSomething", "Escribe algo primero."));
-      focusTextarea();
       return;
     }
     onOpenReview(trimmed);
@@ -314,8 +403,7 @@ export default function MindDumpModal({
 
   // sincronizar idioma UI global si existe setter
   useEffect(() => {
-    const setLangFn =
-      i18n?.setLang ?? i18n?.setUiLang ?? i18n?.setLanguage ?? null;
+    const setLangFn = i18n?.setLang ?? i18n?.setUiLang ?? i18n?.setLanguage ?? null;
     if (typeof setLangFn === "function") {
       try {
         setLangFn(uiLang);
@@ -353,27 +441,66 @@ export default function MindDumpModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ✅ cuando se abre: no enfocamos nada, teclado cerrado
+  useEffect(() => {
+    if (open) {
+      setIsTextFocused(false);
+      setKbdOffset(0);
+    }
+  }, [open]);
+
+  // ✅ seguimiento de VisualViewport para colocar el botón “Guardar” encima del teclado
+  useEffect(() => {
+    if (!open) return;
+    if (!isTextFocused) {
+      setKbdOffset(0);
+      return;
+    }
+
+    const vv = (window as any).visualViewport as VisualViewport | undefined;
+
+    let raf = 0;
+    const update = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        setKbdOffset(getKeyboardBottomOffsetPx());
+      });
+    };
+
+    update();
+
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, { passive: true });
+
+    if (vv) {
+      vv.addEventListener("resize", update);
+      vv.addEventListener("scroll", update);
+    }
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update as any);
+      if (vv) {
+        vv.removeEventListener("resize", update);
+        vv.removeEventListener("scroll", update);
+      }
+    };
+  }, [open, isTextFocused]);
+
   if (!open) return null;
 
   const langLabel = uiLang.toUpperCase();
+
+  // ✅ botón flotante: abajo-derecha, siempre por encima del teclado cuando está abierto
+  const saveFabBottom = Math.max(14, kbdOffset + 14);
+  const showSaveFab = isTextFocused; // solo cuando el usuario está escribiendo (teclado visible)
 
   return (
     <div className="fixed inset-0 z-[1000]" onContextMenu={(e) => e.preventDefault()}>
       <div className="absolute inset-0" style={{ background: "#ffffff" }} />
 
-      <div
-        className="absolute inset-0"
-        onMouseDown={(e) => {
-          const target = e.target as HTMLElement;
-          if (target.closest("[data-no-focus]")) return;
-          focusTextarea();
-        }}
-        onTouchStart={(e) => {
-          const target = e.target as HTMLElement;
-          if (target.closest("[data-no-focus]")) return;
-          focusTextarea();
-        }}
-      >
+      <div className="absolute inset-0">
         {/* top bar */}
         <div
           className="sticky top-0 z-10"
@@ -428,6 +555,9 @@ export default function MindDumpModal({
             ref={textareaRef}
             value={text}
             onChange={(e) => setText(e.target.value)}
+            onFocus={() => setIsTextFocused(true)}
+            onBlur={() => setIsTextFocused(false)}
+            // ✅ NO hacemos focus programático: el teclado solo aparece por tap directo del usuario
             placeholder={safeT("capture.placeholder", "Vacía tu mente aquí… (habla, escribe o pega)")}
             className="w-full resize-none outline-none text-[18px] leading-7"
             style={{
@@ -440,15 +570,49 @@ export default function MindDumpModal({
 
           {ios && (
             <div className="mt-3 text-xs" style={{ color: REMI_SUB }}>
-              {safeT(
-                "capture.iosKeyboardMicHint",
-                "En iPhone: usa el micrófono del teclado para dictar."
-              )}
+              {safeT("capture.iosKeyboardMicHint", "En iPhone: usa el micrófono del teclado para dictar.")}
             </div>
           )}
         </div>
 
-        {/* bottom flotante */}
+        {/* ✅ Guardar flotante: abajo-derecha y por encima del teclado */}
+        {showSaveFab && (
+          <button
+            type="button"
+            // ✅ evita que el click quite el foco del textarea (mantiene teclado y posición estable)
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onClick={handleSave}
+            aria-label={safeT("common.save", "Guardar")}
+            title={safeT("common.save", "Guardar")}
+            style={{
+              position: "fixed",
+              right: 14,
+              bottom: saveFabBottom,
+              zIndex: 2000,
+              width: 54,
+              height: 54,
+              borderRadius: 999,
+              border: "1px solid rgba(125,89,201,0.35)",
+              background: REMI_PURPLE,
+              color: "white",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 16px 34px rgba(35,18,90,0.30)",
+              WebkitTouchCallout: "none",
+              WebkitUserSelect: "none",
+              userSelect: "none",
+              cursor: "pointer",
+            }}
+          >
+            <Check className="h-5 w-5" />
+          </button>
+        )}
+
+        {/* bottom flotante (acciones) */}
         <div
           className="fixed left-0 right-0"
           style={{
@@ -641,7 +805,7 @@ export default function MindDumpModal({
                   )}
                 </div>
 
-                {/* Guardar */}
+                {/* Guardar (en pill) */}
                 <div className="flex flex-col items-center justify-center gap-1.5">
                   <button
                     data-no-focus
