@@ -11,6 +11,9 @@ import { toast } from "sonner";
 import { useI18n } from "@/contexts/I18nContext";
 import { useSpeechDictation } from "@/hooks/useSpeechDictation";
 
+// ✅ NUEVO: para ocultar BottomNav cuando el modal está abierto
+import { useModalUi } from "@/contexts/ModalUiContext";
+
 const REMI_PURPLE = "#7d59c9";
 const REMI_PURPLE_BORDER = "rgba(143,49,243,0.30)";
 const REMI_PURPLE_BG = "rgba(143,49,243,0.10)";
@@ -166,6 +169,14 @@ export default function MindDumpModal({
   const listening = status === "listening";
   const showTalkButton = android && isSupported;
 
+  // ✅ NUEVO: marcar modal abierto/cerrado para ocultar BottomNav (contador)
+  const { setModalOpen } = useModalUi();
+  useEffect(() => {
+    if (!open) return;
+    setModalOpen(true);
+    return () => setModalOpen(false);
+  }, [open, setModalOpen]);
+
   // Evitar spam de toasts por error
   const lastErrorRef = useRef<string | null>(null);
   useEffect(() => {
@@ -175,7 +186,9 @@ export default function MindDumpModal({
 
     // Mapeo básico de errores típicos del Web Speech API
     if (error === "not-allowed" || error === "service-not-allowed") {
-      toast.error(safeT("capture.toast.micDenied", "Permiso de micrófono denegado."));
+      toast.error(
+        safeT("capture.toast.micDenied", "Permiso de micrófono denegado.")
+      );
     } else if (error === "no-speech") {
       toast.message(safeT("capture.toast.noSpeech", "No detecté voz. Prueba de nuevo."));
     } else {
