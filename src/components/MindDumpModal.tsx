@@ -1,5 +1,11 @@
 // src/components/MindDumpModal.tsx
-import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import { X, ClipboardPaste, Mic, Check, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/contexts/I18nContext";
@@ -43,83 +49,124 @@ type Props = {
 };
 
 /* ───────────────────────────────
-   ✅ Anti-duplicados robusto (por palabras)
+   ✅ Normalización fuerte (para comparar)
+   - minúsculas
+   - sin acentos
+   - sin puntuación
+   - espacios colapsados
 ─────────────────────────────── */
-function normSpaces(s: string) {
-  return (s || "").replace(/\s+/g, " ").trim();
+function stripDiacritics(s: string) {
+  try {
+    return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  } catch {
+    return s;
+  }
 }
-function tokenizeWords(s: string) {
-  const t = normSpaces(s);
+function cleanForCompareWord(w: string) {
+  const lower = (w || "").toLowerCase();
+  const noDia = stripDiacritics(lower);
+  // quita puntuación y símbolos comunes, mantiene letras/números
+  const noPunct = noDia.replace(/[^\p{L}\p{N}]+/gu, "");
+  return noPunct;
+}
+function splitWordsOriginal(s: string) {
+  const t = (s || "").replace(/\s+/g, " ").trim();
   return t ? t.split(" ").filter(Boolean) : [];
 }
-function wordsEqual(a: string[], b: string[]) {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+function splitWordsNorm(s: string) {
+  const orig = splitWordsOriginal(s);
+  return orig.map(cleanForCompareWord).filter(Boolean);
+}
+function splitWordsPair(s: string) {
+  const orig = splitWordsOriginal(s);
+  const norm = orig.map(cleanForCompareWord);
+  // no filtramos orig aquí para poder reconstruir tail con las mismas posiciones;
+  // solo usamos norm filtrando vacíos en comparación mediante funciones de igualdad
+  return { orig, norm };
+}
+function normStringForCompare(s: string) {
+  return splitWordsNorm(s).join(" ").trim();
+}
+
+/* ───────────────────────────────
+   ✅ Delta seguro por palabras NORMALIZADAS,
+   pero devolviendo palabras ORIGINALES del NEXT
+─────────────────────────────── */
+function wordsEqualNorm(a: string[], b: string[]) {
+  // compara ignorando vacíos en norm
+  const A = a.filter(Boolean);
+  const B = b.filter(Boolean);
+  if (A.length !== B.length) return false;
+  for (let i = 0; i < A.length; i++) if (A[i] !== B[i]) return false;
   return true;
 }
-function startsWithWords(full: string[], prefix: string[]) {
-  if (prefix.length > full.length) return false;
-  for (let i = 0; i < prefix.length; i++) if (full[i] !== prefix[i]) return false;
+function startsWithNorm(full: string[], prefix: string[]) {
+  const F = full.filter(Boolean);
+  const P = prefix.filter(Boolean);
+  if (P.length > F.length) return false;
+  for (let i = 0; i < P.length; i++) if (F[i] !== P[i]) return false;
   return true;
 }
-function appendWithOverlapWords(acc: string, seg: string) {
-  const A = tokenizeWords(acc);
-  const S = tokenizeWords(seg);
+function deltaFromGrowingWithOrig(prevText: string, nextText: string) {
+  const prev = splitWordsPair(prevText);
+  const next = splitWordsPair(nextText);
 
-  if (!S.length) return A.join(" ");
-  if (!A.length) return S.join(" ");
+  const prevN = prev.norm.filter(Boolean);
+  const nextN = next.norm.filter(Boolean);
 
-  // A termina exactamente con S
-  if (S.length <= A.length && wordsEqual(A.slice(-S.length), S)) {
-    return A.join(" ");
-  }
+  if (!nextN.length) return "";
+  if (!prevN.length) return next.orig.join(" ").trim();
+  if (wordsEqualNorm(prevN, nextN)) return "";
 
-  // S empieza con A (S contiene todo lo anterior)
-  if (A.length <= S.length && wordsEqual(S.slice(0, A.length), A)) {
-    return S.join(" ");
-  }
-
-  // Solape sufijo/prefijo por palabras (incluye palabras cortas: "me", "no", etc.)
-  const max = Math.min(A.length, S.length);
-  for (let k = max; k >= 1; k--) {
-    if (wordsEqual(A.slice(-k), S.slice(0, k))) {
-      return [...A, ...S.slice(k)].join(" ").trim();
+  // caso ideal: next empieza con prev
+  if (startsWithNorm(nextN, prevN)) {
+    // necesitamos sacar las palabras originales correspondientes al tail.
+    // Para eso, recorremos next.norm (sin filtrar) y contamos cuántas “válidas” hemos consumido.
+    let consume = prevN.length;
+    const out: string[] = [];
+    for (let i = 0; i < next.orig.length; i++) {
+      const n = next.norm[i];
+      if (!n) continue;
+      if (consume > 0) {
+        consume--;
+        continue;
+      }
+      out.push(next.orig[i]);
     }
-  }
-
-  return [...A, ...S].join(" ").trim();
-}
-function deltaFromGrowingWords(prevFull: string, nextFull: string) {
-  const prev = tokenizeWords(prevFull);
-  const next = tokenizeWords(nextFull);
-
-  if (!next.length) return "";
-  if (!prev.length) return next.join(" ");
-  if (wordsEqual(prev, next)) return "";
-
-  // next empieza con prev => devuelve cola
-  if (startsWithWords(next, prev)) {
-    return next.slice(prev.length).join(" ").trim();
+    return out.join(" ").trim();
   }
 
   // retroceso => nada
-  if (startsWithWords(prev, next)) return "";
+  if (startsWithNorm(prevN, nextN)) return "";
 
-  // solape suffix(prev)==prefix(next)
-  const max = Math.min(prev.length, next.length);
+  // solape sufijo/prefijo
+  const max = Math.min(prevN.length, nextN.length);
   for (let k = max; k >= 1; k--) {
-    if (wordsEqual(prev.slice(-k), next.slice(0, k))) {
-      return next.slice(k).join(" ").trim();
+    const prevSuffix = prevN.slice(-k);
+    const nextPrefix = nextN.slice(0, k);
+    if (wordsEqualNorm(prevSuffix, nextPrefix)) {
+      // tail = next desde k “palabras válidas” en adelante
+      let consume = k;
+      const out: string[] = [];
+      for (let i = 0; i < next.orig.length; i++) {
+        const n = next.norm[i];
+        if (!n) continue;
+        if (consume > 0) {
+          consume--;
+          continue;
+        }
+        out.push(next.orig[i]);
+      }
+      return out.join(" ").trim();
     }
   }
 
-  // no seguro => no añadimos
+  // no seguro => no añadimos (evita duplicados masivos)
   return "";
 }
 
 /* ───────────────────────────────
    ✅ Teclado real: visualViewport
-   - kbdOffset > ~80px => teclado abierto
 ─────────────────────────────── */
 function getKeyboardOffsetPx() {
   if (typeof window === "undefined") return 0;
@@ -153,11 +200,8 @@ export default function MindDumpModal({
   const recognitionRef = useRef<any | null>(null);
   const speechSessionIdRef = useRef(0);
 
-  // ✅ buffers por sesión (para calcular delta FINAL sin duplicados)
-  const lastFinalAccumRef = useRef<string>("");
-
-  // ✅ estado de foco (solo para UI, NO para decidir si hay teclado)
-  const [isTextFocused, setIsTextFocused] = useState(false);
+  // ✅ por cada índice de resultado, recordamos lo último “final” insertado
+  const finalByIndexRef = useRef<Record<number, string>>({});
 
   // ✅ teclado real
   const [kbdOffset, setKbdOffset] = useState(0);
@@ -179,7 +223,6 @@ export default function MindDumpModal({
     }
   };
 
-  // ✅ NO auto-focus nunca. Solo si el usuario toca el textarea.
   const blurTextarea = () => {
     try {
       textareaRef.current?.blur();
@@ -188,7 +231,6 @@ export default function MindDumpModal({
     }
   };
 
-  // ✅ guía visual en el textarea
   const BULLET = "• ";
 
   const ensureNewBulletBlock = (prevText: string) => {
@@ -222,7 +264,7 @@ export default function MindDumpModal({
   const startDictationNewSession = () => {
     if (!SpeechRecognitionCtor) return;
 
-    // ✅ importantísimo: si estaba enfocado, lo desenfocamos para que NO salga teclado
+    // ✅ no teclado al hablar
     blurTextarea();
 
     speechSessionIdRef.current += 1;
@@ -238,30 +280,19 @@ export default function MindDumpModal({
       rec.interimResults = true;
       rec.lang = speechLangByUiLang[uiLang] || "es-ES";
 
-      // ✅ reset buffers de sesión (clave para anti-duplicados)
-      lastFinalAccumRef.current = "";
+      // ✅ reset dedupe por sesión
+      finalByIndexRef.current = {};
 
       rec.onresult = (event: any) => {
         if (mySessionId !== speechSessionIdRef.current) return;
 
-        // 1) FINAL acumulado estable (merge solapes por palabras)
-        let finalAccum = "";
-        for (let i = 0; i < event.results.length; i++) {
-          const res = event.results[i];
-          if (!res || !res.isFinal) continue;
-          const raw = String(res?.[0]?.transcript ?? "");
-          const chunk = normSpaces(raw);
-          if (!chunk) continue;
-          finalAccum = appendWithOverlapWords(finalAccum, chunk);
-        }
-
-        // 2) Interim actual (solo para UI)
+        // interim (solo el último no-final)
         let interimNow = "";
         for (let i = event.results.length - 1; i >= 0; i--) {
           const res = event.results[i];
           if (!res || res.isFinal) continue;
           const raw = String(res?.[0]?.transcript ?? "");
-          const chunk = normSpaces(raw);
+          const chunk = raw.replace(/\s+/g, " ").trim();
           if (chunk) {
             interimNow = chunk;
             break;
@@ -269,31 +300,60 @@ export default function MindDumpModal({
         }
         setInterim(interimNow);
 
-        // 3) Delta FINAL seguro (solo lo nuevo)
-        const prevFinal = lastFinalAccumRef.current;
-        const finalDelta = deltaFromGrowingWords(prevFinal, finalAccum);
+        // ✅ procesar solo índices desde resultIndex
+        let appendedAnything = false;
 
-        if (finalAccum) lastFinalAccumRef.current = finalAccum;
-        if (!finalDelta) return;
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const res = event.results[i];
+          if (!res || !res.isFinal) continue;
 
-        setText((prev) => {
-          const out = prev ?? "";
-          const base = out.trim().length === 0 ? BULLET : out;
+          const raw = String(res?.[0]?.transcript ?? "");
+          const nextFinal = raw.replace(/\s+/g, " ").trim();
+          if (!nextFinal) continue;
 
-          if (
-            base.endsWith(BULLET) ||
-            base.endsWith("\n" + BULLET) ||
-            base.endsWith("\n\n" + BULLET)
-          ) {
-            return base + finalDelta;
-          }
+          const prevFinalForIndex = finalByIndexRef.current[i] ?? "";
 
-          if (base.length > 0 && !base.endsWith("\n") && !base.endsWith(" ")) {
-            return base + " " + finalDelta;
-          }
+          // delta seguro (comparación normalizada, salida original)
+          const delta = deltaFromGrowingWithOrig(prevFinalForIndex, nextFinal);
 
-          return base + finalDelta;
-        });
+          // avanzamos lo que sabemos del índice (aunque delta sea vacío)
+          finalByIndexRef.current[i] = nextFinal;
+
+          if (!delta) continue;
+
+          setText((prev) => {
+            const out = prev ?? "";
+            const base = out.trim().length === 0 ? BULLET : out;
+
+            // ✅ guard extra: si el final ya termina con ese delta (normalizado), no lo repitas
+            const baseNorm = normStringForCompare(base);
+            const deltaNorm = normStringForCompare(delta);
+            if (deltaNorm && (baseNorm.endsWith(deltaNorm) || baseNorm.endsWith(" " + deltaNorm))) {
+              return base;
+            }
+
+            if (
+              base.endsWith(BULLET) ||
+              base.endsWith("\n" + BULLET) ||
+              base.endsWith("\n\n" + BULLET)
+            ) {
+              return base + delta;
+            }
+
+            if (base.length > 0 && !base.endsWith("\n") && !base.endsWith(" ")) {
+              return base + " " + delta;
+            }
+
+            return base + delta;
+          });
+
+          appendedAnything = true;
+        }
+
+        // ✅ NO hacemos focus del textarea jamás (evita teclado)
+        if (appendedAnything) {
+          // nada
+        }
       };
 
       rec.onerror = (e: any) => {
@@ -335,16 +395,13 @@ export default function MindDumpModal({
     e.preventDefault();
     e.stopPropagation();
 
-    // ✅ NO teclado al hablar
     blurTextarea();
 
     try {
       (e.currentTarget as any)?.setPointerCapture?.(e.pointerId);
     } catch {}
 
-    // ✅ cada sesión de voz crea un nuevo item: doble salto + bullet
     setText((prev) => ensureNewBulletBlock(prev ?? ""));
-
     startDictationNewSession();
   };
 
@@ -361,9 +418,7 @@ export default function MindDumpModal({
   };
 
   const handlePaste = async () => {
-    // ✅ pegar NO debe abrir teclado
     blurTextarea();
-
     try {
       if (!navigator.clipboard?.readText) {
         toast.error(
@@ -389,7 +444,6 @@ export default function MindDumpModal({
 
   const handleSave = () => {
     stopDictation();
-    // ✅ guardar NO debe forzar teclado
     blurTextarea();
 
     const trimmed = text.trim();
@@ -453,7 +507,7 @@ export default function MindDumpModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ✅ detectar teclado real (para que el FAB NO se quede al pulsar "atrás")
+  // ✅ detectar teclado real (para FAB)
   useEffect(() => {
     if (!open) return;
 
@@ -481,13 +535,8 @@ export default function MindDumpModal({
 
   const langLabel = uiLang.toUpperCase();
 
-  // ✅ teclado realmente abierto (umbral)
   const isKeyboardOpen = kbdOffset > 80;
-
-  // ✅ FAB guardar: solo cuando hay teclado real (así desaparece al cerrar teclado con "atrás")
   const showSaveFab = isKeyboardOpen;
-
-  // ✅ posición del FAB: encima del teclado (y safe area)
   const saveFabBottomPx = Math.max(14, kbdOffset + 14);
 
   return (
@@ -526,7 +575,6 @@ export default function MindDumpModal({
               )}
             </div>
 
-            {/* X gris */}
             <button
               data-no-focus
               onClick={handleClose}
@@ -549,8 +597,6 @@ export default function MindDumpModal({
             ref={textareaRef}
             value={text}
             onChange={(e) => setText(e.target.value)}
-            onFocus={() => setIsTextFocused(true)}
-            onBlur={() => setIsTextFocused(false)}
             placeholder={safeT("capture.placeholder", "Vacía tu mente aquí… (habla, escribe o pega)")}
             className="w-full resize-none outline-none text-[18px] leading-7"
             style={{
@@ -568,7 +614,7 @@ export default function MindDumpModal({
           )}
         </div>
 
-        {/* bottom flotante (Pegar / Hablar / Guardar) */}
+        {/* bottom flotante */}
         <div
           className="fixed left-0 right-0"
           style={{
@@ -757,7 +803,7 @@ export default function MindDumpModal({
                   )}
                 </div>
 
-                {/* Guardar (pill) */}
+                {/* Guardar */}
                 <div className="flex flex-col items-center justify-center gap-1.5">
                   <button
                     data-no-focus
@@ -794,7 +840,7 @@ export default function MindDumpModal({
           </div>
         </div>
 
-        {/* ✅ FAB Guardar (solo cuando teclado REAL está abierto) */}
+        {/* ✅ FAB Guardar encima del teclado (solo si teclado real está abierto) */}
         {showSaveFab && (
           <button
             data-no-focus
