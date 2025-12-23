@@ -9,22 +9,18 @@ declare global {
 
   interface WindowEventMap {
     beforeinstallprompt: BeforeInstallPromptEvent;
-    "remi-open-install": Event; // 👈 nuevo evento para reabrir el banner
+    "remi-open-install": Event;
   }
 
   interface Navigator {
-    standalone?: boolean; // Safari iOS
+    standalone?: boolean;
   }
 }
 
-// --- Detectar iOS ---
 function detectIsIos(): boolean {
   if (typeof window === "undefined") return false;
   const ua = window.navigator.userAgent || window.navigator.vendor;
   return /iPad|iPhone|iPod/.test(ua);
-
-  // 🔧 Para probar el banner de iPhone en todos los dispositivos:
-  // return true;
 }
 
 function detectIsStandalone(): boolean {
@@ -41,18 +37,15 @@ export default function InstallPrompt() {
   const [showIosInstructions, setShowIosInstructions] = useState(false);
   const [isIos, setIsIos] = useState(false);
 
-  // Detectar iOS una vez al montar
   useEffect(() => {
     const ios = detectIsIos();
     setIsIos(ios);
 
     if (ios && !detectIsStandalone()) {
-      // Solo mostramos el banner de iPhone cuando se abre en navegador (no en standalone)
       setShowIosInstructions(true);
     }
   }, []);
 
-  // Listener para beforeinstallprompt SOLO si NO es iOS (Android / desktop)
   useEffect(() => {
     if (isIos) return;
 
@@ -66,16 +59,11 @@ export default function InstallPrompt() {
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, [isIos]);
 
-  // 👉 NUEVO: reabrir el banner cuando se dispare "remi-open-install"
   useEffect(() => {
     const openHandler = () => {
       if (isIos) {
-        // En iOS, volvemos a mostrar las instrucciones si no está ya instalada
-        if (!detectIsStandalone()) {
-          setShowIosInstructions(true);
-        }
+        if (!detectIsStandalone()) setShowIosInstructions(true);
       } else if (deferredPrompt) {
-        // En Android/desktop, solo si todavía tenemos el evento guardado
         setShowPwaPrompt(true);
       }
     };
@@ -95,28 +83,23 @@ export default function InstallPrompt() {
     setShowPwaPrompt(false);
   };
 
-  const handleCloseIos = () => {
-    setShowIosInstructions(false);
-  };
+  const handleClosePwa = () => setShowPwaPrompt(false);
+  const handleCloseIos = () => setShowIosInstructions(false);
 
-  // Si no hay nada que mostrar, no renderizar
   if (!showPwaPrompt && !showIosInstructions) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 flex justify-center">
-      <div className="bg-white rounded-2xl shadow-lg px-4 py-3 flex items-start gap-3 max-w-sm w-full">
-        <div className="flex-1 text-sm">
+    <div className="fixed left-4 right-4 z-50 flex justify-center bottom-[calc(1rem+78px+env(safe-area-inset-bottom))]">
+      <div className="bg-white rounded-2xl shadow-lg px-4 py-3 flex items-start gap-3 max-w-sm w-full relative">
+        <div className="flex-1 text-sm pr-10">
           {showIosInstructions ? (
             <>
-              <div className="font-semibold">
-                {t("installPrompt.iosTitle")}
-              </div>
+              <div className="font-semibold">{t("installPrompt.iosTitle")}</div>
               <div className="text-xs text-slate-500 mt-0.5">
                 {t("installPrompt.iosStep1BeforeShare")}{" "}
                 <span className="font-semibold">
                   {t("installPrompt.iosShareLabel")}
                 </span>
-                {/* Icono tipo iOS Share */}
                 <svg
                   className="inline-block w-5 h-5 ml-1 align-middle text-[#007AFF]"
                   viewBox="0 0 24 24"
@@ -170,24 +153,22 @@ export default function InstallPrompt() {
           )}
         </div>
 
-        {/* Botón instalar solo para el banner PWA normal (no iPhone) */}
+        {/* ✅ X: más arriba + un pelín a la derecha, y con hitbox cómoda */}
+        <button
+          onClick={showIosInstructions ? handleCloseIos : handleClosePwa}
+          aria-label={t("installPrompt.close")}
+          className="absolute -top-2 right-1 p-2 text-xs text-slate-400 hover:text-slate-600"
+        >
+          ✕
+        </button>
+
+        {/* ✅ Instalar: un poco más abajo para no pegarse a la X */}
         {showPwaPrompt && !showIosInstructions && (
           <button
             onClick={handleInstallClick}
-            className="px-3 py-1.5 rounded-full bg-[#7d59c9] text-white text-xs font-semibold"
+            className="mt-5 px-3 py-1.5 rounded-full bg-[#7d59c9] text-white text-xs font-semibold"
           >
             {t("installPrompt.buttonInstall")}
-          </button>
-        )}
-
-        {/* Botón cerrar solo en iPhone */}
-        {showIosInstructions && (
-          <button
-            onClick={handleCloseIos}
-            aria-label={t("installPrompt.close")}
-            className="ml-1 text-xs text-slate-400 hover:text-slate-600"
-          >
-            ✕
           </button>
         )}
       </div>
