@@ -71,6 +71,19 @@ function hapticTick(ms = 20) {
   }
 }
 
+/* ───────────────────────────────
+   ✅ Normaliza texto entrante:
+   - sustituye saltos de línea por espacio
+   - colapsa espacios múltiples
+   - trim
+─────────────────────────────── */
+function normalizeIncomingText(raw: string): string {
+  return String(raw ?? "")
+    .replace(/\r?\n+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export default function MindDumpModal({
   open,
   onClose,
@@ -87,7 +100,7 @@ export default function MindDumpModal({
   const [uiLang, setUiLang] = useState<UiLang>(currentUiLang);
   const [langOpen, setLangOpen] = useState(false);
 
-  const [text, setText] = useState(initialText ?? "");
+  const [text, setText] = useState(normalizeIncomingText(initialText ?? ""));
   const [interim, setInterim] = useState("");
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -269,13 +282,14 @@ export default function MindDumpModal({
         return;
       }
       const clip = await navigator.clipboard.readText();
-      if (!clip?.trim()) {
+      const normalizedClip = normalizeIncomingText(clip);
+      if (!normalizedClip) {
         toast.message(
           safeT("capture.toast.clipboardEmpty", "No hay texto en el portapapeles.")
         );
         return;
       }
-      setText((prev) => (prev ? `${prev}\n${clip}` : clip));
+      setText((prev) => (prev ? `${prev} ${normalizedClip}` : normalizedClip));
     } catch {
       toast.error(
         safeT(
@@ -309,7 +323,7 @@ export default function MindDumpModal({
   };
 
   useEffect(() => {
-    if (typeof initialTextNonce === "number") setText(initialText ?? "");
+    if (typeof initialTextNonce === "number") setText(normalizeIncomingText(initialText ?? ""));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialTextNonce]);
 
