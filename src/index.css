@@ -163,11 +163,23 @@
 }
 
 /* ✅ NUEVO: en PC, la app se hace “de PC” (más ancha) SIN romper el scroll interno */
+/* ✅ en PC: ocupa todo el ancho */
 @media (min-width: 1024px) {
   .remi-shell {
-    max-width: 960px; /* puedes subir a 1100 si quieres más */
+    max-width: none;   /* quita el límite */
+    width: 100%;
+    height: 100vh;
+    border-radius: 0;  /* opcional: si quieres edge-to-edge real */
+    box-shadow: none;  /* opcional */
+  }
+
+  /* opcional: que la bottom nav no quede “exageradamente separada” */
+  .remi-bottom-nav-inner {
+    max-width: 900px; /* ajusta a gusto */
+    margin: 0 auto;
   }
 }
+
 
 /* página interior scrollable */
 .remi-page {
