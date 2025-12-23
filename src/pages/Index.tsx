@@ -33,7 +33,14 @@ import MindDumpModal from "@/components/MindDumpModal";
 import MentalDumpModal from "@/components/MentalDumpModal";
 
 import { SHARE_DRAFT_KEY } from "@/pages/ShareTarget";
-import { ListTodo, Check, User, Share2, Smartphone, CalendarPlus } from "lucide-react";
+import {
+  ListTodo,
+  Check,
+  User,
+  Share2,
+  Smartphone,
+  CalendarPlus,
+} from "lucide-react";
 
 const AVATAR_KEY = "remi_avatar";
 
@@ -47,7 +54,8 @@ type DateGroup = {
   dateMs?: number;
 };
 
-type FilterMode = "TODAY" | "WEEK" | "ALL" | "NO_DATE";
+// ✅ Quitado ALL
+type FilterMode = "TODAY" | "WEEK" | "NO_DATE";
 
 function isSameDay(a: Date, b: Date): boolean {
   return (
@@ -88,8 +96,9 @@ export default function TodayPage() {
 
   const [profileOpen, setProfileOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [statusSummary, setStatusSummary] =
-    useState<RemiStatusSummary | null>(null);
+  const [statusSummary, setStatusSummary] = useState<RemiStatusSummary | null>(
+    null
+  );
 
   const [showPushModal, setShowPushModal] = useState(false);
   const [registeringPush, setRegisteringPush] = useState(false);
@@ -99,8 +108,8 @@ export default function TodayPage() {
   // ✅ evita que el “auto-open” abra un modal vacío justo después de “share” (replace URL)
   const skipNextAutoOpenRef = useRef(false);
 
-  // ✅ Orden requerido: Todo (default), Hoy, Semana, Sin fecha
-  const [filter, setFilter] = useState<FilterMode>("ALL");
+  // ✅ Ahora: Hoy (default), Semana, Sin fecha
+  const [filter, setFilter] = useState<FilterMode>("TODAY");
 
   const activeTasksCount = tasks.length;
 
@@ -339,7 +348,9 @@ export default function TodayPage() {
       // 2) fallback: event.detail.initialText
       const ce = ev as CustomEvent<any>;
       const incomingText =
-        typeof ce?.detail?.initialText === "string" ? ce.detail.initialText : null;
+        typeof ce?.detail?.initialText === "string"
+          ? ce.detail.initialText
+          : null;
 
       if (incomingText && incomingText.trim().length > 0) {
         setMindDumpInitialText(incomingText.trim());
@@ -395,8 +406,16 @@ export default function TodayPage() {
       }
 
       const today = new Date();
-      const todayMid = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const tomorrowMid = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+      const todayMid = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate()
+      );
+      const tomorrowMid = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate() + 1
+      );
 
       const todayIso = todayMid.toISOString().slice(0, 10);
 
@@ -404,14 +423,19 @@ export default function TodayPage() {
       const noDate: BrainItem[] = [];
 
       const addTaskToDate = (dateMid: Date, task: BrainItem) => {
-        const dMid = new Date(dateMid.getFullYear(), dateMid.getMonth(), dateMid.getDate());
+        const dMid = new Date(
+          dateMid.getFullYear(),
+          dateMid.getMonth(),
+          dateMid.getDate()
+        );
         const iso = dMid.toISOString().slice(0, 10);
 
         let group = groupsMap.get(iso);
         if (!group) {
           let label: string;
           if (iso === todayIso) label = t("inbox.sectionToday");
-          else if (isSameDay(dMid, tomorrowMid)) label = t("inbox.sectionTomorrow");
+          else if (isSameDay(dMid, tomorrowMid))
+            label = t("inbox.sectionTomorrow");
           else {
             label = dMid.toLocaleDateString(undefined, {
               weekday: "short",
@@ -456,7 +480,11 @@ export default function TodayPage() {
             let cursor = new Date(todayMid);
             while (cursor.getTime() < dueMidTime) {
               addTaskToDate(cursor, task);
-              cursor = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() + 1);
+              cursor = new Date(
+                cursor.getFullYear(),
+                cursor.getMonth(),
+                cursor.getDate() + 1
+              );
             }
           }
         }
@@ -474,20 +502,26 @@ export default function TodayPage() {
 
     const today = new Date();
     const todayMid = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const weekEndMid = new Date(todayMid.getFullYear(), todayMid.getMonth(), todayMid.getDate() + 7);
+    const weekEndMid = new Date(
+      todayMid.getFullYear(),
+      todayMid.getMonth(),
+      todayMid.getDate() + 7
+    );
 
     return dateGroups.filter((group) => {
       if (!group.dateMs) return false;
       const time = group.dateMs;
 
       if (filter === "TODAY") return isSameDay(new Date(time), todayMid);
-      if (filter === "WEEK") return time >= todayMid.getTime() && time <= weekEndMid.getTime();
-      return true; // ALL
+      if (filter === "WEEK")
+        return time >= todayMid.getTime() && time <= weekEndMid.getTime();
+      return false;
     });
   }, [dateGroups, filter]);
 
   const hasVisibleDatedTasks = filteredDateGroups.some((g) => g.items.length > 0);
-  const hasNoDateTasks = noDateTasks.length > 0;
+  // ✅ Importante: “Sin fecha” SOLO cuenta si estás en NO_DATE
+  const hasNoDateTasks = filter === "NO_DATE" && noDateTasks.length > 0;
 
   // ---------- crear ----------
   const handleCreateTask = async (
@@ -497,7 +531,13 @@ export default function TodayPage() {
     repeatType: RepeatType
   ) => {
     if (!user) return;
-    const created = await createTask(user.id, title, dueDate, reminderMode, repeatType);
+    const created = await createTask(
+      user.id,
+      title,
+      dueDate,
+      reminderMode,
+      repeatType
+    );
     setTasks((prev) => [...prev, created]);
   };
 
@@ -591,7 +631,8 @@ export default function TodayPage() {
         padding: "6px 12px",
         borderRadius: 999,
         border: "none",
-        background: filter === mode ? "rgba(143,49,243,0.18)" : "rgba(248,250,252,1)",
+        background:
+          filter === mode ? "rgba(143,49,243,0.18)" : "rgba(248,250,252,1)",
         color: filter === mode ? "#7d59c9" : "#64748b",
         fontWeight: filter === mode ? 600 : 500,
         transition: "background 0.2s ease, color 0.2s ease",
@@ -777,8 +818,7 @@ export default function TodayPage() {
               borderRadius: 999,
             }}
           >
-            {/* ✅ Orden requerido: Todo (default), Hoy, Semana, Sin fecha */}
-            {renderFilterButton("ALL", t("today.tabsAll") || "Todo")}
+            {/* ✅ Sin "Todo". Hoy por defecto */}
             {renderFilterButton("TODAY", t("today.tabsToday") || "Hoy")}
             {renderFilterButton("WEEK", t("today.tabsWeek") || "Semana")}
             {renderFilterButton("NO_DATE", t("today.tabsNoDate") || "Sin fecha")}
@@ -793,7 +833,21 @@ export default function TodayPage() {
             </div>
           )}
 
-          {!loading && !hasVisibleDatedTasks && !hasNoDateTasks && (
+          {/* ✅ Empty state ajustado:
+              - Si NO_DATE -> depende de noDateTasks
+              - Si TODAY/WEEK -> depende de dated tasks visibles
+          */}
+          {!loading && filter !== "NO_DATE" && !hasVisibleDatedTasks && (
+            <div className="remi-task-row">
+              <div className="remi-task-dot" />
+              <div>
+                <p className="remi-task-title">{t("today.noUrgentTitle")}</p>
+                <p className="remi-task-sub">{t("today.noUrgentSubtitle")}</p>
+              </div>
+            </div>
+          )}
+
+          {!loading && filter === "NO_DATE" && !hasNoDateTasks && (
             <div className="remi-task-row">
               <div className="remi-task-dot" />
               <div>
@@ -941,105 +995,104 @@ export default function TodayPage() {
               </div>
             ))}
 
-          {!loading &&
-            hasNoDateTasks &&
-            (filter === "ALL" || filter === "TODAY" || filter === "WEEK" || filter === "NO_DATE") && (
-              <div>
-                <p className="mt-3 mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
-                  {t("inbox.sectionNoDate")}
-                </p>
+          {/* ✅ SIN FECHA: solo en NO_DATE */}
+          {!loading && filter === "NO_DATE" && noDateTasks.length > 0 && (
+            <div>
+              <p className="mt-3 mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                {t("inbox.sectionNoDate")}
+              </p>
 
-                {noDateTasks.map((task) => (
+              {noDateTasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="remi-task-row"
+                  style={{
+                    alignItems: "center",
+                    padding: "10px 12px",
+                    borderRadius: 16,
+                    background: "#ffffff",
+                    boxShadow: "0 10px 25px rgba(15,23,42,0.04)",
+                    marginBottom: 8,
+                  }}
+                >
                   <div
-                    key={task.id}
-                    className="remi-task-row"
                     style={{
-                      alignItems: "center",
-                      padding: "10px 12px",
-                      borderRadius: 16,
-                      background: "#ffffff",
-                      boxShadow: "0 10px 25px rgba(15,23,42,0.04)",
-                      marginBottom: 8,
+                      display: "flex",
+                      flex: 1,
+                      gap: 10,
+                      alignItems: "flex-start",
+                      minWidth: 0,
                     }}
                   >
                     <div
                       style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: "999px",
                         display: "flex",
-                        flex: 1,
-                        gap: 10,
-                        alignItems: "flex-start",
-                        minWidth: 0,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginTop: 2,
+                        background: "rgba(143,49,243,0.08)",
+                        color: "#7d59c9",
+                        flexShrink: 0,
                       }}
                     >
-                      <div
+                      <ListTodo size={16} />
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p
+                        className="remi-task-title"
                         style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: "999px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          marginTop: 2,
-                          background: "rgba(143,49,243,0.08)",
-                          color: "#7d59c9",
-                          flexShrink: 0,
+                          wordBreak: "break-word",
+                          overflowWrap: "break-word",
+                          whiteSpace: "normal",
                         }}
                       >
-                        <ListTodo size={16} />
-                      </div>
-
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p
-                          className="remi-task-title"
-                          style={{
-                            wordBreak: "break-word",
-                            overflowWrap: "break-word",
-                            whiteSpace: "normal",
-                          }}
-                        >
-                          {task.title}
-                        </p>
-                        <div className="remi-task-sub">{t("today.dueNoDate")}</div>
-                      </div>
-                    </div>
-
-                    <div
-                      style={{
-                        textAlign: "right",
-                        marginLeft: 8,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "flex-end",
-                        gap: 6,
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <button
-                          type="button"
-                          onClick={() => handleDone(task)}
-                          title={t("today.actionDoneTitle") || "Marcar como completada"}
-                          aria-label={t("today.actionDoneTitle") || "Marcar como completada"}
-                          style={{
-                            width: 30,
-                            height: 30,
-                            borderRadius: "999px",
-                            border: "1px solid rgba(16,185,129,0.4)",
-                            background: "rgba(16,185,129,0.08)",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                            padding: 0,
-                          }}
-                        >
-                          <Check size={16} color="#10B981" />
-                        </button>
-                      </div>
+                        {task.title}
+                      </p>
+                      <div className="remi-task-sub">{t("today.dueNoDate")}</div>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+
+                  <div
+                    style={{
+                      textAlign: "right",
+                      marginLeft: 8,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-end",
+                      gap: 6,
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => handleDone(task)}
+                        title={t("today.actionDoneTitle") || "Marcar como completada"}
+                        aria-label={t("today.actionDoneTitle") || "Marcar como completada"}
+                        style={{
+                          width: 30,
+                          height: 30,
+                          borderRadius: "999px",
+                          border: "1px solid rgba(16,185,129,0.4)",
+                          background: "rgba(16,185,129,0.08)",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          padding: 0,
+                        }}
+                      >
+                        <Check size={16} color="#10B981" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
