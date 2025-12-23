@@ -131,7 +131,7 @@
   }
 }
 
-/* --------- CONTENEDOR TIPO APP MÓVIL REMI --------- */
+/* --------- CONTENEDOR TIPO APP REMI --------- */
 
 /* contenedor de fondo */
 .remi-root {
@@ -154,11 +154,18 @@
   position: relative;
 }
 
-/* en escritorio que parezca móvil flotante */
+/* en escritorio: redondeada + sombra */
 @media (min-width: 768px) {
   .remi-shell {
     border-radius: var(--remi-radius-xl);
     box-shadow: 0 22px 60px rgba(90, 76, 170, 0.25);
+  }
+}
+
+/* ✅ NUEVO: en PC, la app se hace “de PC” (más ancha) SIN romper el scroll interno */
+@media (min-width: 1024px) {
+  .remi-shell {
+    max-width: 960px; /* puedes subir a 1100 si quieres más */
   }
 }
 
@@ -168,7 +175,7 @@
   min-height: 0; /* clave para que funcione el scroll */
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: 80px; /* hueco para la bottom nav */
+  padding-bottom: calc(80px + env(safe-area-inset-bottom)); /* ✅ safe area + hueco bottom nav */
 }
 
 /* ocultar scroll feo en móvil */
@@ -286,20 +293,19 @@
 .remi-task-time {
   font-size: 11px;
   color: var(--remi-text-soft);
+}
 
-  
-}/* Oculta el scroll de las ruedas de hora/minuto */
+/* Oculta el scroll de las ruedas de hora/minuto */
 .remi-timewheel-scroll {
-  scrollbar-width: none;         /* Firefox */
-  -ms-overflow-style: none;      /* IE/Edge antiguo */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge antiguo */
 }
 
 .remi-timewheel-scroll::-webkit-scrollbar {
   width: 0;
   height: 0;
-  display: none;                 /* Chrome, Safari, Edge */
+  display: none; /* Chrome, Safari, Edge */
 }
-
 
 /* ------- BOTTOM NAV CON CTA CENTRAL ------- */
 
@@ -308,8 +314,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: 78px;
-  padding: 0 18px 12px;
+  height: calc(78px + env(safe-area-inset-bottom)); /* ✅ safe area */
+  padding: 0 18px calc(12px + env(safe-area-inset-bottom)); /* ✅ safe area */
   background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(18px);
   border-top-left-radius: 24px;
@@ -325,6 +331,14 @@
   align-items: flex-end;
   justify-content: space-between;
   padding: 0 40px; /* hueco central para el + */
+}
+
+/* ✅ NUEVO: en PC, centra el contenido de la barra para que no quede demasiado separado */
+@media (min-width: 1024px) {
+  .remi-bottom-nav-inner {
+    max-width: 520px;
+    margin: 0 auto;
+  }
 }
 
 /* enlace de la barra (Hoy / Bandeja) */
@@ -442,14 +456,13 @@
   border-radius: 18px;
   border: 1px solid var(--remi-border-soft);
   padding: 10px 12px;
-  font-size: 16px;   /* ✅ evita el zoom en iOS */
+  font-size: 16px; /* ✅ evita el zoom en iOS */
   resize: none;
   min-height: 240px;
   margin-top: 10px;
   background: #faf9ff;
   outline: none;
 }
-
 
 /* chips para fechas */
 .remi-chip-row {
@@ -503,34 +516,29 @@
 }
 
 .remi-timewheel-scroll {
-  scrollbar-width: none;         /* Firefox */
-  -ms-overflow-style: none;      /* IE/Edge */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
 }
 
 .remi-timewheel-scroll::-webkit-scrollbar {
-  display: none;                 /* Chrome, Safari, etc. */
+  display: none; /* Chrome, Safari, etc. */
 }
-
 
 /* --------- UTILIDADES PERSONALIZADAS REMI --------- */
 
-/* Hero gradient usado en Auth, header perfil, etc. */
 .bg-gradient-hero {
   background: linear-gradient(135deg, #7d59c9 0%, #a75bff 45%, #ff6fd8 100%);
 }
 
-/* Tarjetas con sombra suave (Auth card, perfil, etc.) */
 .shadow-card {
   box-shadow: 0 18px 40px rgba(25, 16, 74, 0.22);
   border-radius: 24px;
 }
 
-/* Botones destacados con sombra */
 .shadow-button {
   box-shadow: 0 12px 24px rgba(143, 49, 243, 0.45);
 }
 
-/* Hover genérico para cards */
 .shadow-hover {
   transition: box-shadow 0.18s ease-out, transform 0.18s ease-out;
 }
@@ -539,7 +547,6 @@
   transform: translateY(-1px);
 }
 
-/* Oculta la barra de scroll en contenedores con .remi-scroll */
 .remi-scroll {
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE y Edge antiguo */
@@ -552,15 +559,15 @@
 
 /* --------- LANDING REMI --------- */
 @layer components {
-  /* fondo general de la landing (igual que mockup) */
   .landing-shell {
     @apply min-h-screen flex justify-center;
     background-color: #f5f4ff;
+    padding: 16px;
   }
 
-  /* “tarjeta” blanca centrada tipo móvil */
   .landing-page {
-    @apply w-full max-w-[430px] min-h-screen mx-auto bg-white;
+    @apply w-full min-h-screen mx-auto bg-white;
+    max-width: 430px;
     border-radius: 40px;
     box-shadow: 0 18px 40px rgba(25, 16, 74, 0.22);
     position: relative;
@@ -568,20 +575,23 @@
     color: hsl(var(--foreground));
   }
 
-  /* píldora blanca reutilizable (botones, etc.) */
+  @media (min-width: 1024px) {
+    .landing-page {
+      max-width: 1100px;
+    }
+  }
+
   .landing-pill {
     @apply rounded-full shadow-sm bg-white;
     border: 1px solid hsl(var(--border));
   }
 
-  /* badge superior (“Reduce tu carga mental”) */
   .landing-badge {
     @apply inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium;
     background-color: hsl(var(--secondary));
     color: hsl(var(--secondary-foreground));
   }
 
-  /* botón morado principal */
   .landing-btn-primary {
     @apply inline-flex items-center justify-center gap-2
       font-semibold text-sm sm:text-base
@@ -595,7 +605,6 @@
     box-shadow: 0 12px 24px rgba(143, 49, 243, 0.45);
   }
 
-  /* botón secundario blanco con borde */
   .landing-btn-secondary {
     @apply inline-flex items-center justify-center gap-2
       font-semibold text-sm sm:text-base
@@ -605,7 +614,6 @@
     color: hsl(var(--foreground));
   }
 
-  /* cards de características / bloques intermedios */
   .landing-card {
     @apply rounded-3xl bg-white;
     border: 1px solid hsl(var(--border));
