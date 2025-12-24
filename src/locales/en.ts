@@ -238,6 +238,12 @@ chip: {
   birthdayWord: "Birthday",
   apptWord: "Meeting",
   ideaWord: "Idea:",
+       buy: "Buy",
+      call: "Call",
+      pay: "Pay",
+      birthday: "Birthday",
+      appt: "Appointment",
+      idea: "Idea",
 
   schedule: {
     on: "on",
@@ -254,6 +260,8 @@ chip: {
   },
 
   reminder: {
+     dailyLabel: "Every day",
+        dailyInsert: "remind every day",
      standardLabel: "Standard",
       dayBeforeLabel: "day before",
       noneLabel: "No reminders",

@@ -247,6 +247,13 @@ chip: {
   birthdayWord: "Cumpleaños",
   apptWord: "Cita",
   ideaWord: "Idea:",
+     buy: "Comprar",
+      call: "Llamar",
+      pay: "Pagar",
+      birthday: "Cumpleaños",
+      appt: "Cita",
+      idea: "Idea",
+  
 
   // SCHEDULE
   schedule: {
@@ -266,6 +273,8 @@ chip: {
 
   // REMINDER 
   reminder: {
+     dailyLabel: "Cada día",
+        dailyInsert: "recordar cada día",
           standardLabel: "Standard",
       dayBeforeLabel: "día de antes",
       noneLabel: "Sin recordatorios",
