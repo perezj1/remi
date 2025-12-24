@@ -72,7 +72,7 @@ const ACTION_VERBS = [
   "volver",
 ];
 
-const IDEA_PREFIXES = ["idea", "pensar", "quizá", "quizás", "tal vez", "talvez"];
+const IDEA_PREFIXES = ["idea", "idee", "pensar", "quizá", "quizás", "tal vez", "talvez"];
 
 // Solo las keys; los textos vienen de i18n
 const HINT_KEYS = [
@@ -361,14 +361,20 @@ function detectWhyForText(text: string): {
   const lower = text.toLowerCase().trim();
 
   for (const prefix of IDEA_PREFIXES) {
-    if (lower.startsWith(prefix + " ") || lower === prefix) {
-      return {
-        kind: "idea",
-        whyKey: "mentalDump.why.prefixIdea",
-        whyVars: { word: prefix },
-      };
-    }
+  if (
+    lower === prefix ||
+    lower.startsWith(prefix + " ") ||
+    lower.startsWith(prefix + ":") ||
+    lower.startsWith(prefix + "-")
+  ) {
+    return {
+      kind: "idea",
+      whyKey: "mentalDump.why.prefixIdea",
+      whyVars: { word: prefix },
+    };
   }
+}
+
 
   const firstWord = normalizeFirstWord(lower);
   if (ACTION_VERBS.includes(firstWord)) {
