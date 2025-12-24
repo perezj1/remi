@@ -84,7 +84,7 @@ const MODAL_I18N: Record<UiLang, Record<string, string>> = {
     "capture.title": "Vacía tu mente",
     "capture.subtitle": "Habla, escribe o pega texto. Remi se encarga.",
     "capture.listening": "Escuchando…",
-    "capture.placeholder": "Vacía tu mente aquí… (habla, escribe o pega)",
+    "capture.placeholder": "Vacía tu mente aquí…",
     "capture.iosKeyboardMicHint":
       "En iPhone: usa el micrófono del teclado para dictar.",
     "capture.speakHold": "Mantén pulsado para hablar",
@@ -144,7 +144,7 @@ const MODAL_I18N: Record<UiLang, Record<string, string>> = {
     "capture.title": "Mind dump",
     "capture.subtitle": "Speak, type or paste. Remi handles the rest.",
     "capture.listening": "Listening…",
-    "capture.placeholder": "Dump your thoughts here… (speak, type or paste)",
+    "capture.placeholder": "Dump your thoughts here…",
     "capture.iosKeyboardMicHint":
       "On iPhone: use the keyboard microphone to диктate.",
     "capture.speakHold": "Hold to speak",
@@ -203,7 +203,7 @@ const MODAL_I18N: Record<UiLang, Record<string, string>> = {
     "capture.title": "Kopf frei machen",
     "capture.subtitle": "Sprich, tippe oder füge Text ein. Remi kümmert sich.",
     "capture.listening": "Höre zu…",
-    "capture.placeholder": "Schreib hier alles rein… (sprechen, tippen oder einfügen)",
+    "capture.placeholder": "Schreib hier alles rein…",
     "capture.iosKeyboardMicHint":
       "Auf dem iPhone: Nutze das Mikrofon der Tastatur zum Diktieren.",
     "capture.speakHold": "Gedrückt halten zum Sprechen",
@@ -1205,7 +1205,7 @@ export default function MindDumpModal({
                 return next;
               });
             }}
-            placeholder={t("capture.placeholder", "Vacía tu mente aquí… (habla, escribe o pega)")}
+            placeholder={t("capture.placeholder", "Vacía tu mente aquí…")}
             className="w-full resize-none outline-none text-[18px] leading-7"
             style={{ minHeight: "70vh", color: REMI_TEXT, background: "transparent" }}
             inputMode="text"

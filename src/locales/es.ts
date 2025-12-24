@@ -507,7 +507,7 @@ tip: {
   menuInstallApp: "Instalar app",
 
   greeting: "Hola, {{name}} 👋",
-  tasksToday: "Tienes {{count}} tareas activas",
+  tasksToday: "Tienes tareas activas",
   prioritize: "Prioricemos solo lo importante.",
   postponeDayToast: "Has añadido un día más a tu tarea.",
   

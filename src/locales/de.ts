@@ -495,7 +495,7 @@ tip: {
   
 
   greeting: "Hallo, {{name}} 👋",
-  tasksToday: "Du hast {{count}} aktive Aufgaben",
+  tasksToday: "Du hast aktive Aufgaben",
   prioritize: "Lass uns nur das Wichtige priorisieren.",
   postponeDayToast: "Du hast deiner Aufgabe einen Tag hinzugefügt.",
 
