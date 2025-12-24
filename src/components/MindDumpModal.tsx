@@ -6,12 +6,10 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { X, ClipboardPaste, Mic, Check, ChevronDown } from "lucide-react";
+import { X, ClipboardPaste, Mic, Check, ChevronDown, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/contexts/I18nContext";
 import { useSpeechDictation } from "@/hooks/useSpeechDictation";
-
-// ✅ NUEVO: para ocultar BottomNav cuando el modal está abierto
 import { useModalUi } from "@/contexts/ModalUiContext";
 
 const REMI_PURPLE = "#7d59c9";
@@ -72,8 +70,8 @@ function hapticTick(ms = 20) {
 }
 
 /* ───────────────────────────────
-   ✅ Normaliza texto entrante:
-   - sustituye saltos de línea por espacio
+   ✅ Normaliza texto entrante/pegado:
+   - sustituye saltos de línea por espacio (para evitar crear items sin querer)
    - colapsa espacios múltiples
    - trim
 ─────────────────────────────── */
@@ -84,6 +82,11 @@ function normalizeIncomingText(raw: string): string {
     .trim();
 }
 
+type ChipStage = "ROOT" | "SCHEDULE" | "TIME" | "REMINDER";
+type RootChipId = "birthday" | "call" | "buy" | "pay" | "appointment" | "idea";
+
+const GAP = " "; // ✅ 1 solo espacio
+
 export default function MindDumpModal({
   open,
   onClose,
@@ -91,6 +94,8 @@ export default function MindDumpModal({
   initialText,
   initialTextNonce,
 }: Props) {
+  // ✅ IMPORTANTE: NO pongas `if (!open) return null;` antes de hooks.
+
   const i18n = useI18n() as any;
   const t = i18n?.t as (k: string, vars?: any) => string;
 
@@ -113,13 +118,21 @@ export default function MindDumpModal({
   const [talkPressed, setTalkPressed] = useState(false);
   const [rippleTick, setRippleTick] = useState(0);
 
+  // ✅ Smart chips (auto)
+  const [chipStage, setChipStage] = useState<ChipStage>("ROOT");
+  const [activeRootChip, setActiveRootChip] = useState<RootChipId | null>(null);
+
+  // ✅ caret tracking (para detectar “línea actual”)
+  const [caretTick, setCaretTick] = useState(0);
+  const caretRef = useRef<number>(0);
+
   const ios = useMemo(() => isIOS(), []);
   const android = useMemo(() => isAndroid(), []);
 
-  const safeT = (key: string, fallback: string) => {
+  const safeT = (key: string, fallback: string, vars?: any) => {
     try {
       if (!t) return fallback;
-      const value = t(key);
+      const value = t(key, vars);
       if (!value) return fallback;
       if (value === key) return fallback;
       return value;
@@ -127,6 +140,9 @@ export default function MindDumpModal({
       return fallback;
     }
   };
+
+  // ✅ Helpers: siempre texto + 1 espacio final (GAP)
+  const withGap = (s: string) => `${String(s ?? "").trim()}${GAP}`;
 
   const blurTextarea = () => {
     try {
@@ -157,7 +173,6 @@ export default function MindDumpModal({
       const out = prev ?? "";
       const base = out.trim().length === 0 ? BULLET : out;
 
-      // si acabas de crear el bullet, pega directo
       if (
         base.endsWith(BULLET) ||
         base.endsWith("\n" + BULLET) ||
@@ -166,13 +181,12 @@ export default function MindDumpModal({
         return base + clean;
       }
 
-      // separador suave
       if (base.endsWith("\n") || base.endsWith(" ")) return base + clean;
       return base + " " + clean;
     });
   };
 
-  // ✅ Hook robusto de dictado (mismo enfoque que te funcionaba)
+  // ✅ Hook robusto de dictado
   const { isSupported, status, error, start, stop } = useSpeechDictation({
     lang: speechLangByUiLang[uiLang] || "es-ES",
     continuous: true,
@@ -182,7 +196,7 @@ export default function MindDumpModal({
   const listening = status === "listening";
   const showTalkButton = android && isSupported;
 
-  // ✅ NUEVO: marcar modal abierto/cerrado para ocultar BottomNav (contador)
+  // ✅ Ocultar BottomNav cuando el modal está abierto
   const { setModalOpen } = useModalUi();
   useEffect(() => {
     if (!open) return;
@@ -197,11 +211,8 @@ export default function MindDumpModal({
     if (lastErrorRef.current === error) return;
     lastErrorRef.current = error;
 
-    // Mapeo básico de errores típicos del Web Speech API
     if (error === "not-allowed" || error === "service-not-allowed") {
-      toast.error(
-        safeT("capture.toast.micDenied", "Permiso de micrófono denegado.")
-      );
+      toast.error(safeT("capture.toast.micDenied", "Permiso de micrófono denegado."));
     } else if (error === "no-speech") {
       toast.message(safeT("capture.toast.noSpeech", "No detecté voz. Prueba de nuevo."));
     } else {
@@ -224,12 +235,10 @@ export default function MindDumpModal({
     e.preventDefault();
     e.stopPropagation();
 
-    // ✅ haptic + waves
     hapticTick(20);
     setTalkPressed(true);
     setRippleTick((n) => n + 1);
 
-    // ✅ NO teclado al hablar
     blurTextarea();
     setTimeout(blurTextarea, 0);
 
@@ -237,7 +246,6 @@ export default function MindDumpModal({
       (e.currentTarget as any)?.setPointerCapture?.(e.pointerId);
     } catch {}
 
-    // ✅ prepara bloque bullet (solo una vez por “pulsación”)
     setText((prev) => ensureNewBulletBlock(prev ?? ""));
 
     if (startedRef.current) return;
@@ -284,24 +292,18 @@ export default function MindDumpModal({
       const clip = await navigator.clipboard.readText();
       const normalizedClip = normalizeIncomingText(clip);
       if (!normalizedClip) {
-        toast.message(
-          safeT("capture.toast.clipboardEmpty", "No hay texto en el portapapeles.")
-        );
+        toast.message(safeT("capture.toast.clipboardEmpty", "No hay texto en el portapapeles."));
         return;
       }
       setText((prev) => (prev ? `${prev} ${normalizedClip}` : normalizedClip));
     } catch {
       toast.error(
-        safeT(
-          "capture.toast.pasteError",
-          "No pude acceder al portapapeles. Mantén pulsado y pega."
-        )
+        safeT("capture.toast.pasteError", "No pude acceder al portapapeles. Mantén pulsado y pega.")
       );
     }
   };
 
   const handleSave = () => {
-    // para no mezclar dictado + guardar
     startedRef.current = false;
     stop();
     blurTextarea();
@@ -322,14 +324,33 @@ export default function MindDumpModal({
     onClose();
   };
 
+  // ✅ caret update
+  const updateCaret = () => {
+    const node = textareaRef.current;
+    if (!node) return;
+    try {
+      caretRef.current = node.selectionStart ?? node.value.length;
+      setCaretTick((n) => n + 1);
+    } catch {
+      // ignore
+    }
+  };
+
+  // ✅ Si llega texto de fuera (share, etc), normalizamos
   useEffect(() => {
-    if (typeof initialTextNonce === "number") setText(normalizeIncomingText(initialText ?? ""));
+    if (typeof initialTextNonce === "number") {
+      setText(normalizeIncomingText(initialText ?? ""));
+      setChipStage("ROOT");
+      setActiveRootChip(null);
+      caretRef.current = 0;
+      setCaretTick((n) => n + 1);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialTextNonce]);
 
+  // ✅ Propagar idioma a tu i18n si lo soporta
   useEffect(() => {
-    const setLangFn =
-      i18n?.setLang ?? i18n?.setUiLang ?? i18n?.setLanguage ?? null;
+    const setLangFn = i18n?.setLang ?? i18n?.setUiLang ?? i18n?.setLanguage ?? null;
     if (typeof setLangFn === "function") {
       try {
         setLangFn(uiLang);
@@ -338,6 +359,7 @@ export default function MindDumpModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uiLang]);
 
+  // Cerrar dropdown idioma al click fuera
   useEffect(() => {
     if (!langOpen) return;
     const onDown = (e: MouseEvent | TouchEvent) => {
@@ -365,13 +387,13 @@ export default function MindDumpModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // Teclado: visualViewport + focus/blur (evita que quede el FAB “pegado”)
+  // Teclado: visualViewport + focus/blur (evita FAB “pegado”)
   useEffect(() => {
     if (!open) return;
 
     const update = () => setKbdOffset(getKeyboardOffsetPx());
-
     update();
+
     const vv = window.visualViewport;
 
     let raf = 0;
@@ -396,13 +418,368 @@ export default function MindDumpModal({
     };
   }, [open]);
 
+  /* ───────────────────────────────
+     ✅ Smart chips helpers (cursor + línea actual)
+  ──────────────────────────────── */
+
+  const insertAtCursor = (snippet: string) => {
+    const node = textareaRef.current;
+    const s = String(snippet ?? "");
+    if (!s) return;
+
+    if (!node) {
+      setText((prev) => (prev ? `${prev}${prev.endsWith("\n") ? "" : "\n"}${s}` : s));
+      return;
+    }
+
+    const start = node.selectionStart ?? node.value.length;
+    const end = node.selectionEnd ?? node.value.length;
+
+    setText((prev) => {
+      const current = String(prev ?? "");
+      const safeStart = Math.min(start, current.length);
+      const safeEnd = Math.min(end, current.length);
+      const next = current.slice(0, safeStart) + s + current.slice(safeEnd);
+
+      requestAnimationFrame(() => {
+        const el = textareaRef.current;
+        if (!el) return;
+        try {
+          const pos = Math.min(safeStart + s.length, el.value.length);
+          el.selectionStart = el.selectionEnd = pos;
+          caretRef.current = pos;
+          setCaretTick((n) => n + 1);
+          el.focus();
+        } catch {
+          // ignore
+        }
+      });
+
+      return next;
+    });
+  };
+
+  // línea actual = “tarea/idea actual”
+  const getCurrentLineInfo = (full: string, caretIndex: number) => {
+    const s = String(full ?? "");
+    const idx = Math.max(0, Math.min(caretIndex, s.length));
+    const lineStart = s.lastIndexOf("\n", idx - 1) + 1;
+    const nextNl = s.indexOf("\n", idx);
+    const lineEnd = nextNl === -1 ? s.length : nextNl;
+    const rawLine = s.slice(lineStart, lineEnd);
+    const line = rawLine.replace(/^\s*•\s*/, "").trim();
+    return { line, lineStart, lineEnd, rawLine };
+  };
+
+  // Detectores (por idioma UI)
+  const detection = useMemo(() => {
+    const lower = (x: string) => x.toLowerCase();
+
+    const es = {
+      root: [
+        { id: "buy" as const, re: /^(compr|compra|comprar)\b/i },
+        { id: "call" as const, re: /^(llama|llamar|llamad|llam)\b/i },
+        { id: "pay" as const, re: /^(paga|pagar|pago)\b/i },
+        { id: "birthday" as const, re: /^(cumple|cumpleaños)\b/i },
+        { id: "appointment" as const, re: /^(cita|reunión|reunion)\b/i },
+        { id: "idea" as const, re: /^(idea)\b/i },
+      ],
+      scheduleTokens: [
+        /\bel\b/i,
+        /\bcada\b/i,
+        /\bantes de\b/i,
+        /\bantes del\b/i,
+        /\bhoy\b/i,
+        /\bmañana\b/i,
+        /\besta semana\b/i,
+        /\beste\b/i,
+        /\bpróxim[oa]\b/i,
+        /\bproxim[oa]\b/i,
+      ],
+      timeTokens: [/\ba las\b/i, /\b\d{1,2}:\d{2}\b/, /\b\d{1,2}\b/],
+      reminderTokens: [/\brecordar\b/i, /\brecuérdame\b/i, /\bnotificar\b/i],
+    };
+
+    const en = {
+      root: [
+        { id: "buy" as const, re: /^(buy|purchase)\b/i },
+        { id: "call" as const, re: /^(call|ring)\b/i },
+        { id: "pay" as const, re: /^(pay)\b/i },
+        { id: "birthday" as const, re: /^(birthday)\b/i },
+        { id: "appointment" as const, re: /^(meeting|appointment)\b/i },
+        { id: "idea" as const, re: /^(idea)\b/i },
+      ],
+      scheduleTokens: [/\bon\b/i, /\bevery\b/i, /\bbefore\b/i, /\btoday\b/i, /\btomorrow\b/i],
+      timeTokens: [/\bat\b/i, /\b\d{1,2}:\d{2}\b/, /\b\d{1,2}\s?(am|pm)\b/i],
+      reminderTokens: [/\bremind\b/i, /\bnotify\b/i],
+    };
+
+    const de = {
+      root: [
+        { id: "buy" as const, re: /^(kauf|kaufen)\b/i },
+        { id: "call" as const, re: /^(anrufen|ruf)\b/i },
+        { id: "pay" as const, re: /^(zahlen|bezahlen)\b/i },
+        { id: "birthday" as const, re: /^(geburtstag)\b/i },
+        { id: "appointment" as const, re: /^(termin|meeting)\b/i },
+        { id: "idea" as const, re: /^(idee)\b/i },
+      ],
+      scheduleTokens: [/\bam\b/i, /\bjeden\b/i, /\bvor\b/i, /\bheute\b/i, /\bmorgen\b/i],
+      timeTokens: [/\bum\b/i, /\b\d{1,2}:\d{2}\b/],
+      reminderTokens: [/\berinner\b/i, /\bbenachrichtig\b/i],
+    };
+
+    const map: Record<UiLang, typeof es> = { es, en: en as any, de: de as any };
+    return map[lower(uiLang) as UiLang] ?? es;
+  }, [uiLang]);
+
+  // ✅ ROOT chips: label (UI) + word (lo que se inserta) desde i18n
+  const rootChips = useMemo(
+    () =>
+      [
+        {
+          id: "buy" as const,
+          label: safeT("capture.chip.buy", "Comprar"),
+          word: safeT("capture.chip.buyWord", "Comprar"),
+        },
+        {
+          id: "call" as const,
+          label: safeT("capture.chip.call", "Llamar"),
+          word: safeT("capture.chip.callWord", "Llamar"),
+        },
+        {
+          id: "pay" as const,
+          label: safeT("capture.chip.pay", "Pagar"),
+          word: safeT("capture.chip.payWord", "Pagar"),
+        },
+        {
+          id: "birthday" as const,
+          label: safeT("capture.chip.birthday", "Cumpleaños"),
+          word: safeT("capture.chip.birthdayWord", "Cumpleaños"),
+        },
+        {
+          id: "appointment" as const,
+          label: safeT("capture.chip.appt", "Cita"),
+          word: safeT("capture.chip.apptWord", "Cita"),
+        },
+        {
+          id: "idea" as const,
+          label: safeT("capture.chip.idea", "Idea"),
+          word: safeT("capture.chip.ideaWord", "Idea:"),
+        },
+      ] as const,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [uiLang]
+  );
+
+  // ✅ SCHEDULE chips: label + insert desde capture.chip.schedule.*
+  const scheduleChips = useMemo(() => {
+    if (uiLang === "en") {
+      return [
+        {
+          id: "on",
+          label: safeT("capture.chip.schedule.on", "on"),
+          insert: withGap(safeT("capture.chip.schedule.on", "on")),
+        },
+        {
+          id: "every",
+          label: safeT("capture.chip.schedule.every", "every"),
+          insert: withGap(safeT("capture.chip.schedule.every", "every")),
+        },
+        {
+          id: "before",
+          label: safeT("capture.chip.schedule.before", "before"),
+          insert: withGap(safeT("capture.chip.schedule.before", "before")),
+        },
+        {
+          id: "today",
+          label: safeT("capture.chip.schedule.today", "today"),
+          insert: withGap(safeT("capture.chip.schedule.today", "today")),
+        },
+        {
+          id: "tomorrow",
+          label: safeT("capture.chip.schedule.tomorrow", "tomorrow"),
+          insert: withGap(safeT("capture.chip.schedule.tomorrow", "tomorrow")),
+        },
+      ];
+    }
+    if (uiLang === "de") {
+      return [
+        {
+          id: "am",
+          label: safeT("capture.chip.schedule.am", "am"),
+          insert: withGap(safeT("capture.chip.schedule.am", "am")),
+        },
+        {
+          id: "jeden",
+          label: safeT("capture.chip.schedule.jeden", "jeden"),
+          insert: withGap(safeT("capture.chip.schedule.jeden", "jeden")),
+        },
+        {
+          id: "vor",
+          label: safeT("capture.chip.schedule.vor", "vor"),
+          insert: withGap(safeT("capture.chip.schedule.vor", "vor")),
+        },
+        {
+          id: "heute",
+          label: safeT("capture.chip.schedule.heute", "heute"),
+          insert: withGap(safeT("capture.chip.schedule.heute", "heute")),
+        },
+        {
+          id: "morgen",
+          label: safeT("capture.chip.schedule.morgen", "morgen"),
+          insert: withGap(safeT("capture.chip.schedule.morgen", "morgen")),
+        },
+      ];
+    }
+    return [
+      {
+        id: "el",
+        label: safeT("capture.chip.schedule.el", "el"),
+        insert: withGap(safeT("capture.chip.schedule.el", "el")),
+      },
+      {
+        id: "cada",
+        label: safeT("capture.chip.schedule.cada", "cada"),
+        insert: withGap(safeT("capture.chip.schedule.cada", "cada")),
+      },
+      {
+        id: "antesDel",
+        label: safeT("capture.chip.schedule.antesDel", "antes del"),
+        insert: withGap(safeT("capture.chip.schedule.antesDel", "antes del")),
+      },
+      {
+        id: "hoy",
+        label: safeT("capture.chip.schedule.hoy", "hoy"),
+        insert: withGap(safeT("capture.chip.schedule.hoy", "hoy")),
+      },
+      {
+        id: "manana",
+        label: safeT("capture.chip.schedule.manana", "mañana"),
+        insert: withGap(safeT("capture.chip.schedule.manana", "mañana")),
+      },
+    ];
+  }, [uiLang]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ✅ TIME chips: label + insert desde capture.chip.time.*
+  const timeChips = useMemo(() => {
+    // prefix cambia según idioma (en/de/es) pero va a la misma key en tu estructura: capture.chip.time.prefix
+    const defaultPrefix = uiLang === "en" ? "at" : uiLang === "de" ? "um" : "a las";
+    const default0900 = uiLang === "en" ? "9:00" : "09:00";
+
+    return [
+      {
+        id: "prefix",
+        label: safeT("capture.chip.time.prefix", defaultPrefix),
+        insert: withGap(safeT("capture.chip.time.prefix", defaultPrefix)),
+      },
+      {
+        id: "9",
+        label: safeT("capture.chip.time.t0900", default0900),
+        insert: withGap(safeT("capture.chip.time.t0900", default0900)),
+      },
+      {
+        id: "18",
+        label: safeT("capture.chip.time.t1800", "18:00"),
+        insert: withGap(safeT("capture.chip.time.t1800", "18:00")),
+      },
+    ];
+  }, [uiLang]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ✅ REMINDER chips: label + insert desde capture.chip.reminder.*
+  const reminderChips = useMemo(() => {
+    const fallbackDailyLabel = uiLang === "en" ? "every day" : uiLang === "de" ? "jeden Tag" : "cada día";
+    const fallbackDayBeforeLabel = uiLang === "en" ? "day before" : uiLang === "de" ? "Vortag" : "día de antes";
+
+    const fallbackDailyInsert = uiLang === "en" ? "remind every day" : uiLang === "de" ? "erinner jeden Tag" : "recordar cada día";
+    const fallbackDayBeforeInsert =
+      uiLang === "en" ? "remind the day before" : uiLang === "de" ? "erinner am Vortag" : "recordar el día de antes";
+
+    return [
+      {
+        id: "daily",
+        label: safeT("capture.chip.reminder.dailyLabel", fallbackDailyLabel),
+        insert: withGap(safeT("capture.chip.reminder.dailyInsert", fallbackDailyInsert)),
+      },
+      {
+        id: "dayBefore",
+        label: safeT("capture.chip.reminder.dayBeforeLabel", fallbackDayBeforeLabel),
+        insert: withGap(safeT("capture.chip.reminder.dayBeforeInsert", fallbackDayBeforeInsert)),
+      },
+    ];
+  }, [uiLang]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ✅ auto: detecta acción/estado según la LÍNEA actual
+  useEffect(() => {
+    if (!open) return;
+
+    const caret = caretRef.current ?? 0;
+    const { line } = getCurrentLineInfo(text, caret);
+
+    const foundRoot = detection.root.find((r) => r.re.test(line));
+    const nextRoot: RootChipId | null = (foundRoot?.id as any) ?? null;
+
+    if (!nextRoot) {
+      if (activeRootChip !== null) setActiveRootChip(null);
+      if (chipStage !== "ROOT") setChipStage("ROOT");
+      return;
+    }
+
+    const hasSchedule = detection.scheduleTokens.some((re) => re.test(line));
+    const hasTime = detection.timeTokens.some((re) => re.test(line));
+    const hasReminder = detection.reminderTokens.some((re) => re.test(line));
+
+    let nextStage: ChipStage = "SCHEDULE";
+    if (hasTime || hasReminder) nextStage = "REMINDER";
+    else if (hasSchedule) nextStage = "TIME";
+    else nextStage = "SCHEDULE";
+
+    if (activeRootChip !== nextRoot) setActiveRootChip(nextRoot);
+    if (chipStage !== nextStage) setChipStage(nextStage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text, caretTick, open, detection]);
+
+  const handleRootChip = (id: RootChipId) => {
+    hapticTick(12);
+
+    const word =
+      rootChips.find((c) => c.id === id)?.word ??
+      (id === "buy" ? "Comprar" : id === "call" ? "Llamar" : id === "pay" ? "Pagar" : id);
+
+    insertAtCursor(withGap(word));
+  };
+
+  const handleScheduleChip = (insert: string) => {
+    hapticTick(10);
+    const prefix = text.endsWith(" ") || text.endsWith("\n") ? "" : " ";
+    insertAtCursor(prefix + insert);
+  };
+
+  const handleTimeChip = (insert: string) => {
+    hapticTick(10);
+    const prefix = text.endsWith(" ") || text.endsWith("\n") ? "" : " ";
+    insertAtCursor(prefix + insert);
+  };
+
+  const handleReminderChip = (insert: string) => {
+    hapticTick(10);
+    const prefix = text.endsWith(" ") || text.endsWith("\n") ? "" : " ";
+    insertAtCursor(prefix + insert);
+  };
+
+  const resetChips = () => {
+    hapticTick(10);
+    setChipStage("ROOT");
+    setActiveRootChip(null);
+  };
+
+  /* ───────────────────────────────
+     Render gating (después de hooks)
+  ──────────────────────────────── */
   if (!open) return null;
 
   const langLabel = uiLang.toUpperCase();
 
   const isKeyboardOpen = isFocused && kbdOffset > 80;
-
-  // ✅ Evita duplicados: cuando hay teclado, NO mostramos el botón Guardar del “pill”
   const showSaveFab = isKeyboardOpen;
   const showInlineSave = !showSaveFab;
 
@@ -411,11 +788,17 @@ export default function MindDumpModal({
   const showTalkActiveRing = listening;
   const showTalkRipple = talkPressed || listening;
 
+  const chipTitle =
+    chipStage === "ROOT"
+      ? safeT("capture.chips.title", "Atajos inteligentes")
+      : chipStage === "SCHEDULE"
+      ? safeT("capture.chips.title2", "Fecha / hábito")
+      : chipStage === "TIME"
+      ? safeT("capture.chips.title3", "Hora")
+      : safeT("capture.chips.title4", "Recordatorio");
+
   return (
-    <div
-      className="fixed inset-0 z-[1000]"
-      onContextMenu={(e) => e.preventDefault()}
-    >
+    <div className="fixed inset-0 z-[1000]" onContextMenu={(e) => e.preventDefault()}>
       <style>{`
         @keyframes remiRipple {
           from { transform: scale(0); opacity: .35; }
@@ -442,11 +825,20 @@ export default function MindDumpModal({
           animation: remiRingPulse 1.1s ease-in-out infinite;
           pointer-events: none;
         }
+        .remi-chipRow {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+        .remi-chipRow::-webkit-scrollbar {
+          display: none;
+          width: 0; height: 0;
+        }
       `}</style>
 
       <div className="absolute inset-0" style={{ background: "#ffffff" }} />
 
       <div className="absolute inset-0">
+        {/* Header */}
         <div
           className="sticky top-0 z-10"
           style={{
@@ -459,33 +851,19 @@ export default function MindDumpModal({
         >
           <div className="px-5 pt-4 pb-4 flex items-start justify-between">
             <div className="min-w-0 pr-3">
-              <div
-                className="text-[16px] font-semibold leading-tight"
-                style={{ color: "#ffffff" }}
-              >
+              <div className="text-[16px] font-semibold leading-tight" style={{ color: "#ffffff" }}>
                 {safeT("capture.title", "Vacía tu mente")}
               </div>
 
-              <div
-                className="text-[11px] mt-1"
-                style={{ color: "rgba(255,255,255,0.88)" }}
-              >
-                {safeT(
-                  "capture.subtitle",
-                  "Habla, escribe o pega texto. Remi se encarga."
-                )}
+              <div className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.88)" }}>
+                {safeT("capture.subtitle", "Habla, escribe o pega texto. Remi se encarga.")}
               </div>
 
               {showTalkButton && listening && (
-                <div
-                  className="text-[11px] mt-2"
-                  style={{ color: "rgba(255,255,255,0.92)" }}
-                >
+                <div className="text-[11px] mt-2" style={{ color: "rgba(255,255,255,0.92)" }}>
                   {safeT("capture.listening", "Escuchando…")}{" "}
                   {interim ? (
-                    <span style={{ color: "rgba(255,255,255,0.70)" }}>
-                      {interim}
-                    </span>
+                    <span style={{ color: "rgba(255,255,255,0.70)" }}>{interim}</span>
                   ) : null}
                 </div>
               )}
@@ -505,70 +883,163 @@ export default function MindDumpModal({
               <X className="h-5 w-5" style={{ color: "rgba(15,23,42,0.65)" }} />
             </button>
           </div>
+
+          {/* ✅ Smart chips bar (AUTO) */}
+          <div style={{ padding: "0 20px 14px" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 10,
+              }}
+            >
+              <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.92)" }}>
+                {chipTitle}
+              </div>
+
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                {chipStage !== "ROOT" && (
+                  <button
+                    type="button"
+                    onClick={resetChips}
+                    style={{
+                      height: 26,
+                      padding: "0 10px",
+                      borderRadius: 999,
+                      border: "1px solid rgba(255,255,255,0.28)",
+                      background: "rgba(255,255,255,0.10)",
+                      color: "rgba(255,255,255,0.95)",
+                      fontSize: 11,
+                      fontWeight: 900,
+                      cursor: "pointer",
+                    }}
+                    title={safeT("capture.chips.backHint", "Volver a atajos")}
+                    aria-label={safeT("capture.chips.backHint", "Volver a atajos")}
+                  >
+                    <Sparkles size={14} style={{ display: "inline-block", marginRight: 6 }} />
+                    {safeT("capture.chips.back", "Atajos")}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div
+              className="remi-chipRow"
+              style={{
+                marginTop: 10,
+                display: "flex",
+                overflowX: "auto",
+                WebkitOverflowScrolling: "touch",
+                gap: 8,
+                paddingBottom: 2,
+              }}
+            >
+              {chipStage === "ROOT" && (
+                <>
+                  {rootChips.map((c) => (
+                    <Chip key={c.id} label={c.label} onClick={() => handleRootChip(c.id)} />
+                  ))}
+                </>
+              )}
+
+              {chipStage === "SCHEDULE" && (
+                <>
+                  {scheduleChips.map((c) => (
+                    <Chip key={c.id} label={c.label} onClick={() => handleScheduleChip(c.insert)} />
+                  ))}
+                </>
+              )}
+
+              {chipStage === "TIME" && (
+                <>
+                  {timeChips.map((c) => (
+                    <Chip key={c.id} label={c.label} onClick={() => handleTimeChip(c.insert)} />
+                  ))}
+                </>
+              )}
+
+              {chipStage === "REMINDER" && (
+                <>
+                  {reminderChips.map((c) => (
+                    <Chip
+                      key={c.id}
+                      label={c.label}
+                      onClick={() => handleReminderChip(c.insert)}
+                    />
+                  ))}
+                </>
+              )}
+
+              <Chip label="↵" onClick={() => insertAtCursor("\n")} />
+            </div>
+          </div>
         </div>
 
+        {/* Body */}
         <div className="px-5 pt-5 pb-44">
           <textarea
-  ref={textareaRef}
-  value={text}
-  onChange={(e) => setText(e.target.value)}
-  onPaste={(e) => {
-    const pasted = e.clipboardData?.getData("text") ?? "";
-    const normalized = normalizeIncomingText(pasted);
-    if (!normalized) return;
+            ref={textareaRef}
+            value={text}
+            onChange={(e) => {
+              setText(e.target.value);
+              requestAnimationFrame(updateCaret);
+            }}
+            onKeyUp={() => updateCaret()}
+            onClick={() => updateCaret()}
+            onSelect={() => updateCaret()}
+            onFocus={() => {
+              setIsFocused(true);
+              requestAnimationFrame(updateCaret);
+            }}
+            onBlur={() => setIsFocused(false)}
+            onPaste={(e) => {
+              const pasted = e.clipboardData?.getData("text") ?? "";
+              const normalized = normalizeIncomingText(pasted);
+              if (!normalized) return;
 
-    // Interceptamos el pegado normal
-    e.preventDefault();
+              e.preventDefault();
 
-    // ✅ Capturar cursor/selección ANTES del setState (no usar e dentro luego)
-    const el = e.currentTarget as HTMLTextAreaElement | null;
-    const startRaw = el?.selectionStart;
-    const endRaw = el?.selectionEnd;
+              const el = e.currentTarget as HTMLTextAreaElement | null;
+              const startRaw = el?.selectionStart;
+              const endRaw = el?.selectionEnd;
 
-    setText((prev) => {
-      const current = String(prev ?? "");
+              setText((prev) => {
+                const current = String(prev ?? "");
+                const start =
+                  typeof startRaw === "number"
+                    ? Math.min(startRaw, current.length)
+                    : current.length;
+                const end =
+                  typeof endRaw === "number" ? Math.min(endRaw, current.length) : start;
 
-      // Fallback seguro si por lo que sea no hay selección disponible
-      const start =
-        typeof startRaw === "number" ? Math.min(startRaw, current.length) : current.length;
-      const end =
-        typeof endRaw === "number" ? Math.min(endRaw, current.length) : start;
+                const next = current.slice(0, start) + normalized + current.slice(end);
 
-      const next = current.slice(0, start) + normalized + current.slice(end);
+                requestAnimationFrame(() => {
+                  const node = textareaRef.current;
+                  if (!node) return;
+                  try {
+                    const pos = Math.min(start + normalized.length, node.value.length);
+                    node.selectionStart = node.selectionEnd = pos;
+                    caretRef.current = pos;
+                    setCaretTick((n) => n + 1);
+                  } catch {
+                    // ignore
+                  }
+                });
 
-      // Recolocar cursor después de pegar (usar ref, no el evento)
-      requestAnimationFrame(() => {
-        const node = textareaRef.current;
-        if (!node) return;
-        try {
-          const pos = Math.min(start + normalized.length, node.value.length);
-          node.selectionStart = node.selectionEnd = pos;
-        } catch {
-          // ignore
-        }
-      });
-
-      return next;
-    });
-  }}
-  onFocus={() => setIsFocused(true)}
-  onBlur={() => setIsFocused(false)}
-  placeholder={safeT(
-    "capture.placeholder",
-    "Vacía tu mente aquí… (habla, escribe o pega)"
-  )}
-  className="w-full resize-none outline-none text-[18px] leading-7"
-  style={{ minHeight: "70vh", color: REMI_TEXT, background: "transparent" }}
-  inputMode="text"
-/>
-
+                return next;
+              });
+            }}
+            placeholder={safeT("capture.placeholder", "Vacía tu mente aquí… (habla, escribe o pega)")}
+            className="w-full resize-none outline-none text-[18px] leading-7"
+            style={{ minHeight: "70vh", color: REMI_TEXT, background: "transparent" }}
+            inputMode="text"
+          />
 
           {ios && (
             <div className="mt-3 text-xs" style={{ color: REMI_SUB }}>
-              {safeT(
-                "capture.iosKeyboardMicHint",
-                "En iPhone: usa el micrófono del teclado para dictar."
-              )}
+              {safeT("capture.iosKeyboardMicHint", "En iPhone: usa el micrófono del teclado para dictar.")}
             </div>
           )}
         </div>
@@ -843,5 +1314,31 @@ export default function MindDumpModal({
         )}
       </div>
     </div>
+  );
+}
+
+function Chip({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        flex: "0 0 auto",
+        height: 30,
+        padding: "0 12px",
+        borderRadius: 999,
+        border: "1px solid rgba(255,255,255,0.30)",
+        background: "rgba(255,255,255,0.16)",
+        color: "rgba(255,255,255,0.95)",
+        fontSize: 11,
+        fontWeight: 900,
+        cursor: "pointer",
+        userSelect: "none",
+        WebkitTouchCallout: "none",
+        WebkitUserSelect: "none",
+      }}
+    >
+      {label}
+    </button>
   );
 }

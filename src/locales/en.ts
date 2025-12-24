@@ -14,6 +14,7 @@ help: "Turn this task into a habit that Remi will always remind you of at the ch
 },
 
 
+
 // ENGLISH
 mentalDump: {
   whyLabel: "Why:",
@@ -220,6 +221,47 @@ installPrompt: {
 
 
 capture: {
+
+// dentro de capture: { ... }
+chips: {
+  backHint: "Back to shortcuts",
+  title: "Smart shortcuts",
+    title2: "Date / habit",
+    title3: "Time",
+    title4: "Reminder",
+    back: "Shortcuts",
+},
+chip: {
+  buyWord: "Buy",
+  callWord: "Call",
+  payWord: "Pay",
+  birthdayWord: "Birthday",
+  apptWord: "Meeting",
+  ideaWord: "Idea:",
+
+  schedule: {
+    on: "on",
+    every: "every",
+    before: "before",
+    today: "today",
+    tomorrow: "tomorrow",
+  },
+
+  time: {
+    prefix: "at",
+    t0900: "9:00",
+    t1800: "18:00",
+  },
+
+  reminder: {
+    dailyLabel: "every day",
+    dayBeforeLabel: "day before",
+    dailyInsert: "remind every day",
+    dayBeforeInsert: "remind the day before",
+  },
+},
+
+
   tips: {
     0: "Tip: Say or type “idea” to create notes without reminders",
     1: "Tip: You can paste text from other apps",

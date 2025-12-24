@@ -229,6 +229,51 @@ status: {
 
 
 capture: {
+// dentro de capture: { ... }
+chips: {
+  backHint: "Volver a atajos",
+     title: "Atajos inteligentes",
+    title2: "Fecha / hábito",
+    title3: "Hora",
+    title4: "Recordatorio",
+    back: "Atajos",
+    
+},
+chip: {
+  // ROOT: palabra que se inserta en el textarea
+  buyWord: "Comprar",
+  callWord: "Llamar",
+  payWord: "Pagar",
+  birthdayWord: "Cumpleaños",
+  apptWord: "Cita",
+  ideaWord: "Idea:",
+
+  // SCHEDULE
+  schedule: {
+    el: "el",
+    cada: "cada",
+    antesDel: "antes del",
+    hoy: "hoy",
+    manana: "mañana",
+  },
+
+  // TIME
+  time: {
+    prefix: "a las",
+    t0900: "09:00",
+    t1800: "18:00",
+  },
+
+  // REMINDER (solo 2 opciones)
+  reminder: {
+    dailyLabel: "cada día",
+    dayBeforeLabel: "día de antes",
+    dailyInsert: "recordar cada día",
+    dayBeforeInsert: "recordar el día de antes",
+  },
+},
+
+
    tips: {
     0: "Consejo: Di o escribe “idea” para crear notas sin recordatorio",
     1: "Consejo: Puedes pegar texto de otras aplicaciones",

@@ -15,6 +15,8 @@ help: "Mach aus dieser Aufgabe eine Gewohnheit, an die Remi dich immer zur gewä
   },
 },
   
+
+
  // GERMAN
 mentalDump: {
   whyLabel: "Warum:",
@@ -223,6 +225,46 @@ status: {
 
 
 capture: {
+// dentro de capture: { ... }
+chips: {
+  title: "Intelligente Shortcuts",
+    title2: "Datum / Gewohnheit",
+    title3: "Uhrzeit",
+    title4: "Erinnerung",
+    back: "Shortcuts",
+  backHint: "Zurück zu Shortcuts",
+},
+chip: {
+  buyWord: "Kaufen",
+  callWord: "Anrufen",
+  payWord: "Bezahlen",
+  birthdayWord: "Geburtstag",
+  apptWord: "Termin",
+  ideaWord: "Idee:",
+
+  schedule: {
+    am: "am",
+    jeden: "jeden",
+    vor: "vor",
+    heute: "heute",
+    morgen: "morgen",
+  },
+
+  time: {
+    prefix: "um",
+    t0900: "09:00",
+    t1800: "18:00",
+  },
+
+  reminder: {
+    dailyLabel: "jeden Tag",
+    dayBeforeLabel: "Vortag",
+    dailyInsert: "erinner jeden Tag",
+    dayBeforeInsert: "erinner am Vortag",
+  },
+},
+
+
   tips: {
     0: "Tipp: Sage oder schreibe „Idee“, um Notizen ohne Erinnerung zu erstellen",
     1: "Tipp: Du kannst Text aus anderen Apps einfügen",
