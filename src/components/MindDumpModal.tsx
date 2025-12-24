@@ -509,51 +509,59 @@ export default function MindDumpModal({
 
         <div className="px-5 pt-5 pb-44">
           <textarea
-            ref={textareaRef}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onPaste={(e) => {
-              const pasted = e.clipboardData?.getData("text") ?? "";
-              const normalized = normalizeIncomingText(pasted);
-              if (!normalized) return;
+  ref={textareaRef}
+  value={text}
+  onChange={(e) => setText(e.target.value)}
+  onPaste={(e) => {
+    const pasted = e.clipboardData?.getData("text") ?? "";
+    const normalized = normalizeIncomingText(pasted);
+    if (!normalized) return;
 
-              // Interceptamos el pegado normal
-              e.preventDefault();
+    // Interceptamos el pegado normal
+    e.preventDefault();
 
-              // Insertar en la posición del cursor / selección
-              setText((prev) => {
-                const current = String(prev ?? "");
-                const target = e.currentTarget;
+    // ✅ Capturar cursor/selección ANTES del setState (no usar e dentro luego)
+    const el = e.currentTarget as HTMLTextAreaElement | null;
+    const startRaw = el?.selectionStart;
+    const endRaw = el?.selectionEnd;
 
-                const start = target.selectionStart ?? current.length;
-                const end = target.selectionEnd ?? current.length;
+    setText((prev) => {
+      const current = String(prev ?? "");
 
-                const next =
-                  current.slice(0, start) + normalized + current.slice(end);
+      // Fallback seguro si por lo que sea no hay selección disponible
+      const start =
+        typeof startRaw === "number" ? Math.min(startRaw, current.length) : current.length;
+      const end =
+        typeof endRaw === "number" ? Math.min(endRaw, current.length) : start;
 
-                // Recolocar cursor después de pegar
-                requestAnimationFrame(() => {
-                  try {
-                    target.selectionStart = target.selectionEnd =
-                      start + normalized.length;
-                  } catch {
-                    // ignore
-                  }
-                });
+      const next = current.slice(0, start) + normalized + current.slice(end);
 
-                return next;
-              });
-            }}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            placeholder={safeT(
-              "capture.placeholder",
-              "Vacía tu mente aquí… (habla, escribe o pega)"
-            )}
-            className="w-full resize-none outline-none text-[18px] leading-7"
-            style={{ minHeight: "70vh", color: REMI_TEXT, background: "transparent" }}
-            inputMode="text"
-          />
+      // Recolocar cursor después de pegar (usar ref, no el evento)
+      requestAnimationFrame(() => {
+        const node = textareaRef.current;
+        if (!node) return;
+        try {
+          const pos = Math.min(start + normalized.length, node.value.length);
+          node.selectionStart = node.selectionEnd = pos;
+        } catch {
+          // ignore
+        }
+      });
+
+      return next;
+    });
+  }}
+  onFocus={() => setIsFocused(true)}
+  onBlur={() => setIsFocused(false)}
+  placeholder={safeT(
+    "capture.placeholder",
+    "Vacía tu mente aquí… (habla, escribe o pega)"
+  )}
+  className="w-full resize-none outline-none text-[18px] leading-7"
+  style={{ minHeight: "70vh", color: REMI_TEXT, background: "transparent" }}
+  inputMode="text"
+/>
+
 
           {ios && (
             <div className="mt-3 text-xs" style={{ color: REMI_SUB }}>
