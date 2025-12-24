@@ -512,6 +512,38 @@ export default function MindDumpModal({
             ref={textareaRef}
             value={text}
             onChange={(e) => setText(e.target.value)}
+            onPaste={(e) => {
+              const pasted = e.clipboardData?.getData("text") ?? "";
+              const normalized = normalizeIncomingText(pasted);
+              if (!normalized) return;
+
+              // Interceptamos el pegado normal
+              e.preventDefault();
+
+              // Insertar en la posición del cursor / selección
+              setText((prev) => {
+                const current = String(prev ?? "");
+                const target = e.currentTarget;
+
+                const start = target.selectionStart ?? current.length;
+                const end = target.selectionEnd ?? current.length;
+
+                const next =
+                  current.slice(0, start) + normalized + current.slice(end);
+
+                // Recolocar cursor después de pegar
+                requestAnimationFrame(() => {
+                  try {
+                    target.selectionStart = target.selectionEnd =
+                      start + normalized.length;
+                  } catch {
+                    // ignore
+                  }
+                });
+
+                return next;
+              });
+            }}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             placeholder={safeT(
