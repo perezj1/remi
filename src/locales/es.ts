@@ -285,7 +285,7 @@ paste: {
   listening: "Escuchando…",
     iosKeyboardMicHint: "En iPhone: usa el micrófono del teclado para hablar.",
  speakHold: "Mantén pulsado para hablar",
- 
+
   textareaPlaceholder: "Ejemplos:",
 
   ideaButton: "Idea",
@@ -374,6 +374,58 @@ tasks: {
   },
 
   today: {
+
+tip: {
+    noDate: {
+      title_one: "Tienes {{count}} tarea sin fecha",
+      title_other: "Tienes {{count}} tareas sin fecha",
+      body: "¿Las ordenamos? En 30s te dejo la lista limpia.",
+      cta: "Ver sin fecha",
+    },
+
+    cleanNoDate: {
+      title: "✅ Sin tareas sin fecha",
+      body: "Perfecto. Ahora es fácil priorizar.",
+      cta: "Ver hoy",
+    },
+
+    paste: {
+      title: "¿Has probado a pegar texto?",
+      body: "Copia cualquier cosa (WhatsApp, Mail, Notas) y deja que Remi lo ordene.",
+      cta: "Pegar ahora",
+    },
+
+    mental: {
+      title: "Mini pausa",
+      body: "Respira 4s, suelta 6s. Tu mente no necesita hacerlo todo hoy.",
+      cta: "Vaciar mente",
+    },
+
+    week: {
+      title: "Plan rápido",
+      body: "Mira tu semana en 1 gesto. Lo urgente primero, lo demás fuera de la cabeza.",
+      cta: "Ver semana",
+    },
+
+    push: {
+      title: "No se te escapa nada",
+      body: "Activa notificaciones y deja de “acordarte por fuerza”.",
+      cta: "Activar",
+    },
+
+    birthday: {
+      title: "¿Cumpleaños cerca?",
+      body: "Escríbelo en 5 segundos y Remi te lo recordará cuando toque.",
+      cta: "Añadir",
+      prefill: "Cumpleaños de ___ el ___",
+    },
+
+    clearMind: {
+      title: "Mente despejada: {{percent}}%",
+      body: "Si ahora mismo te ronda algo… suéltalo aquí y sigues.",
+      cta: "Soltar",
+    },
+  },
 
     actionPostpone1d: "+1",
     actionPostpone1dTitle: "Aplazar: añade 1 día a la fecha límite",

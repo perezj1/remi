@@ -5,6 +5,7 @@ import {
   useState,
   useRef,
   type CSSProperties,
+  type ReactNode,
 } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -34,12 +35,19 @@ import MentalDumpModal from "@/components/MentalDumpModal";
 
 import { SHARE_DRAFT_KEY } from "@/pages/ShareTarget";
 import {
-  ListTodo,
+  List,
   Check,
   User,
   Share2,
   Smartphone,
   CalendarPlus,
+  Sparkles,
+  ClipboardPaste,
+  CalendarDays,
+  HeartPulse,
+  Bell,
+  ArrowRight,
+  ChevronDown,
 } from "lucide-react";
 
 const AVATAR_KEY = "remi_avatar";
@@ -74,11 +82,35 @@ function isShareEntry(search: string): boolean {
   }
 }
 
+type TipCardItem = {
+  id: string;
+  title: string;
+  body: string;
+  cta?: string;
+  icon: ReactNode;
+  bg: string; // compatibilidad
+  border: string; // compatibilidad
+  onClick?: () => void;
+};
+
+const DECK_CARD_W = 260;
+const DECK_CARD_H = 300;
+const DECK_OVERLAP = -30;
+
+// ✅ key fija para "Sin fecha"
+const NO_DATE_GROUP_KEY = "__NO_DATE__";
+
 export default function TodayPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, profile } = useAuth();
   const { t } = useI18n();
+
+  const safeT = (key: string, fallback: string, vars?: Record<string, any>) => {
+    const v = t(key as any, vars as any);
+    if (!v || v === key) return fallback;
+    return v;
+  };
 
   const [tasks, setTasks] = useState<BrainItem[]>([]);
   const [ideas, setIdeas] = useState<BrainItem[]>([]);
@@ -91,7 +123,8 @@ export default function TodayPage() {
 
   // ✅ modal de revisión
   const [mentalDumpOpen, setMentalDumpOpen] = useState(false);
-  const [mentalDumpInitialText, setMentalDumpInitialText] = useState<string>("");
+  const [mentalDumpInitialText, setMentalDumpInitialText] =
+    useState<string>("");
   const [mentalDumpInitialNonce, setMentalDumpInitialNonce] = useState(0);
 
   const [profileOpen, setProfileOpen] = useState(false);
@@ -105,11 +138,20 @@ export default function TodayPage() {
 
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
 
-  // ✅ evita que el “auto-open” abra un modal vacío justo después de “share” (replace URL)
+  // ✅ evita que el “auto-open” abra un modal vacío justo después de “share”
   const skipNextAutoOpenRef = useRef(false);
 
   // ✅ Ahora: Hoy (default), Semana, Sin fecha
   const [filter, setFilter] = useState<FilterMode>("TODAY");
+
+  // ✅ plegar/desplegar por grupo (por defecto TODO abierto)
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(
+    {}
+  );
+  const isCollapsed = (key: string) => !!collapsedGroups[key];
+  const toggleGroup = (key: string) => {
+    setCollapsedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const activeTasksCount = tasks.length;
 
@@ -122,9 +164,6 @@ export default function TodayPage() {
   };
 
   // ✅ Auto-open del MindDumpModal al entrar en "/"
-  // - NO lo dispares si vienes de share (?shared=1) -> lo maneja el effect de share
-  // - NO lo dispares si hay texto pendiente (share/dictado) -> lo maneja el handler específico
-  // - NO lo dispares tras un replace provocado por share (skipNextAutoOpenRef)
   useEffect(() => {
     if (location.pathname !== "/") return;
     if (typeof window === "undefined") return;
@@ -161,7 +200,6 @@ export default function TodayPage() {
     const raw = sessionStorage.getItem(SHARE_DRAFT_KEY);
     if (!raw) {
       if (hasSharedFlag) {
-        // Evita auto-open vacío tras el replace
         skipNextAutoOpenRef.current = true;
         navigate("/", { replace: true });
       }
@@ -182,12 +220,10 @@ export default function TodayPage() {
         return;
       }
 
-      // ✅ abrir el MindDumpModal con el texto compartido
       setMindDumpInitialText(text);
       setMindDumpInitialNonce((n) => n + 1);
       setMindDumpOpen(true);
 
-      // ✅ limpiar el query param ?shared=1 sin disparar auto-open vacío
       if (hasSharedFlag) {
         skipNextAutoOpenRef.current = true;
         navigate("/", { replace: true });
@@ -221,12 +257,13 @@ export default function TodayPage() {
         setStatusSummary(summaryData);
       } catch (err) {
         console.error(err);
-        alert(t("today.errorLoadingTasks"));
+        alert(safeT("today.errorLoadingTasks", "Error cargando tareas"));
       } finally {
         setLoading(false);
       }
     })();
-  }, [user, t]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   // ---------- mente despejada ----------
   const mindClearPercent = useMemo(() => {
@@ -324,7 +361,6 @@ export default function TodayPage() {
   // ✅ “remi-open-capture” ahora abre el MindDumpModal (y puede traer texto pendiente)
   useEffect(() => {
     const handler = (ev: Event) => {
-      // 1) prioridad: texto pendiente (dictado desde otra pantalla)
       let pending: string | null = null;
       try {
         pending = sessionStorage.getItem(NAV_DICTATION_KEY);
@@ -336,16 +372,13 @@ export default function TodayPage() {
         const clean = pending.trim();
         try {
           sessionStorage.removeItem(NAV_DICTATION_KEY);
-        } catch {
-          // ignore
-        }
+        } catch {}
         setMindDumpInitialText(clean);
         setMindDumpInitialNonce((n) => n + 1);
         setMindDumpOpen(true);
         return;
       }
 
-      // 2) fallback: event.detail.initialText
       const ce = ev as CustomEvent<any>;
       const incomingText =
         typeof ce?.detail?.initialText === "string"
@@ -433,9 +466,9 @@ export default function TodayPage() {
         let group = groupsMap.get(iso);
         if (!group) {
           let label: string;
-          if (iso === todayIso) label = t("inbox.sectionToday");
+          if (iso === todayIso) label = safeT("inbox.sectionToday", "Hoy");
           else if (isSameDay(dMid, tomorrowMid))
-            label = t("inbox.sectionTomorrow");
+            label = safeT("inbox.sectionTomorrow", "Mañana");
           else {
             label = dMid.toLocaleDateString(undefined, {
               weekday: "short",
@@ -495,13 +528,18 @@ export default function TodayPage() {
         .sort((a, b) => (a.dateMs ?? 0) - (b.dateMs ?? 0));
 
       return { dateGroups: dateGroupsArr, noDateTasks: noDate };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tasks, t]);
 
   const filteredDateGroups = useMemo(() => {
     if (filter === "NO_DATE") return [];
 
     const today = new Date();
-    const todayMid = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const todayMid = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
     const weekEndMid = new Date(
       todayMid.getFullYear(),
       todayMid.getMonth(),
@@ -520,7 +558,6 @@ export default function TodayPage() {
   }, [dateGroups, filter]);
 
   const hasVisibleDatedTasks = filteredDateGroups.some((g) => g.items.length > 0);
-  // ✅ Importante: “Sin fecha” SOLO cuenta si estás en NO_DATE
   const hasNoDateTasks = filter === "NO_DATE" && noDateTasks.length > 0;
 
   // ---------- crear ----------
@@ -549,7 +586,7 @@ export default function TodayPage() {
 
   const handleDone = async (task: BrainItem) => {
     const updated = await setTaskStatus(task.id, "DONE");
-    setTasks((prev) => prev.filter((t) => t.id !== updated.id));
+    setTasks((prev) => prev.filter((tt) => tt.id !== updated.id));
   };
 
   const handlePostpone = async (task: BrainItem, option: "DAY" | "WEEK") => {
@@ -558,9 +595,9 @@ export default function TodayPage() {
     if (option === "WEEK") base.setDate(base.getDate() + 7);
 
     const updated = await postponeTask(task.id, base.toISOString());
-    setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+    setTasks((prev) => prev.map((tt) => (tt.id === updated.id ? updated : tt)));
 
-    toast.success(t("today.postponeDayToast"));
+    toast.success(safeT("today.postponeDayToast", "Aplazado"));
   };
 
   // ---------- push ----------
@@ -571,10 +608,10 @@ export default function TodayPage() {
     try {
       await registerPushSubscription(user.id);
       setShowPushModal(false);
-      toast.success(t("today.pushEnabledToast"));
+      toast.success(safeT("today.pushEnabledToast", "Notificaciones activadas"));
     } catch (err) {
       console.error("Error registering push subscription", err);
-      toast.error(t("today.pushErrorToast"));
+      toast.error(safeT("today.pushErrorToast", "No se pudo activar push"));
     } finally {
       setRegisteringPush(false);
     }
@@ -585,7 +622,8 @@ export default function TodayPage() {
       ? profile.display_name
       : user?.email
       ? user.email.split("@")[0]
-      : t("today.defaultUserName")) ?? t("today.defaultUserName");
+      : safeT("today.defaultUserName", "Usuario")) ??
+    safeT("today.defaultUserName", "Usuario");
 
   const initial = displayName.charAt(0).toUpperCase();
 
@@ -597,14 +635,14 @@ export default function TodayPage() {
   const handleShareApp = async () => {
     setProfileOpen(false);
     const url = `${window.location.origin}/landing`;
-    const text = t("today.shareText");
+    const text = safeT("today.shareText", "Prueba REMI");
 
     try {
       if (navigator.share) {
         await navigator.share({ title: "REMI", text, url });
       } else if (navigator.clipboard) {
         await navigator.clipboard.writeText(url);
-        alert(t("today.shareCopied"));
+        alert(safeT("today.shareCopied", "Copiado"));
       } else {
         alert(url);
       }
@@ -619,33 +657,287 @@ export default function TodayPage() {
     window.dispatchEvent(new Event("remi-open-install"));
   };
 
-  const renderFilterButton = (mode: FilterMode, label: string) => (
-    <button
-      key={mode}
-      type="button"
-      onClick={() => setFilter(mode)}
-      className="remi-tab"
-      style={{
-        cursor: "pointer",
-        fontSize: 11,
-        padding: "6px 12px",
-        borderRadius: 999,
-        border: "none",
-        background:
-          filter === mode ? "rgba(143,49,243,0.18)" : "rgba(248,250,252,1)",
-        color: filter === mode ? "#7d59c9" : "#64748b",
-        fontWeight: filter === mode ? 600 : 500,
-        transition: "background 0.2s ease, color 0.2s ease",
-      }}
-    >
-      {label}
-    </button>
-  );
+  const renderFilterButton = (mode: FilterMode, label: string) => {
+    const active = filter === mode;
+
+    return (
+      <button
+        key={mode}
+        type="button"
+        onClick={() => setFilter(mode)}
+        className="remi-tab"
+        style={{
+          cursor: "pointer",
+          border: "none",
+          outline: "none",
+          padding: "10px 16px",
+          borderRadius: 999,
+          background: active ? "rgba(125,89,201,0.14)" : "transparent",
+          color: active ? "#7d59c9" : "rgba(100,116,139,0.95)",
+          fontSize: 13,
+          fontWeight: active ? 700 : 600,
+          lineHeight: 1,
+          transition: "background 0.18s ease, color 0.18s ease",
+        }}
+      >
+        {label}
+      </button>
+    );
+  };
 
   const shouldAutoPreview = mentalDumpInitialText.trim().length > 0;
 
+  const handleOpenMindDump = (prefill?: string) => {
+    setMindDumpInitialText(prefill ?? "");
+    setMindDumpInitialNonce((n) => n + 1);
+    setMindDumpOpen(true);
+  };
+
+  const handlePasteFromClipboard = async () => {
+    try {
+      if (!("clipboard" in navigator) || !navigator.clipboard?.readText) {
+        toast.error("El portapapeles no está disponible aquí");
+        handleOpenMindDump("");
+        return;
+      }
+
+      const txt = (await navigator.clipboard.readText())?.trim?.() ?? "";
+      if (!txt) {
+        toast.message("Portapapeles vacío (o sin permiso). Abro Remi igualmente 🙂");
+        handleOpenMindDump("");
+        return;
+      }
+      handleOpenMindDump(txt);
+    } catch (e) {
+      console.error(e);
+      toast.error("No pude leer el portapapeles (permiso). Abro Remi igualmente 🙂");
+      handleOpenMindDump("");
+    }
+  };
+
+  // ✅ Carrusel de tips
+  const tipCards: TipCardItem[] = useMemo(() => {
+    const noDateCount = noDateTasks.length;
+    const cards: TipCardItem[] = [];
+
+    if (noDateCount > 0) {
+      const key =
+        noDateCount === 1
+          ? "today.tip.noDate.title_one"
+          : "today.tip.noDate.title_other";
+
+      cards.push({
+        id: "no-date",
+        title: safeT(
+          key,
+          `Tienes ${noDateCount} tarea${noDateCount === 1 ? "" : "s"} sin fecha`,
+          { count: noDateCount }
+        ),
+        body: safeT(
+          "today.tip.noDate.body",
+          "¿Las ordenamos? En 30s te dejo la lista limpia."
+        ),
+        cta: safeT("today.tip.noDate.cta", "Ver sin fecha"),
+        icon: <CalendarDays size={18} />,
+        bg: "",
+        border: "rgba(16,185,129,0.65)",
+        onClick: () => setFilter("NO_DATE"),
+      });
+    } else {
+      cards.push({
+        id: "clean-no-date",
+        title: safeT("today.tip.cleanNoDate.title", "✅ Sin tareas sin fecha"),
+        body: safeT("today.tip.cleanNoDate.body", "Perfecto. Ahora es fácil priorizar."),
+        cta: safeT("today.tip.cleanNoDate.cta", "Ver hoy"),
+        icon: <Sparkles size={18} />,
+        bg: "",
+        border: "rgba(125,89,201,0.70)",
+        onClick: () => setFilter("TODAY"),
+      });
+    }
+
+    cards.push({
+      id: "paste",
+      title: safeT("today.tip.paste.title", "¿Has probado a pegar texto?"),
+      body: safeT(
+        "today.tip.paste.body",
+        "Copia cualquier cosa (WhatsApp, Mail, Notas) y deja que Remi lo ordene."
+      ),
+      cta: safeT("today.tip.paste.cta", "Pegar ahora"),
+      icon: <ClipboardPaste size={18} />,
+      bg: "",
+      border: "rgba(59,130,246,0.65)",
+      onClick: () => void handlePasteFromClipboard(),
+    });
+
+    cards.push({
+      id: "mental",
+      title: safeT("today.tip.mental.title", "Mini pausa"),
+      body: safeT(
+        "today.tip.mental.body",
+        "Respira 4s, suelta 6s. Tu mente no necesita hacerlo todo hoy."
+      ),
+      cta: safeT("today.tip.mental.cta", "Vaciar mente"),
+      icon: <HeartPulse size={18} />,
+      bg: "",
+      border: "rgba(244,63,94,0.60)",
+      onClick: () => handleOpenMindDump(""),
+    });
+
+    cards.push({
+      id: "week",
+      title: safeT("today.tip.week.title", "Plan rápido"),
+      body: safeT(
+        "today.tip.week.body",
+        "Mira tu semana en 1 gesto. Lo urgente primero, lo demás fuera de la cabeza."
+      ),
+      cta: safeT("today.tip.week.cta", "Ver semana"),
+      icon: <CalendarDays size={18} />,
+      bg: "",
+      border: "rgba(14,165,233,0.65)",
+      onClick: () => setFilter("WEEK"),
+    });
+
+    cards.push({
+      id: "push",
+      title: safeT("today.tip.push.title", "No se te escapa nada"),
+      body: safeT(
+        "today.tip.push.body",
+        "Activa notificaciones y deja de “acordarte por fuerza”."
+      ),
+      cta: safeT("today.tip.push.cta", "Activar"),
+      icon: <Bell size={18} />,
+      bg: "",
+      border: "rgba(99,102,241,0.65)",
+      onClick: () => setShowPushModal(true),
+    });
+
+    cards.push({
+      id: "birthday",
+      title: safeT("today.tip.birthday.title", "¿Cumpleaños cerca?"),
+      body: safeT(
+        "today.tip.birthday.body",
+        "Escríbelo en 5 segundos y Remi te lo recordará cuando toque."
+      ),
+      cta: safeT("today.tip.birthday.cta", "Añadir"),
+      icon: <Sparkles size={18} />,
+      bg: "",
+      border: "rgba(253,186,116,0.85)",
+      onClick: () =>
+        handleOpenMindDump(safeT("today.tip.birthday.prefill", "Cumpleaños de ___ el ___")),
+    });
+
+    cards.push({
+      id: "clear-mind",
+      title: safeT(
+        "today.tip.clearMind.title",
+        `Mente despejada: ${mindClearPercent}%`,
+        { percent: mindClearPercent }
+      ),
+      body: safeT(
+        "today.tip.clearMind.body",
+        "Si ahora mismo te ronda algo… suéltalo aquí y sigues."
+      ),
+      cta: safeT("today.tip.clearMind.cta", "Soltar"),
+      icon: <Sparkles size={18} />,
+      bg: "",
+      border: "rgba(148,163,184,0.65)",
+      onClick: () => handleOpenMindDump(""),
+    });
+
+    return cards;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [noDateTasks.length, mindClearPercent, t]);
+
+  // ✅ Deck: índice activo para los “puntitos”
+  const deckRef = useRef<HTMLDivElement | null>(null);
+  const [activeTipIndex, setActiveTipIndex] = useState(0);
+  const rafRef = useRef<number | null>(null);
+
+  const computeActiveTipIndex = () => {
+    const el = deckRef.current;
+    if (!el) return;
+
+    const children = Array.from(el.children) as HTMLElement[];
+    if (children.length === 0) return;
+
+    const centerX = el.scrollLeft + el.clientWidth / 2;
+
+    let bestIdx = 0;
+    let bestDist = Number.POSITIVE_INFINITY;
+
+    for (let i = 0; i < children.length; i++) {
+      const node = children[i];
+      const nodeCenter = node.offsetLeft + node.offsetWidth / 2;
+      const dist = Math.abs(nodeCenter - centerX);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestIdx = i;
+      }
+    }
+
+    setActiveTipIndex(bestIdx);
+  };
+
+  useEffect(() => {
+    const el = deckRef.current;
+    if (!el) return;
+
+    const onScroll = () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(() => {
+        computeActiveTipIndex();
+      });
+    };
+
+    el.addEventListener("scroll", onScroll, { passive: true });
+    computeActiveTipIndex();
+
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tipCards.length]);
+
+  useEffect(() => {
+    setActiveTipIndex((i) => Math.max(0, Math.min(i, tipCards.length - 1)));
+  }, [tipCards.length]);
+
+  const scrollToTip = (index: number) => {
+    const el = deckRef.current;
+    if (!el) return;
+
+    const child = el.querySelector(
+      `[data-tip-index="${index}"]`
+    ) as HTMLElement | null;
+
+    if (!child) return;
+
+    const target =
+      child.offsetLeft - (el.clientWidth / 2 - child.clientWidth / 2);
+
+    el.scrollTo({ left: target, behavior: "smooth" });
+  };
+
   return (
     <div className="remi-page">
+      {/* ✅ CSS local para ocultar scrollbars del deck */}
+      <style>
+        {`
+          .remi-tipDeck {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+          }
+          .remi-tipDeck::-webkit-scrollbar {
+            display: none;
+            width: 0;
+            height: 0;
+          }
+        `}
+      </style>
+
       {/* CABECERA */}
       <div
         style={{
@@ -666,12 +958,18 @@ export default function TodayPage() {
         >
           <div>
             <p style={{ fontSize: 12, opacity: 0.8 }}>
-              {t("today.greeting", { name: displayName })}
+              {safeT("today.greeting", `Hola, ${displayName}`, {
+                name: displayName,
+              })}
             </p>
             <h1 style={{ fontSize: 20, margin: "4px 0 2px", fontWeight: 600 }}>
-              {t("today.tasksToday", { count: activeTasksCount })}
+              {safeT("today.tasksToday", `Tienes ${activeTasksCount} tareas`, {
+                count: activeTasksCount,
+              })}
             </h1>
-            <p style={{ fontSize: 11, opacity: 0.85 }}>{t("today.prioritize")}</p>
+            <p style={{ fontSize: 11, opacity: 0.85 }}>
+              {safeT("today.prioritize", "Prioriza lo importante")}
+            </p>
           </div>
 
           {/* PERFIL */}
@@ -726,7 +1024,7 @@ export default function TodayPage() {
                   boxShadow: "0 18px 40px rgba(35,18,90,0.35)",
                   padding: "8px 10px",
                   minWidth: 170,
-                  zIndex: 20,
+                  zIndex: 1000,
                 }}
               >
                 <div
@@ -738,22 +1036,38 @@ export default function TodayPage() {
                     color: "#8b8fa6",
                   }}
                 >
-                  {t("today.profileLoggedInAs", { name: displayName })}
+                  {safeT(
+                    "today.profileLoggedInAs",
+                    `Conectado como ${displayName}`,
+                    { name: displayName }
+                  )}
                 </div>
 
-                <button type="button" onClick={handleOpenProfile} style={menuButtonStyle}>
+                <button
+                  type="button"
+                  onClick={handleOpenProfile}
+                  style={menuButtonStyle}
+                >
                   <User size={16} style={{ marginRight: 8 }} />
-                  <span>{t("today.menuProfile")}</span>
+                  <span>{safeT("today.menuProfile", "Perfil")}</span>
                 </button>
 
-                <button type="button" onClick={handleShareApp} style={menuButtonStyle}>
+                <button
+                  type="button"
+                  onClick={handleShareApp}
+                  style={menuButtonStyle}
+                >
                   <Share2 size={16} style={{ marginRight: 8 }} />
-                  <span>{t("today.menuShareApp")}</span>
+                  <span>{safeT("today.menuShareApp", "Compartir app")}</span>
                 </button>
 
-                <button type="button" onClick={handleInstallApp} style={menuButtonStyle}>
+                <button
+                  type="button"
+                  onClick={handleInstallApp}
+                  style={menuButtonStyle}
+                >
                   <Smartphone size={16} style={{ marginRight: 8 }} />
-                  <span>{t("today.menuInstallApp")}</span>
+                  <span>{safeT("today.menuInstallApp", "Instalar app")}</span>
                 </button>
               </div>
             )}
@@ -771,7 +1085,7 @@ export default function TodayPage() {
               opacity: 0.9,
             }}
           >
-            <span>{t("index.clearMind")}</span>
+            <span>{safeT("index.clearMind", "Mente despejada")}</span>
             <span>{mindClearPercent}%</span>
           </div>
           <div
@@ -796,301 +1110,327 @@ export default function TodayPage() {
         </div>
       </div>
 
+      {/* ✅ DECK DE TIPS */}
+      <div style={{ padding: "0 18px", marginTop: 14, marginBottom: 10 }}>
+        <div
+          ref={deckRef}
+          className="remi-tipDeck"
+          style={{
+            display: "flex",
+            alignItems: "stretch",
+            overflowX: "auto",
+            WebkitOverflowScrolling: "touch",
+            scrollSnapType: "x mandatory",
+            scrollBehavior: "smooth",
+            paddingLeft: `calc(50% - ${DECK_CARD_W / 2}px)`,
+            paddingRight: `calc(50% - ${DECK_CARD_W / 2}px)`,
+            paddingTop: 6,
+            paddingBottom: 8,
+            gap: 0,
+          }}
+        >
+          {tipCards.map((card, idx) => (
+            <TipCard
+              key={card.id}
+              item={card}
+              index={idx}
+              active={idx === activeTipIndex}
+              style={{
+                marginLeft: idx === 0 ? 0 : -DECK_OVERLAP,
+              }}
+              dataTipIndex={idx}
+            />
+          ))}
+        </div>
+
+        {/* puntitos */}
+        <div
+          style={{
+            marginTop: 6,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 7,
+          }}
+        >
+          {tipCards.map((_, i) => {
+            const isActive = i === activeTipIndex;
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => scrollToTip(i)}
+                aria-label={`Ir a la tarjeta ${i + 1}`}
+                style={{
+                  width: isActive ? 18 : 7,
+                  height: 7,
+                  borderRadius: 999,
+                  border: "none",
+                  cursor: "pointer",
+                  background: isActive
+                    ? "rgba(125,89,201,0.95)"
+                    : "rgba(148,163,184,0.55)",
+                  transition: "width 0.18s ease, background 0.18s ease",
+                }}
+              />
+            );
+          })}
+        </div>
+      </div>
+
       {/* CONTENIDO */}
       <div style={{ padding: "0 18px 18px" }}>
         {/* Filtros */}
         <div
           style={{
-            marginTop: 16,
+            marginTop: 8,
             marginBottom: 8,
             display: "flex",
-            justifyContent: "flex-start",
+            justifyContent: "center",
             alignItems: "center",
           }}
         >
           <div
             className="remi-tabs"
             style={{
-              display: "flex",
+              display: "inline-flex",
               gap: 6,
-              background: "#f9fafb",
-              padding: 4,
+              padding: 6,
               borderRadius: 999,
+              background: "#ffffff",
+              border: "1px solid rgba(226,232,240,0.95)",
+              boxShadow: "0 12px 30px rgba(15,23,42,0.06)",
             }}
           >
-            {/* ✅ Sin "Todo". Hoy por defecto */}
-            {renderFilterButton("TODAY", t("today.tabsToday") || "Hoy")}
-            {renderFilterButton("WEEK", t("today.tabsWeek") || "Semana")}
-            {renderFilterButton("NO_DATE", t("today.tabsNoDate") || "Sin fecha")}
+            {renderFilterButton("TODAY", safeT("today.tabsToday", "Hoy"))}
+            {renderFilterButton("WEEK", safeT("today.tabsWeek", "Semana"))}
+            {renderFilterButton("NO_DATE", safeT("today.tabsNoDate", "Sin fecha"))}
           </div>
         </div>
 
-        {/* lista */}
-        <div className="remi-task-list">
+        {/* ✅ lista */}
+        <div className="space-y-3">
           {loading && (
-            <div className="remi-task-row">
-              <span className="remi-task-sub">{t("today.loadingTasks")}</span>
+            <div className="rounded-2xl bg-white/70 border border-slate-100 px-4 py-3 text-[13px] text-slate-500">
+              {safeT("today.loadingTasks", "Cargando…")}
             </div>
           )}
 
-          {/* ✅ Empty state ajustado:
-              - Si NO_DATE -> depende de noDateTasks
-              - Si TODAY/WEEK -> depende de dated tasks visibles
-          */}
           {!loading && filter !== "NO_DATE" && !hasVisibleDatedTasks && (
-            <div className="remi-task-row">
-              <div className="remi-task-dot" />
-              <div>
-                <p className="remi-task-title">{t("today.noUrgentTitle")}</p>
-                <p className="remi-task-sub">{t("today.noUrgentSubtitle")}</p>
+            <div className="rounded-2xl bg-white border border-slate-100 shadow-[0_14px_34px_rgba(15,23,42,0.06)] px-4 py-4 flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-[rgba(143,49,243,0.10)] text-[#7d59c9] flex items-center justify-center shrink-0">
+                <List size={18} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[14px] font-semibold text-slate-900">
+                  {safeT("today.noUrgentTitle", "Todo bajo control")}
+                </p>
+                <p className="text-[12px] text-slate-500">
+                  {safeT("today.noUrgentSubtitle", "No hay nada urgente ahora mismo")}
+                </p>
               </div>
             </div>
           )}
 
           {!loading && filter === "NO_DATE" && !hasNoDateTasks && (
-            <div className="remi-task-row">
-              <div className="remi-task-dot" />
-              <div>
-                <p className="remi-task-title">{t("today.noUrgentTitle")}</p>
-                <p className="remi-task-sub">{t("today.noUrgentSubtitle")}</p>
+            <div className="rounded-2xl bg-white border border-slate-100 shadow-[0_14px_34px_rgba(15,23,42,0.06)] px-4 py-4 flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-[rgba(143,49,243,0.10)] text-[#7d59c9] flex items-center justify-center shrink-0">
+                <List size={18} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[14px] font-semibold text-slate-900">
+                  {safeT("today.noUrgentTitle", "Todo bajo control")}
+                </p>
+                <p className="text-[12px] text-slate-500">
+                  {safeT("today.noUrgentSubtitle", "No hay nada urgente ahora mismo")}
+                </p>
               </div>
             </div>
           )}
 
+          {/* Grupos con fecha */}
           {!loading &&
             filteredDateGroups.map((group) => (
-              <div key={group.key}>
-                <p className="mt-3 mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
-                  {group.label}
-                </p>
+              <div key={group.key} className="pt-2">
+                {/* ✅ Separador plegable */}
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(group.key)}
+                  aria-expanded={!isCollapsed(group.key)}
+                  className="w-full flex items-center gap-2 mb-2 select-none"
+                  style={{ cursor: "pointer" }}
+                >
+                  <ChevronDown
+                    size={16}
+                    className="text-slate-500 transition-transform"
+                    style={{
+                      transform: isCollapsed(group.key)
+                        ? "rotate(-90deg)"
+                        : "rotate(0deg)",
+                    }}
+                  />
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+                    {group.label}
+                  </p>
+                  <div className="flex-1 h-px bg-slate-300/70" />
+                </button>
 
-                {group.items.map((task) => {
-                  const hasDue = !!task.due_date;
-                  const dueStr = hasDue
-                    ? new Date(task.due_date as string).toLocaleString()
-                    : t("today.dueNoDate");
+                {/* ✅ Contenido plegable (por defecto abierto) */}
+                {!isCollapsed(group.key) && (
+                  <div className="space-y-2">
+                    {group.items.map((task) => {
+                      const hasDue = !!task.due_date;
+                      const dueStr = hasDue
+                        ? new Date(task.due_date as string).toLocaleString()
+                        : safeT("today.dueNoDate", "Sin fecha");
 
-                  return (
-                    <div
-                      key={task.id}
-                      className="remi-task-row"
-                      style={{
-                        alignItems: "center",
-                        padding: "10px 12px",
-                        borderRadius: 16,
-                        background: "#ffffff",
-                        boxShadow: "0 10px 25px rgba(15,23,42,0.04)",
-                        marginBottom: 8,
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          flex: 1,
-                          gap: 10,
-                          alignItems: "flex-start",
-                          minWidth: 0,
-                        }}
-                      >
+                      return (
                         <div
-                          style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: "999px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            marginTop: 2,
-                            background: "rgba(143,49,243,0.08)",
-                            color: "#7d59c9",
-                            flexShrink: 0,
-                          }}
+                          key={task.id}
+                          className="rounded-2xl bg-white border border-slate-100 shadow-[0_14px_34px_rgba(15,23,42,0.06)] px-4 py-3 flex items-center gap-3"
                         >
-                          <ListTodo size={16} />
-                        </div>
-
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p
-                            className="remi-task-title"
-                            style={{
-                              wordBreak: "break-word",
-                              overflowWrap: "break-word",
-                              whiteSpace: "normal",
-                            }}
-                          >
-                            {task.title}
-                          </p>
-                          <div className="remi-task-sub">
-                            {hasDue ? t("today.dueLabel") : ""}
-                            {dueStr}
+                          <div className="w-10 h-10 rounded-full bg-[rgba(143,49,243,0.10)] text-[#7d59c9] flex items-center justify-center shrink-0">
+                            <List size={18} />
                           </div>
-                        </div>
-                      </div>
 
-                      <div
-                        style={{
-                          textAlign: "right",
-                          marginLeft: 8,
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "flex-end",
-                          gap: 6,
-                        }}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          {hasDue && (
-                            <button
-                              type="button"
-                              onClick={() => handlePostpone(task, "DAY")}
-                              title={
-                                t("today.actionPostpone1dTitle") ||
-                                "Aplazar: añade 1 día a la fecha límite"
-                              }
-                              aria-label={
-                                t("today.actionPostpone1dTitle") ||
-                                "Aplazar: añade 1 día a la fecha límite"
-                              }
+                          <div className="flex-1 min-w-0">
+                            <p
+                              className="text-[14px] font-semibold text-slate-900 leading-snug"
                               style={{
-                                width: 30,
-                                height: 30,
-                                borderRadius: "999px",
-                                border: "1px solid #C6CDD7",
-                                background: "#FFFFFF",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                cursor: "pointer",
-                                padding: 0,
+                                wordBreak: "break-word",
+                                overflowWrap: "anywhere",
+                                whiteSpace: "normal",
                               }}
                             >
-                              <CalendarPlus size={16} color="#747B88" />
-                            </button>
-                          )}
+                              {task.title}
+                            </p>
 
-                          <button
-                            type="button"
-                            onClick={() => handleDone(task)}
-                            title={t("today.actionDoneTitle") || "Marcar como completada"}
-                            aria-label={t("today.actionDoneTitle") || "Marcar como completada"}
-                            style={{
-                              width: 30,
-                              height: 30,
-                              borderRadius: "999px",
-                              border: "1px solid rgba(16,185,129,0.4)",
-                              background: "rgba(16,185,129,0.08)",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              cursor: "pointer",
-                              padding: 0,
-                            }}
-                          >
-                            <Check size={16} color="#10B981" />
-                          </button>
+                            <div className="mt-1 flex items-center gap-1 text-[12px] text-slate-500">
+                              <CalendarDays size={14} className="text-slate-400" />
+                              <span className="truncate">{dueStr}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {hasDue && (
+                              <button
+                                type="button"
+                                onClick={() => handlePostpone(task, "DAY")}
+                                title={safeT(
+                                  "today.actionPostpone1dTitle",
+                                  "Aplazar: añade 1 día a la fecha límite"
+                                )}
+                                aria-label={safeT(
+                                  "today.actionPostpone1dTitle",
+                                  "Aplazar: añade 1 día a la fecha límite"
+                                )}
+                                className="w-9 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center"
+                              >
+                                <CalendarPlus size={16} color="#94A3B8" />
+                              </button>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => handleDone(task)}
+                              title={safeT(
+                                "today.actionDoneTitle",
+                                "Marcar como completada"
+                              )}
+                              aria-label={safeT(
+                                "today.actionDoneTitle",
+                                "Marcar como completada"
+                              )}
+                              className="w-9 h-9 rounded-full border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 inline-flex items-center justify-center"
+                            >
+                              <Check size={16} color="#10B981" />
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             ))}
 
           {/* ✅ SIN FECHA: solo en NO_DATE */}
           {!loading && filter === "NO_DATE" && noDateTasks.length > 0 && (
-            <div>
-              <p className="mt-3 mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
-                {t("inbox.sectionNoDate")}
-              </p>
-
-              {noDateTasks.map((task) => (
-                <div
-                  key={task.id}
-                  className="remi-task-row"
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => toggleGroup(NO_DATE_GROUP_KEY)}
+                aria-expanded={!isCollapsed(NO_DATE_GROUP_KEY)}
+                className="w-full flex items-center gap-2 mb-2 select-none"
+                style={{ cursor: "pointer" }}
+              >
+                <ChevronDown
+                  size={16}
+                  className="text-slate-500 transition-transform"
                   style={{
-                    alignItems: "center",
-                    padding: "10px 12px",
-                    borderRadius: 16,
-                    background: "#ffffff",
-                    boxShadow: "0 10px 25px rgba(15,23,42,0.04)",
-                    marginBottom: 8,
+                    transform: isCollapsed(NO_DATE_GROUP_KEY)
+                      ? "rotate(-90deg)"
+                      : "rotate(0deg)",
                   }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      flex: 1,
-                      gap: 10,
-                      alignItems: "flex-start",
-                      minWidth: 0,
-                    }}
-                  >
+                />
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+                  {safeT("inbox.sectionNoDate", "Sin fecha")}
+                </p>
+                <div className="flex-1 h-px bg-slate-300/70" />
+              </button>
+
+              {!isCollapsed(NO_DATE_GROUP_KEY) && (
+                <div className="space-y-2">
+                  {noDateTasks.map((task) => (
                     <div
-                      style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: "999px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginTop: 2,
-                        background: "rgba(143,49,243,0.08)",
-                        color: "#7d59c9",
-                        flexShrink: 0,
-                      }}
+                      key={task.id}
+                      className="rounded-2xl bg-white border border-slate-100 shadow-[0_14px_34px_rgba(15,23,42,0.06)] px-4 py-3 flex items-center gap-3"
                     >
-                      <ListTodo size={16} />
-                    </div>
+                      <div className="w-10 h-10 rounded-full bg-[rgba(143,49,243,0.10)] text-[#7d59c9] flex items-center justify-center shrink-0">
+                        <List size={18} />
+                      </div>
 
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p
-                        className="remi-task-title"
-                        style={{
-                          wordBreak: "break-word",
-                          overflowWrap: "break-word",
-                          whiteSpace: "normal",
-                        }}
-                      >
-                        {task.title}
-                      </p>
-                      <div className="remi-task-sub">{t("today.dueNoDate")}</div>
-                    </div>
-                  </div>
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className="text-[14px] font-semibold text-slate-900 leading-snug"
+                          style={{
+                            wordBreak: "break-word",
+                            overflowWrap: "anywhere",
+                            whiteSpace: "normal",
+                          }}
+                        >
+                          {task.title}
+                        </p>
 
-                  <div
-                    style={{
-                      textAlign: "right",
-                      marginLeft: 8,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "flex-end",
-                      gap: 6,
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <button
-                        type="button"
-                        onClick={() => handleDone(task)}
-                        title={t("today.actionDoneTitle") || "Marcar como completada"}
-                        aria-label={t("today.actionDoneTitle") || "Marcar como completada"}
-                        style={{
-                          width: 30,
-                          height: 30,
-                          borderRadius: "999px",
-                          border: "1px solid rgba(16,185,129,0.4)",
-                          background: "rgba(16,185,129,0.08)",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          cursor: "pointer",
-                          padding: 0,
-                        }}
-                      >
-                        <Check size={16} color="#10B981" />
-                      </button>
+                        <div className="mt-1 flex items-center gap-1 text-[12px] text-slate-500">
+                          <CalendarDays size={14} className="text-slate-400" />
+                          <span className="truncate">
+                            {safeT("today.dueNoDate", "Sin fecha")}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleDone(task)}
+                          title={safeT(
+                            "today.actionDoneTitle",
+                            "Marcar como completada"
+                          )}
+                          aria-label={safeT(
+                            "today.actionDoneTitle",
+                            "Marcar como completada"
+                          )}
+                          className="w-9 h-9 rounded-full border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 inline-flex items-center justify-center"
+                        >
+                          <Check size={16} color="#10B981" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           )}
         </div>
@@ -1100,8 +1440,12 @@ export default function TodayPage() {
       {showPushModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl p-5 w-[90%] max-w-sm shadow-xl">
-            <h2 className="text-base font-semibold mb-1">{t("today.pushTitle")}</h2>
-            <p className="text-xs text-slate-600 mb-4">{t("today.pushBody")}</p>
+            <h2 className="text-base font-semibold mb-1">
+              {safeT("today.pushTitle", "Activa notificaciones")}
+            </h2>
+            <p className="text-xs text-slate-600 mb-4">
+              {safeT("today.pushBody", "Para recordatorios en el momento justo.")}
+            </p>
 
             <div className="flex flex-col gap-2">
               <button
@@ -1110,7 +1454,17 @@ export default function TodayPage() {
                 disabled={registeringPush}
                 className="w-full rounded-full bg-[#7d59c9] text-white text-xs font-semibold py-2.5 shadow-md disabled:opacity-70"
               >
-                {registeringPush ? t("today.pushEnabling") : t("today.pushEnable")}
+                {registeringPush
+                  ? safeT("today.pushEnabling", "Activando…")
+                  : safeT("today.pushEnable", "Activar")}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowPushModal(false)}
+                className="w-full rounded-full bg-slate-100 text-slate-700 text-xs font-semibold py-2.5"
+              >
+                Ahora no
               </button>
             </div>
           </div>
@@ -1137,6 +1491,126 @@ export default function TodayPage() {
         autoPreview={shouldAutoPreview}
       />
     </div>
+  );
+}
+
+function TipCard({
+  item,
+  index,
+  active,
+  style,
+  dataTipIndex,
+}: {
+  item: TipCardItem;
+  index: number;
+  active: boolean;
+  style?: CSSProperties;
+  dataTipIndex: number;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={item.onClick}
+      data-tip-index={dataTipIndex}
+      style={{
+        scrollSnapAlign: "center",
+        flex: `0 0 ${DECK_CARD_W}px`,
+        width: DECK_CARD_W,
+        height: DECK_CARD_H,
+        borderRadius: 36,
+        background: "#ffffff",
+        border: "1px solid rgba(226,232,240,0.95)",
+        boxShadow: "0 10px 10px rgba(15,23,42,0.10)",
+        padding: 26,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 14,
+        textAlign: "center",
+        cursor: item.onClick ? "pointer" : "default",
+        position: "relative",
+        zIndex: active ? 50 : 10 + index,
+        transform: active ? "translateY(-2px)" : "translateY(0)",
+        transition: "transform 0.18s ease",
+        ...style,
+      }}
+    >
+      <div
+        style={{
+          width: 74,
+          height: 74,
+          borderRadius: 22,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "rgba(125,89,201,0.10)",
+          border: "1px solid rgba(125,89,201,0.18)",
+          boxShadow: "0 14px 30px rgba(15,23,42,0.08)",
+        }}
+      >
+        <div style={{ transform: "scale(1.7)", color: "#7d59c9" }}>
+          {item.icon}
+        </div>
+      </div>
+
+      <div style={{ padding: "6px 6px 0" }}>
+        <div
+          style={{
+            fontSize: 12.5,
+            lineHeight: 1.35,
+            color: "rgba(15,23,42,0.78)",
+            fontWeight: 700,
+          }}
+        >
+          {item.title}
+        </div>
+
+        <div
+          style={{
+            marginTop: 10,
+            fontSize: 11.5,
+            lineHeight: 1.35,
+            color: "rgba(15,23,42,0.55)",
+            fontWeight: 500,
+          }}
+        >
+          {item.body}
+        </div>
+      </div>
+
+      {item.cta ? (
+        <div
+          style={{
+            width: "100%",
+            display: "flex",
+            justifyContent: "center",
+            paddingBottom: 2,
+          }}
+        >
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "14px 26px",
+              borderRadius: 999,
+              background: "#ffffff",
+              border: "1px solid rgba(125,89,201,0.25)",
+              color: "#7d59c9",
+              fontSize: 16,
+              fontWeight: 700,
+              boxShadow: "0 14px 26px rgba(125,89,201,0.10)",
+            }}
+          >
+            <span>{item.cta}</span>
+            <ArrowRight size={16} />
+          </div>
+        </div>
+      ) : (
+        <div style={{ height: 36 }} />
+      )}
+    </button>
   );
 }
 

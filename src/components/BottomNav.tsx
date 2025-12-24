@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
   Brain,
-  ListTodo,
+  List,
   Lightbulb,
   Mic,
   Plus,
@@ -357,7 +357,7 @@ export default function BottomNav() {
         <NavItem
           to="/tasks"
           label={t("bottomNav.tasks")}
-          icon={ListTodo}
+          icon={List}
           active={isTasksActive}
         />
 

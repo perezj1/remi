@@ -9,7 +9,7 @@ import {
   setTaskStatus,
   deleteBrainItem,
 } from "@/lib/brainItemsApi";
-import { Lightbulb, ListTodo, Check, Trash2, Pencil } from "lucide-react";
+import { Lightbulb, List, Check, Trash2, Pencil } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
 import IdeaEditModal from "@/components/IdeaEditModal";
 
@@ -374,7 +374,7 @@ export default function InboxPage() {
                           }}
                         >
                           {isTask ? (
-                            <ListTodo size={18} />
+                            <List size={18} />
                           ) : (
                             <Lightbulb size={18} />
                           )}

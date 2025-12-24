@@ -1,5 +1,5 @@
 // src/pages/Ideas.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   BrainItem,
@@ -8,7 +8,14 @@ import {
   setTaskStatus,
   deleteBrainItem,
 } from "@/lib/brainItemsApi";
-import { Lightbulb, Check, Trash2, Pencil } from "lucide-react";
+import {
+  Lightbulb,
+  Check,
+  Trash2,
+  Pencil,
+  ChevronDown,
+  Calendar,
+} from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
 import IdeaEditModal from "@/components/IdeaEditModal";
 
@@ -18,10 +25,7 @@ type DateGroup = {
   items: BrainItem[];
 };
 
-function statusLabel(
-  status: BrainItemStatus,
-  t: (key: string) => string
-): string {
+function statusLabel(status: BrainItemStatus, t: (key: string) => string): string {
   if (status === "DONE") return t("inbox.statusDone");
   if (status === "ACTIVE") return t("inbox.statusActive");
   return t("inbox.statusArchived");
@@ -35,6 +39,21 @@ function isSameDay(a: Date, b: Date): boolean {
   );
 }
 
+function formatDue(due: string, fallbackLocale?: string) {
+  const dt = new Date(due);
+  if (Number.isNaN(dt.getTime())) return null;
+
+  // Formato tipo: "26 dic, 18:55" (según locale del navegador)
+  const fmt = new Intl.DateTimeFormat(fallbackLocale, {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  return fmt.format(dt);
+}
+
 export default function IdeasPage() {
   const { user } = useAuth();
   const { t } = useI18n();
@@ -44,6 +63,11 @@ export default function IdeasPage() {
 
   const [editingIdea, setEditingIdea] = useState<BrainItem | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+
+  // ✅ Retráctil: estado de grupos colapsados
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(
+    {}
+  );
 
   // siempre arriba al entrar / recargar
   useEffect(() => {
@@ -70,44 +94,28 @@ export default function IdeasPage() {
     })();
   }, [user, t]);
 
-  const filtered = items.filter((item) => item.type === "idea");
+  // ✅ Memo: filtrado estable
+  const filtered = useMemo(() => {
+    return items.filter((item) => item.type === "idea");
+  }, [items]);
 
-  // Agrupar por fecha:
-  const dateGroups: DateGroup[] = (() => {
+  // ✅ Memo: agrupación estable (mismo patrón que Tasks)
+  const dateGroups: DateGroup[] = useMemo(() => {
     if (filtered.length === 0) return [];
 
     const today = new Date();
-    const todayMid = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate()
-    );
-    const tomorrowMid = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate() + 1
-    );
+    const todayMid = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const tomorrowMid = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
 
-    const todayGroup: DateGroup = {
-      key: "TODAY",
-      label: t("inbox.sectionToday"),
-      items: [],
-    };
+    const todayGroup: DateGroup = { key: "TODAY", label: t("inbox.sectionToday"), items: [] };
     const tomorrowGroup: DateGroup = {
       key: "TOMORROW",
       label: t("inbox.sectionTomorrow"),
       items: [],
     };
-    const noDateGroup: DateGroup = {
-      key: "NO_DATE",
-      label: t("inbox.sectionNoDate"),
-      items: [],
-    };
+    const noDateGroup: DateGroup = { key: "NO_DATE", label: t("inbox.sectionNoDate"), items: [] };
 
-    const otherDateGroupsMap = new Map<
-      string,
-      { group: DateGroup; dateMs: number }
-    >();
+    const otherDateGroupsMap = new Map<string, { group: DateGroup; dateMs: number }>();
 
     for (const item of filtered) {
       if (item.due_date) {
@@ -128,11 +136,7 @@ export default function IdeasPage() {
               month: "short",
             });
             stored = {
-              group: {
-                key,
-                label,
-                items: [],
-              },
+              group: { key, label, items: [] },
               dateMs: dMid.getTime(),
             };
             otherDateGroupsMap.set(key, stored);
@@ -140,7 +144,6 @@ export default function IdeasPage() {
           stored.group.items.push(item);
         }
       } else {
-        // Sin fecha límite → grupo "Sin fecha"
         noDateGroup.items.push(item);
       }
     }
@@ -159,16 +162,43 @@ export default function IdeasPage() {
     if (noDateGroup.items.length > 0) groups.push(noDateGroup);
 
     return groups;
-  })();
+  }, [filtered, t]);
+
+  // ✅ Firma estable para el effect
+  const groupKeysSignature = useMemo(() => {
+    return dateGroups.map((g) => g.key).join("|");
+  }, [dateGroups]);
+
+  // ✅ Inicializar / limpiar collapsedGroups sin bucle
+  useEffect(() => {
+    setCollapsedGroups((prev) => {
+      let changed = false;
+      const next: Record<string, boolean> = { ...prev };
+
+      for (const g of dateGroups) {
+        if (next[g.key] === undefined) {
+          next[g.key] = false; // por defecto expandido
+          changed = true;
+        }
+      }
+
+      for (const k of Object.keys(next)) {
+        if (!dateGroups.some((g) => g.key === k)) {
+          delete next[k];
+          changed = true;
+        }
+      }
+
+      return changed ? next : prev;
+    });
+  }, [groupKeysSignature, dateGroups]);
 
   // marcar como hecha o borrar según estado actual
   const handlePrimaryAction = async (item: BrainItem) => {
     try {
       if (item.status !== "DONE") {
         const updated = await setTaskStatus(item.id, "DONE");
-        setItems((prev) =>
-          prev.map((i) => (i.id === updated.id ? updated : i))
-        );
+        setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
       } else {
         await deleteBrainItem(item.id);
         setItems((prev) => prev.filter((i) => i.id !== item.id));
@@ -196,7 +226,7 @@ export default function IdeasPage() {
       </header>
 
       {/* Contenido scrollable */}
-      <main className="flex-1 px-4 pb-24 pt-2 bg-white remi-scroll">
+      <main className="flex-1 px-4 pb-24 pt-2 bg-[#F6F7FB] remi-scroll">
         {/* Chip con el filtro actual + contador */}
         <div className="mb-2 flex items-center justify-between">
           <div className="remi-tabs">
@@ -209,187 +239,143 @@ export default function IdeasPage() {
           </span>
         </div>
 
-        <div className="remi-task-list">
+        <div className="space-y-3">
           {loading && (
-            <div className="remi-task-row">
-              <span className="remi-task-sub">{t("inbox.loading")}</span>
+            <div className="rounded-2xl bg-white/70 border border-slate-100 px-4 py-3 text-[13px] text-slate-500">
+              {t("inbox.loading")}
             </div>
           )}
 
           {!loading && filtered.length === 0 && (
-            <div className="remi-task-row">
-              <div className="remi-task-dot" />
-              <div>
-                <p className="remi-task-title">{t("inbox.emptyTitle")}</p>
-                <p className="remi-task-sub">{t("inbox.emptySubtitle")}</p>
+            <div className="rounded-2xl bg-white border border-slate-100 shadow-[0_14px_34px_rgba(15,23,42,0.06)] px-4 py-4 flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-[rgba(251,191,36,0.18)] text-[#F59E0B] flex items-center justify-center shrink-0">
+                <Lightbulb size={18} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[14px] font-semibold text-slate-900">
+                  {t("inbox.emptyTitle")}
+                </p>
+                <p className="text-[12px] text-slate-500">{t("inbox.emptySubtitle")}</p>
               </div>
             </div>
           )}
 
           {!loading &&
-            dateGroups.map((group) => (
-              <div key={group.key}>
-                {/* Cabecera de fecha */}
-                <p className="mt-3 mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
-                  {group.label}
-                </p>
+            dateGroups.map((group) => {
+              const isCollapsed = collapsedGroups[group.key] ?? false;
 
-                {group.items.map((item) => {
-                  const isDone = item.status === "DONE";
+              return (
+                <div key={group.key} className="pt-2">
+                  {/* Separador retráctil: chevron + label + línea */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCollapsedGroups((prev) => ({
+                        ...prev,
+                        [group.key]: !isCollapsed,
+                      }))
+                    }
+                    className="w-full flex items-center gap-2 mb-2 text-left"
+                    aria-expanded={!isCollapsed}
+                  >
+                    <ChevronDown
+                      size={16}
+                      className={`text-slate-500 transition-transform duration-200 ${
+                        isCollapsed ? "-rotate-90" : "rotate-0"
+                      }`}
+                    />
+                    <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+                      {group.label}
+                    </p>
+                    <div className="flex-1 h-px bg-slate-300/70" />
+                  </button>
 
-                  const btnBg = isDone
-                    ? "rgba(248,113,113,0.08)"
-                    : "rgba(16,185,129,0.08)";
-                  const btnBorder = isDone
-                    ? "rgba(248,113,113,0.4)"
-                    : "rgba(16,185,129,0.4)";
-                  const btnColor = isDone ? "#DC2626" : "#10B981";
+                  {!isCollapsed && (
+                    <div className="space-y-2">
+                      {group.items.map((item) => {
+                        const isDone = item.status === "DONE";
 
-                  return (
-                    <div
-                      key={item.id}
-                      className="remi-task-row"
-                      style={{
-                        alignItems: "center",
-                        padding: "10px 12px",
-                        borderRadius: 16,
-                        background: "#ffffff",
-                        boxShadow: "0 10px 25px rgba(15,23,42,0.04)",
-                        marginBottom: 8,
-                      }}
-                    >
-                      {/* icono + texto */}
-                      <div
-                        style={{
-                          display: "flex",
-                          flex: 1,
-                          gap: 10,
-                          alignItems: "flex-start",
-                          minWidth: 0,
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: "999px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            marginTop: 2,
-                            background: "rgba(251,191,36,0.15)",
-                            color: "#F59E0B",
-                            flexShrink: 0,
-                          }}
-                        >
-                          <Lightbulb size={18} />
-                        </div>
+                        const dueText = item.due_date
+                          ? formatDue(item.due_date as string) ??
+                            new Date(item.due_date as string).toLocaleString()
+                          : t("today.dueNoDate");
 
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p
-                            className="remi-task-title"
-                            style={{
-                              whiteSpace: "normal",
-                              wordBreak: "break-word",
-                              overflowWrap: "anywhere",
-                            }}
+                        // Botón principal: DONE -> trash (rojo), ACTIVE -> check (verde)
+                        const primaryBtnClass = isDone
+                          ? "bg-red-50 border-red-200 hover:bg-red-100"
+                          : "bg-emerald-50 border-emerald-200 hover:bg-emerald-100";
+
+                        const primaryIconColor = isDone ? "#DC2626" : "#10B981";
+
+                        return (
+                          <div
+                            key={item.id}
+                            className="rounded-2xl bg-white border border-slate-100 shadow-[0_14px_34px_rgba(15,23,42,0.06)] px-4 py-3 flex items-center gap-3"
                           >
-                            {item.title}
-                          </p>
+                            {/* icono */}
+                            <div className="w-10 h-10 rounded-full bg-[rgba(251,191,36,0.18)] text-[#F59E0B] flex items-center justify-center shrink-0">
+                              <Lightbulb size={18} />
+                            </div>
 
-                          <p className="remi-task-sub">
-                            {t("inbox.itemIdeaPrefix")}
-                          </p>
-                        </div>
-                      </div>
+                            {/* texto */}
+                            <div className="flex-1 min-w-0">
+                              <p
+                                className="text-[14px] font-semibold text-slate-900 leading-snug"
+                                style={{
+                                  whiteSpace: "normal",
+                                  wordBreak: "break-word",
+                                  overflowWrap: "anywhere",
+                                }}
+                              >
+                                {item.title}
+                              </p>
 
-                      {/* estado + botones circulares */}
-                      <div
-                        style={{
-                          textAlign: "right",
-                          marginLeft: 8,
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "flex-end",
-                          gap: 6,
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: 10,
-                            color: isDone
-                              ? "#16a34a"
-                              : item.status === "ACTIVE"
-                              ? "#8b8fa6"
-                              : "#b2b6d1",
-                          }}
-                        >
-                          {statusLabel(item.status, t)}
-                        </div>
+                              <div className="mt-1 flex items-center gap-1 text-[12px] text-slate-500">
+                                <Calendar size={14} className="text-slate-400" />
+                                <span className="truncate">{dueText}</span>
+                              </div>
+                            </div>
 
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: 6,
-                          }}
-                        >
-                          {/* Botón editar SOLO para ideas */}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openEditModal(item);
-                            }}
-                            style={{
-                              width: 30,
-                              height: 30,
-                              borderRadius: "999px",
-                              border:
-                                "1px solid rgba(148,163,184,0.8)",
-                              background: "transparent",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              cursor: "pointer",
-                              padding: 0,
-                            }}
-                          >
-                            <Pencil size={16} color="#6b7280" />
-                          </button>
+                            {/* acciones derecha */}
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openEditModal(item);
+                                }}
+                                className="w-9 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center"
+                                aria-label="Edit"
+                                title="Edit"
+                              >
+                                <Pencil size={16} color="#94A3B8" />
+                              </button>
 
-                          {/* Botón principal: marcar DONE / borrar */}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handlePrimaryAction(item);
-                            }}
-                            style={{
-                              width: 30,
-                              height: 30,
-                              borderRadius: "999px",
-                              border: `1px solid ${btnBorder}`,
-                              background: btnBg,
-                              display: "inline-flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              cursor: "pointer",
-                              padding: 0,
-                            }}
-                          >
-                            {isDone ? (
-                              <Trash2 size={16} color={btnColor} />
-                            ) : (
-                              <Check size={16} color={btnColor} />
-                            )}
-                          </button>
-                        </div>
-                      </div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handlePrimaryAction(item);
+                                }}
+                                className={`w-9 h-9 rounded-full border inline-flex items-center justify-center ${primaryBtnClass}`}
+                                aria-label={isDone ? "Delete" : "Done"}
+                                title={isDone ? "Delete" : "Done"}
+                              >
+                                {isDone ? (
+                                  <Trash2 size={16} color={primaryIconColor} />
+                                ) : (
+                                  <Check size={16} color={primaryIconColor} />
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
-              </div>
-            ))}
+                  )}
+                </div>
+              );
+            })}
         </div>
       </main>
 
@@ -399,9 +385,7 @@ export default function IdeasPage() {
         idea={editingIdea}
         onClose={() => setEditOpen(false)}
         onUpdated={(updated) => {
-          setItems((prev) =>
-            prev.map((i) => (i.id === updated.id ? updated : i))
-          );
+          setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
         }}
         onConverted={(convertedTask) => {
           setItems((prev) =>

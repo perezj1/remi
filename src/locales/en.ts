@@ -366,6 +366,59 @@ tasks: {
 
   today: {
     
+tip: {
+  noDate: {
+    title_one: "You have {{count}} task without a date",
+    title_other: "You have {{count}} tasks without a date",
+    body: "Want to sort them? In 30s I’ll leave your list clean.",
+    cta: "View no-date",
+  },
+
+  cleanNoDate: {
+    title: "✅ No no-date tasks",
+    body: "Perfect. Now it’s easy to prioritize.",
+    cta: "View today",
+  },
+
+  paste: {
+    title: "Have you tried pasting text?",
+    body: "Copy anything (WhatsApp, email, notes) and let Remi organize it.",
+    cta: "Paste now",
+  },
+
+  mental: {
+    title: "Mini break",
+    body: "Breathe in 4s, exhale 6s. Your mind doesn’t need to do everything today.",
+    cta: "Clear mind",
+  },
+
+  week: {
+    title: "Quick plan",
+    body: "See your week in one gesture. Urgent first, everything else out of your head.",
+    cta: "View week",
+  },
+
+  push: {
+    title: "Nothing slips through",
+    body: "Turn on notifications and stop “remembering by force”.",
+    cta: "Enable",
+  },
+
+  birthday: {
+    title: "Birthday coming up?",
+    body: "Write it in 5 seconds and Remi will remind you at the right time.",
+    cta: "Add",
+    prefill: "___’s birthday on ___",
+  },
+
+  clearMind: {
+    title: "Clear mind: {{percent}}%",
+    body: "If something’s on your mind right now… drop it here and move on.",
+    cta: "Drop it",
+  },
+},
+
+
     title: "Today",
     emptyState: "You don't have tasks for today.",
     addTask: "Add task",

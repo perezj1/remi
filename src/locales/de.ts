@@ -14,8 +14,7 @@ help: "Mach aus dieser Aufgabe eine Gewohnheit, an die Remi dich immer zur gewä
     yearly: "Jährlich",
   },
 },
-      
-
+  
  // GERMAN
 mentalDump: {
   whyLabel: "Warum:",
@@ -370,6 +369,60 @@ tasks: {
   },
 
   today: {
+
+tip: {
+  noDate: {
+    title_one: "Du hast {{count}} Aufgabe ohne Datum",
+    title_other: "Du hast {{count}} Aufgaben ohne Datum",
+    body: "Sollen wir sie ordnen? In 30 Sekunden ist deine Liste sauber.",
+    cta: "Ohne Datum ansehen",
+  },
+
+  cleanNoDate: {
+    title: "✅ Keine Aufgaben ohne Datum",
+    body: "Perfekt. Jetzt ist Priorisieren ganz einfach.",
+    cta: "Heute ansehen",
+  },
+
+  paste: {
+    title: "Schon mal Text eingefügt?",
+    body: "Kopiere irgendwas (WhatsApp, Mail, Notizen) und lass Remi es ordnen.",
+    cta: "Jetzt einfügen",
+  },
+
+  mental: {
+    title: "Mini-Pause",
+    body: "4 Sek. einatmen, 6 Sek. ausatmen. Dein Kopf muss heute nicht alles schaffen.",
+    cta: "Kopf leeren",
+  },
+
+  week: {
+    title: "Schnell planen",
+    body: "Sieh deine Woche mit einem Blick. Erst das Dringende, der Rest raus aus dem Kopf.",
+    cta: "Woche ansehen",
+  },
+
+  push: {
+    title: "Nichts geht verloren",
+    body: "Aktiviere Benachrichtigungen und hör auf, dich „mit Gewalt zu erinnern“.",
+    cta: "Aktivieren",
+  },
+
+  birthday: {
+    title: "Steht ein Geburtstag an?",
+    body: "Schreib’s in 5 Sekunden auf und Remi erinnert dich rechtzeitig.",
+    cta: "Hinzufügen",
+    prefill: "Geburtstag von ___ am ___",
+  },
+
+  clearMind: {
+    title: "Kopf frei: {{percent}}%",
+    body: "Wenn dir gerade etwas im Kopf herumgeht … lass es hier und mach weiter.",
+    cta: "Loslassen",
+  },
+},
+
+
      title: "Heute",
   emptyState: "Du hast heute keine Aufgaben.",
   addTask: "Aufgabe hinzufügen",

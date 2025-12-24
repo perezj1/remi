@@ -191,6 +191,8 @@
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding-bottom: calc(80px + env(safe-area-inset-bottom)); /* ✅ safe area + hueco bottom nav */
+  background: var(--remi-bg); /* ✅ AÑADE ESTO */
+
 }
 
 /* ocultar scroll feo en móvil */
