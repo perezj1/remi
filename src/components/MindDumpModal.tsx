@@ -6,7 +6,14 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { X, ClipboardPaste, Mic, Check, ChevronDown, Sparkles } from "lucide-react";
+import {
+  X,
+  ClipboardPaste,
+  Mic,
+  Check,
+  ChevronDown,
+  Sparkles,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/contexts/I18nContext";
 import { useSpeechDictation } from "@/hooks/useSpeechDictation";
@@ -17,6 +24,9 @@ const REMI_PURPLE_BORDER = "rgba(143,49,243,0.30)";
 const REMI_PURPLE_BG = "rgba(143,49,243,0.10)";
 const REMI_TEXT = "rgba(15,23,42,0.92)";
 const REMI_SUB = "rgba(15,23,42,0.55)";
+
+/** ✅ Modal language persistence (independent from app) */
+const MODAL_LANG_STORAGE_KEY = "remi.mindDumpModal.lang";
 
 function isIOS(): boolean {
   if (typeof navigator === "undefined") return false;
@@ -36,6 +46,235 @@ const speechLangByUiLang: Record<UiLang, string> = {
   en: "en-US",
   de: "de-DE",
 };
+
+function isUiLang(x: any): x is UiLang {
+  return x === "es" || x === "en" || x === "de";
+}
+
+function readStoredModalLang(): UiLang | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const v = window.localStorage.getItem(MODAL_LANG_STORAGE_KEY);
+    return isUiLang(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredModalLang(lang: UiLang) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(MODAL_LANG_STORAGE_KEY, lang);
+  } catch {
+    // ignore
+  }
+}
+
+/* ───────────────────────────────
+   ✅ Local (modal-only) i18n dictionary
+   - This is independent from the app i18n.
+─────────────────────────────── */
+const MODAL_I18N: Record<UiLang, Record<string, string>> = {
+  es: {
+    "common.close": "Cerrar",
+    "common.paste": "Pegar",
+    "common.speak": "Hablar",
+    "common.save": "Guardar",
+
+    "capture.title": "Vacía tu mente",
+    "capture.subtitle": "Habla, escribe o pega texto. Remi se encarga.",
+    "capture.listening": "Escuchando…",
+    "capture.placeholder": "Vacía tu mente aquí… (habla, escribe o pega)",
+    "capture.iosKeyboardMicHint":
+      "En iPhone: usa el micrófono del teclado para dictar.",
+    "capture.speakHold": "Mantén pulsado para hablar",
+
+    "capture.toast.micDenied": "Permiso de micrófono denegado.",
+    "capture.toast.noSpeech": "No detecté voz. Prueba de nuevo.",
+    "capture.toast.dictationError": "Error de dictado.",
+    "capture.toast.pasteUnavailable":
+      "No puedo pegar aquí (portapapeles no disponible).",
+    "capture.toast.clipboardEmpty": "No hay texto en el portapapeles.",
+    "capture.toast.pasteError":
+      "No pude acceder al portapapeles. Mantén pulsado y pega.",
+    "capture.toast.writeSomething": "Escribe algo primero.",
+
+    "capture.chips.title": "Atajos inteligentes",
+    "capture.chips.title2": "Fecha / hábito",
+    "capture.chips.title3": "Hora",
+    "capture.chips.title4": "Recordatorio",
+    "capture.chips.backHint": "Volver a atajos",
+    "capture.chips.back": "Atajos",
+
+    "capture.chip.buy": "Comprar",
+    "capture.chip.buyWord": "Comprar",
+    "capture.chip.call": "Llamar",
+    "capture.chip.callWord": "Llamar",
+    "capture.chip.pay": "Pagar",
+    "capture.chip.payWord": "Pagar",
+    "capture.chip.birthday": "Cumpleaños",
+    "capture.chip.birthdayWord": "Cumpleaños",
+    "capture.chip.appt": "Cita",
+    "capture.chip.apptWord": "Cita",
+    "capture.chip.idea": "Idea",
+    "capture.chip.ideaWord": "Idea:",
+
+    "capture.chip.schedule.el": "el",
+    "capture.chip.schedule.cada": "cada",
+    "capture.chip.schedule.antesDel": "antes del",
+    "capture.chip.schedule.hoy": "hoy",
+    "capture.chip.schedule.manana": "mañana",
+
+    "capture.chip.time.prefix": "a las",
+    "capture.chip.time.t0900": "09:00",
+    "capture.chip.time.t1800": "18:00",
+
+    "capture.chip.reminder.dailyLabel": "cada día",
+    "capture.chip.reminder.dailyInsert": "recordatorio estándar",
+    "capture.chip.reminder.dayBeforeLabel": "día de antes",
+    "capture.chip.reminder.dayBeforeInsert": "recordar el día de antes",
+  },
+
+  en: {
+    "common.close": "Close",
+    "common.paste": "Paste",
+    "common.speak": "Speak",
+    "common.save": "Save",
+
+    "capture.title": "Mind dump",
+    "capture.subtitle": "Speak, type or paste. Remi handles the rest.",
+    "capture.listening": "Listening…",
+    "capture.placeholder": "Dump your thoughts here… (speak, type or paste)",
+    "capture.iosKeyboardMicHint":
+      "On iPhone: use the keyboard microphone to диктate.",
+    "capture.speakHold": "Hold to speak",
+
+    "capture.toast.micDenied": "Microphone permission denied.",
+    "capture.toast.noSpeech": "I didn’t detect speech. Try again.",
+    "capture.toast.dictationError": "Dictation error.",
+    "capture.toast.pasteUnavailable": "Paste isn’t available here (clipboard).",
+    "capture.toast.clipboardEmpty": "Clipboard is empty.",
+    "capture.toast.pasteError":
+      "Couldn’t access clipboard. Long-press and paste.",
+    "capture.toast.writeSomething": "Write something first.",
+
+    "capture.chips.title": "Smart shortcuts",
+    "capture.chips.title2": "Date / habit",
+    "capture.chips.title3": "Time",
+    "capture.chips.title4": "Reminder",
+    "capture.chips.backHint": "Back to shortcuts",
+    "capture.chips.back": "Shortcuts",
+
+    "capture.chip.buy": "Buy",
+    "capture.chip.buyWord": "Buy",
+    "capture.chip.call": "Call",
+    "capture.chip.callWord": "Call",
+    "capture.chip.pay": "Pay",
+    "capture.chip.payWord": "Pay",
+    "capture.chip.birthday": "Birthday",
+    "capture.chip.birthdayWord": "Birthday",
+    "capture.chip.appt": "Meeting",
+    "capture.chip.apptWord": "Meeting",
+    "capture.chip.idea": "Idea",
+    "capture.chip.ideaWord": "Idea:",
+
+    "capture.chip.schedule.on": "on",
+    "capture.chip.schedule.every": "every",
+    "capture.chip.schedule.before": "before",
+    "capture.chip.schedule.today": "today",
+    "capture.chip.schedule.tomorrow": "tomorrow",
+
+    "capture.chip.time.prefix": "at",
+    "capture.chip.time.t0900": "9:00",
+    "capture.chip.time.t1800": "18:00",
+
+    "capture.chip.reminder.dailyLabel": "every day",
+    "capture.chip.reminder.dailyInsert": "standard reminder",
+    "capture.chip.reminder.dayBeforeLabel": "day before",
+    "capture.chip.reminder.dayBeforeInsert": "remind the day before",
+  },
+
+  de: {
+    "common.close": "Schließen",
+    "common.paste": "Einfügen",
+    "common.speak": "Sprechen",
+    "common.save": "Speichern",
+
+    "capture.title": "Kopf frei machen",
+    "capture.subtitle": "Sprich, tippe oder füge Text ein. Remi kümmert sich.",
+    "capture.listening": "Höre zu…",
+    "capture.placeholder": "Schreib hier alles rein… (sprechen, tippen oder einfügen)",
+    "capture.iosKeyboardMicHint":
+      "Auf dem iPhone: Nutze das Mikrofon der Tastatur zum Diktieren.",
+    "capture.speakHold": "Gedrückt halten zum Sprechen",
+
+    "capture.toast.micDenied": "Mikrofon-Zugriff verweigert.",
+    "capture.toast.noSpeech": "Keine Sprache erkannt. Versuch es nochmal.",
+    "capture.toast.dictationError": "Diktat-Fehler.",
+    "capture.toast.pasteUnavailable":
+      "Einfügen nicht möglich (Zwischenablage nicht verfügbar).",
+    "capture.toast.clipboardEmpty": "Zwischenablage ist leer.",
+    "capture.toast.pasteError":
+      "Kein Zugriff auf die Zwischenablage. Lange drücken und einfügen.",
+    "capture.toast.writeSomething": "Schreib zuerst etwas.",
+
+    "capture.chips.title": "Smarte Shortcuts",
+    "capture.chips.title2": "Datum / Gewohnheit",
+    "capture.chips.title3": "Uhrzeit",
+    "capture.chips.title4": "Erinnerung",
+    "capture.chips.backHint": "Zurück zu Shortcuts",
+    "capture.chips.back": "Shortcuts",
+
+    "capture.chip.buy": "Kaufen",
+    "capture.chip.buyWord": "Kaufen",
+    "capture.chip.call": "Anrufen",
+    "capture.chip.callWord": "Anrufen",
+    "capture.chip.pay": "Zahlen",
+    "capture.chip.payWord": "Zahlen",
+    "capture.chip.birthday": "Geburtstag",
+    "capture.chip.birthdayWord": "Geburtstag",
+    "capture.chip.appt": "Termin",
+    "capture.chip.apptWord": "Termin",
+    "capture.chip.idea": "Idee",
+    "capture.chip.ideaWord": "Idee:",
+
+    "capture.chip.schedule.am": "am",
+    "capture.chip.schedule.jeden": "jeden",
+    "capture.chip.schedule.vor": "vor",
+    "capture.chip.schedule.heute": "heute",
+    "capture.chip.schedule.morgen": "morgen",
+
+    "capture.chip.time.prefix": "um",
+    "capture.chip.time.t0900": "09:00",
+    "capture.chip.time.t1800": "18:00",
+
+    "capture.chip.reminder.dailyLabel": "jeden Tag",
+    "capture.chip.reminder.dailyInsert": "Standard-Erinnerung",
+    "capture.chip.reminder.dayBeforeLabel": "Vortag",
+    "capture.chip.reminder.dayBeforeInsert": "am Vortag erinnern",
+  },
+};
+
+function tr(
+  lang: UiLang,
+  key: string,
+  fallback: string,
+  vars?: Record<string, any>
+): string {
+  try {
+    const dict = MODAL_I18N[lang] || MODAL_I18N.es;
+    let out = dict[key] ?? fallback;
+    if (!vars) return out;
+
+    // simple {{var}} interpolation
+    for (const [k, v] of Object.entries(vars)) {
+      out = out.replace(new RegExp(`\\{\\{\\s*${k}\\s*\\}\\}`, "g"), String(v));
+    }
+    return out;
+  } catch {
+    return fallback;
+  }
+}
 
 type Props = {
   open: boolean;
@@ -71,7 +310,7 @@ function hapticTick(ms = 20) {
 
 /* ───────────────────────────────
    ✅ Normaliza texto entrante/pegado:
-   - sustituye saltos de línea por espacio (para evitar crear items sin querer)
+   - sustituye saltos de línea por espacio
    - colapsa espacios múltiples
    - trim
 ─────────────────────────────── */
@@ -96,21 +335,43 @@ export default function MindDumpModal({
 }: Props) {
   // ✅ IMPORTANTE: NO pongas `if (!open) return null;` antes de hooks.
 
-  const i18n = useI18n() as any;
-  const t = i18n?.t as (k: string, vars?: any) => string;
+  // We still read app lang only as a fallback default (modal remains independent).
+  const appI18n = useI18n() as any;
+  const appLangGuess: UiLang = (appI18n?.lang ??
+    appI18n?.uiLang ??
+    appI18n?.language ??
+    "es") as UiLang;
 
-  const currentUiLang: UiLang =
-    (i18n?.lang ?? i18n?.uiLang ?? i18n?.language ?? "es") as UiLang;
-
-  const [uiLang, setUiLang] = useState<UiLang>(currentUiLang);
+  // ✅ Modal language: read localStorage once (initial), fallback to app language.
+  const [uiLang, setUiLang] = useState<UiLang>(() => {
+    const stored = readStoredModalLang();
+    if (stored) return stored;
+    return isUiLang(appLangGuess) ? appLangGuess : "es";
+  });
   const [langOpen, setLangOpen] = useState(false);
+
+  // Keep it persisted
+  useEffect(() => {
+    writeStoredModalLang(uiLang);
+  }, [uiLang]);
+
+  // If modal opens, re-sync from storage (e.g., other tab changed it)
+  useEffect(() => {
+    if (!open) return;
+    const stored = readStoredModalLang();
+    if (stored && stored !== uiLang) setUiLang(stored);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const t = (key: string, fallback: string, vars?: any) =>
+    tr(uiLang, key, fallback, vars);
 
   const [text, setText] = useState(normalizeIncomingText(initialText ?? ""));
   const [interim, setInterim] = useState("");
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  // ✅ teclado real (FAB guardar) + foco (para evitar “fantasmas”)
+  // ✅ teclado real (FAB guardar) + foco
   const [kbdOffset, setKbdOffset] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
 
@@ -122,24 +383,12 @@ export default function MindDumpModal({
   const [chipStage, setChipStage] = useState<ChipStage>("ROOT");
   const [activeRootChip, setActiveRootChip] = useState<RootChipId | null>(null);
 
-  // ✅ caret tracking (para detectar “línea actual”)
+  // ✅ caret tracking
   const [caretTick, setCaretTick] = useState(0);
   const caretRef = useRef<number>(0);
 
   const ios = useMemo(() => isIOS(), []);
   const android = useMemo(() => isAndroid(), []);
-
-  const safeT = (key: string, fallback: string, vars?: any) => {
-    try {
-      if (!t) return fallback;
-      const value = t(key, vars);
-      if (!value) return fallback;
-      if (value === key) return fallback;
-      return value;
-    } catch {
-      return fallback;
-    }
-  };
 
   // ✅ Helpers: siempre texto + 1 espacio final (GAP)
   const withGap = (s: string) => `${String(s ?? "").trim()}${GAP}`;
@@ -186,7 +435,7 @@ export default function MindDumpModal({
     });
   };
 
-  // ✅ Hook robusto de dictado
+  // ✅ Hook robusto de dictado (lang depends on modal uiLang)
   const { isSupported, status, error, start, stop } = useSpeechDictation({
     lang: speechLangByUiLang[uiLang] || "es-ES",
     continuous: true,
@@ -212,13 +461,14 @@ export default function MindDumpModal({
     lastErrorRef.current = error;
 
     if (error === "not-allowed" || error === "service-not-allowed") {
-      toast.error(safeT("capture.toast.micDenied", "Permiso de micrófono denegado."));
+      toast.error(t("capture.toast.micDenied", "Permiso de micrófono denegado."));
     } else if (error === "no-speech") {
-      toast.message(safeT("capture.toast.noSpeech", "No detecté voz. Prueba de nuevo."));
+      toast.message(t("capture.toast.noSpeech", "No detecté voz. Prueba de nuevo."));
     } else {
-      toast.error(safeT("capture.toast.dictationError", "Error de dictado."));
+      toast.error(t("capture.toast.dictationError", "Error de dictado."));
     }
-  }, [error]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error, uiLang]);
 
   // Si se corta el dictado, limpia estados visuales
   useEffect(() => {
@@ -282,7 +532,7 @@ export default function MindDumpModal({
     try {
       if (!navigator.clipboard?.readText) {
         toast.error(
-          safeT(
+          t(
             "capture.toast.pasteUnavailable",
             "No puedo pegar aquí (portapapeles no disponible)."
           )
@@ -292,13 +542,16 @@ export default function MindDumpModal({
       const clip = await navigator.clipboard.readText();
       const normalizedClip = normalizeIncomingText(clip);
       if (!normalizedClip) {
-        toast.message(safeT("capture.toast.clipboardEmpty", "No hay texto en el portapapeles."));
+        toast.message(t("capture.toast.clipboardEmpty", "No hay texto en el portapapeles."));
         return;
       }
       setText((prev) => (prev ? `${prev} ${normalizedClip}` : normalizedClip));
     } catch {
       toast.error(
-        safeT("capture.toast.pasteError", "No pude acceder al portapapeles. Mantén pulsado y pega.")
+        t(
+          "capture.toast.pasteError",
+          "No pude acceder al portapapeles. Mantén pulsado y pega."
+        )
       );
     }
   };
@@ -310,7 +563,7 @@ export default function MindDumpModal({
 
     const trimmed = text.trim();
     if (!trimmed) {
-      toast.message(safeT("capture.toast.writeSomething", "Escribe algo primero."));
+      toast.message(t("capture.toast.writeSomething", "Escribe algo primero."));
       return;
     }
     onOpenReview(trimmed);
@@ -348,18 +601,7 @@ export default function MindDumpModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialTextNonce]);
 
-  // ✅ Propagar idioma a tu i18n si lo soporta
-  useEffect(() => {
-    const setLangFn = i18n?.setLang ?? i18n?.setUiLang ?? i18n?.setLanguage ?? null;
-    if (typeof setLangFn === "function") {
-      try {
-        setLangFn(uiLang);
-      } catch {}
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [uiLang]);
-
-  // Cerrar dropdown idioma al click fuera
+  // ✅ Cerrar dropdown idioma al click fuera
   useEffect(() => {
     if (!langOpen) return;
     const onDown = (e: MouseEvent | TouchEvent) => {
@@ -376,7 +618,7 @@ export default function MindDumpModal({
     };
   }, [langOpen]);
 
-  // Cerrar dictado al cerrar modal
+  // ✅ Cerrar dictado al cerrar modal
   useEffect(() => {
     if (!open) {
       startedRef.current = false;
@@ -387,7 +629,7 @@ export default function MindDumpModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // Teclado: visualViewport + focus/blur (evita FAB “pegado”)
+  // ✅ Teclado: visualViewport + focus/blur
   useEffect(() => {
     if (!open) return;
 
@@ -459,7 +701,7 @@ export default function MindDumpModal({
     });
   };
 
-  // línea actual = “tarea/idea actual”
+  // línea actual
   const getCurrentLineInfo = (full: string, caretIndex: number) => {
     const s = String(full ?? "");
     const idx = Math.max(0, Math.min(caretIndex, s.length));
@@ -471,7 +713,7 @@ export default function MindDumpModal({
     return { line, lineStart, lineEnd, rawLine };
   };
 
-  // Detectores (por idioma UI)
+  // Detectores (por idioma UI del MODAL)
   const detection = useMemo(() => {
     const lower = (x: string) => x.toLowerCase();
 
@@ -532,178 +774,114 @@ export default function MindDumpModal({
     return map[lower(uiLang) as UiLang] ?? es;
   }, [uiLang]);
 
-  // ✅ ROOT chips: label (UI) + word (lo que se inserta) desde i18n
+  // ✅ ROOT chips: label (UI) + word (lo que se inserta)
   const rootChips = useMemo(
     () =>
       [
         {
           id: "buy" as const,
-          label: safeT("capture.chip.buy", "Comprar"),
-          word: safeT("capture.chip.buyWord", "Comprar"),
+          label: t("capture.chip.buy", "Comprar"),
+          word: t("capture.chip.buyWord", "Comprar"),
         },
         {
           id: "call" as const,
-          label: safeT("capture.chip.call", "Llamar"),
-          word: safeT("capture.chip.callWord", "Llamar"),
+          label: t("capture.chip.call", "Llamar"),
+          word: t("capture.chip.callWord", "Llamar"),
         },
         {
           id: "pay" as const,
-          label: safeT("capture.chip.pay", "Pagar"),
-          word: safeT("capture.chip.payWord", "Pagar"),
+          label: t("capture.chip.pay", "Pagar"),
+          word: t("capture.chip.payWord", "Pagar"),
         },
         {
           id: "birthday" as const,
-          label: safeT("capture.chip.birthday", "Cumpleaños"),
-          word: safeT("capture.chip.birthdayWord", "Cumpleaños"),
+          label: t("capture.chip.birthday", "Cumpleaños"),
+          word: t("capture.chip.birthdayWord", "Cumpleaños"),
         },
         {
           id: "appointment" as const,
-          label: safeT("capture.chip.appt", "Cita"),
-          word: safeT("capture.chip.apptWord", "Cita"),
+          label: t("capture.chip.appt", "Cita"),
+          word: t("capture.chip.apptWord", "Cita"),
         },
         {
           id: "idea" as const,
-          label: safeT("capture.chip.idea", "Idea"),
-          word: safeT("capture.chip.ideaWord", "Idea:"),
+          label: t("capture.chip.idea", "Idea"),
+          word: t("capture.chip.ideaWord", "Idea:"),
         },
       ] as const,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [uiLang]
   );
 
-  // ✅ SCHEDULE chips: label + insert desde capture.chip.schedule.*
   const scheduleChips = useMemo(() => {
     if (uiLang === "en") {
       return [
-        {
-          id: "on",
-          label: safeT("capture.chip.schedule.on", "on"),
-          insert: withGap(safeT("capture.chip.schedule.on", "on")),
-        },
-        {
-          id: "every",
-          label: safeT("capture.chip.schedule.every", "every"),
-          insert: withGap(safeT("capture.chip.schedule.every", "every")),
-        },
-        {
-          id: "before",
-          label: safeT("capture.chip.schedule.before", "before"),
-          insert: withGap(safeT("capture.chip.schedule.before", "before")),
-        },
-        {
-          id: "today",
-          label: safeT("capture.chip.schedule.today", "today"),
-          insert: withGap(safeT("capture.chip.schedule.today", "today")),
-        },
-        {
-          id: "tomorrow",
-          label: safeT("capture.chip.schedule.tomorrow", "tomorrow"),
-          insert: withGap(safeT("capture.chip.schedule.tomorrow", "tomorrow")),
-        },
+        { id: "on", label: t("capture.chip.schedule.on", "on"), insert: withGap(t("capture.chip.schedule.on", "on")) },
+        { id: "every", label: t("capture.chip.schedule.every", "every"), insert: withGap(t("capture.chip.schedule.every", "every")) },
+        { id: "before", label: t("capture.chip.schedule.before", "before"), insert: withGap(t("capture.chip.schedule.before", "before")) },
+        { id: "today", label: t("capture.chip.schedule.today", "today"), insert: withGap(t("capture.chip.schedule.today", "today")) },
+        { id: "tomorrow", label: t("capture.chip.schedule.tomorrow", "tomorrow"), insert: withGap(t("capture.chip.schedule.tomorrow", "tomorrow")) },
       ];
     }
     if (uiLang === "de") {
       return [
-        {
-          id: "am",
-          label: safeT("capture.chip.schedule.am", "am"),
-          insert: withGap(safeT("capture.chip.schedule.am", "am")),
-        },
-        {
-          id: "jeden",
-          label: safeT("capture.chip.schedule.jeden", "jeden"),
-          insert: withGap(safeT("capture.chip.schedule.jeden", "jeden")),
-        },
-        {
-          id: "vor",
-          label: safeT("capture.chip.schedule.vor", "vor"),
-          insert: withGap(safeT("capture.chip.schedule.vor", "vor")),
-        },
-        {
-          id: "heute",
-          label: safeT("capture.chip.schedule.heute", "heute"),
-          insert: withGap(safeT("capture.chip.schedule.heute", "heute")),
-        },
-        {
-          id: "morgen",
-          label: safeT("capture.chip.schedule.morgen", "morgen"),
-          insert: withGap(safeT("capture.chip.schedule.morgen", "morgen")),
-        },
+        { id: "am", label: t("capture.chip.schedule.am", "am"), insert: withGap(t("capture.chip.schedule.am", "am")) },
+        { id: "jeden", label: t("capture.chip.schedule.jeden", "jeden"), insert: withGap(t("capture.chip.schedule.jeden", "jeden")) },
+        { id: "vor", label: t("capture.chip.schedule.vor", "vor"), insert: withGap(t("capture.chip.schedule.vor", "vor")) },
+        { id: "heute", label: t("capture.chip.schedule.heute", "heute"), insert: withGap(t("capture.chip.schedule.heute", "heute")) },
+        { id: "morgen", label: t("capture.chip.schedule.morgen", "morgen"), insert: withGap(t("capture.chip.schedule.morgen", "morgen")) },
       ];
     }
     return [
-      {
-        id: "el",
-        label: safeT("capture.chip.schedule.el", "el"),
-        insert: withGap(safeT("capture.chip.schedule.el", "el")),
-      },
-      {
-        id: "cada",
-        label: safeT("capture.chip.schedule.cada", "cada"),
-        insert: withGap(safeT("capture.chip.schedule.cada", "cada")),
-      },
-      {
-        id: "antesDel",
-        label: safeT("capture.chip.schedule.antesDel", "antes del"),
-        insert: withGap(safeT("capture.chip.schedule.antesDel", "antes del")),
-      },
-      {
-        id: "hoy",
-        label: safeT("capture.chip.schedule.hoy", "hoy"),
-        insert: withGap(safeT("capture.chip.schedule.hoy", "hoy")),
-      },
-      {
-        id: "manana",
-        label: safeT("capture.chip.schedule.manana", "mañana"),
-        insert: withGap(safeT("capture.chip.schedule.manana", "mañana")),
-      },
+      { id: "el", label: t("capture.chip.schedule.el", "el"), insert: withGap(t("capture.chip.schedule.el", "el")) },
+      { id: "cada", label: t("capture.chip.schedule.cada", "cada"), insert: withGap(t("capture.chip.schedule.cada", "cada")) },
+      { id: "antesDel", label: t("capture.chip.schedule.antesDel", "antes del"), insert: withGap(t("capture.chip.schedule.antesDel", "antes del")) },
+      { id: "hoy", label: t("capture.chip.schedule.hoy", "hoy"), insert: withGap(t("capture.chip.schedule.hoy", "hoy")) },
+      { id: "manana", label: t("capture.chip.schedule.manana", "mañana"), insert: withGap(t("capture.chip.schedule.manana", "mañana")) },
     ];
   }, [uiLang]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ✅ TIME chips: label + insert desde capture.chip.time.*
   const timeChips = useMemo(() => {
-    // prefix cambia según idioma (en/de/es) pero va a la misma key en tu estructura: capture.chip.time.prefix
     const defaultPrefix = uiLang === "en" ? "at" : uiLang === "de" ? "um" : "a las";
     const default0900 = uiLang === "en" ? "9:00" : "09:00";
 
     return [
       {
         id: "prefix",
-        label: safeT("capture.chip.time.prefix", defaultPrefix),
-        insert: withGap(safeT("capture.chip.time.prefix", defaultPrefix)),
+        label: t("capture.chip.time.prefix", defaultPrefix),
+        insert: withGap(t("capture.chip.time.prefix", defaultPrefix)),
       },
       {
         id: "9",
-        label: safeT("capture.chip.time.t0900", default0900),
-        insert: withGap(safeT("capture.chip.time.t0900", default0900)),
+        label: t("capture.chip.time.t0900", default0900),
+        insert: withGap(t("capture.chip.time.t0900", default0900)),
       },
       {
         id: "18",
-        label: safeT("capture.chip.time.t1800", "18:00"),
-        insert: withGap(safeT("capture.chip.time.t1800", "18:00")),
+        label: t("capture.chip.time.t1800", "18:00"),
+        insert: withGap(t("capture.chip.time.t1800", "18:00")),
       },
     ];
   }, [uiLang]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ✅ REMINDER chips: label + insert desde capture.chip.reminder.*
   const reminderChips = useMemo(() => {
     const fallbackDailyLabel = uiLang === "en" ? "every day" : uiLang === "de" ? "jeden Tag" : "cada día";
     const fallbackDayBeforeLabel = uiLang === "en" ? "day before" : uiLang === "de" ? "Vortag" : "día de antes";
 
     const fallbackDailyInsert = uiLang === "en" ? "standard reminder" : uiLang === "de" ? "Standard-Erinnerung" : "recordatorio estándar";
     const fallbackDayBeforeInsert =
-      uiLang === "en" ? "remind the day before" : uiLang === "de" ? "erinner am Vortag" : "recordar el día de antes";
+      uiLang === "en" ? "remind the day before" : uiLang === "de" ? "am Vortag erinnern" : "recordar el día de antes";
 
     return [
       {
         id: "daily",
-        label: safeT("capture.chip.reminder.dailyLabel", fallbackDailyLabel),
-        insert: withGap(safeT("capture.chip.reminder.dailyInsert", fallbackDailyInsert)),
+        label: t("capture.chip.reminder.dailyLabel", fallbackDailyLabel),
+        insert: withGap(t("capture.chip.reminder.dailyInsert", fallbackDailyInsert)),
       },
       {
         id: "dayBefore",
-        label: safeT("capture.chip.reminder.dayBeforeLabel", fallbackDayBeforeLabel),
-        insert: withGap(safeT("capture.chip.reminder.dayBeforeInsert", fallbackDayBeforeInsert)),
+        label: t("capture.chip.reminder.dayBeforeLabel", fallbackDayBeforeLabel),
+        insert: withGap(t("capture.chip.reminder.dayBeforeInsert", fallbackDayBeforeInsert)),
       },
     ];
   }, [uiLang]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -790,12 +968,12 @@ export default function MindDumpModal({
 
   const chipTitle =
     chipStage === "ROOT"
-      ? safeT("capture.chips.title", "Atajos inteligentes")
+      ? t("capture.chips.title", "Atajos inteligentes")
       : chipStage === "SCHEDULE"
-      ? safeT("capture.chips.title2", "Fecha / hábito")
+      ? t("capture.chips.title2", "Fecha / hábito")
       : chipStage === "TIME"
-      ? safeT("capture.chips.title3", "Hora")
-      : safeT("capture.chips.title4", "Recordatorio");
+      ? t("capture.chips.title3", "Hora")
+      : t("capture.chips.title4", "Recordatorio");
 
   return (
     <div className="fixed inset-0 z-[1000]" onContextMenu={(e) => e.preventDefault()}>
@@ -852,16 +1030,16 @@ export default function MindDumpModal({
           <div className="px-5 pt-4 pb-4 flex items-start justify-between">
             <div className="min-w-0 pr-3">
               <div className="text-[16px] font-semibold leading-tight" style={{ color: "#ffffff" }}>
-                {safeT("capture.title", "Vacía tu mente")}
+                {t("capture.title", "Vacía tu mente")}
               </div>
 
               <div className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.88)" }}>
-                {safeT("capture.subtitle", "Habla, escribe o pega texto. Remi se encarga.")}
+                {t("capture.subtitle", "Habla, escribe o pega texto. Remi se encarga.")}
               </div>
 
               {showTalkButton && listening && (
                 <div className="text-[11px] mt-2" style={{ color: "rgba(255,255,255,0.92)" }}>
-                  {safeT("capture.listening", "Escuchando…")}{" "}
+                  {t("capture.listening", "Escuchando…")}{" "}
                   {interim ? (
                     <span style={{ color: "rgba(255,255,255,0.70)" }}>{interim}</span>
                   ) : null}
@@ -872,7 +1050,7 @@ export default function MindDumpModal({
             <button
               data-no-focus
               onClick={handleClose}
-              aria-label={safeT("common.close", "Cerrar")}
+              aria-label={t("common.close", "Cerrar")}
               className="h-10 w-10 rounded-full flex items-center justify-center"
               style={{
                 background: "rgba(255,255,255,0.85)",
@@ -914,11 +1092,11 @@ export default function MindDumpModal({
                       fontWeight: 900,
                       cursor: "pointer",
                     }}
-                    title={safeT("capture.chips.backHint", "Volver a atajos")}
-                    aria-label={safeT("capture.chips.backHint", "Volver a atajos")}
+                    title={t("capture.chips.backHint", "Volver a atajos")}
+                    aria-label={t("capture.chips.backHint", "Volver a atajos")}
                   >
                     <Sparkles size={14} style={{ display: "inline-block", marginRight: 6 }} />
-                    {safeT("capture.chips.back", "Atajos")}
+                    {t("capture.chips.back", "Atajos")}
                   </button>
                 )}
               </div>
@@ -962,11 +1140,7 @@ export default function MindDumpModal({
               {chipStage === "REMINDER" && (
                 <>
                   {reminderChips.map((c) => (
-                    <Chip
-                      key={c.id}
-                      label={c.label}
-                      onClick={() => handleReminderChip(c.insert)}
-                    />
+                    <Chip key={c.id} label={c.label} onClick={() => handleReminderChip(c.insert)} />
                   ))}
                 </>
               )}
@@ -1031,7 +1205,7 @@ export default function MindDumpModal({
                 return next;
               });
             }}
-            placeholder={safeT("capture.placeholder", "Vacía tu mente aquí… (habla, escribe o pega)")}
+            placeholder={t("capture.placeholder", "Vacía tu mente aquí… (habla, escribe o pega)")}
             className="w-full resize-none outline-none text-[18px] leading-7"
             style={{ minHeight: "70vh", color: REMI_TEXT, background: "transparent" }}
             inputMode="text"
@@ -1039,7 +1213,7 @@ export default function MindDumpModal({
 
           {ios && (
             <div className="mt-3 text-xs" style={{ color: REMI_SUB }}>
-              {safeT("capture.iosKeyboardMicHint", "En iPhone: usa el micrófono del teclado para dictar.")}
+              {t("capture.iosKeyboardMicHint", "En iPhone: usa el micrófono del teclado para dictar.")}
             </div>
           )}
         </div>
@@ -1188,7 +1362,7 @@ export default function MindDumpModal({
                     <ClipboardPaste className="h-5 w-5" />
                   </button>
                   <div style={{ fontSize: 11, fontWeight: 800, color: REMI_PURPLE }}>
-                    {safeT("common.paste", "Pegar")}
+                    {t("common.paste", "Pegar")}
                   </div>
                 </div>
 
@@ -1223,8 +1397,8 @@ export default function MindDumpModal({
                           overflow: "hidden",
                         }}
                         aria-pressed={listening}
-                        title={safeT("capture.speakHold", "Mantén pulsado para hablar")}
-                        aria-label={safeT("capture.speakHold", "Mantén pulsado para hablar")}
+                        title={t("capture.speakHold", "Mantén pulsado para hablar")}
+                        aria-label={t("capture.speakHold", "Mantén pulsado para hablar")}
                       >
                         {showTalkActiveRing && <span className="remi-ring" />}
                         {showTalkRipple && <span key={rippleTick} className="remi-ripple" />}
@@ -1235,7 +1409,7 @@ export default function MindDumpModal({
                       </button>
 
                       <div style={{ fontSize: 11, fontWeight: 800, color: REMI_PURPLE }}>
-                        {safeT("common.speak", "Hablar")}
+                        {t("common.speak", "Hablar")}
                       </div>
                     </>
                   ) : (
@@ -1269,7 +1443,7 @@ export default function MindDumpModal({
                         <Check className="h-5 w-5" />
                       </button>
                       <div style={{ fontSize: 11, fontWeight: 900, color: REMI_PURPLE }}>
-                        {safeT("common.save", "Guardar")}
+                        {t("common.save", "Guardar")}
                       </div>
                     </>
                   ) : (
@@ -1290,7 +1464,7 @@ export default function MindDumpModal({
             type="button"
             onClick={handleSave}
             onContextMenu={(e) => e.preventDefault()}
-            aria-label={safeT("common.save", "Guardar")}
+            aria-label={t("common.save", "Guardar")}
             style={{
               position: "fixed",
               right: 16,

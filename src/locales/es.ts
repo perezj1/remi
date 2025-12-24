@@ -262,6 +262,16 @@ chip: {
     antesDel: "antes del",
     hoy: "hoy",
     manana: "mañana",
+        on: "el",
+        every: "cada",
+        before: "antes",
+        today: "hoy",
+        tomorrow: "mañana",
+        am: "a las",
+        jeden: "cada",
+        vor: "antes",
+        heute: "hoy",
+        morgen: "mañana",
   },
 
   // TIME

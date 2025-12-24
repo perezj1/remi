@@ -254,6 +254,12 @@ chip: {
     vor: "vor",
     heute: "heute",
     morgen: "morgen",
+         on: "am",
+        every: "jeden",
+        before: "vor",
+        today: "heute",
+        tomorrow: "morgen",
+       
   },
 
   time: {

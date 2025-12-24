@@ -246,11 +246,17 @@ chip: {
       idea: "Idea",
 
   schedule: {
-    on: "on",
-    every: "every",
-    before: "before",
-    today: "today",
-    tomorrow: "tomorrow",
+   
+      on: "on",
+        every: "every",
+        before: "before",
+        today: "today",
+        tomorrow: "tomorrow",
+        am: "at",
+        jeden: "every",
+        vor: "before",
+        heute: "today",
+        morgen: "tomorrow",
   },
 
   time: {
