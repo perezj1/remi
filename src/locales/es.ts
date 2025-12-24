@@ -264,12 +264,16 @@ chip: {
     t1800: "18:00",
   },
 
-  // REMINDER (solo 2 opciones)
+  // REMINDER 
   reminder: {
-    dailyLabel: "cada día",
-    dayBeforeLabel: "día de antes",
-    dailyInsert: "recordar cada día",
-    dayBeforeInsert: "recordar el día de antes",
+          standardLabel: "Standard",
+      dayBeforeLabel: "día de antes",
+      noneLabel: "Sin recordatorios",
+
+      standardInsert: "recordar",
+      dayBeforeInsert: "recordar el día de antes",
+      noneInsert: "sin recordatorios",
+
   },
 },
 

@@ -690,9 +690,9 @@ export default function MindDumpModal({
     const fallbackDailyLabel = uiLang === "en" ? "every day" : uiLang === "de" ? "jeden Tag" : "cada día";
     const fallbackDayBeforeLabel = uiLang === "en" ? "day before" : uiLang === "de" ? "Vortag" : "día de antes";
 
-    const fallbackDailyInsert = uiLang === "en" ? "remind every day" : uiLang === "de" ? "erinner jeden Tag" : "recordar cada día";
+    const fallbackDailyInsert = uiLang === "en" ? "standard reminder" : uiLang === "de" ? "Standard-Erinnerung" : "recordar cada día";
     const fallbackDayBeforeInsert =
-      uiLang === "en" ? "remind the day before" : uiLang === "de" ? "erinner am Vortag" : "recordar el día de antes";
+      uiLang === "en" ? "remind the day before" : uiLang === "de" ? "erinner am Vortag" : "recordatorio estándar";
 
     return [
       {

@@ -254,10 +254,13 @@ chip: {
   },
 
   reminder: {
-    dailyLabel: "every day",
-    dayBeforeLabel: "day before",
-    dailyInsert: "remind every day",
-    dayBeforeInsert: "remind the day before",
+     standardLabel: "Standard",
+      dayBeforeLabel: "day before",
+      noneLabel: "No reminders",
+
+      standardInsert: "remind",
+      dayBeforeInsert: "remind the day before",
+      noneInsert: "no reminders",
   },
 },
 
