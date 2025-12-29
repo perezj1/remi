@@ -690,7 +690,19 @@ shareToRemiModal: {
     logout: "Abmelden",
     toastSaved: "Profil erfolgreich aktualisiert.",
     toastError: "Profil konnte nicht gespeichert werden.",
-    
+
+    devicePushTitle: "Benachrichtigungen auf diesem Gerät",
+  devicePushUnsupportedHint:
+    "Dieser Browser unterstützt keine Push-Benachrichtigungen. Probiere Safari auf dem iPhone oder Chrome/Edge auf Android/PC.",
+     devicePushChecking: "Wird geprüft…",
+  devicePushUnsupportedLine: "Dieses Gerät/Browser unterstützt keine Push-Benachrichtigungen.",
+  devicePushDeniedLine: "Berechtigung auf diesem Gerät verweigert (Browser-Einstellungen).",
+  devicePushNeedsPermissionLine: "Du hast auf diesem Gerät noch keine Berechtigung erteilt.",
+  devicePushNeedsRegisterLine: "Berechtigung OK, aber hier noch nicht aktiviert.",
+  devicePushActiveLine: "Auf diesem Gerät aktiv ✅",
+  devicePushToggleAria: "Benachrichtigungen auf diesem Gerät aktivieren oder pausieren",
+  pushDeviceEnabled: "Benachrichtigungen auf diesem Gerät aktiviert",
+
   back: "Profil",
   memberSince: "Mitglied seit {{date}}",
 

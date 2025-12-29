@@ -25,14 +25,56 @@ import { registerPushSubscription } from "@/lib/registerPush";
 import { useI18n } from "@/contexts/I18nContext";
 import type { RemiLocale } from "@/locales";
 
-const NOTIF_KEY = "remi_notifications";
-
 type DevicePushStatus =
   | "unsupported"
   | "denied"
   | "needs_permission"
   | "needs_register"
+  | "paused"
   | "active";
+
+function ToggleSwitch(props: {
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  disabled?: boolean;
+  ariaLabel?: string;
+}) {
+  const { checked, onChange, disabled, ariaLabel } = props;
+
+  const onBg = "#EAFBF4"; // como tu imagen
+  const onBorder = "#34D399";
+  const onKnob = "#10B981";
+
+  const offBg = "#E8EDF3";
+  const offBorder = "#CBD5E1";
+  const offKnob = "#FFFFFF";
+
+  return (
+    <button
+      type="button"
+      aria-label={ariaLabel}
+      onClick={() => onChange(!checked)}
+      disabled={disabled}
+      className="relative inline-flex h-[28px] w-[52px] items-center rounded-full border transition disabled:opacity-60 disabled:cursor-not-allowed"
+      style={{
+        background: checked ? onBg : offBg,
+        borderColor: checked ? onBorder : offBorder,
+        boxShadow: "0 1px 0 rgba(0,0,0,0.02)",
+      }}
+    >
+      <span
+        className="absolute h-[24px] w-[24px] rounded-full transition"
+        style={{
+          left: checked ? "24px" : "2px",
+          background: checked ? onKnob : offKnob,
+          boxShadow: checked
+            ? "0 3px 10px rgba(16,185,129,0.25)"
+            : "0 3px 10px rgba(15,23,42,0.12)",
+        }}
+      />
+    </button>
+  );
+}
 
 export default function ProfilePage() {
   const { user, profile, signOut, updateProfile, updateAuthUser } = useAuth();
@@ -51,9 +93,8 @@ export default function ProfilePage() {
   const [email, setEmail] = useState("");
   const [memberSince, setMemberSince] = useState<string | null>(null);
 
-  // ---- ajustes de la app ----
+  // ---- ajustes ----
   const [preferredLanguage, setPreferredLanguage] = useState<RemiLocale>(lang);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   // ---- push por dispositivo (multi-dispositivo) ----
   const [devicePushStatus, setDevicePushStatus] =
@@ -66,28 +107,30 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
 
   // ---- avatar ----
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null); // mostrar
-  const [avatarFile, setAvatarFile] = useState<File | null>(null); // subir
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarError, setAvatarError] = useState<string | null>(null);
 
-  // ✅ Check REAL de push en ESTE dispositivo (y si está en DB por endpoint)
+  const hasPushSupport = () => {
+    if (typeof window === "undefined") return false;
+    const hasNotif = "Notification" in window;
+    const hasSW = "serviceWorker" in navigator;
+    const hasPush = "PushManager" in window;
+    return !!(hasNotif && hasSW && hasPush);
+  };
+
+  // ✅ Check REAL de push en ESTE dispositivo (y estado en DB por endpoint)
   const checkDevicePush = async (uid: string) => {
     if (typeof window === "undefined") {
       setDevicePushStatus("unsupported");
       return;
     }
 
-    // soporte
-    const hasNotif = "Notification" in window;
-    const hasSW = "serviceWorker" in navigator;
-    const hasPush = "PushManager" in window;
-
-    if (!hasNotif || !hasSW || !hasPush) {
+    if (!hasPushSupport()) {
       setDevicePushStatus("unsupported");
       return;
     }
 
-    // permiso
     if (Notification.permission === "denied") {
       setDevicePushStatus("denied");
       return;
@@ -98,7 +141,6 @@ export default function ProfilePage() {
       return;
     }
 
-    // suscripción local
     try {
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.getSubscription();
@@ -108,30 +150,29 @@ export default function ProfilePage() {
         return;
       }
 
-      // validación por endpoint en DB (multi-dispositivo)
       const endpoint = sub.endpoint;
 
       const { data, error } = await supabase
         .from("remi_push_subscriptions")
-        .select("id")
+        .select("id, status")
         .eq("user_id", uid)
         .eq("endpoint", endpoint)
-        .eq("status", "ACTIVE")
         .maybeSingle();
 
       if (error) {
         console.error("Error checking device push in DB", error);
-        // en duda, mejor mostrar que falta registrar para poder repararlo
         setDevicePushStatus("needs_register");
         return;
       }
 
       if (data?.id) {
-        setDevicePushStatus("active");
-        return;
+        if (data.status === "ACTIVE") return setDevicePushStatus("active");
+        if (data.status === "PAUSED") return setDevicePushStatus("paused");
+        // INACTIVE u otro
+        return setDevicePushStatus("needs_register");
       }
 
-      // permiso granted + sub local existe, pero falta en DB => auto-registrar
+      // Permiso granted + sub local existe, pero falta en DB => auto-registrar
       try {
         await registerPushSubscription(uid);
         setDevicePushStatus("active");
@@ -145,11 +186,145 @@ export default function ProfilePage() {
     }
   };
 
+  // ✅ PAUSAR push en ESTE dispositivo (status=PAUSED en DB)
+  const pausePushOnThisDevice = async (uid: string) => {
+    if (typeof window === "undefined") return;
+
+    if (!hasPushSupport()) {
+      setDevicePushStatus("unsupported");
+      return;
+    }
+
+    if (Notification.permission === "denied") {
+      setDevicePushStatus("denied");
+      return;
+    }
+
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+
+      if (!sub) {
+        setDevicePushStatus("needs_register");
+        return;
+      }
+
+      const endpoint = sub.endpoint;
+      const json = sub.toJSON() as any;
+      const p256dh = json?.keys?.p256dh ?? "";
+      const auth = json?.keys?.auth ?? "";
+
+      const { error } = await supabase
+        .from("remi_push_subscriptions")
+        .upsert(
+          {
+            user_id: uid,
+            endpoint,
+            p256dh,
+            auth,
+            user_agent:
+              typeof navigator !== "undefined" ? navigator.userAgent : null,
+            status: "PAUSED",
+          },
+          { onConflict: "user_id,endpoint" },
+        );
+
+      if (error) {
+        console.error("Error pausing device push", error);
+      }
+
+      setDevicePushStatus("paused");
+    } catch (e) {
+      console.error("Unexpected pause push error", e);
+      setDevicePushStatus("paused");
+    }
+  };
+
+  // ✅ activar push en ESTE dispositivo (status=ACTIVE) via registerPushSubscription
+  const handleEnablePushOnThisDevice = async () => {
+    if (!user) return;
+    setRegisteringDevicePush(true);
+    try {
+      await registerPushSubscription(user.id);
+      toast.success(
+        safeT(
+          "profile.pushDeviceEnabled",
+          "Notificaciones activadas en este dispositivo",
+        ),
+      );
+      await checkDevicePush(user.id);
+    } catch (e) {
+      console.error("Error enabling push on this device", e);
+      toast.error(
+        safeT(
+          "profile.pushDeviceEnableError",
+          "No se pudieron activar notificaciones en este dispositivo",
+        ),
+      );
+      await checkDevicePush(user.id);
+    } finally {
+      setRegisteringDevicePush(false);
+    }
+  };
+
+  // ✅ toggle del dispositivo (ACTIVE <-> PAUSED)
+  const handleToggleDevicePush = async (nextOn: boolean) => {
+    if (!user) return;
+
+    if (nextOn) {
+      if (!hasPushSupport()) {
+        toast.error(
+          safeT(
+            "profile.devicePushUnsupportedToast",
+            "Este dispositivo/navegador no soporta push.",
+          ),
+        );
+        setDevicePushStatus("unsupported");
+        return;
+      }
+      if (Notification.permission === "denied") {
+        toast.error(
+          safeT(
+            "profile.devicePushDeniedToast",
+            "Permiso denegado en este dispositivo (Ajustes del navegador).",
+          ),
+        );
+        setDevicePushStatus("denied");
+        return;
+      }
+      await handleEnablePushOnThisDevice();
+      return;
+    }
+
+    setRegisteringDevicePush(true);
+    try {
+      await pausePushOnThisDevice(user.id);
+      toast.success(
+        safeT(
+          "profile.devicePushPaused",
+          "Notificaciones pausadas en este dispositivo",
+        ),
+      );
+    } catch (e) {
+      console.error("Error pausing push on this device", e);
+      toast.error(
+        safeT(
+          "profile.devicePushPauseError",
+          "No se pudieron pausar las notificaciones en este dispositivo",
+        ),
+      );
+      try {
+        await checkDevicePush(user.id);
+      } catch {}
+    } finally {
+      setRegisteringDevicePush(false);
+    }
+  };
+
   // Cargar datos iniciales cuando cambian user o profile
   useEffect(() => {
     if (!user) return;
 
-    // Nombre: primero perfil, luego metadata, luego email
     const meta = (user.user_metadata || {}) as {
       username?: string;
       language?: RemiLocale;
@@ -161,8 +336,8 @@ export default function ProfilePage() {
       (meta.username && meta.username.trim() !== ""
         ? meta.username
         : user.email
-        ? user.email.split("@")[0]
-        : "");
+          ? user.email.split("@")[0]
+          : "");
 
     setUsername(baseUsername);
     setEmail(user.email ?? "");
@@ -174,11 +349,11 @@ export default function ProfilePage() {
           year: "numeric",
           month: "long",
           day: "2-digit",
-        })
+        }),
       );
     }
 
-    // idioma: prioridad profiles.language → metadata.language
+    // idioma
     const profileLang = (((profile as any)?.language ??
       meta.language ??
       null) as RemiLocale | null);
@@ -188,30 +363,7 @@ export default function ProfilePage() {
       setLang(profileLang);
     }
 
-    // notificaciones (primero local, luego settings en Supabase)
-    if (typeof window !== "undefined") {
-      const notif = window.localStorage.getItem(NOTIF_KEY);
-      if (notif === "0") setNotificationsEnabled(false);
-      if (notif === "1") setNotificationsEnabled(true);
-    }
-
-    (async () => {
-      try {
-        const { data } = await supabase
-          .from("remi_user_settings")
-          .select("notifications_enabled")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        if (data && data.notifications_enabled !== null) {
-          setNotificationsEnabled(data.notifications_enabled);
-        }
-      } catch (err) {
-        console.error("Error loading notification settings", err);
-      }
-    })();
-
-    // avatar: ahora usamos principalmente la tabla profiles
+    // avatar
     const avatarFromProfile = profile?.avatar_url || null;
     const metaAvatar = meta.avatar_url || null;
 
@@ -219,7 +371,22 @@ export default function ProfilePage() {
     setAvatarFile(null);
     setAvatarError(null);
 
-    // ✅ push por dispositivo (multi-dispositivo)
+    // ✅ asegurar que global está "siempre activado" para que la Edge Function no excluya al usuario
+    // (upsert mínimo: no toca otras columnas)
+    (async () => {
+      try {
+        await supabase
+          .from("remi_user_settings")
+          .upsert(
+            { user_id: user.id, notifications_enabled: true },
+            { onConflict: "user_id" },
+          );
+      } catch (e) {
+        console.error("Error ensuring notifications_enabled=true", e);
+      }
+    })();
+
+    // ✅ push por dispositivo
     (async () => {
       setCheckingDevicePush(true);
       try {
@@ -232,12 +399,8 @@ export default function ProfilePage() {
 
   const handleLanguageChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value as RemiLocale;
-    setPreferredLanguage(value); // estado de formulario
-    setLang(value); // cambia idioma de la UI + localStorage
-  };
-
-  const handleToggleNotifications = () => {
-    setNotificationsEnabled((prev) => !prev);
+    setPreferredLanguage(value);
+    setLang(value);
   };
 
   const handleShareApp = async () => {
@@ -268,7 +431,7 @@ export default function ProfilePage() {
     }
   };
 
-  // --- Avatar: elegir archivo y previsualizar ---
+  // Avatar
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
   };
@@ -290,33 +453,6 @@ export default function ProfilePage() {
     setAvatarUrl(previewUrl);
   };
 
-  // ✅ activar push en ESTE dispositivo
-  const handleEnablePushOnThisDevice = async () => {
-    if (!user) return;
-    setRegisteringDevicePush(true);
-    try {
-      await registerPushSubscription(user.id);
-      toast.success(
-        safeT(
-          "profile.pushDeviceEnabled",
-          "Notificaciones activadas en este dispositivo"
-        )
-      );
-      await checkDevicePush(user.id);
-    } catch (e) {
-      console.error("Error enabling push on this device", e);
-      toast.error(
-        safeT(
-          "profile.pushDeviceEnableError",
-          "No se pudieron activar notificaciones en este dispositivo"
-        )
-      );
-      await checkDevicePush(user.id);
-    } finally {
-      setRegisteringDevicePush(false);
-    }
-  };
-
   const handleSave = async (e: FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -324,7 +460,6 @@ export default function ProfilePage() {
     setSaving(true);
 
     try {
-      // 1) si hay nuevo archivo, subirlo a Storage y obtener URL pública
       let finalAvatarUrl: string | null = avatarUrl;
 
       if (avatarFile) {
@@ -354,14 +489,14 @@ export default function ProfilePage() {
         setAvatarFile(null);
       }
 
-      // 2) Actualizar perfil en la tabla public.profiles (nombre + avatar + idioma)
+      // profiles
       await updateProfile({
         display_name: username,
         avatar_url: finalAvatarUrl,
         language: preferredLanguage,
       } as any);
 
-      // 3) Actualizar email / contraseña en Auth
+      // Auth updates
       const authUpdates: { email?: string; password?: string } = {};
 
       if (email && email !== user.email) {
@@ -386,43 +521,13 @@ export default function ProfilePage() {
         }
       }
 
-      // 4) guardar ajustes de notificaciones en remi_user_settings (preferencia GLOBAL)
-      const { error: settingsError } = await supabase
+      // ✅ asegurar de nuevo global ON (por si acaso)
+      await supabase
         .from("remi_user_settings")
         .upsert(
-          {
-            user_id: user.id,
-            notifications_enabled: notificationsEnabled,
-            notify_day_before: true,
-            notify_on_due_date: true,
-            repeat_until_done: true,
-            notification_hour_utc: 6, // ejemplo: 6:00 UTC
-          },
-          { onConflict: "user_id" }
+          { user_id: user.id, notifications_enabled: true },
+          { onConflict: "user_id" },
         );
-
-      if (settingsError) {
-        console.error("Error saving notification settings", settingsError);
-      }
-
-      // 5) si están activadas globalmente, registrar push de ESTE dispositivo
-      //    (multi-dispositivo: añade/actualiza fila por endpoint)
-      if (notificationsEnabled) {
-        try {
-          await registerPushSubscription(user.id);
-        } catch (subErr) {
-          console.error("Error registering push subscription", subErr);
-        }
-        // refrescar estado device
-        try {
-          await checkDevicePush(user.id);
-        } catch {}
-      }
-
-      // 6) guardar preferencias locales (solo notificaciones; el idioma lo guarda el I18nProvider)
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(NOTIF_KEY, notificationsEnabled ? "1" : "0");
-      }
 
       toast.success(t("profile.updateSuccess"));
       setNewPassword("");
@@ -439,25 +544,34 @@ export default function ProfilePage() {
     !avatarUrl && displayName ? displayName.charAt(0).toUpperCase() : "R";
 
   const devicePushLine = (() => {
-    if (checkingDevicePush) return "Comprobando…";
+    if (checkingDevicePush) return t("profile.devicePushChecking");
     if (devicePushStatus === "unsupported")
-      return "Este dispositivo/navegador no soporta push.";
-    if (devicePushStatus === "denied")
-      return "Permiso denegado en este dispositivo (Ajustes del navegador).";
+      return t("profile.devicePushUnsupportedLine");
+    if (devicePushStatus === "denied") return t("profile.devicePushDeniedLine");
     if (devicePushStatus === "needs_permission")
-      return "Aún no has concedido permiso en este dispositivo.";
+      return t("profile.devicePushNeedsPermissionLine");
     if (devicePushStatus === "needs_register")
-      return "Permiso OK, pero falta activar aquí.";
-    return "Activo en este dispositivo ✅";
+      return t("profile.devicePushNeedsRegisterLine");
+    if (devicePushStatus === "paused")
+      return safeT(
+        "profile.devicePushPausedLine",
+        "Pausadas en este dispositivo.",
+      );
+    return t("profile.devicePushActiveLine");
   })();
 
-  const showDevicePushButton =
-    devicePushStatus === "needs_permission" ||
-    devicePushStatus === "needs_register";
+  const deviceToggleChecked = devicePushStatus === "active";
+  const deviceToggleDisabled =
+    checkingDevicePush ||
+    registeringDevicePush ||
+    !user ||
+    devicePushStatus === "unsupported" ||
+    devicePushStatus === "denied" ||
+    devicePushStatus === "needs_permission";
 
   return (
     <div className="remi-page flex flex-col">
-      {/* HEADER CON GRADIENTE USANDO COLOR REMI (#7d59c9) */}
+      {/* HEADER */}
       <div
         style={{
           padding: "16px 20px 40px",
@@ -538,7 +652,6 @@ export default function ProfilePage() {
       {/* CONTENIDO */}
       <div className="px-5 pb-24" style={{ marginTop: -20 }}>
         <div className="space-y-4">
-          {/* TARJETA INFORMACIÓN DE USUARIO */}
           <section
             className="bg-white rounded-2xl shadow-md"
             style={{ padding: "14px 14px 14px" }}
@@ -624,7 +737,7 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* ✅ NOTIFICACIONES POR DISPOSITIVO (multi-dispositivo) */}
+              {/* ✅ SOLO: NOTIFICACIONES POR DISPOSITIVO (ACTIVE/PAUSED) */}
               <div className="pt-2">
                 <div className="flex items-start justify-between gap-3">
                   <div className="text-xs">
@@ -632,7 +745,7 @@ export default function ProfilePage() {
                       <Bell size={13} />
                       {safeT(
                         "profile.devicePushTitle",
-                        "Notificaciones (este dispositivo)"
+                        "Notificaciones en este dispositivo",
                       )}
                     </div>
                     <div className="text-[11px] text-slate-500 mt-0.5">
@@ -640,62 +753,39 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  {showDevicePushButton && (
-                    <button
-                      type="button"
-                      onClick={handleEnablePushOnThisDevice}
-                      disabled={registeringDevicePush || !user}
-                      className="shrink-0 rounded-full bg-[#7d59c9] text-white text-[11px] font-semibold px-4 py-2 shadow-md disabled:opacity-70"
-                    >
-                      {registeringDevicePush
-                        ? safeT("profile.devicePushEnabling", "Activando…")
-                        : safeT("profile.devicePushEnable", "Activar")}
-                    </button>
-                  )}
+                  <ToggleSwitch
+                    checked={deviceToggleChecked}
+                    onChange={(next) => handleToggleDevicePush(next)}
+                    disabled={deviceToggleDisabled}
+                    ariaLabel={safeT(
+                      "profile.devicePushToggleAria",
+                      "Activar o pausar notificaciones en este dispositivo",
+                    )}
+                  />
                 </div>
 
+                {/* hints */}
                 {(devicePushStatus === "denied" ||
-                  devicePushStatus === "unsupported") && (
+                  devicePushStatus === "unsupported" ||
+                  devicePushStatus === "needs_permission") && (
                   <div className="mt-2 text-[11px] text-slate-500">
                     {devicePushStatus === "denied"
                       ? safeT(
                           "profile.devicePushDeniedHint",
-                          "Si quieres activarlas: Ajustes del navegador → Notificaciones → permitir."
+                          "Si quieres activarlas: Ajustes del navegador → Notificaciones → permitir.",
                         )
-                      : safeT(
-                          "profile.devicePushUnsupportedHint",
-                          "Prueba desde Chrome/Edge/Firefox o instala la PWA."
-                        )}
+                      : devicePushStatus === "needs_permission"
+                        ? safeT(
+                            "profile.devicePushNeedsPermissionHint",
+                            "Concede permiso de notificaciones para poder activarlas.",
+                          )
+                        : safeT(
+                            "profile.devicePushUnsupportedHint",
+                            "Prueba desde Chrome/Edge/Firefox o instala la PWA.",
+                          )}
                   </div>
                 )}
               </div>
-
-              {/* NOTIFICATIONS (GLOBAL) — lo dejas comentado como estabas */}
-              {/* <div className="flex items-center justify-between pt-2">
-                <div className="text-xs">
-                  <div className="font-medium">
-                    {t("profile.notificationsLabel")}
-                  </div>
-                  <div className="text-[11px] text-slate-500">
-                    {t("profile.notificationsDescription")}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleToggleNotifications}
-                  className={`w-10 h-6 rounded-full flex items-center px-1 transition ${
-                    notificationsEnabled ? "bg-violet-500" : "bg-slate-300"
-                  }`}
-                >
-                  <span
-                    className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition ${
-                      notificationsEnabled
-                        ? "translate-x-4"
-                        : "translate-x-0"
-                    }`}
-                  />
-                </button>
-              </div> */}
 
               {/* BOTÓN GUARDAR */}
               <button

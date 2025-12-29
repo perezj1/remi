@@ -681,7 +681,19 @@ shareToRemiModal: {
     logout: "Log out",
     toastSaved: "Profile updated successfully.",
     toastError: "Could not save profile.",
-    
+
+     devicePushTitle: "Notifications on this device",
+  devicePushUnsupportedHint:
+    "This browser doesn’t support push notifications. Try Safari on iPhone or Chrome/Edge on Android/desktop.",
+    devicePushChecking: "Checking…",
+  devicePushUnsupportedLine: "This device/browser doesn’t support push.",
+  devicePushDeniedLine: "Permission denied on this device (browser settings).",
+  devicePushNeedsPermissionLine: "You haven’t granted permission on this device yet.",
+  devicePushNeedsRegisterLine: "Permission OK, but you still need to enable it here.",
+  devicePushActiveLine: "Active on this device ✅",
+   devicePushToggleAria: "Enable or pause notifications on this device",
+  pushDeviceEnabled: "Notifications enabled on this device",
+
   back: "Profile",
   memberSince: "Member since {{date}}",
 

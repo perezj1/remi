@@ -709,7 +709,19 @@ tasks: {
     logout: "Cerrar sesión",
     toastSaved: "Perfil actualizado correctamente.",
     toastError: "No se pudo guardar el perfil.",
-    
+
+    devicePushTitle: "Notificaciones en este dispositivo",
+  devicePushUnsupportedHint:
+    "Este navegador no admite notificaciones push. Prueba con Safari en iPhone o Chrome/Edge en Android/PC.",
+     devicePushChecking: "Comprobando…",
+  devicePushUnsupportedLine: "Este dispositivo/navegador no soporta push.",
+  devicePushDeniedLine: "Permiso denegado en este dispositivo (Ajustes del navegador).",
+  devicePushNeedsPermissionLine: "Aún no has concedido permiso en este dispositivo.",
+  devicePushNeedsRegisterLine: "Permiso OK, pero falta activar aquí.",
+  devicePushActiveLine: "Activo en este dispositivo ✅",
+   devicePushToggleAria: "Activar o pausar notificaciones en este dispositivo",
+  pushDeviceEnabled: "Notificaciones activadas en este dispositivo",
+
   back: "Perfil",
   memberSince: "Miembro desde {{date}}",
 
