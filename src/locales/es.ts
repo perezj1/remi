@@ -492,8 +492,29 @@ tasks: {
     pushEnabledToast: "Notificaciones activadas",
     pushErrorToast: "No se pudo activar push",
 
+  multideviceHelp: {
+      title: "Multidispositivo: no olvides nada, estés donde estés",
+      p1: "Remi está pensado para que puedas soltar cosas en 5 segundos, desde cualquier dispositivo.",
+      stepsTitle: "Cómo usarlo (rápido)",
+      step1: "Captura donde te pille: móvil, iPad/tablet o PC. Escribe, habla o pega texto.",
+      step2: "Todo se sincroniza: lo que guardas en un dispositivo aparece en los demás.",
+      step3: "Notificaciones por dispositivo: activa avisos solo en los que quieras (ej: móvil ON, PC OFF).",
+      examplesTitle: "Ejemplos que funcionan",
+      examplesBody:
+        "• Móvil ON → recordatorios cuando estás fuera\n• PC OFF → cero interrupciones trabajando\n• iPad ON → revisión tranquila al final del día",
+      footer: "Tú sueltas la carga mental en el momento. Remi se encarga de recordártelo cuando y donde sea necesario.",
+      ok: "Entendido",
+      hideForever: "No volver mostrar",
+    },
+
     // Tips (deck)
     tip: {
+
+ multidevice: {
+        title: "Remi contigo en móvil, iPad/tablet y PC",
+        body: "Vacía tu cabeza donde estés. Todo se sincroniza y tú eliges en qué dispositivo quieres notificaciones.",
+        cta: "Cómo funciona",
+      },
       smartShortcuts: {
         title: "Atajos inteligentes (ahorran 10s)",
         body: "Agrega palabras con 1 toque. \nEj: Idea / Comprar / a las 18:00.",
@@ -599,7 +620,7 @@ tasks: {
       androidStep4:
         "Si no aparece, asegúrate de tener Remi instalada como app (PWA) y prueba de nuevo.",
       ok: "Entendido",
-      hideForever: "No mostrar más",
+      hideForever: "No volver mostrar",
     },
 
     // Shortcuts modal
@@ -625,7 +646,7 @@ tasks: {
       step2: "General → Teclado",
       step3: "Activa “Activar Dictado”",
       ok: "Entendido",
-      hideForever: "No mostrar más",
+      hideForever: "No volver mostrar",
     },
   },
 

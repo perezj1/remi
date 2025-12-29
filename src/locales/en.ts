@@ -463,7 +463,31 @@ tasks: {
     pushEnabledToast: "Notifications enabled",
     pushErrorToast: "Couldn’t enable notifications",
 
+    multideviceHelp: {
+      title: "Multi-device: don’t forget anything, wherever you are",
+      p1: "Remi is built so you can offload things in 5 seconds, from any device.",
+      stepsTitle: "How to use it (quick)",
+      step1: "Capture wherever you are: phone, iPad/tablet or PC. Type, speak or paste text.",
+      step2: "Everything syncs: what you save on one device appears on the others.",
+      step3: "Per-device notifications: enable alerts only where you want (e.g. phone ON, PC OFF).",
+      examplesTitle: "Examples that work",
+      examplesBody:
+        "• Phone ON → reminders on the go\n• PC OFF → zero interruptions while working\n• iPad ON → calm end-of-day review",
+      footer: "You offload the mental load in the moment. Remi nudges you when it’s time.",
+      ok: "Got it",
+      hideForever: "Don’t show again",
+    },
+
+
     tip: {
+
+      multidevice: {
+        title: "Remi on your phone, iPad/tablet and PC",
+        body: "Offload your mind anywhere. Everything syncs, and you choose which devices should receive notifications.",
+        cta: "How it works",
+      },
+
+
       smartShortcuts: {
             title: "Smart shortcuts (save 10s)",
             body: "Add words with 1 tap.\nE.g. Idea / Buy / at 6:00 PM.",

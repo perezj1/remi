@@ -42,11 +42,7 @@ function RequireAuth({ children }: { children: JSX.Element }) {
 
   if (!user) {
     return (
-      <Navigate
-        to="/auth"
-        replace
-        state={{ from: location.pathname || "/" }}
-      />
+      <Navigate to="/auth" replace state={{ from: location.pathname || "/" }} />
     );
   }
   return children;
@@ -57,7 +53,7 @@ function AppRoutes() {
   const { lang, setLang } = useI18n();
   const location = useLocation();
 
-  // ✅ lee si hay algún modal abierto
+  // ✅ lee si hay algún modal abierto (incluidos los de Index si los “registras”)
   const { isAnyModalOpen } = useModalUi();
 
   // ✅ Idioma desde perfil
@@ -78,26 +74,21 @@ function AppRoutes() {
     const runSync = async (reason: "mount" | "online") => {
       if (cancelled) return;
 
-      // Si no hay red, no hacemos nada (syncOfflineQueue ya lo comprueba también)
       if (typeof navigator !== "undefined" && navigator.onLine === false) return;
 
       try {
         await syncOfflineQueue(user.id);
 
-        // Toast opcional: solo cuando vuelve la red (para no molestar en cada mount)
         if (reason === "online") {
           toast.success("Sincronizado ✅");
         }
       } catch (e) {
-        // No romper nada: solo log
         console.error("[App] syncOfflineQueue failed:", e);
       }
     };
 
-    // 1) al montar
     runSync("mount");
 
-    // 2) al volver la señal
     const onOnline = () => runSync("online");
     window.addEventListener("online", onOnline);
 

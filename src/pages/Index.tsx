@@ -56,6 +56,9 @@ import {
   Download,
 } from "lucide-react";
 
+// ✅ NUEVO: para ocultar BottomNav cuando hay modales abiertos (App.tsx lo usa)
+import { useModalUi } from "@/contexts/ModalUiContext";
+
 const AVATAR_KEY = "remi_avatar";
 
 // ✅ debe coincidir con BottomNav.tsx (por si llega texto dictado desde otra pantalla)
@@ -66,6 +69,9 @@ const TIP_DISMISS_KEY = "remi_tip_dismissed_v1";
 
 // ✅ key NUEVA para que vuelva a aparecer el tip “Compartir → Remi”
 const SHARE_TO_REMI_DISMISS_KEY = "share-to-remi-help";
+
+// ✅ NUEVO: key tip multi-dispositivo
+const MULTI_DEVICE_TIP_KEY = "multi-device";
 
 // ✅ NUEVO: anti doble-disparo auto-open
 const AUTO_OPEN_LAST_TS_KEY = "remi_auto_open_last_ts_v1";
@@ -122,6 +128,9 @@ export default function TodayPage() {
   const { user, profile } = useAuth();
   const { t } = useI18n();
 
+  // ✅ NUEVO: registrar modales para ocultar BottomNav
+  const { setModalOpen } = useModalUi();
+
   const safeT = (key: string, fallback: string, vars?: Record<string, any>) => {
     const v = t(key as any, vars as any);
     if (!v || v === key) return fallback;
@@ -146,7 +155,7 @@ export default function TodayPage() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [statusSummary, setStatusSummary] = useState<RemiStatusSummary | null>(
-    null
+    null,
   );
 
   const [showPushModal, setShowPushModal] = useState(false);
@@ -159,7 +168,7 @@ export default function TodayPage() {
 
   // ✅ dismiss de tips
   const [dismissedTips, setDismissedTips] = useState<Record<string, boolean>>(
-    {}
+    {},
   );
 
   // ✅ detectar PWA/standalone e iOS (para tips)
@@ -174,6 +183,9 @@ export default function TodayPage() {
 
   // ✅ modal ayuda: “Compartir → Remi” (iOS/Android)
   const [showShareToRemiHelp, setShowShareToRemiHelp] = useState(false);
+
+  // ✅ modal ayuda: multi-dispositivo
+  const [showMultiDeviceHelp, setShowMultiDeviceHelp] = useState(false);
 
   // ✅ tick para re-evaluar “Cierre del día” sin recargar
   const [nowTick, setNowTick] = useState(0);
@@ -193,6 +205,7 @@ export default function TodayPage() {
       showShortcutsModal ||
       showIosDictationHelp ||
       showShareToRemiHelp ||
+      showMultiDeviceHelp ||
       profileOpen;
   }, [
     mindDumpOpen,
@@ -201,8 +214,52 @@ export default function TodayPage() {
     showShortcutsModal,
     showIosDictationHelp,
     showShareToRemiHelp,
+    showMultiDeviceHelp,
     profileOpen,
   ]);
+
+  // ✅ NUEVO: registrar cada modal en el contador global -> App.tsx ocultará BottomNav
+  useEffect(() => {
+    if (!mindDumpOpen) return;
+    setModalOpen(true);
+    return () => setModalOpen(false);
+  }, [mindDumpOpen, setModalOpen]);
+
+  useEffect(() => {
+    if (!mentalDumpOpen) return;
+    setModalOpen(true);
+    return () => setModalOpen(false);
+  }, [mentalDumpOpen, setModalOpen]);
+
+  useEffect(() => {
+    if (!showPushModal) return;
+    setModalOpen(true);
+    return () => setModalOpen(false);
+  }, [showPushModal, setModalOpen]);
+
+  useEffect(() => {
+    if (!showShortcutsModal) return;
+    setModalOpen(true);
+    return () => setModalOpen(false);
+  }, [showShortcutsModal, setModalOpen]);
+
+  useEffect(() => {
+    if (!showIosDictationHelp) return;
+    setModalOpen(true);
+    return () => setModalOpen(false);
+  }, [showIosDictationHelp, setModalOpen]);
+
+  useEffect(() => {
+    if (!showShareToRemiHelp) return;
+    setModalOpen(true);
+    return () => setModalOpen(false);
+  }, [showShareToRemiHelp, setModalOpen]);
+
+  useEffect(() => {
+    if (!showMultiDeviceHelp) return;
+    setModalOpen(true);
+    return () => setModalOpen(false);
+  }, [showMultiDeviceHelp, setModalOpen]);
 
   // ✅ Ahora: Hoy (default), Semana, Sin fecha
   const [filter, setFilter] = useState<FilterMode>("TODAY");
@@ -305,7 +362,9 @@ export default function TodayPage() {
     // Cooldown anti doble-disparo (visibility + pageshow pueden coincidir)
     try {
       const now = Date.now();
-      const last = Number(sessionStorage.getItem(AUTO_OPEN_LAST_TS_KEY) || "0");
+      const last = Number(
+        sessionStorage.getItem(AUTO_OPEN_LAST_TS_KEY) || "0",
+      );
       if (now - last < AUTO_OPEN_COOLDOWN_MS) return;
       sessionStorage.setItem(AUTO_OPEN_LAST_TS_KEY, String(now));
     } catch {}
@@ -665,12 +724,12 @@ export default function TodayPage() {
     const todayMid = new Date(
       today.getFullYear(),
       today.getMonth(),
-      today.getDate()
+      today.getDate(),
     );
     const tomorrowMid = new Date(
       today.getFullYear(),
       today.getMonth(),
-      today.getDate() + 1
+      today.getDate() + 1,
     );
 
     const todayIso = todayMid.toISOString().slice(0, 10);
@@ -682,7 +741,7 @@ export default function TodayPage() {
       const dMid = new Date(
         dateMid.getFullYear(),
         dateMid.getMonth(),
-        dateMid.getDate()
+        dateMid.getDate(),
       );
       const iso = dMid.toISOString().slice(0, 10);
 
@@ -739,7 +798,7 @@ export default function TodayPage() {
             cursor = new Date(
               cursor.getFullYear(),
               cursor.getMonth(),
-              cursor.getDate() + 1
+              cursor.getDate() + 1,
             );
           }
         }
@@ -758,20 +817,31 @@ export default function TodayPage() {
     if (filter === "NO_DATE") return [];
 
     const today = new Date();
-    const todayMid = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const weekEndMid = new Date(todayMid.getFullYear(), todayMid.getMonth(), todayMid.getDate() + 7);
+    const todayMid = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
+    const weekEndMid = new Date(
+      todayMid.getFullYear(),
+      todayMid.getMonth(),
+      todayMid.getDate() + 7,
+    );
 
     return dateGroups.filter((group) => {
       if (!group.dateMs) return false;
       const time = group.dateMs;
 
       if (filter === "TODAY") return isSameDay(new Date(time), todayMid);
-      if (filter === "WEEK") return time >= todayMid.getTime() && time <= weekEndMid.getTime();
+      if (filter === "WEEK")
+        return time >= todayMid.getTime() && time <= weekEndMid.getTime();
       return false;
     });
   }, [dateGroups, filter]);
 
-  const hasVisibleDatedTasks = filteredDateGroups.some((g) => g.items.length > 0);
+  const hasVisibleDatedTasks = filteredDateGroups.some(
+    (g) => g.items.length > 0,
+  );
   const hasNoDateTasks = filter === "NO_DATE" && noDateTasks.length > 0;
 
   // ---------- crear ----------
@@ -779,10 +849,16 @@ export default function TodayPage() {
     title: string,
     dueDate: string | null,
     reminderMode: ReminderMode,
-    repeatType: RepeatType
+    repeatType: RepeatType,
   ) => {
     if (!user) return;
-    const created = await createTask(user.id, title, dueDate, reminderMode, repeatType);
+    const created = await createTask(
+      user.id,
+      title,
+      dueDate,
+      reminderMode,
+      repeatType,
+    );
     setTasks((prev) => [...prev, created]);
   };
 
@@ -803,7 +879,9 @@ export default function TodayPage() {
     if (option === "WEEK") base.setDate(base.getDate() + 7);
 
     const updated = await postponeTask(task.id, base.toISOString());
-    setTasks((prev) => prev.map((tt) => (tt.id === updated.id ? updated : tt)));
+    setTasks((prev) =>
+      prev.map((tt) => (tt.id === updated.id ? updated : tt)),
+    );
 
     toast.success(safeT("today.postponeDayToast", "Aplazado"));
   };
@@ -830,8 +908,8 @@ export default function TodayPage() {
     (profile?.display_name && profile.display_name.trim() !== ""
       ? profile.display_name
       : user?.email
-      ? user.email.split("@")[0]
-      : safeT("today.defaultUserName", "Usuario")) ??
+        ? user.email.split("@")[0]
+        : safeT("today.defaultUserName", "Usuario")) ??
     safeT("today.defaultUserName", "Usuario");
 
   const initial = displayName.charAt(0).toUpperCase();
@@ -954,10 +1032,7 @@ export default function TodayPage() {
       cards.push({
         id: "install",
         title: safeT("today.tip.install.title", "Instala Remi como app"),
-        body: safeT(
-          "today.tip.install.body",
-          "Ábrela en 1 toque y funciona más fluida como una app."
-        ),
+        body: safeT("today.tip.install.body", "Ábrela en 1 toque y funciona más fluida como una app."),
         cta: safeT("today.tip.install.cta", "Instalar"),
         icon: <Download size={18} />,
         bg: "",
@@ -973,7 +1048,7 @@ export default function TodayPage() {
         title: safeT("today.tip.push.title", "Que Remi te avise por ti"),
         body: safeT(
           "today.tip.push.body",
-          "Activa notificaciones y suelta la carga mental. Remi te toca el hombro cuando toca."
+          "Activa notificaciones y suelta la carga mental. Remi te toca el hombro cuando toca.",
         ),
         cta: safeT("today.tip.push.cta", "Activar"),
         icon: <Bell size={18} />,
@@ -990,7 +1065,7 @@ export default function TodayPage() {
         title: safeT("today.tip.iosDict.title", "Activa el micrófono del teclado"),
         body: safeT(
           "today.tip.iosDict.body",
-          "Si no ves el micro en el teclado, actívalo en Ajustes y dicta más rápido."
+          "Si no ves el micro en el teclado, actívalo en Ajustes y dicta más rápido.",
         ),
         cta: safeT("today.tip.iosDict.cta", "Ver cómo"),
         icon: <Keyboard size={18} />,
@@ -1000,13 +1075,30 @@ export default function TodayPage() {
       });
     }
 
+    // ✅ NUEVO: Multi-dispositivo (justo después del tip iOS)
+    if (!dismissedTips[MULTI_DEVICE_TIP_KEY]) {
+      cards.push({
+        id: MULTI_DEVICE_TIP_KEY,
+        title: safeT("today.tip.multidevice.title", "Remi contigo en móvil, iPad y PC"),
+        body: safeT(
+          "today.tip.multidevice.body",
+          "Vacía tu cabeza donde estés. Todo se sincroniza y tú eliges en qué dispositivo quieres notificaciones.",
+        ),
+        cta: safeT("today.tip.multidevice.cta", "Ver cómo funciona"),
+        icon: <Smartphone size={18} />,
+        bg: "",
+        border: "rgba(16,185,129,0.65)",
+        onClick: () => setShowMultiDeviceHelp(true),
+      });
+    }
+
     // 5) Palabras que ahorran tiempo (abre modal ejemplos)
     cards.push({
       id: "shortcuts",
       title: safeT("today.tip.shortcuts.title", "Palabras que ahorran tiempo"),
       body: safeT(
         "today.tip.shortcuts.body",
-        "Una idea = empieza con ‘Idea: …’. Una tarea = empieza con un verbo."
+        "Una idea = empieza con ‘Idea: …’. Una tarea = empieza con un verbo.",
       ),
       cta: safeT("today.tip.shortcuts.cta", "Ver ejemplos"),
       icon: <Sparkles size={18} />,
@@ -1035,7 +1127,7 @@ export default function TodayPage() {
       title: safeT("today.tip.paste.title", "¿Has probado a pegar texto?"),
       body: safeT(
         "today.tip.paste.body",
-        "Copia cualquier cosa (WhatsApp, Mail, Notas) y deja que Remi lo ordene."
+        "Copia cualquier cosa (WhatsApp, Mail, Notas) y deja que Remi lo ordene.",
       ),
       cta: safeT("today.tip.paste.cta", "Pegar ahora"),
       icon: <ClipboardPaste size={18} />,
@@ -1051,7 +1143,7 @@ export default function TodayPage() {
         title: safeT("today.tip.shareToRemi.title", "Guarda cosas con “Compartir”"),
         body: safeT(
           "today.tip.shareToRemi.body",
-          "Desde WhatsApp/Correo/Notas: Compartir → Remi. Se abre listo para ordenar."
+          "Desde WhatsApp/Correo/Notas: Compartir → Remi. Se abre listo para ordenar.",
         ),
         cta: safeT("today.tip.shareToRemi.cta", "Probar"),
         icon: <Share2 size={18} />,
@@ -1067,13 +1159,14 @@ export default function TodayPage() {
       title: safeT("today.tip.natural.title", "Escribe como hablas"),
       body: safeT(
         "today.tip.natural.body",
-        "Ej: “Pagar la luz mañana a las 6 de la tarde”. Remi lo ordena y tú te olvidas."
+        "Ej: “Pagar la luz mañana a las 6 de la tarde”. Remi lo ordena y tú te olvidas.",
       ),
       cta: safeT("today.tip.natural.cta", "Probar ejemplo"),
       icon: <Sparkles size={18} />,
       bg: "",
       border: "rgba(16,185,129,0.65)",
-      onClick: () => handleOpenMindDump(safeT("today.tip.natural.prefill", "Pagar la luz mañana 18:00")),
+      onClick: () =>
+        handleOpenMindDump(safeT("today.tip.natural.prefill", "Pagar la luz mañana 18:00")),
     });
 
     // 10) ✅ Atajos inteligentes
@@ -1082,7 +1175,7 @@ export default function TodayPage() {
       title: safeT("today.tip.smartShortcuts.title", "Atajos inteligentes (ahorran 10s)"),
       body: safeT(
         "today.tip.smartShortcuts.body",
-        "Agrega palabras con 1 toque. Ej: Idea / Comprar / a las 18:00."
+        "Agrega palabras con 1 toque. Ej: Idea / Comprar / a las 18:00.",
       ),
       cta: safeT("today.tip.smartShortcuts.cta", "Probar ahora"),
       icon: <Sparkles size={18} />,
@@ -1101,7 +1194,7 @@ export default function TodayPage() {
         title: safeT(
           key,
           `Tienes ${noDateCount} tarea${noDateCount === 1 ? "" : "s"} sin fecha`,
-          { count: noDateCount }
+          { count: noDateCount },
         ),
         body: safeT("today.tip.noDate.body", "¿Las ordenamos? En 30s te dejo la lista limpia."),
         cta: safeT("today.tip.noDate.cta", "Ver sin fecha"),
@@ -1118,7 +1211,7 @@ export default function TodayPage() {
       title: safeT("today.tip.week.title", "Plan rápido"),
       body: safeT(
         "today.tip.week.body",
-        "Mira tu semana en 1 gesto. Lo urgente primero, lo demás fuera de la cabeza."
+        "Mira tu semana en 1 gesto. Lo urgente primero, lo demás fuera de la cabeza.",
       ),
       cta: safeT("today.tip.week.cta", "Ver semana"),
       icon: <CalendarDays size={18} />,
@@ -1133,7 +1226,7 @@ export default function TodayPage() {
       title: safeT("today.tip.mental.title", "Mini pausa"),
       body: safeT(
         "today.tip.mental.body",
-        "Respira 4s, suelta 6s. Tu mente no necesita hacerlo todo hoy."
+        "Respira 4s, suelta 6s. Tu mente no necesita hacerlo todo hoy.",
       ),
       cta: safeT("today.tip.mental.cta", "Vaciar mente"),
       icon: <HeartPulse size={18} />,
@@ -1148,7 +1241,7 @@ export default function TodayPage() {
       title: safeT("today.tip.birthday.title", "¿Cumpleaños cerca?"),
       body: safeT(
         "today.tip.birthday.body",
-        "Escríbelo en 5 segundos y Remi te lo recordará cuando toque."
+        "Escríbelo en 5 segundos y Remi te lo recordará cuando toque.",
       ),
       cta: safeT("today.tip.birthday.cta", "Añadir"),
       icon: <Sparkles size={18} />,
@@ -1185,14 +1278,11 @@ export default function TodayPage() {
 
   // ✅ Deck: ahora con hook
   const deckRef = useRef<HTMLDivElement | null>(null);
-  const {
-    activeIndex: activeTipIndex,
-    scrollToIndex: scrollToTip,
-    bind: deckBind,
-  } = useSnapTipDeck(deckRef, tipCards.length, {
-    maxStep: 1,
-    settleMs: 120,
-  });
+  const { activeIndex: activeTipIndex, scrollToIndex: scrollToTip, bind: deckBind } =
+    useSnapTipDeck(deckRef, tipCards.length, {
+      maxStep: 1,
+      settleMs: 120,
+    });
 
   return (
     <div className="remi-page">
@@ -1222,13 +1312,7 @@ export default function TodayPage() {
           position: "relative",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-          }}
-        >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
             <p style={{ fontSize: 12, opacity: 0.8 }}>
               {safeT("today.greeting", `Hola, ${displayName}`, { name: displayName })}
@@ -1392,9 +1476,7 @@ export default function TodayPage() {
               item={card}
               index={idx}
               active={idx === activeTipIndex}
-              style={{
-                marginLeft: idx === 0 ? 0 : -DECK_OVERLAP,
-              }}
+              style={{ marginLeft: idx === 0 ? 0 : -DECK_OVERLAP }}
               dataTipIndex={idx}
             />
           ))}
@@ -1424,9 +1506,7 @@ export default function TodayPage() {
                   borderRadius: 999,
                   border: "none",
                   cursor: "pointer",
-                  background: isActive
-                    ? "rgba(125,89,201,0.95)"
-                    : "rgba(148,163,184,0.55)",
+                  background: isActive ? "rgba(125,89,201,0.95)" : "rgba(148,163,184,0.55)",
                   transition: "width 0.18s ease, background 0.18s ease",
                 }}
               />
@@ -1438,15 +1518,7 @@ export default function TodayPage() {
       {/* CONTENIDO */}
       <div style={{ padding: "0 18px 18px" }}>
         {/* Filtros */}
-        <div
-          style={{
-            marginTop: 8,
-            marginBottom: 8,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
+        <div style={{ marginTop: 8, marginBottom: 8, display: "flex", justifyContent: "center", alignItems: "center" }}>
           <div
             className="remi-tabs"
             style={{
@@ -1573,11 +1645,11 @@ export default function TodayPage() {
                                 onClick={() => handlePostpone(task, "DAY")}
                                 title={safeT(
                                   "today.actionPostpone1dTitle",
-                                  "Aplazar: añade 1 día a la fecha límite"
+                                  "Aplazar: añade 1 día a la fecha límite",
                                 )}
                                 aria-label={safeT(
                                   "today.actionPostpone1dTitle",
-                                  "Aplazar: añade 1 día a la fecha límite"
+                                  "Aplazar: añade 1 día a la fecha límite",
                                 )}
                                 className="w-9 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center"
                               >
@@ -1617,9 +1689,7 @@ export default function TodayPage() {
                   size={16}
                   className="text-slate-500 transition-transform"
                   style={{
-                    transform: isCollapsed(NO_DATE_GROUP_KEY)
-                      ? "rotate(-90deg)"
-                      : "rotate(0deg)",
+                    transform: isCollapsed(NO_DATE_GROUP_KEY) ? "rotate(-90deg)" : "rotate(0deg)",
                   }}
                 />
                 <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
@@ -1685,10 +1755,7 @@ export default function TodayPage() {
               {safeT("today.shortcutsModal.title", "Ver ejemplos")}
             </h2>
             <p className="text-xs text-slate-600 mb-4">
-              {safeT(
-                "today.shortcutsModal.body",
-                "Toca un ejemplo para abrir Remi con ese texto."
-              )}
+              {safeT("today.shortcutsModal.body", "Toca un ejemplo para abrir Remi con ese texto.")}
             </p>
 
             <div className="space-y-2 mb-4">
@@ -1739,7 +1806,7 @@ export default function TodayPage() {
 
       {/* ✅ AYUDA iOS: activar dictado del teclado */}
       {showIosDictationHelp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-content-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl p-5 w-[90%] max-w-sm shadow-xl">
             <h2 className="text-base font-semibold mb-1">
               {safeT("today.iosDict.helpTitle", "Activa Dictado en iPhone")}
@@ -1748,7 +1815,7 @@ export default function TodayPage() {
             <p className="text-xs text-slate-600 mb-3">
               {safeT(
                 "today.iosDict.helpBody",
-                "En iOS suele estar en: Ajustes → General → Teclado → Activar Dictado."
+                "En iOS suele estar en: Ajustes → General → Teclado → Activar Dictado.",
               )}
             </p>
 
@@ -1787,6 +1854,93 @@ export default function TodayPage() {
         </div>
       )}
 
+      {/* ✅ NUEVO: AYUDA Multi-dispositivo */}
+      {showMultiDeviceHelp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl p-5 w-[90%] max-w-sm shadow-xl">
+            <h2 className="text-base font-semibold mb-1">
+              {safeT(
+                "today.multideviceHelp.title",
+                "Multidispositivo: no olvides nada, estés donde estés",
+              )}
+            </h2>
+
+            <p className="text-xs text-slate-600 mb-3">
+              {safeT(
+                "today.multideviceHelp.p1",
+                "Remi está pensado para que puedas soltar cosas en 5 segundos, desde cualquier dispositivo.",
+              )}
+            </p>
+
+            <div className="rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-[12px] text-slate-700 mb-4">
+              <div className="font-semibold mb-1">
+                {safeT("today.multideviceHelp.stepsTitle", "Cómo usarlo (rápido)")}
+              </div>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>
+                  {safeT(
+                    "today.multideviceHelp.step1",
+                    "Captura donde te pille: móvil, iPad/tablet o PC. Escribe, habla o pega texto.",
+                  )}
+                </li>
+                <li>
+                  {safeT(
+                    "today.multideviceHelp.step2",
+                    "Todo se sincroniza: lo que guardas en un dispositivo aparece en los demás.",
+                  )}
+                </li>
+                <li>
+                  {safeT(
+                    "today.multideviceHelp.step3",
+                    "Notificaciones por dispositivo: activa avisos solo en los que quieras (ej: móvil ON, PC OFF).",
+                  )}
+                </li>
+              </ul>
+            </div>
+
+            <div className="rounded-xl bg-white border border-slate-200 px-3 py-2 text-[12px] text-slate-700 mb-4">
+              <div className="font-semibold mb-1">
+                {safeT("today.multideviceHelp.examplesTitle", "Ejemplos que funcionan")}
+              </div>
+              <div style={{ whiteSpace: "pre-line" }}>
+                {safeT(
+                  "today.multideviceHelp.examplesBody",
+                  "• Móvil ON → recordatorios cuando estás fuera\n• PC OFF → cero interrupciones trabajando\n• iPad ON → revisión tranquila al final del día",
+                )}
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 mb-4">
+              {safeT(
+                "today.multideviceHelp.footer",
+                "Tú sueltas la carga mental en el momento. Remi se encarga de recordártelo cuando toque.",
+              )}
+            </p>
+
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => setShowMultiDeviceHelp(false)}
+                className="w-full rounded-full bg-[#7d59c9] text-white text-xs font-semibold py-2.5 shadow-md"
+              >
+                {safeT("today.multideviceHelp.ok", "Entendido")}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  dismissTip(MULTI_DEVICE_TIP_KEY);
+                  setShowMultiDeviceHelp(false);
+                }}
+                className="w-full rounded-full bg-slate-100 text-slate-700 text-xs font-semibold py-2.5"
+              >
+                {safeT("today.multideviceHelp.hideForever", "No mostrar más")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ✅ AYUDA: “Compartir → Remi” (iOS / Android) */}
       {showShareToRemiHelp && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -1796,10 +1950,7 @@ export default function TodayPage() {
             </h2>
 
             <p className="text-xs text-slate-600 mb-3">
-              {safeT(
-                "today.shareToRemiModal.body",
-                "Guarda texto desde cualquier app usando “Compartir”."
-              )}
+              {safeT("today.shareToRemiModal.body", "Guarda texto desde cualquier app usando “Compartir”.")}
             </p>
 
             <div className="rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-[12px] text-slate-700 mb-4">
@@ -1816,13 +1967,13 @@ export default function TodayPage() {
                   <li>
                     {safeT(
                       "today.shareToRemiModal.iosStep3",
-                      "Si ves “Remi”, tócalo y se abrirá listo para ordenar."
+                      "Si ves “Remi”, tócalo y se abrirá listo para ordenar.",
                     )}
                   </li>
                   <li>
                     {safeT(
                       "today.shareToRemiModal.iosStep4",
-                      "Si no aparece, usa “Copiar” y luego pega en Remi (en iOS a veces depende del sistema/versión)."
+                      "Si no aparece, usa “Copiar” y luego pega en Remi (en iOS a veces depende del sistema/versión).",
                     )}
                   </li>
                 </ul>
@@ -1833,13 +1984,13 @@ export default function TodayPage() {
                   <li>
                     {safeT(
                       "today.shareToRemiModal.androidStep3",
-                      "Elige “Remi” y se abrirá con el texto listo para ordenar."
+                      "Elige “Remi” y se abrirá con el texto listo para ordenar.",
                     )}
                   </li>
                   <li>
                     {safeT(
                       "today.shareToRemiModal.androidStep4",
-                      "Si no aparece, asegúrate de tener Remi instalada como app (PWA) y prueba de nuevo."
+                      "Si no aparece, asegúrate de tener Remi instalada como app (PWA) y prueba de nuevo.",
                     )}
                   </li>
                 </ul>
@@ -1888,9 +2039,7 @@ export default function TodayPage() {
                 disabled={registeringPush}
                 className="w-full rounded-full bg-[#7d59c9] text-white text-xs font-semibold py-2.5 shadow-md disabled:opacity-70"
               >
-                {registeringPush
-                  ? safeT("today.pushEnabling", "Activando…")
-                  : safeT("today.pushEnable", "Activar")}
+                {registeringPush ? safeT("today.pushEnabling", "Activando…") : safeT("today.pushEnable", "Activar")}
               </button>
 
               <button
@@ -1898,7 +2047,7 @@ export default function TodayPage() {
                 onClick={() => setShowPushModal(false)}
                 className="w-full rounded-full bg-slate-100 text-slate-700 text-xs font-semibold py-2.5"
               >
-                Ahora no
+                {safeT("today.pushLater", "Ahora no")}
               </button>
             </div>
           </div>
@@ -1984,9 +2133,7 @@ function TipCard({
           boxShadow: "0 14px 30px rgba(15,23,42,0.08)",
         }}
       >
-        <div style={{ transform: "scale(1.7)", color: "#7d59c9" }}>
-          {item.icon}
-        </div>
+        <div style={{ transform: "scale(1.7)", color: "#7d59c9" }}>{item.icon}</div>
       </div>
 
       <div style={{ padding: "6px 6px 0" }}>
@@ -2016,14 +2163,7 @@ function TipCard({
       </div>
 
       {item.cta ? (
-        <div
-          style={{
-            width: "100%",
-            display: "flex",
-            justifyContent: "center",
-            paddingBottom: 2,
-          }}
-        >
+        <div style={{ width: "100%", display: "flex", justifyContent: "center", paddingBottom: 2 }}>
           <div
             style={{
               display: "inline-flex",

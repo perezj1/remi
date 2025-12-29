@@ -468,7 +468,28 @@ tasks: {
     pushEnabledToast: "Benachrichtigungen aktiviert",
     pushErrorToast: "Benachrichtigungen konnten nicht aktiviert werden",
 
+ multideviceHelp: {
+      title: "Mehrere Geräte: nichts vergessen – egal wo du bist",
+      p1: "Remi ist dafür gemacht, dass du Dinge in 5 Sekunden loswerden kannst – von jedem Gerät aus.",
+      stepsTitle: "So nutzt du es (kurz)",
+      step1: "Erfasse es, wo du gerade bist: Handy, iPad/Tablet oder PC. Tippen, sprechen oder Text einfügen.",
+      step2: "Alles synchronisiert sich: Was du auf einem Gerät speicherst, erscheint auf den anderen.",
+      step3: "Benachrichtigungen pro Gerät: Aktiviere Hinweise nur dort, wo du sie willst (z. B. Handy AN, PC AUS).",
+      examplesTitle: "Beispiele, die funktionieren",
+      examplesBody:
+        "• Handy AN → Erinnerungen unterwegs\n• PC AUS → keine Unterbrechungen beim Arbeiten\n• iPad AN → ruhiger Tagesabschluss",
+      footer: "Du gibst die mentale Last im Moment ab. Remi stupst dich an, wenn es soweit ist.",
+      ok: "Verstanden",
+      hideForever: "Nicht mehr anzeigen",
+    },
+
     tip: {
+
+        multidevice: {
+        title: "Remi auf Handy, iPad/Tablet und PC",
+        body: "Entlaste deinen Kopf überall. Alles synchronisiert sich, und du entscheidest, auf welchen Geräten du Benachrichtigungen willst.",
+        cta: "So funktioniert’s",
+      },
 
        smartShortcuts: {
       title: "Smarte Shortcuts (spart 10 Sek.)",
