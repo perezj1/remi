@@ -42,7 +42,7 @@ type Candidate = {
 function scoreChronoResult(r: any): number {
   if (!r || !r.start) return -1;
   const len = (r.text?.length ?? 0);
-  const idx = (typeof r.index === "number" ? r.index : 9999);
+  const idx = typeof r.index === "number" ? r.index : 9999;
   return len * 10 - idx;
 }
 
@@ -496,8 +496,9 @@ function deWordsToNumber_0_99(phrase: string): number | null {
   const compact = p.replace(/\s+/g, "");
 
   // Direct hits (0..59 basics + tens words)
-  if (DE_NUM_0_59[p] != null) return Number(DE_NUM_0_59[p]);
-  if (DE_NUM_0_59[compact] != null) return Number(DE_NUM_0_59[compact]);
+  if ((DE_NUM_0_59 as any)[p] != null) return Number((DE_NUM_0_59 as any)[p]);
+  if ((DE_NUM_0_59 as any)[compact] != null)
+    return Number((DE_NUM_0_59 as any)[compact]);
 
   // 21..59: "fünfundzwanzig"
   let m = compact.match(
@@ -758,24 +759,23 @@ function detectReminderHint(
   const text = normalize(raw);
 
   // ---- Español ----
-if (locale === "es") {
-  if (
-    /\b(dia antes|dia de antes|el dia antes|el dia de antes|un dia antes|un dia de antes|1 dia antes|1 dia de antes|la vispera|el dia anterior|la noche anterior)\b/.test(
-      text
-    )
-  ) {
-    return "DAY_BEFORE_AND_DUE";
-  }
+  if (locale === "es") {
+    if (
+      /\b(dia antes|dia de antes|el dia antes|el dia de antes|un dia antes|un dia de antes|1 dia antes|1 dia de antes|la vispera|el dia anterior|la noche anterior)\b/.test(
+        text
+      )
+    ) {
+      return "DAY_BEFORE_AND_DUE";
+    }
 
-  if (
-    /\b(todos los dias hasta|cada dia hasta|diariamente hasta|a diario hasta)\b/.test(
-      text
-    )
-  ) {
-    return "DAILY_UNTIL_DUE";
+    if (
+      /\b(todos los dias hasta|cada dia hasta|diariamente hasta|a diario hasta)\b/.test(
+        text
+      )
+    ) {
+      return "DAILY_UNTIL_DUE";
+    }
   }
-}
-
 
   if (locale === "en") {
     if (
@@ -798,16 +798,13 @@ if (locale === "es") {
     ) {
       return "DAY_BEFORE_AND_DUE";
     }
-    if (
-      /\b(jeden tag bis|taglich bis|täglich bis|taeglich bis)\b/.test(text)
-    ) {
+    if (/\b(jeden tag bis|taglich bis|täglich bis|taeglich bis)\b/.test(text)) {
       return "DAILY_UNTIL_DUE";
     }
   }
 
   return null;
 }
-
 
 const WEEKDAYS_ES =
   "(?:l)?unes|martes|mi[eé]rcoles|jueves|viernes|s[áa]bado|domingo";
@@ -821,175 +818,423 @@ function normalizeRelativeWeeksAny(raw: string): string {
 
   // ---------- ES ----------
 
-// "la próxima semana (el) jueves" / "para la próxima semana, el jueves" -> "próximo jueves"
-s = s.replace(
-  new RegExp(
-    `\\b(para\\s+)?la\\s+pr[oó]xima\\s+semana\\s*,?\\s*(el\\s+)?(${WEEKDAYS_ES})\\b`,
-    "gi"
-  ),
-  (_m, _para, _el, wd) => `próximo ${wd}`
-);
+  // "la próxima semana (el) jueves" / "para la próxima semana, el jueves" -> "próximo jueves"
+  s = s.replace(
+    new RegExp(
+      `\\b(para\\s+)?la\\s+pr[oó]xima\\s+semana\\s*,?\\s*(el\\s+)?(${WEEKDAYS_ES})\\b`,
+      "gi"
+    ),
+    (_m, _para, _el, wd) => `próximo ${wd}`
+  );
 
-// "la semana que viene (el) jueves" / "para la semana que viene, el jueves" -> "próximo jueves"
-s = s.replace(
-  new RegExp(
-    `\\b(para\\s+)?la\\s+semana\\s+que\\s+viene\\s*,?\\s*(el\\s+)?(${WEEKDAYS_ES})\\b`,
-    "gi"
-  ),
-  (_m, _para, _el, wd) => `próximo ${wd}`
-);
+  // "la semana que viene (el) jueves" / "para la semana que viene, el jueves" -> "próximo jueves"
+  s = s.replace(
+    new RegExp(
+      `\\b(para\\s+)?la\\s+semana\\s+que\\s+viene\\s*,?\\s*(el\\s+)?(${WEEKDAYS_ES})\\b`,
+      "gi"
+    ),
+    (_m, _para, _el, wd) => `próximo ${wd}`
+  );
 
-// "el jueves de la semana que viene" -> "próximo jueves"
-s = s.replace(
-  new RegExp(
-    `\\b(el\\s+)?(${WEEKDAYS_ES})\\s+de\\s+la\\s+semana\\s+que\\s+viene\\b`,
-    "gi"
-  ),
-  (_m, _el, wd) => `próximo ${wd}`
-);
+  // "el jueves de la semana que viene" -> "próximo jueves"
+  s = s.replace(
+    new RegExp(
+      `\\b(el\\s+)?(${WEEKDAYS_ES})\\s+de\\s+la\\s+semana\\s+que\\s+viene\\b`,
+      "gi"
+    ),
+    (_m, _el, wd) => `próximo ${wd}`
+  );
 
-// "dentro de 2 semanas (el) martes" -> "martes en 2 semanas"
-s = s.replace(
-  new RegExp(
-    `\\bdentro\\s+de\\s+(\\d+)\\s+semanas?\\s*,?\\s*(el\\s+)?(${WEEKDAYS_ES})\\b`,
-    "gi"
-  ),
-  (_m, n, _el, wd) => `${wd} en ${n} semanas`
-);
+  // "dentro de 2 semanas (el) martes" -> "martes en 2 semanas"
+  s = s.replace(
+    new RegExp(
+      `\\bdentro\\s+de\\s+(\\d+)\\s+semanas?\\s*,?\\s*(el\\s+)?(${WEEKDAYS_ES})\\b`,
+      "gi"
+    ),
+    (_m, n, _el, wd) => `${wd} en ${n} semanas`
+  );
 
-// "(el) martes dentro de 2 semanas" -> "martes en 2 semanas"
-s = s.replace(
-  new RegExp(
-    `\\b(el\\s+)?(${WEEKDAYS_ES})\\s+dentro\\s+de\\s+(\\d+)\\s+semanas?\\b`,
-    "gi"
-  ),
-  (_m, _el, wd, n) => `${wd} en ${n} semanas`
-);
+  // "(el) martes dentro de 2 semanas" -> "martes en 2 semanas"
+  s = s.replace(
+    new RegExp(
+      `\\b(el\\s+)?(${WEEKDAYS_ES})\\s+dentro\\s+de\\s+(\\d+)\\s+semanas?\\b`,
+      "gi"
+    ),
+    (_m, _el, wd, n) => `${wd} en ${n} semanas`
+  );
 
-// "el mes que viene (en) marzo" -> "próximo marzo"
-s = s.replace(
-  /\b(el\s+)?mes\s+que\s+viene\s+(en\s+)?(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\b/gi,
-  (_m, _el, _en, month) => `próximo ${month}`
-);
+  // "el mes que viene (en) marzo" -> "próximo marzo"
+  s = s.replace(
+    /\b(el\s+)?mes\s+que\s+viene\s+(en\s+)?(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\b/gi,
+    (_m, _el, _en, month) => `próximo ${month}`
+  );
 
-// "el año que viene (en) marzo" -> "marzo del próximo año"
-s = s.replace(
-  /\b(el\s+)?a[nñ]o\s+que\s+viene\s+(en\s+)?(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\b/gi,
-  (_m, _el, _en, month) => `${month} del próximo año`
-);
+  // "el año que viene (en) marzo" -> "marzo del próximo año"
+  s = s.replace(
+    /\b(el\s+)?a[nñ]o\s+que\s+viene\s+(en\s+)?(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\b/gi,
+    (_m, _el, _en, month) => `${month} del próximo año`
+  );
 
-// también: "en marzo del año que viene" -> "marzo del próximo año"
-s = s.replace(
-  /\b(en\s+)?(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\s+del\s+a[nñ]o\s+que\s+viene\b/gi,
-  (_m, _en, month) => `${month} del próximo año`
-);
-
+  // también: "en marzo del año que viene" -> "marzo del próximo año"
+  s = s.replace(
+    /\b(en\s+)?(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\s+del\s+a[nñ]o\s+que\s+viene\b/gi,
+    (_m, _en, month) => `${month} del próximo año`
+  );
 
   // ---------- EN ----------
 
-// "next month in March" (raro pero pasa en dictado) -> "next March"
-s = s.replace(
-  /\bnext\s+month\s*,?\s*(in\s+)?(january|february|march|april|may|june|july|august|september|october|november|december)\b/gi,
-  (_m, _in, month) => `next ${month}`
-);
+  // "next month in March" -> "next March"
+  s = s.replace(
+    /\bnext\s+month\s*,?\s*(in\s+)?(january|february|march|april|may|june|july|august|september|october|november|december)\b/gi,
+    (_m, _in, month) => `next ${month}`
+  );
 
-// "next year in March" -> "March next year"
-s = s.replace(
-  /\bnext\s+year\s*,?\s*(in\s+)?(january|february|march|april|may|june|july|august|september|october|november|december)\b/gi,
-  (_m, _in, month) => `${month} next year`
-);
+  // "next year in March" -> "March next year"
+  s = s.replace(
+    /\bnext\s+year\s*,?\s*(in\s+)?(january|february|march|april|may|june|july|august|september|october|november|december)\b/gi,
+    (_m, _in, month) => `${month} next year`
+  );
 
-// "in March next year" -> "March next year" (más estable)
-s = s.replace(
-  /\bin\s+(january|february|march|april|may|june|july|august|september|october|november|december)\s+next\s+year\b/gi,
-  (_m, month) => `${month} next year`
-);
+  // "in March next year" -> "March next year"
+  s = s.replace(
+    /\bin\s+(january|february|march|april|may|june|july|august|september|october|november|december)\s+next\s+year\b/gi,
+    (_m, month) => `${month} next year`
+  );
 
-// "next week thursday" / "next week, on thursday" -> "next thursday"
-s = s.replace(
-  new RegExp(`\\bnext\\s+week\\s*,?\\s*(on\\s+)?(${WEEKDAYS_EN})\\b`, "gi"),
-  (_m, _on, wd) => `next ${wd}`
-);
+  // "next week thursday" -> "next thursday"
+  s = s.replace(
+    new RegExp(`\\bnext\\s+week\\s*,?\\s*(on\\s+)?(${WEEKDAYS_EN})\\b`, "gi"),
+    (_m, _on, wd) => `next ${wd}`
+  );
 
-// "thursday next week" -> "next thursday"
-s = s.replace(
-  new RegExp(`\\b(${WEEKDAYS_EN})\\s+next\\s+week\\b`, "gi"),
-  (_m, wd) => `next ${wd}`
-);
+  // "thursday next week" -> "next thursday"
+  s = s.replace(
+    new RegExp(`\\b(${WEEKDAYS_EN})\\s+next\\s+week\\b`, "gi"),
+    (_m, wd) => `next ${wd}`
+  );
 
-// "in 2 weeks on tuesday" / "in 2 weeks, tuesday" -> "tuesday in 2 weeks"
-s = s.replace(
-  new RegExp(`\\bin\\s+(\\d+)\\s+weeks?\\s*,?\\s*(on\\s+)?(${WEEKDAYS_EN})\\b`, "gi"),
-  (_m, n, _on, wd) => `${wd} in ${n} weeks`
-);
+  // "in 2 weeks on tuesday" -> "tuesday in 2 weeks"
+  s = s.replace(
+    new RegExp(
+      `\\bin\\s+(\\d+)\\s+weeks?\\s*,?\\s*(on\\s+)?(${WEEKDAYS_EN})\\b`,
+      "gi"
+    ),
+    (_m, n, _on, wd) => `${wd} in ${n} weeks`
+  );
 
-// "tuesday in 2 weeks" already ok, but also: "tuesday, in 2 weeks"
-s = s.replace(
-  new RegExp(`\\b(${WEEKDAYS_EN})\\s*,?\\s*in\\s+(\\d+)\\s+weeks?\\b`, "gi"),
-  (_m, wd, n) => `${wd} in ${n} weeks`
-);
-
+  // "tuesday, in 2 weeks" -> "tuesday in 2 weeks"
+  s = s.replace(
+    new RegExp(`\\b(${WEEKDAYS_EN})\\s*,?\\s*in\\s+(\\d+)\\s+weeks?\\b`, "gi"),
+    (_m, wd, n) => `${wd} in ${n} weeks`
+  );
 
   // ---------- DE ----------
 
-// "nächsten Monat im März" -> "nächsten März"
-s = s.replace(
-  /\bn[aä]chsten\s+monat\s*,?\s*(im\s+)?(januar|februar|m[aä]rz|maerz|april|mai|juni|juli|august|september|oktober|november|dezember)\b/gi,
-  (_m, _im, month) => `nächsten ${month}`
-);
+  // "nächsten Monat im März" -> "nächsten März"
+  s = s.replace(
+    /\bn[aä]chsten\s+monat\s*,?\s*(im\s+)?(januar|februar|m[aä]rz|maerz|april|mai|juni|juli|august|september|oktober|november|dezember)\b/gi,
+    (_m, _im, month) => `nächsten ${month}`
+  );
 
-// "nächstes Jahr im März" -> "März nächstes Jahr"
-s = s.replace(
-  /\bn[aä]chstes\s+jahr\s*,?\s*(im\s+)?(januar|februar|m[aä]rz|maerz|april|mai|juni|juli|august|september|oktober|november|dezember)\b/gi,
-  (_m, _im, month) => `${month} nächstes Jahr`
-);
+  // "nächstes Jahr im März" -> "März nächstes Jahr"
+  s = s.replace(
+    /\bn[aä]chstes\s+jahr\s*,?\s*(im\s+)?(januar|februar|m[aä]rz|maerz|april|mai|juni|juli|august|september|oktober|november|dezember)\b/gi,
+    (_m, _im, month) => `${month} nächstes Jahr`
+  );
 
-// "im März nächstes Jahr" -> "März nächstes Jahr"
-s = s.replace(
-  /\bim\s+(januar|februar|m[aä]rz|maerz|april|mai|juni|juli|august|september|oktober|november|dezember)\s+n[aä]chstes\s+jahr\b/gi,
-  (_m, month) => `${month} nächstes Jahr`
-);
+  // "im März nächstes Jahr" -> "März nächstes Jahr"
+  s = s.replace(
+    /\bim\s+(januar|februar|m[aä]rz|maerz|april|mai|juni|juli|august|september|oktober|november|dezember)\s+n[aä]chstes\s+jahr\b/gi,
+    (_m, month) => `${month} nächstes Jahr`
+  );
 
-// "nächste Woche Donnerstag" / "nächste Woche, am Donnerstag" -> "nächsten Donnerstag"
-s = s.replace(
-  new RegExp(`\\bn[aä]chste\\s+woche\\s*,?\\s*(am\\s+)?(${WEEKDAYS_DE})\\b`, "gi"),
-  (_m, _am, wd) => `nächsten ${wd}`
-);
+  // "nächste Woche Donnerstag" -> "nächsten Donnerstag"
+  s = s.replace(
+    new RegExp(
+      `\\bn[aä]chste\\s+woche\\s*,?\\s*(am\\s+)?(${WEEKDAYS_DE})\\b`,
+      "gi"
+    ),
+    (_m, _am, wd) => `nächsten ${wd}`
+  );
 
-// "in der nächsten Woche am Donnerstag" -> "nächsten Donnerstag"
-s = s.replace(
-  new RegExp(`\\bin\\s+der\\s+n[aä]chsten\\s+woche\\s*,?\\s*(am\\s+)?(${WEEKDAYS_DE})\\b`, "gi"),
-  (_m, _am, wd) => `nächsten ${wd}`
-);
+  // "in der nächsten Woche am Donnerstag" -> "nächsten Donnerstag"
+  s = s.replace(
+    new RegExp(
+      `\\bin\\s+der\\s+n[aä]chsten\\s+woche\\s*,?\\s*(am\\s+)?(${WEEKDAYS_DE})\\b`,
+      "gi"
+    ),
+    (_m, _am, wd) => `nächsten ${wd}`
+  );
 
-// "am Donnerstag nächste Woche" -> "nächsten Donnerstag"
-s = s.replace(
-  new RegExp(`\\b(am\\s+)?(${WEEKDAYS_DE})\\s+n[aä]chste\\s+woche\\b`, "gi"),
-  (_m, _am, wd) => `nächsten ${wd}`
-);
+  // "am Donnerstag nächste Woche" -> "nächsten Donnerstag"
+  s = s.replace(
+    new RegExp(`\\b(am\\s+)?(${WEEKDAYS_DE})\\s+n[aä]chste\\s+woche\\b`, "gi"),
+    (_m, _am, wd) => `nächsten ${wd}`
+  );
 
-// "in 2 Wochen am Dienstag" / "in 2 Wochen, Dienstag" -> "Dienstag in 2 Wochen"
-s = s.replace(
-  new RegExp(`\\bin\\s+(\\d+)\\s+wochen?\\s*,?\\s*(am\\s+)?(${WEEKDAYS_DE})\\b`, "gi"),
-  (_m, n, _am, wd) => `${wd} in ${n} Wochen`
-);
+  // "in 2 Wochen am Dienstag" -> "Dienstag in 2 Wochen"
+  s = s.replace(
+    new RegExp(
+      `\\bin\\s+(\\d+)\\s+wochen?\\s*,?\\s*(am\\s+)?(${WEEKDAYS_DE})\\b`,
+      "gi"
+    ),
+    (_m, n, _am, wd) => `${wd} in ${n} Wochen`
+  );
 
-// "am Dienstag in 2 Wochen" (también lo dejamos normalizado)
-s = s.replace(
-  new RegExp(`\\b(am\\s+)?(${WEEKDAYS_DE})\\s+in\\s+(\\d+)\\s+wochen?\\b`, "gi"),
-  (_m, _am, wd, n) => `${wd} in ${n} Wochen`
-);
-
+  // "am Dienstag in 2 Wochen"
+  s = s.replace(
+    new RegExp(`\\b(am\\s+)?(${WEEKDAYS_DE})\\s+in\\s+(\\d+)\\s+wochen?\\b`, "gi"),
+    (_m, _am, wd, n) => `${wd} in ${n} Wochen`
+  );
 
   return s;
 }
-
 
 function detectReminderHintAny(raw: string): ParsedResult["reminderHint"] {
   for (const l of ALL_LOCALES) {
     const r = detectReminderHint(raw, l);
     if (r) return r;
   }
+  return null;
+}
+
+/* =========================================================
+   3) HORA 12h/24h + MERIDIEM (ES/EN/DE)
+   - Objetivo: "martes a las 4" => 16:00 (por defecto PM)
+               "a las 4 de la mañana" => 04:00
+               "at 4 pm" => 16:00
+               "um 4 nachmittags" => 16:00
+   ========================================================= */
+
+type Meridiem = "AM" | "PM";
+
+function to24hFrom12h(hour12: number, mer: Meridiem): number {
+  if (mer === "PM") return hour12 === 12 ? 12 : hour12 + 12;
+  return hour12 === 12 ? 0 : hour12;
+}
+
+type TimeOverride = {
+  hour: number; // 0..23
+  minute: number; // 0..59
+  matchedText: string;
+  hadExplicitMeridiem: boolean;
+  assumedPmByDefault: boolean; // true cuando hacemos "a las 4" => 16:00
+};
+
+function parseTimeOverrideAny(text: string): TimeOverride | null {
+  const s = text;
+
+  // 1) EN: "4pm" / "4 pm" / "4:30 a.m."
+  {
+    const m = s.match(
+      /\b(\d{1,2})(?:[:\.](\d{2}))?\s*(a\.?\s*m\.?|p\.?\s*m\.?)\b/i
+    );
+    if (m) {
+      const h = parseInt(m[1], 10);
+      const min = m[2] ? parseInt(m[2], 10) : 0;
+      const mer: Meridiem = /p/i.test(m[3]) ? "PM" : "AM";
+      if (h >= 1 && h <= 12 && min >= 0 && min <= 59) {
+        return {
+          hour: to24hFrom12h(h, mer),
+          minute: min,
+          matchedText: m[0],
+          hadExplicitMeridiem: true,
+          assumedPmByDefault: false,
+        };
+      }
+    }
+  }
+
+  // 2) ES: "a las 4 de la tarde" / "a als 4 de la tarde" / "4 de la mañana"
+  {
+    const m = s.match(
+      /\b(?:a\s+(?:las|la|als)\s*)?(\d{1,2})(?:[:\.](\d{2}))?\s*(?:de|por)\s+la\s+(mañana|tarde|noche)\b/i
+    );
+    if (m) {
+      const h = parseInt(m[1], 10);
+      const min = m[2] ? parseInt(m[2], 10) : 0;
+      const part = normalize(m[3]);
+      if (h >= 1 && h <= 12 && min >= 0 && min <= 59) {
+        const mer: Meridiem = part === "mañana" ? "AM" : "PM"; // tarde/noche => PM
+        return {
+          hour: to24hFrom12h(h, mer),
+          minute: min,
+          matchedText: m[0],
+          hadExplicitMeridiem: true,
+          assumedPmByDefault: false,
+        };
+      }
+    }
+  }
+
+  // 2b) ES: "de madrugada" => AM
+  {
+    const m = s.match(
+      /\b(?:a\s+(?:las|la|als)\s*)?(\d{1,2})(?:[:\.](\d{2}))?\s*(?:de|por)\s+la\s+madrugada\b/i
+    );
+    if (m) {
+      const h = parseInt(m[1], 10);
+      const min = m[2] ? parseInt(m[2], 10) : 0;
+      if (h >= 1 && h <= 12 && min >= 0 && min <= 59) {
+        return {
+          hour: to24hFrom12h(h, "AM"),
+          minute: min,
+          matchedText: m[0],
+          hadExplicitMeridiem: true,
+          assumedPmByDefault: false,
+        };
+      }
+    }
+  }
+
+  // 3) EN: "at 4 in the afternoon" / "4 in the morning"
+  {
+    const m = s.match(
+      /\b(?:at\s+)?(\d{1,2})(?:[:\.](\d{2}))?\s*(?:in\s+the\s+)?(morning|afternoon|evening|night)\b/i
+    );
+    if (m) {
+      const h = parseInt(m[1], 10);
+      const min = m[2] ? parseInt(m[2], 10) : 0;
+      const part = normalize(m[3]);
+      if (h >= 1 && h <= 12 && min >= 0 && min <= 59) {
+        // night es ambiguo: regla práctica (si 1..5 => AM, si no => PM)
+        let mer: Meridiem;
+        if (part === "morning") mer = "AM";
+        else if (part === "afternoon" || part === "evening") mer = "PM";
+        else mer = h <= 5 ? "AM" : "PM";
+        return {
+          hour: to24hFrom12h(h, mer),
+          minute: min,
+          matchedText: m[0],
+          hadExplicitMeridiem: true,
+          assumedPmByDefault: false,
+        };
+      }
+    }
+  }
+
+  // 4) DE: "um 4 nachmittags" / "um 4 Uhr morgens" / "... am Nachmittag"
+  {
+    const m = s.match(
+      /\b(?:um\s+)?(\d{1,2})(?:[:\.](\d{2}))?\s*(?:uhr\s*)?(?:am\s+)?(vormittag|nachmittag|abend|nacht)\b/i
+    );
+    if (m) {
+      const h = parseInt(m[1], 10);
+      const min = m[2] ? parseInt(m[2], 10) : 0;
+      const part = normalize(m[3]);
+      if (h >= 1 && h <= 12 && min >= 0 && min <= 59) {
+        const mer: Meridiem =
+          part === "vormittag" ? "AM" : part === "nachmittag" ? "PM" : part === "abend" ? "PM" : "AM";
+        return {
+          hour: to24hFrom12h(h, mer),
+          minute: min,
+          matchedText: m[0],
+          hadExplicitMeridiem: true,
+          assumedPmByDefault: false,
+        };
+      }
+    }
+  }
+
+  // 4b) DE adverbios: "um 4 nachmittags / abends / nachts / morgens / vormittags / mittags"
+  {
+    const m = s.match(
+      /\b(?:um\s+)?(\d{1,2})(?:[:\.](\d{2}))?\s*(?:uhr\s*)?(morgens|vormittags|mittags|nachmittags|abends|nachts)\b/i
+    );
+    if (m) {
+      const h = parseInt(m[1], 10);
+      const min = m[2] ? parseInt(m[2], 10) : 0;
+      const part = normalize(m[3]);
+      if (h >= 1 && h <= 12 && min >= 0 && min <= 59) {
+        let mer: Meridiem;
+        if (part === "morgens" || part === "vormittags") mer = "AM";
+        else if (part === "nachmittags" || part === "abends") mer = "PM";
+        else if (part === "mittags") mer = "PM";
+        else mer = "AM"; // nachts
+        return {
+          hour: to24hFrom12h(h, mer),
+          minute: min,
+          matchedText: m[0],
+          hadExplicitMeridiem: true,
+          assumedPmByDefault: false,
+        };
+      }
+    }
+  }
+
+  // 5) 24h explícito con "a las/at/um" o con "uhr"
+  {
+    const m = s.match(
+      /\b(?:a\s+(?:las|la|als)|at|um)\s*(\d{1,2})(?:[:\.](\d{2}))?(?:\s*uhr)?\b/i
+    );
+    if (m) {
+      const h = parseInt(m[1], 10);
+      const min = m[2] ? parseInt(m[2], 10) : 0;
+      if (h >= 0 && h < 24 && min >= 0 && min <= 59) {
+        // Si es 13..23, es 24h seguro. Si es 0..12 puede ser ambiguo.
+        if (h >= 13) {
+          return {
+            hour: h,
+            minute: min,
+            matchedText: m[0],
+            hadExplicitMeridiem: false,
+            assumedPmByDefault: false,
+          };
+        }
+
+        // Aquí viene la parte clave para ti:
+        // "martes a las 4" => interpretamos por defecto como PM (16:00)
+        // (y si el usuario quiere AM, lo dice con "mañana", "am", "morgens", etc.)
+        if (h >= 1 && h <= 11) {
+          return {
+            hour: h + 12,
+            minute: min,
+            matchedText: m[0],
+            hadExplicitMeridiem: false,
+            assumedPmByDefault: true,
+          };
+        }
+
+        // h = 0 o h = 12
+        return {
+          hour: h,
+          minute: min,
+          matchedText: m[0],
+          hadExplicitMeridiem: false,
+          assumedPmByDefault: false,
+        };
+      }
+    }
+  }
+
+  // 5b) "14 uhr" (24h explícito)
+  {
+    const m = s.match(/\b(\d{1,2})(?:[:\.](\d{2}))?\s*uhr\b/i);
+    if (m) {
+      const h = parseInt(m[1], 10);
+      const min = m[2] ? parseInt(m[2], 10) : 0;
+      if (h >= 0 && h < 24 && min >= 0 && min <= 59) {
+        // Si es 1..11 con "uhr" suele ser 24h/ambig, pero mantenemos la misma regla por defecto (PM)
+        if (h >= 1 && h <= 11) {
+          return {
+            hour: h + 12,
+            minute: min,
+            matchedText: m[0],
+            hadExplicitMeridiem: false,
+            assumedPmByDefault: true,
+          };
+        }
+        return {
+          hour: h,
+          minute: min,
+          matchedText: m[0],
+          hadExplicitMeridiem: false,
+          assumedPmByDefault: false,
+        };
+      }
+    }
+  }
+
   return null;
 }
 
@@ -1013,10 +1258,7 @@ export function parseDateTimeFromText(
   }
 
   // ✅ Normalización antes de chrono
-  const normalizedText = normalizeRelativeWeeksAny(
-  normalizeSpokenNumbersAny(text)
-);
-
+  const normalizedText = normalizeRelativeWeeksAny(normalizeSpokenNumbersAny(text));
 
   // 1) Intentamos en el orden: locale actual primero, luego el resto
   const tryOrder = unique<RemiLocale>([locale, ...ALL_LOCALES]);
@@ -1065,32 +1307,34 @@ export function parseDateTimeFromText(
   // 4) Construir fecha/hora base
   const date = best.start.date(); // hora local
 
-  // 4.1) Fallback manual para horas tipo:
-  // "a las 14:00" / "a las 14" / "at 14" / "um 14" / "um 14 uhr"
-  const timeRegex =
-    /(?:\b(?:a las|a la|at|um)\b)\s*(\d{1,2})(?:[:\.](\d{2}))?(?:\s*(?:uhr))?/i;
-  const timeMatch = timeRegex.exec(normalizedText);
-  if (timeMatch) {
-    const hour = parseInt(timeMatch[1], 10);
-    const minute = timeMatch[2] ? parseInt(timeMatch[2], 10) : 0;
-    if (
-      Number.isFinite(hour) &&
-      Number.isFinite(minute) &&
-      hour >= 0 &&
-      hour < 24 &&
-      minute >= 0 &&
-      minute < 60
-    ) {
-      date.setHours(hour, minute, 0, 0);
+  // 4.1) Override manual de hora (ES/EN/DE): mañana/tarde/noche, AM/PM, morgens/nachmittags...
+  const tOver = parseTimeOverrideAny(normalizedText);
+  if (tOver) {
+    date.setHours(tOver.hour, tOver.minute, 0, 0);
+
+    // Si chrono NO tenía el día explícito y la hora cae en el pasado, empuja a mañana
+    const chronoHasExplicitDay =
+      typeof best?.start?.isCertain === "function" ? best.start.isCertain("day") : true;
+
+    if (!chronoHasExplicitDay && date.getTime() < reference.getTime()) {
+      date.setDate(date.getDate() + 1);
     }
   }
 
   const dueDateISO = date.toISOString();
 
-  // 5) Limpiar título: quitar fragmento de fecha/hora detectado
+  // 5) Limpiar título: quitar fragmento de fecha/hora detectado por chrono
   const before = normalizedText.slice(0, best.index);
   const after = normalizedText.slice(best.index + best.text.length);
   let cleanTitle = (before + " " + after).replace(/\s+/g, " ").trim();
+
+  // 5.1) (Opcional recomendado) quitar también el fragmento de hora (si existía)
+  if (tOver?.matchedText) {
+    cleanTitle = cleanTitle
+      .replace(new RegExp(escapeRegExp(tOver.matchedText), "i"), " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
 
   // 6) Quitar verbos típicos de "recordar" (multilingüe)
   cleanTitle = cleanTitle

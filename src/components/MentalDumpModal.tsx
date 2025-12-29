@@ -482,7 +482,7 @@ export default function MentalDumpModal({
     const cleaned = sanitizeForSplit(text);
     if (!cleaned) return [];
     return cleaned
-      .split(/\n|,/g)
+      .split(/\n+/g)
       .map((part) => stripVisualBullets(part).trim())
       .filter((part) => part.length > 0);
   };
