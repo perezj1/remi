@@ -424,111 +424,152 @@ tasks: {
   },
 
   today: {
-    
-tip: {
-  noDate: {
-    title_one: "You have {{count}} task without a date",
-    title_other: "You have {{count}} tasks without a date",
-    body: "Want to sort them? In 30s I’ll leave your list clean.",
-    cta: "View no-date",
-  },
+    greeting: "Hi, {{name}}",
+    tasksToday: "You have {{count}} tasks",
+    prioritize: "Focus on what matters",
 
-  cleanNoDate: {
-    title: "✅ No no-date tasks",
-    body: "Perfect. Now it’s easy to prioritize.",
-    cta: "View today",
-  },
+    defaultUserName: "User",
 
-  paste: {
-    title: "Have you tried pasting text?",
-    body: "Copy anything (WhatsApp, email, notes) and let Remi organize it.",
-    cta: "Paste now",
-  },
+    tabsToday: "Today",
+    tabsWeek: "Week",
+    tabsNoDate: "No date",
 
-  mental: {
-    title: "Mini break",
-    body: "Breathe in 4s, exhale 6s. Your mind doesn’t need to do everything today.",
-    cta: "Clear mind",
-  },
+    loadingTasks: "Loading…",
+    noUrgentTitle: "All under control",
+    noUrgentSubtitle: "Nothing urgent right now",
 
-  week: {
-    title: "Quick plan",
-    body: "See your week in one gesture. Urgent first, everything else out of your head.",
-    cta: "View week",
-  },
+    dueNoDate: "No date",
 
-  push: {
-    title: "Nothing slips through",
-    body: "Turn on notifications and stop “remembering by force”.",
-    cta: "Enable",
-  },
-
-  birthday: {
-    title: "Birthday coming up?",
-    body: "Write it in 5 seconds and Remi will remind you at the right time.",
-    cta: "Add",
-    prefill: "___’s birthday on ___",
-  },
-
-  clearMind: {
-    title: "Clear mind: {{percent}}%",
-    body: "If something’s on your mind right now… drop it here and move on.",
-    cta: "Drop it",
-  },
-},
-
-
-    title: "Today",
-    emptyState: "You don't have tasks for today.",
-    addTask: "Add task",
-    streak: "Streak",
-    menuInstallApp: "Install app",
+    actionPostpone1dTitle: "Postpone: add 1 day to the due date",
     actionDoneTitle: "Mark as done",
-      actionPostpone1d: "+1",
-  actionPostpone1dTitle: "Postpone: add 1 day to the due date",
-  actionDone: " ",
-  
-    
+    postponeDayToast: "Postponed",
 
-  greeting: "Hi, {{name}} 👋",
-  tasksToday: "You have active tasks",
-  prioritize: "Let's focus only on what matters.",
-  postponeDayToast: "You added one more day to your task.",
+    errorLoadingTasks: "Error loading tasks",
 
-  tabsToday: "Today",
-  tabsWeek: "Week",
-  tabsMonth: "Month",
-  tabsNext: "Upcoming tasks",
- 
-tabsAll: "All",
-tabsNoDate: "No date",
+    profileLoggedInAs: "Signed in as {{name}}",
+    menuProfile: "Profile",
+    menuShareApp: "Share app",
+    menuInstallApp: "Install app",
 
+    shareText:
+      "I’m using Remi to get tasks and ideas out of my head, and my mind feels much clearer and less stressed.\nI really recommend trying it — it helps a lot. Here’s the link 🙂",
+    shareCopied: "Link copied to clipboard",
 
-  loadingTasks: "Loading tasks…",
-  noUrgentTitle: "Nothing urgent for today 🎉",
-  noUrgentSubtitle: "Use the + button to add your first task.",
-  dueLabel: "Due · ",
-  dueNoDate: "No due date",
-  errorLoadingTasks: "Error loading your tasks",
+    pushTitle: "Enable notifications",
+    pushBody: "So you get reminders at the right moment.",
+    pushEnable: "Enable",
+    pushEnabling: "Enabling…",
+    pushLater: "Not now",
+    pushEnabledToast: "Notifications enabled",
+    pushErrorToast: "Couldn’t enable notifications",
 
-  pushTitle: "Turn on your reminders",
-  pushBody:
-    "REMI can send you notifications with your 3 most important tasks of the day and warn you when one is about to expire.",
-  pushEnable: "Enable reminders",
-  pushEnabling: "Enabling...",
-  pushLater: "Later",
-  pushEnabledToast: "Notifications enabled for your tasks ✨",
-  pushErrorToast: "Couldn't enable notifications.",
+    tip: {
+      install: {
+        title: "Install Remi as an app",
+        body: "Open it in one tap and it runs smoother like a real app.",
+        cta: "Install",
+      },
 
-  profileLoggedInAs: "Signed in as {{name}}",
-  menuProfile: "Profile",
-  menuShareApp: "Share app",
-  menuLogout: "Log out",
+      push: {
+        title: "Let Remi remind you",
+        body: "Enable notifications and drop the mental load. Remi taps your shoulder when it’s time.",
+        cta: "Enable",
+      },
 
-  shareText: "I’m using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\nI definitely recommend trying it, it really helps. Here’s the link. 🙂",
-  shareCopied: "Link copied to clipboard",
+      iosDict: {
+        title: "Enable the keyboard mic",
+        body: "If you don’t see the mic on the keyboard, enable it in Settings to dictate faster.",
+        cta: "Show me",
+      },
 
-  defaultUserName: "User",
+      noDate: {
+        title_one: "You have {{count}} task with no date",
+        title_other: "You have {{count}} tasks with no date",
+        body: "Want to sort them? I’ll clean the list up in 30s.",
+        cta: "View no date",
+      },
+
+      shortcuts: {
+        title: "Words that save time",
+        body: "An idea = start with ‘Idea’. \nA task = start with a verb.",
+        cta: "See examples",
+      },
+
+      dayClose: {
+        title: "60-second wrap-up",
+        body: "What’s on your mind for tomorrow? Drop it and done.",
+        cta: "Drop it",
+      },
+
+      paste: {
+        title: "Have you tried pasting text?",
+        body: "Copy anything (WhatsApp, email, notes) and let Remi organize it.",
+        cta: "Paste now",
+      },
+
+      shareToRemi: {
+        title: "Save things using Share",
+        body: "From WhatsApp/Mail/Notes: Share → Remi. It opens ready to organize.",
+        cta: "Got it",
+        toast: "Tip: in another app tap “Share” → “Remi” to send it directly 🙂",
+      },
+
+      natural: {
+        title: "Write like you speak",
+        body: "Example: “Pay the electricity bill tomorrow at 6pm”. Remi organizes it and you can forget it.",
+        cta: "Try example",
+        prefill: "Pay the electricity bill tomorrow 18:00",
+      },
+
+      week: {
+        title: "Quick plan",
+        body: "See your week in one gesture. Urgent first — the rest out of your head.",
+        cta: "View week",
+      },
+
+      mental: {
+        title: "Mini break",
+        body: "Breathe in 4s, out 6s. Your mind doesn’t have to do everything today.",
+        cta: "Empty mind",
+      },
+
+      birthday: {
+        title: "Birthday coming up?",
+        body: "Write it in 5 seconds and Remi will remind you when it’s time.",
+        cta: "Add",
+        prefill: "___’s birthday on ___",
+      },
+
+      cleanNoDate: {
+        title: "✅ No undated tasks",
+        body: "Perfect. Prioritizing is easy now.",
+        cta: "View today",
+      },
+    },
+
+    shortcutsModal: {
+      title: "See examples",
+      body: "Tap an example to open Remi with that text.",
+      ex1: "Idea: Trip to Japan in spring",
+      ex2: "Idea: Gift for ___",
+      ex3: "Call the insurance tomorrow 10:00",
+      ex4: "Pay the electricity bill tomorrow 18:00",
+      ex5: "Send an email to ___ today",
+      openEmpty: "Open Remi",
+      close: "Close",
+    },
+
+    iosDict: {
+      helpTitle: "Enable Dictation on iPhone",
+      helpBody:
+        "On iOS it’s usually here: Settings → General → Keyboard → Enable Dictation.",
+      helpStepsTitle: "Quick steps",
+      step1: "Open Settings",
+      step2: "General → Keyboard",
+      step3: "Enable “Enable Dictation”",
+      ok: "Got it",
+      hideForever: "Don’t show again",
+    },
   },
 
   inbox: {

@@ -441,109 +441,170 @@ tasks: {
   signUpSuccess: "¡Cuenta creada! Ahora empieza a liberar tu mente.",
   },
 
+  // es.ts
+
   today: {
+    // Header / general
+    greeting: "Hola, {{name}}",
+    tasksToday: "Tienes {{count}} tareas",
+    prioritize: "Prioriza lo importante",
 
-tip: {
-    noDate: {
-      title_one: "Tienes {{count}} tarea sin fecha",
-      title_other: "Tienes {{count}} tareas sin fecha",
-      body: "¿Las ordenamos? En 30s te dejo la lista limpia.",
-      cta: "Ver sin fecha",
-    },
+    defaultUserName: "Usuario",
 
-    cleanNoDate: {
-      title: "✅ Sin tareas sin fecha",
-      body: "Perfecto. Ahora es fácil priorizar.",
-      cta: "Ver hoy",
-    },
+    // Tabs
+    tabsToday: "Hoy",
+    tabsWeek: "Semana",
+    tabsNoDate: "Sin fecha",
 
-    paste: {
-      title: "¿Has probado a pegar texto?",
-      body: "Copia cualquier cosa (WhatsApp, Mail, Notas) y deja que Remi lo ordene.",
-      cta: "Pegar ahora",
-    },
+    // States
+    loadingTasks: "Cargando…",
+    noUrgentTitle: "Todo bajo control",
+    noUrgentSubtitle: "No hay nada urgente ahora mismo",
 
-    mental: {
-      title: "Mini pausa",
-      body: "Respira 4s, suelta 6s. Tu mente no necesita hacerlo todo hoy.",
-      cta: "Vaciar mente",
-    },
+    // Dates / labels
+    dueNoDate: "Sin fecha",
 
-    week: {
-      title: "Plan rápido",
-      body: "Mira tu semana en 1 gesto. Lo urgente primero, lo demás fuera de la cabeza.",
-      cta: "Ver semana",
-    },
-
-    push: {
-      title: "No se te escapa nada",
-      body: "Activa notificaciones y deja de “acordarte por fuerza”.",
-      cta: "Activar",
-    },
-
-    birthday: {
-      title: "¿Cumpleaños cerca?",
-      body: "Escríbelo en 5 segundos y Remi te lo recordará cuando toque.",
-      cta: "Añadir",
-      prefill: "Cumpleaños de ___ el ___",
-    },
-
-    clearMind: {
-      title: "Mente despejada: {{percent}}%",
-      body: "Si ahora mismo te ronda algo… suéltalo aquí y sigues.",
-      cta: "Soltar",
-    },
-  },
-
-    actionPostpone1d: "+1",
+    // Actions
     actionPostpone1dTitle: "Aplazar: añade 1 día a la fecha límite",
-    actionDone: " ",
     actionDoneTitle: "Marcar como completada",
+    postponeDayToast: "Aplazado",
 
-  title: "Hoy",
-  emptyState: "No tienes tareas para hoy.",
-  addTask: "Añadir tarea",
-  streak: "Racha",
-  menuInstallApp: "Instalar app",
+    // Errors
+    errorLoadingTasks: "Error cargando tareas",
 
-  greeting: "Hola, {{name}} 👋",
-  tasksToday: "Tienes tareas activas",
-  prioritize: "Prioricemos solo lo importante.",
-  postponeDayToast: "Has añadido un día más a tu tarea.",
-  
-  tabsNext: "Próximas tareas",
-  tabsToday: "Hoy",
-  tabsWeek: "Semana",
-  tabsMonth: "Mes",
-  tabsAll: "Todo",
-  tabsNoDate: "Sin Fecha",
+    // Profile menu
+    profileLoggedInAs: "Conectado como {{name}}",
+    menuProfile: "Perfil",
+    menuShareApp: "Compartir app",
+    menuInstallApp: "Instalar app",
 
-  loadingTasks: "Cargando tareas…",
-  noUrgentTitle: "Nada urgente por hoy 🎉",
-  noUrgentSubtitle: "Usa el botón + para añadir tu primera tarea.",
-  dueLabel: "Fecha límite · ",
-  dueNoDate: "Sin fecha límite",
-  errorLoadingTasks: "Error cargando tus tareas",
+    // Share
+    shareText:
+      "Uso Remi para sacar tareas e ideas de mi cabeza, y mi mente se siente mucho más clara y con menos estrés.\nDe verdad te lo recomiendo, ayuda mucho. Aquí tienes el enlace 🙂",
+    shareCopied: "Enlace copiado al portapapeles",
 
-  pushTitle: "Activa tus recordatorios",
-  pushBody:
-    "REMI puede enviarte notificaciones con tus 3 tareas más importantes del día y avisarte cuando una está a punto de terminar.",
-  pushEnable: "Activar recordatorios",
-  pushEnabling: "Activando...",
-  pushLater: "Más tarde",
-  pushEnabledToast: "Notificaciones activadas para tus tareas ✨",
-  pushErrorToast: "No se pudieron activar las notificaciones.",
+    // Push modal + toasts
+    pushTitle: "Activa notificaciones",
+    pushBody: "Para recordatorios en el momento justo.",
+    pushEnable: "Activar",
+    pushEnabling: "Activando…",
+    pushLater: "Ahora no",
+    pushEnabledToast: "Notificaciones activadas",
+    pushErrorToast: "No se pudo activar push",
 
-  profileLoggedInAs: "Sesión iniciada como {{name}}",
-  menuProfile: "Perfil",
-  menuShareApp: "Compartir app",
-  menuLogout: "Cerrar sesión",
+    // Tips (deck)
+    tip: {
+      install: {
+        title: "Instala Remi como app",
+        body: "Ábrela en 1 toque y funciona más fluida como una app.",
+        cta: "Instalar",
+      },
 
-  shareText: "I’m using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\nI definitely recommend trying it, it really helps. Here’s the link. 🙂",
-  shareCopied: "Enlace copiado al portapapeles",
+      push: {
+        title: "Que Remi te avise por ti",
+        body: "Activa notificaciones y suelta la carga mental. Remi te toca el hombro cuando toca.",
+        cta: "Activar",
+      },
 
-  defaultUserName: "Usuario",
+      iosDict: {
+        title: "Activa el micrófono del teclado",
+        body: "Si no ves el micro en el teclado, actívalo en Ajustes y dicta más rápido.",
+        cta: "Ver cómo",
+      },
+
+      noDate: {
+        title_one: "Tienes {{count}} tarea sin fecha",
+        title_other: "Tienes {{count}} tareas sin fecha",
+        body: "¿Las ordenamos? En 30s te dejo la lista limpia.",
+        cta: "Ver sin fecha",
+      },
+
+      shortcuts: {
+        title: "Palabras que ahorran tiempo",
+        body: "Una idea = empieza con ‘Idea’. \nUna tarea = empieza con un verbo.",
+        cta: "Ver ejemplos",
+      },
+
+      dayClose: {
+        title: "Cierre de 60 segundos",
+        body: "¿Qué te preocupa para mañana? Suéltalo y listo.",
+        cta: "Soltar",
+      },
+
+      paste: {
+        title: "¿Has probado a pegar texto?",
+        body: "Copia cualquier cosa (WhatsApp, Mail, Notas) y deja que Remi lo ordene.",
+        cta: "Pegar ahora",
+      },
+
+      shareToRemi: {
+        title: "Guarda cosas con “Compartir”",
+        body: "Desde WhatsApp/Correo/Notas: Compartir → Remi. Se abre listo para ordenar.",
+        cta: "Entendido",
+        toast: "Tip: en otra app pulsa “Compartir” → “Remi” para mandarlo directo 🙂",
+      },
+
+      natural: {
+        title: "Escribe como hablas",
+        body: "Ej: “Pagar la luz mañana a las 6 de la tarde”. Remi lo ordena y tú te olvidas.",
+        cta: "Probar ejemplo",
+        prefill: "Pagar la luz mañana 18:00",
+      },
+
+      week: {
+        title: "Plan rápido",
+        body: "Mira tu semana en 1 gesto. Lo urgente primero, lo demás fuera de la cabeza.",
+        cta: "Ver semana",
+      },
+
+      mental: {
+        title: "Mini pausa",
+        body: "Respira 4s, suelta 6s. Tu mente no necesita hacerlo todo hoy.",
+        cta: "Vaciar mente",
+      },
+
+      birthday: {
+        title: "¿Cumpleaños cerca?",
+        body: "Escríbelo en 5 segundos y Remi te lo recordará cuando toque.",
+        cta: "Añadir",
+        prefill: "Cumpleaños de ___ el ___",
+      },
+
+      cleanNoDate: {
+        title: "✅ Sin tareas sin fecha",
+        body: "Perfecto. Ahora es fácil priorizar.",
+        cta: "Ver hoy",
+      },
+    },
+
+    // Shortcuts modal
+    shortcutsModal: {
+      title: "Ver ejemplos",
+      body: "Toca un ejemplo para abrir Remi con ese texto.",
+      ex1: "Idea: Viaje a Japón en primavera",
+      ex2: "Idea: Regalo para ___",
+      ex3: "Llamar al seguro mañana 10:00",
+      ex4: "Pagar la luz mañana 18:00",
+      ex5: "Enviar correo a ___ hoy",
+      openEmpty: "Abrir Remi",
+      close: "Cerrar",
+    },
+
+    // iOS dictation help modal
+    iosDict: {
+      helpTitle: "Activa Dictado en iPhone",
+      helpBody:
+        "En iOS suele estar en: Ajustes → General → Teclado → Activar Dictado.",
+      helpStepsTitle: "Pasos rápidos",
+      step1: "Abre Ajustes",
+      step2: "General → Teclado",
+      step3: "Activa “Activar Dictado”",
+      ok: "Entendido",
+      hideForever: "No mostrar más",
+    },
   },
+
+
 
   inbox: {
     title: "Bandeja de entrada",

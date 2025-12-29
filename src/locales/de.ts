@@ -429,109 +429,153 @@ tasks: {
   },
 
   today: {
+    greeting: "Hallo, {{name}}",
+    tasksToday: "Du hast {{count}} Aufgaben",
+    prioritize: "Fokussiere das Wichtige",
 
-tip: {
-  noDate: {
-    title_one: "Du hast {{count}} Aufgabe ohne Datum",
-    title_other: "Du hast {{count}} Aufgaben ohne Datum",
-    body: "Sollen wir sie ordnen? In 30 Sekunden ist deine Liste sauber.",
-    cta: "Ohne Datum ansehen",
-  },
+    defaultUserName: "Nutzer",
 
-  cleanNoDate: {
-    title: "✅ Keine Aufgaben ohne Datum",
-    body: "Perfekt. Jetzt ist Priorisieren ganz einfach.",
-    cta: "Heute ansehen",
-  },
+    tabsToday: "Heute",
+    tabsWeek: "Woche",
+    tabsNoDate: "Ohne Datum",
 
-  paste: {
-    title: "Schon mal Text eingefügt?",
-    body: "Kopiere irgendwas (WhatsApp, Mail, Notizen) und lass Remi es ordnen.",
-    cta: "Jetzt einfügen",
-  },
+    loadingTasks: "Lädt…",
+    noUrgentTitle: "Alles im Griff",
+    noUrgentSubtitle: "Gerade ist nichts Dringendes",
 
-  mental: {
-    title: "Mini-Pause",
-    body: "4 Sek. einatmen, 6 Sek. ausatmen. Dein Kopf muss heute nicht alles schaffen.",
-    cta: "Kopf leeren",
-  },
+    dueNoDate: "Ohne Datum",
 
-  week: {
-    title: "Schnell planen",
-    body: "Sieh deine Woche mit einem Blick. Erst das Dringende, der Rest raus aus dem Kopf.",
-    cta: "Woche ansehen",
-  },
+    actionPostpone1dTitle: "Verschieben: +1 Tag zur Frist hinzufügen",
+    actionDoneTitle: "Als erledigt markieren",
+    postponeDayToast: "Verschoben",
 
-  push: {
-    title: "Nichts geht verloren",
-    body: "Aktiviere Benachrichtigungen und hör auf, dich „mit Gewalt zu erinnern“.",
-    cta: "Aktivieren",
-  },
+    errorLoadingTasks: "Fehler beim Laden der Aufgaben",
 
-  birthday: {
-    title: "Steht ein Geburtstag an?",
-    body: "Schreib’s in 5 Sekunden auf und Remi erinnert dich rechtzeitig.",
-    cta: "Hinzufügen",
-    prefill: "Geburtstag von ___ am ___",
-  },
+    profileLoggedInAs: "Angemeldet als {{name}}",
+    menuProfile: "Profil",
+    menuShareApp: "App teilen",
+    menuInstallApp: "App installieren",
 
-  clearMind: {
-    title: "Kopf frei: {{percent}}%",
-    body: "Wenn dir gerade etwas im Kopf herumgeht … lass es hier und mach weiter.",
-    cta: "Loslassen",
-  },
-},
+    shareText:
+      "Ich nutze Remi, um Aufgaben und Ideen aus dem Kopf zu bekommen – dadurch fühlt sich mein Kopf viel klarer und weniger gestresst an.\nIch empfehle es echt. Hier ist der Link 🙂",
+    shareCopied: "Link in die Zwischenablage kopiert",
 
+    pushTitle: "Benachrichtigungen aktivieren",
+    pushBody: "Damit du Erinnerungen im richtigen Moment bekommst.",
+    pushEnable: "Aktivieren",
+    pushEnabling: "Wird aktiviert…",
+    pushLater: "Nicht jetzt",
+    pushEnabledToast: "Benachrichtigungen aktiviert",
+    pushErrorToast: "Benachrichtigungen konnten nicht aktiviert werden",
 
-     title: "Heute",
-  emptyState: "Du hast heute keine Aufgaben.",
-  addTask: "Aufgabe hinzufügen",
-  streak: "Serie",
-  menuInstallApp: "App installieren",
-  actionDoneTitle: "Als erledigt markieren",
-  actionPostpone1d: "+1",
-  actionPostpone1dTitle: "Verschieben: 1 Tag zur Fälligkeit hinzufügen",
-  actionDone: " ",
-  
+    tip: {
+      install: {
+        title: "Installiere Remi als App",
+        body: "In 1 Tipp öffnen – und es läuft flüssiger wie eine echte App.",
+        cta: "Installieren",
+      },
 
-  greeting: "Hallo, {{name}} 👋",
-  tasksToday: "Du hast aktive Aufgaben",
-  prioritize: "Lass uns nur das Wichtige priorisieren.",
-  postponeDayToast: "Du hast deiner Aufgabe einen Tag hinzugefügt.",
+      push: {
+        title: "Lass Remi dich erinnern",
+        body: "Aktiviere Benachrichtigungen und lass die mentale Last los. Remi stupst dich an, wenn es Zeit ist.",
+        cta: "Aktivieren",
+      },
 
-  tabsToday: "Heute",
-  tabsWeek: "Woche",
-  tabsMonth: "Monat",
-  tabsNext: "Bevorstehende Aufgaben",
-  tabsAll: "Alle",
-tabsNoDate: "Ohne Datum",
+      iosDict: {
+        title: "Aktiviere das Mikro am Keyboard",
+        body: "Wenn du das Mikro nicht siehst, aktiviere es in den Einstellungen – dann kannst du schneller diktieren.",
+        cta: "So geht’s",
+      },
 
-  loadingTasks: "Aufgaben werden geladen…",
-  noUrgentTitle: "Heute nichts Dringendes 🎉",
-  noUrgentSubtitle:
-    "Nutze den + Button, um deine erste Aufgabe hinzuzufügen.",
-  dueLabel: "Fällig · ",
-  dueNoDate: "Kein Fälligkeitsdatum",
-  errorLoadingTasks: "Fehler beim Laden deiner Aufgaben",
+      noDate: {
+        title_one: "Du hast {{count}} Aufgabe ohne Datum",
+        title_other: "Du hast {{count}} Aufgaben ohne Datum",
+        body: "Sollen wir sie sortieren? In 30s ist die Liste sauber.",
+        cta: "Ohne Datum ansehen",
+      },
 
-  pushTitle: "Aktiviere deine Erinnerungen",
-  pushBody:
-    "REMI kann dir Benachrichtigungen mit deinen 3 wichtigsten Aufgaben des Tages schicken und dich warnen, wenn eine fast abläuft.",
-  pushEnable: "Erinnerungen aktivieren",
-  pushEnabling: "Aktiviere...",
-  pushLater: "Später",
-  pushEnabledToast: "Benachrichtigungen für deine Aufgaben aktiviert ✨",
-  pushErrorToast: "Benachrichtigungen konnten nicht aktiviert werden.",
+      shortcuts: {
+        title: "Wörter, die Zeit sparen",
+        body: "Eine Idee = starte mit ‘Idee’. \nEine Aufgabe = starte mit einem Verb.",
+        cta: "Beispiele ansehen",
+      },
 
-  profileLoggedInAs: "Angemeldet als {{name}}",
-  menuProfile: "Profil",
-  menuShareApp: "App teilen",
-  menuLogout: "Abmelden",
+      dayClose: {
+        title: "60-Sekunden-Abschluss",
+        body: "Was beschäftigt dich für morgen? Lass es hier – fertig.",
+        cta: "Loslassen",
+      },
 
-  shareText: "I’m using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\nI definitely recommend trying it, it really helps. Here’s the link. 🙂",
-  shareCopied: "Link in die Zwischenablage kopiert",
+      paste: {
+        title: "Schon mal Text eingefügt?",
+        body: "Kopiere irgendwas (WhatsApp, Mail, Notizen) und lass Remi es ordnen.",
+        cta: "Jetzt einfügen",
+      },
 
-  defaultUserName: "Benutzer",
+      shareToRemi: {
+        title: "Speichere Dinge per „Teilen“",
+        body: "Aus WhatsApp/Mail/Notizen: Teilen → Remi. Öffnet sich direkt zum Sortieren.",
+        cta: "Verstanden",
+        toast:
+          "Tipp: In einer anderen App „Teilen“ → „Remi“ tippen, um es direkt zu senden 🙂",
+      },
+
+      natural: {
+        title: "Schreib, wie du sprichst",
+        body: "Z.B.: „Stromrechnung morgen um 18 Uhr zahlen“. Remi ordnet es – und du kannst es vergessen.",
+        cta: "Beispiel testen",
+        prefill: "Stromrechnung morgen 18:00 zahlen",
+      },
+
+      week: {
+        title: "Schneller Plan",
+        body: "Sieh deine Woche mit einer Geste. Dringendes zuerst – der Rest raus aus dem Kopf.",
+        cta: "Woche ansehen",
+      },
+
+      mental: {
+        title: "Mini-Pause",
+        body: "4s einatmen, 6s ausatmen. Dein Kopf muss heute nicht alles tragen.",
+        cta: "Kopf leeren",
+      },
+
+      birthday: {
+        title: "Bald Geburtstag?",
+        body: "In 5 Sekunden notiert – und Remi erinnert dich, wenn es so weit ist.",
+        cta: "Hinzufügen",
+        prefill: "Geburtstag von ___ am ___",
+      },
+
+      cleanNoDate: {
+        title: "✅ Keine Aufgaben ohne Datum",
+        body: "Perfekt. Priorisieren ist jetzt easy.",
+        cta: "Heute ansehen",
+      },
+    },
+
+    shortcutsModal: {
+      title: "Beispiele ansehen",
+      body: "Tippe ein Beispiel an, um Remi mit diesem Text zu öffnen.",
+      ex1: "Idee: Japanreise im Frühling",
+      ex2: "Idee: Geschenk für ___",
+      ex3: "Morgen 10:00 Versicherung anrufen",
+      ex4: "Morgen 18:00 Stromrechnung zahlen",
+      ex5: "Heute E-Mail an ___ senden",
+      openEmpty: "Remi öffnen",
+      close: "Schliessen",
+    },
+
+    iosDict: {
+      helpTitle: "Diktieren am iPhone aktivieren",
+      helpBody:
+        "Unter iOS ist es meistens hier: Einstellungen → Allgemein → Tastatur → Diktierfunktion aktivieren.",
+      helpStepsTitle: "Schnelle Schritte",
+      step1: "Einstellungen öffnen",
+      step2: "Allgemein → Tastatur",
+      step3: "„Diktierfunktion aktivieren“ einschalten",
+      ok: "Verstanden",
+      hideForever: "Nicht mehr anzeigen",
+    },
   },
 
   inbox: {
