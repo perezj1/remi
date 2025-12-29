@@ -470,7 +470,7 @@ export default function TodayPage() {
     return Math.max(10, Math.min(100, value));
   }, [statusSummary]);
 
-  // ---------- comprobar push ----------
+  // ---------- comprobar push (MULTI-DISPOSITIVO) ----------
   useEffect(() => {
     if (!user || typeof window === "undefined" || !("Notification" in window)) {
       return;
@@ -483,30 +483,76 @@ export default function TodayPage() {
       return;
     }
 
-    const checkSubscription = async () => {
+    const checkThisDeviceSubscription = async () => {
       try {
+        // Si el navegador no soporta push, no enseñamos el tip
+        if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+          setHasPushSubscription(true);
+          setShowPushModal(false);
+          return;
+        }
+
+        // Si todavía no está concedido, este dispositivo no puede tener sub activa
+        // (y queremos mostrar el modal para activarlo en ESTE dispositivo)
+        if (Notification.permission !== "granted") {
+          setHasPushSubscription(false);
+          setShowPushModal(true);
+          return;
+        }
+
+        // 1) Miramos si ESTE dispositivo tiene suscripción local
+        const registration = await navigator.serviceWorker.ready;
+        const sub = await registration.pushManager.getSubscription();
+
+        if (!sub) {
+          // no hay sub en este dispositivo => mostrar modal para activarlo aquí
+          setHasPushSubscription(false);
+          setShowPushModal(true);
+          return;
+        }
+
+        // 2) Verificamos si esa sub (endpoint) está guardada en DB para este usuario
+        const endpoint = sub.endpoint;
+
         const { data, error } = await supabase
           .from("remi_push_subscriptions")
           .select("id")
           .eq("user_id", user.id)
+          .eq("endpoint", endpoint)
+          .eq("status", "ACTIVE")
           .maybeSingle();
 
         if (error) {
-          console.error("Error checking push subscription", error);
+          console.error("Error checking push subscription (device)", error);
+          // en caso de duda, no bloqueamos: mostramos el modal para re-registrar
+          setHasPushSubscription(false);
+          setShowPushModal(true);
           return;
         }
 
-        const hasSub = !!data;
-        setHasPushSubscription(hasSub);
+        if (data) {
+          // este dispositivo ya está registrado
+          setHasPushSubscription(true);
+          setShowPushModal(false);
+          return;
+        }
 
-        if (!hasSub) setShowPushModal(true);
-        else setShowPushModal(false);
+        // 3) Permiso granted + hay sub local, pero falta en DB => registramos silenciosamente
+        try {
+          await registerPushSubscription(user.id);
+          setHasPushSubscription(true);
+          setShowPushModal(false);
+        } catch (e) {
+          console.error("Error auto-registering push subscription", e);
+          setHasPushSubscription(false);
+          setShowPushModal(true);
+        }
       } catch (err) {
         console.error("Unexpected error checking push subscription", err);
       }
     };
 
-    void checkSubscription();
+    void checkThisDeviceSubscription();
   }, [user?.id]);
 
   // ---------- Avatar ----------
@@ -890,7 +936,7 @@ export default function TodayPage() {
     return isEvening && inactive;
   }, [statusSummary?.daysSinceLastActivity, nowTick]);
 
-  // ✅ Condición: tip push (solo si permission !== granted y NO hay fila en remi_push_subscriptions)
+  // ✅ Condición: tip push (solo si permission !== granted y ESTE DISPOSITIVO no está registrado)
   const shouldShowPushTip = useMemo(() => {
     if (typeof window === "undefined") return false;
     if (!("Notification" in window)) return false;
