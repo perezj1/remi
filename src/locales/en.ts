@@ -473,7 +473,7 @@ tasks: {
 
       install: {
         title: "Install Remi as an app",
-        body: "Open it in one tap and it runs smoother like a real app.",
+        body: "Quick access, notifications, and all the benefits of an app.",
         cta: "Install",
       },
 
@@ -516,14 +516,14 @@ tasks: {
 
       shareToRemi: {
         title: "Save things using Share",
-        body: "From WhatsApp/Mail/Notes: Share → Remi. It opens ready to organize.",
-        cta: "Got it",
+        body: "From WhatsApp/Mail/Notes: Share → Remi. \nIt opens ready to organize.",
+        cta: "Try",
         toast: "Tip: in another app tap “Share” → “Remi” to send it directly 🙂",
       },
 
       natural: {
         title: "Write like you speak",
-        body: "Example: “Pay the electricity bill tomorrow at 6pm”. Remi organizes it and you can forget it.",
+        body: "Example: “Pay the electricity bill tomorrow at 6pm”. Remi handles it, and you can rest.",
         cta: "Try example",
         prefill: "Pay the electricity bill tomorrow 18:00",
       },
@@ -553,6 +553,27 @@ tasks: {
         cta: "View today",
       },
     },
+
+    // en
+shareToRemiModal: {
+  title: "Share to Remi",
+  body: "Save text from any app using “Share”.",
+  iosTitle: "On iPhone (iOS)",
+  iosStep1: "Open WhatsApp/Mail/Notes.",
+  iosStep2: "Tap “Share”.",
+  iosStep3: "If you see “Remi”, tap it and it will open ready to organize.",
+  iosStep4:
+    "If it doesn’t appear, use “Copy” and then paste into Remi (on iOS it can depend on the system/version).",
+  androidTitle: "On Android",
+  androidStep1: "Open WhatsApp/Mail/Notes.",
+  androidStep2: "Select the text and/or tap “Share”.",
+  androidStep3: "Choose “Remi” and it will open with the text ready to organize.",
+  androidStep4:
+    "If it doesn’t appear, make sure Remi is installed as an app (PWA) and try again.",
+  ok: "Got it",
+  hideForever: "Don’t show again",
+},
+
 
     shortcutsModal: {
       title: "See examples",

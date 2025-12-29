@@ -479,7 +479,7 @@ tasks: {
 
       install: {
         title: "Installiere Remi als App",
-        body: "In 1 Tipp öffnen – und es läuft flüssiger wie eine echte App.",
+        body: "Schneller Zugriff, Benachrichtigungen und alle Vorteile einer App.",
         cta: "Installieren",
       },
 
@@ -522,15 +522,15 @@ tasks: {
 
       shareToRemi: {
         title: "Speichere Dinge per „Teilen“",
-        body: "Aus WhatsApp/Mail/Notizen: Teilen → Remi. Öffnet sich direkt zum Sortieren.",
-        cta: "Verstanden",
+        body: "Aus WhatsApp/Mail/Notizen: Teilen → Remi. \nÖffnet sich direkt zum Sortieren.",
+        cta: "Testen",
         toast:
           "Tipp: In einer anderen App „Teilen“ → „Remi“ tippen, um es direkt zu senden 🙂",
       },
 
       natural: {
         title: "Schreib, wie du sprichst",
-        body: "Z.B.: „Stromrechnung morgen um 18 Uhr zahlen“. Remi ordnet es – und du kannst es vergessen.",
+        body: "Beispiel: „Stromrechnung morgen um 18:00 bezahlen“. Remi kümmert sich darum – und du kannst entspannen.",
         cta: "Beispiel testen",
         prefill: "Stromrechnung morgen 18:00 zahlen",
       },
@@ -560,6 +560,27 @@ tasks: {
         cta: "Heute ansehen",
       },
     },
+
+    // de
+shareToRemiModal: {
+  title: "An Remi teilen",
+  body: "Speichere Text aus jeder App über „Teilen“.",
+  iosTitle: "Auf dem iPhone (iOS)",
+  iosStep1: "Öffne WhatsApp/Mail/Notizen.",
+  iosStep2: "Tippe auf „Teilen“.",
+  iosStep3: "Wenn „Remi“ erscheint, tippe darauf – es öffnet sich bereit zum Ordnen.",
+  iosStep4:
+    "Wenn es nicht erscheint: „Kopieren“ und dann in Remi einfügen (unter iOS hängt es manchmal vom System/der Version ab).",
+  androidTitle: "Auf Android",
+  androidStep1: "Öffne WhatsApp/Mail/Notizen.",
+  androidStep2: "Text markieren und/oder auf „Teilen“ tippen.",
+  androidStep3: "Wähle „Remi“ – Remi öffnet sich mit dem Text bereit zum Ordnen.",
+  androidStep4:
+    "Wenn es nicht erscheint, stelle sicher, dass Remi als App (PWA) installiert ist, und versuche es erneut.",
+  ok: "Verstanden",
+  hideForever: "Nicht mehr anzeigen",
+},
+
 
     shortcutsModal: {
       title: "Beispiele ansehen",

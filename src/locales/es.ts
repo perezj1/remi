@@ -502,7 +502,7 @@ tasks: {
       },
       install: {
         title: "Instala Remi como app",
-        body: "Ábrela en 1 toque y funciona más fluida como una app.",
+        body: "Acceso rápido, notificaciones y todas las ventajas de una app.",
         cta: "Instalar",
       },
 
@@ -545,14 +545,14 @@ tasks: {
 
       shareToRemi: {
         title: "Guarda cosas con “Compartir”",
-        body: "Desde WhatsApp/Correo/Notas: Compartir → Remi. Se abre listo para ordenar.",
-        cta: "Entendido",
+        body: "Desde WhatsApp/Correo/Notas: Compartir → Remi. \nSe abre listo para ordenar.",
+        cta: "Probar",
         toast: "Tip: en otra app pulsa “Compartir” → “Remi” para mandarlo directo 🙂",
       },
 
       natural: {
         title: "Escribe como hablas",
-        body: "Ej: “Pagar la luz mañana a las 6 de la tarde”. Remi lo ordena y tú te olvidas.",
+        body: "Ej: “Pagar la luz mañana a las 6 de la tarde”. Remi lo se encarga y tú descansas.",
         cta: "Probar ejemplo",
         prefill: "Pagar la luz mañana 18:00",
       },
@@ -581,6 +581,25 @@ tasks: {
         body: "Perfecto. Ahora es fácil priorizar.",
         cta: "Ver hoy",
       },
+    },
+
+    shareToRemiModal: {
+      title: "Compartir a Remi",
+      body: "Guarda texto desde cualquier app usando “Compartir”.",
+      iosTitle: "En iPhone (iOS)",
+      iosStep1: "Abre WhatsApp/Correo/Notas.",
+      iosStep2: "Pulsa “Compartir”.",
+      iosStep3: "Si ves “Remi”, tócalo y se abrirá listo para ordenar.",
+      iosStep4:
+        "Si no aparece, usa “Copiar” y luego pega en Remi (en iOS a veces depende del sistema/versión).",
+      androidTitle: "En Android",
+      androidStep1: "Abre WhatsApp/Correo/Notas.",
+      androidStep2: "Selecciona el texto y/o Pulsa “Compartir”.",
+      androidStep3: "Elige “Remi” y se abrirá con el texto listo para ordenar.",
+      androidStep4:
+        "Si no aparece, asegúrate de tener Remi instalada como app (PWA) y prueba de nuevo.",
+      ok: "Entendido",
+      hideForever: "No mostrar más",
     },
 
     // Shortcuts modal

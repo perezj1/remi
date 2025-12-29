@@ -53,7 +53,6 @@ import {
   ChevronDown,
   Keyboard,
   Download,
-  Lightbulb,
 } from "lucide-react";
 
 const AVATAR_KEY = "remi_avatar";
@@ -63,6 +62,12 @@ const NAV_DICTATION_KEY = "remi_nav_dictation_pending_v1";
 
 // ✅ persistir “no mostrar más” para tips
 const TIP_DISMISS_KEY = "remi_tip_dismissed_v1";
+
+// ✅ key NUEVA para que vuelva a aparecer el tip “Compartir → Remi”
+const SHARE_TO_REMI_DISMISS_KEY = "share-to-remi-help";
+
+// ✅ NUEVO: controla el auto-open solo cuando la app vuelve a estar visible (no en refresh/navegación interna)
+const AUTO_OPEN_VISIBLE_KEY = "remi_auto_open_visible_seen_v1";
 
 type DateGroup = {
   key: string;
@@ -146,9 +151,9 @@ export default function TodayPage() {
   const [registeringPush, setRegisteringPush] = useState(false);
 
   // ✅ estado de push real (para ocultar la tarjeta si ya está activado)
-  const [hasPushSubscription, setHasPushSubscription] = useState<boolean | null>(
-    null
-  );
+  const [hasPushSubscription, setHasPushSubscription] = useState<
+    boolean | null
+  >(null);
 
   // ✅ dismiss de tips
   const [dismissedTips, setDismissedTips] = useState<Record<string, boolean>>(
@@ -165,6 +170,9 @@ export default function TodayPage() {
   // ✅ modal: ejemplos “Atajos”
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
 
+  // ✅ modal ayuda: “Compartir → Remi” (iOS/Android)
+  const [showShareToRemiHelp, setShowShareToRemiHelp] = useState(false);
+
   // ✅ tick para re-evaluar “Cierre del día” sin recargar
   const [nowTick, setNowTick] = useState(0);
 
@@ -177,9 +185,9 @@ export default function TodayPage() {
   const [filter, setFilter] = useState<FilterMode>("TODAY");
 
   // ✅ plegar/desplegar por grupo (por defecto TODO abierto)
-  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(
-    {}
-  );
+  const [collapsedGroups, setCollapsedGroups] = useState<
+    Record<string, boolean>
+  >({});
   const isCollapsed = (key: string) => !!collapsedGroups[key];
   const toggleGroup = (key: string) => {
     setCollapsedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -244,10 +252,52 @@ export default function TodayPage() {
     return () => window.clearInterval(id);
   }, []);
 
+  // ✅ NUEVO: al entrar en la app o volver a verla, resetea la “bandera” para permitir auto-open 1 vez.
+  // - No se dispara en refresh/navegación interna (porque no cambia visibilityState a hidden->visible).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    // Por si ya carga visible: marcamos "visible" como visto (para no abrir automáticamente por refresh)
+    try {
+      if (document.visibilityState === "visible") {
+        sessionStorage.setItem(AUTO_OPEN_VISIBLE_KEY, "1");
+      }
+    } catch {}
+
+    const onVisibility = () => {
+      try {
+        if (document.visibilityState === "visible") {
+          // Al volver a estar visible, permitimos auto-open una vez
+          sessionStorage.removeItem(AUTO_OPEN_VISIBLE_KEY);
+        } else if (document.visibilityState === "hidden") {
+          // Marcamos que ya estuvo visible (evita que un refresh posterior lo trate como “entrada”)
+          sessionStorage.setItem(AUTO_OPEN_VISIBLE_KEY, "1");
+        }
+      } catch {}
+    };
+
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
+
   // ✅ Auto-open del MindDumpModal al entrar en "/"
   useEffect(() => {
     if (location.pathname !== "/") return;
     if (typeof window === "undefined") return;
+
+    // ✅ NUEVO: no abrir al refrescar o navegar a "/" mientras la app ya está visible.
+    // Solo abre si venimos de "hidden -> visible" (porque entonces se remove la key arriba).
+    try {
+      const alreadyVisibleThisSession = !!sessionStorage.getItem(
+        AUTO_OPEN_VISIBLE_KEY
+      );
+      if (alreadyVisibleThisSession) return;
+      // Consumimos el “permiso” (para que no vuelva a abrir por cambios de location.key)
+      sessionStorage.setItem(AUTO_OPEN_VISIBLE_KEY, "1");
+    } catch {
+      // si sessionStorage falla, mejor no auto-abrir para no molestar
+      return;
+    }
 
     if (isShareEntry(location.search)) return;
 
@@ -522,129 +572,118 @@ export default function TodayPage() {
   }, [profileOpen]);
 
   // ---------- Agrupar tareas ----------
-  const {
-    dateGroups,
-    noDateTasks,
-  }: { dateGroups: DateGroup[]; noDateTasks: BrainItem[] } = useMemo(() => {
-    if (tasks.length === 0) {
-      return { dateGroups: [], noDateTasks: [] };
-    }
+  const { dateGroups, noDateTasks }: { dateGroups: DateGroup[]; noDateTasks: BrainItem[] } =
+    useMemo(() => {
+      if (tasks.length === 0) {
+        return { dateGroups: [], noDateTasks: [] };
+      }
 
-    const today = new Date();
-    const todayMid = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate()
-    );
-    const tomorrowMid = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate() + 1
-    );
-
-    const todayIso = todayMid.toISOString().slice(0, 10);
-
-    const groupsMap = new Map<string, DateGroup>();
-    const noDate: BrainItem[] = [];
-
-    const addTaskToDate = (dateMid: Date, task: BrainItem) => {
-      const dMid = new Date(
-        dateMid.getFullYear(),
-        dateMid.getMonth(),
-        dateMid.getDate()
+      const today = new Date();
+      const todayMid = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate()
       );
-      const iso = dMid.toISOString().slice(0, 10);
+      const tomorrowMid = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate() + 1
+      );
 
-      let group = groupsMap.get(iso);
-      if (!group) {
-        let label: string;
-        if (iso === todayIso) label = safeT("inbox.sectionToday", "Hoy");
-        else if (isSameDay(dMid, tomorrowMid))
-          label = safeT("inbox.sectionTomorrow", "Mañana");
-        else {
-          label = dMid.toLocaleDateString(undefined, {
-            weekday: "short",
-            day: "numeric",
-            month: "short",
-          });
+      const todayIso = todayMid.toISOString().slice(0, 10);
+
+      const groupsMap = new Map<string, DateGroup>();
+      const noDate: BrainItem[] = [];
+
+      const addTaskToDate = (dateMid: Date, task: BrainItem) => {
+        const dMid = new Date(
+          dateMid.getFullYear(),
+          dateMid.getMonth(),
+          dateMid.getDate()
+        );
+        const iso = dMid.toISOString().slice(0, 10);
+
+        let group = groupsMap.get(iso);
+        if (!group) {
+          let label: string;
+          if (iso === todayIso) label = safeT("inbox.sectionToday", "Hoy");
+          else if (isSameDay(dMid, tomorrowMid))
+            label = safeT("inbox.sectionTomorrow", "Mañana");
+          else {
+            label = dMid.toLocaleDateString(undefined, {
+              weekday: "short",
+              day: "numeric",
+              month: "short",
+            });
+          }
+
+          group = { key: iso, label, items: [], dateMs: dMid.getTime() };
+          groupsMap.set(iso, group);
         }
 
-        group = { key: iso, label, items: [], dateMs: dMid.getTime() };
-        groupsMap.set(iso, group);
-      }
+        if (!group.items.includes(task)) {
+          group.items.push(task);
+        }
+      };
 
-      if (!group.items.includes(task)) {
-        group.items.push(task);
-      }
-    };
+      for (const task of tasks) {
+        const mode = (task as any).reminder_mode as ReminderMode | undefined;
 
-    for (const task of tasks) {
-      const mode = (task as any).reminder_mode as ReminderMode | undefined;
+        if (!task.due_date) {
+          noDate.push(task);
+          continue;
+        }
 
-      if (!task.due_date) {
-        noDate.push(task);
-        continue;
-      }
+        const due = new Date(task.due_date as string);
+        const dueMid = new Date(due.getFullYear(), due.getMonth(), due.getDate());
 
-      const due = new Date(task.due_date as string);
-      const dueMid = new Date(due.getFullYear(), due.getMonth(), due.getDate());
+        addTaskToDate(dueMid, task);
 
-      addTaskToDate(dueMid, task);
+        if (mode === "DAY_BEFORE_AND_DUE") {
+          const dayBefore = new Date(dueMid);
+          dayBefore.setDate(dayBefore.getDate() - 1);
+          addTaskToDate(dayBefore, task);
+        }
 
-      if (mode === "DAY_BEFORE_AND_DUE") {
-        const dayBefore = new Date(dueMid);
-        dayBefore.setDate(dayBefore.getDate() - 1);
-        addTaskToDate(dayBefore, task);
-      }
+        if (mode === "DAILY_UNTIL_DUE") {
+          const todayMidTime = todayMid.getTime();
+          const dueMidTime = dueMid.getTime();
 
-      if (mode === "DAILY_UNTIL_DUE") {
-        const todayMidTime = todayMid.getTime();
-        const dueMidTime = dueMid.getTime();
-
-        if (dueMidTime >= todayMidTime) {
-          let cursor = new Date(todayMid);
-          while (cursor.getTime() < dueMidTime) {
-            addTaskToDate(cursor, task);
-            cursor = new Date(
-              cursor.getFullYear(),
-              cursor.getMonth(),
-              cursor.getDate() + 1
-            );
+          if (dueMidTime >= todayMidTime) {
+            let cursor = new Date(todayMid);
+            while (cursor.getTime() < dueMidTime) {
+              addTaskToDate(cursor, task);
+              cursor = new Date(
+                cursor.getFullYear(),
+                cursor.getMonth(),
+                cursor.getDate() + 1
+              );
+            }
           }
         }
       }
-    }
 
-    const dateGroupsArr = Array.from(groupsMap.values())
-      .filter((g) => g.items.length > 0)
-      .sort((a, b) => (a.dateMs ?? 0) - (b.dateMs ?? 0));
+      const dateGroupsArr = Array.from(groupsMap.values())
+        .filter((g) => g.items.length > 0)
+        .sort((a, b) => (a.dateMs ?? 0) - (b.dateMs ?? 0));
 
-    return { dateGroups: dateGroupsArr, noDateTasks: noDate };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tasks, t]);
+      return { dateGroups: dateGroupsArr, noDateTasks: noDate };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [tasks, t]);
 
   const filteredDateGroups = useMemo(() => {
     if (filter === "NO_DATE") return [];
 
     const today = new Date();
-    const todayMid = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate()
-    );
-    const weekEndMid = new Date(
-      todayMid.getFullYear(),
-      todayMid.getMonth(),
-      todayMid.getDate() + 7
-    );
+    const todayMid = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const weekEndMid = new Date(todayMid.getFullYear(), todayMid.getMonth(), todayMid.getDate() + 7);
 
     return dateGroups.filter((group) => {
       if (!group.dateMs) return false;
       const time = group.dateMs;
 
       if (filter === "TODAY") return isSameDay(new Date(time), todayMid);
-      if (filter === "WEEK")
-        return time >= todayMid.getTime() && time <= weekEndMid.getTime();
+      if (filter === "WEEK") return time >= todayMid.getTime() && time <= weekEndMid.getTime();
       return false;
     });
   }, [dateGroups, filter]);
@@ -660,13 +699,7 @@ export default function TodayPage() {
     repeatType: RepeatType
   ) => {
     if (!user) return;
-    const created = await createTask(
-      user.id,
-      title,
-      dueDate,
-      reminderMode,
-      repeatType
-    );
+    const created = await createTask(user.id, title, dueDate, reminderMode, repeatType);
     setTasks((prev) => [...prev, created]);
   };
 
@@ -871,10 +904,7 @@ export default function TodayPage() {
     if (isIOSDevice && !dismissedTips["ios-dictation"]) {
       cards.push({
         id: "ios-dictation",
-        title: safeT(
-          "today.tip.iosDict.title",
-          "Activa el micrófono del teclado"
-        ),
+        title: safeT("today.tip.iosDict.title", "Activa el micrófono del teclado"),
         body: safeT(
           "today.tip.iosDict.body",
           "Si no ves el micro en el teclado, actívalo en Ajustes y dicta más rápido."
@@ -886,8 +916,6 @@ export default function TodayPage() {
         onClick: () => setShowIosDictationHelp(true),
       });
     }
-
-    
 
     // 5) Palabras que ahorran tiempo (abre modal ejemplos)
     cards.push({
@@ -909,10 +937,7 @@ export default function TodayPage() {
       cards.push({
         id: "day-close",
         title: safeT("today.tip.dayClose.title", "Cierre de 60 segundos"),
-        body: safeT(
-          "today.tip.dayClose.body",
-          "¿Qué te preocupa para mañana? Suéltalo y listo."
-        ),
+        body: safeT("today.tip.dayClose.body", "¿Qué te preocupa para mañana? Suéltalo y listo."),
         cta: safeT("today.tip.dayClose.cta", "Soltar"),
         icon: <HeartPulse size={18} />,
         bg: "",
@@ -936,8 +961,8 @@ export default function TodayPage() {
       onClick: () => void handlePasteFromClipboard(),
     });
 
-    // 8) Compartir a Remi (flujo)
-    if (!dismissedTips["share-to-remi"]) {
+    // 8) ✅ Compartir a Remi (flujo) — CTA “Probar” + abre modal iOS/Android + “No mostrar más”
+    if (!dismissedTips[SHARE_TO_REMI_DISMISS_KEY]) {
       cards.push({
         id: "share-to-remi",
         title: safeT("today.tip.shareToRemi.title", "Guarda cosas con “Compartir”"),
@@ -945,19 +970,11 @@ export default function TodayPage() {
           "today.tip.shareToRemi.body",
           "Desde WhatsApp/Correo/Notas: Compartir → Remi. Se abre listo para ordenar."
         ),
-        cta: safeT("today.tip.shareToRemi.cta", "Entendido"),
+        cta: safeT("today.tip.shareToRemi.cta", "Probar"),
         icon: <Share2 size={18} />,
         bg: "",
         border: "rgba(14,165,233,0.65)",
-        onClick: () => {
-          toast.message(
-            safeT(
-              "today.tip.shareToRemi.toast",
-              "Tip: en otra app pulsa “Compartir” → “Remi” para mandarlo directo 🙂"
-            )
-          );
-          dismissTip("share-to-remi");
-        },
+        onClick: () => setShowShareToRemiHelp(true),
       });
     }
 
@@ -973,38 +990,28 @@ export default function TodayPage() {
       icon: <Sparkles size={18} />,
       bg: "",
       border: "rgba(16,185,129,0.65)",
-      onClick: () =>
-        handleOpenMindDump(
-          safeT("today.tip.natural.prefill", "Pagar la luz mañana 18:00")
-        ),
+      onClick: () => handleOpenMindDump(safeT("today.tip.natural.prefill", "Pagar la luz mañana 18:00")),
     });
 
-   // 10) ✅ Atajos inteligentes (sin repetir “Palabras que ahorran tiempo”)
-cards.push({
-  id: "smart-shortcuts",
-  title: safeT(
-    "today.tip.smartShortcuts.title",
-    "Atajos inteligentes (ahorran 10s)"
-  ),
-  body: safeT(
-    "today.tip.smartShortcuts.body",
-    "Agrega palabras con 1 toque. Ej: Idea / Comprar / a las 18:00."
-  ),
-  cta: safeT("today.tip.smartShortcuts.cta", "Probar ahora"),
-  icon: <Sparkles size={18} />,
-  bg: "",
-  border: "rgba(125,89,201,0.70)",
-  onClick: () =>
-    handleOpenMindDump(
-    ),
-});
+    // 10) ✅ Atajos inteligentes
+    cards.push({
+      id: "smart-shortcuts",
+      title: safeT("today.tip.smartShortcuts.title", "Atajos inteligentes (ahorran 10s)"),
+      body: safeT(
+        "today.tip.smartShortcuts.body",
+        "Agrega palabras con 1 toque. Ej: Idea / Comprar / a las 18:00."
+      ),
+      cta: safeT("today.tip.smartShortcuts.cta", "Probar ahora"),
+      icon: <Sparkles size={18} />,
+      bg: "",
+      border: "rgba(125,89,201,0.70)",
+      onClick: () => handleOpenMindDump(""),
+    });
 
-    // 4) Tareas sin fecha (si existen)
+    // 4) ✅ Tareas sin fecha (si existen) — después de “Atajos inteligentes”
     if (noDateCount > 0) {
       const key =
-        noDateCount === 1
-          ? "today.tip.noDate.title_one"
-          : "today.tip.noDate.title_other";
+        noDateCount === 1 ? "today.tip.noDate.title_one" : "today.tip.noDate.title_other";
 
       cards.push({
         id: "no-date",
@@ -1013,10 +1020,7 @@ cards.push({
           `Tienes ${noDateCount} tarea${noDateCount === 1 ? "" : "s"} sin fecha`,
           { count: noDateCount }
         ),
-        body: safeT(
-          "today.tip.noDate.body",
-          "¿Las ordenamos? En 30s te dejo la lista limpia."
-        ),
+        body: safeT("today.tip.noDate.body", "¿Las ordenamos? En 30s te dejo la lista limpia."),
         cta: safeT("today.tip.noDate.cta", "Ver sin fecha"),
         icon: <CalendarDays size={18} />,
         bg: "",
@@ -1067,10 +1071,7 @@ cards.push({
       icon: <Sparkles size={18} />,
       bg: "",
       border: "rgba(253,186,116,0.85)",
-      onClick: () =>
-        handleOpenMindDump(
-          safeT("today.tip.birthday.prefill", "Cumpleaños de ___ el ___")
-        ),
+      onClick: () => handleOpenMindDump(safeT("today.tip.birthday.prefill", "Cumpleaños de ___ el ___")),
     });
 
     // ✅ “sin tareas sin fecha” (solo si NO hay tareas sin fecha)
@@ -1078,10 +1079,7 @@ cards.push({
       cards.push({
         id: "clean-no-date",
         title: safeT("today.tip.cleanNoDate.title", "✅ Sin tareas sin fecha"),
-        body: safeT(
-          "today.tip.cleanNoDate.body",
-          "Perfecto. Ahora es fácil priorizar."
-        ),
+        body: safeT("today.tip.cleanNoDate.body", "Perfecto. Ahora es fácil priorizar."),
         cta: safeT("today.tip.cleanNoDate.cta", "Ver hoy"),
         icon: <Sparkles size={18} />,
         bg: "",
@@ -1150,14 +1148,10 @@ cards.push({
         >
           <div>
             <p style={{ fontSize: 12, opacity: 0.8 }}>
-              {safeT("today.greeting", `Hola, ${displayName}`, {
-                name: displayName,
-              })}
+              {safeT("today.greeting", `Hola, ${displayName}`, { name: displayName })}
             </p>
             <h1 style={{ fontSize: 20, margin: "4px 0 2px", fontWeight: 600 }}>
-              {safeT("today.tasksToday", `Tienes ${activeTasksCount} tareas`, {
-                count: activeTasksCount,
-              })}
+              {safeT("today.tasksToday", `Tienes ${activeTasksCount} tareas`, { count: activeTasksCount })}
             </h1>
             <p style={{ fontSize: 11, opacity: 0.85 }}>
               {safeT("today.prioritize", "Prioriza lo importante")}
@@ -1228,36 +1222,22 @@ cards.push({
                     color: "#8b8fa6",
                   }}
                 >
-                  {safeT(
-                    "today.profileLoggedInAs",
-                    `Conectado como ${displayName}`,
-                    { name: displayName }
-                  )}
+                  {safeT("today.profileLoggedInAs", `Conectado como ${displayName}`, {
+                    name: displayName,
+                  })}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleOpenProfile}
-                  style={menuButtonStyle}
-                >
+                <button type="button" onClick={handleOpenProfile} style={menuButtonStyle}>
                   <User size={16} style={{ marginRight: 8 }} />
                   <span>{safeT("today.menuProfile", "Perfil")}</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={handleShareApp}
-                  style={menuButtonStyle}
-                >
+                <button type="button" onClick={handleShareApp} style={menuButtonStyle}>
                   <Share2 size={16} style={{ marginRight: 8 }} />
                   <span>{safeT("today.menuShareApp", "Compartir app")}</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={handleInstallApp}
-                  style={menuButtonStyle}
-                >
+                <button type="button" onClick={handleInstallApp} style={menuButtonStyle}>
                   <Smartphone size={16} style={{ marginRight: 8 }} />
                   <span>{safeT("today.menuInstallApp", "Instalar app")}</span>
                 </button>
@@ -1458,9 +1438,7 @@ cards.push({
                     size={16}
                     className="text-slate-500 transition-transform"
                     style={{
-                      transform: isCollapsed(group.key)
-                        ? "rotate(-90deg)"
-                        : "rotate(0deg)",
+                      transform: isCollapsed(group.key) ? "rotate(-90deg)" : "rotate(0deg)",
                     }}
                   />
                   <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
@@ -1528,10 +1506,7 @@ cards.push({
                               type="button"
                               onClick={() => handleDone(task)}
                               title={safeT("today.actionDoneTitle", "Marcar como completada")}
-                              aria-label={safeT(
-                                "today.actionDoneTitle",
-                                "Marcar como completada"
-                              )}
+                              aria-label={safeT("today.actionDoneTitle", "Marcar como completada")}
                               className="w-9 h-9 rounded-full border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 inline-flex items-center justify-center"
                             >
                               <Check size={16} color="#10B981" />
@@ -1595,9 +1570,7 @@ cards.push({
 
                         <div className="mt-1 flex items-center gap-1 text-[12px] text-slate-500">
                           <CalendarDays size={14} className="text-slate-400" />
-                          <span className="truncate">
-                            {safeT("today.dueNoDate", "Sin fecha")}
-                          </span>
+                          <span className="truncate">{safeT("today.dueNoDate", "Sin fecha")}</span>
                         </div>
                       </div>
 
@@ -1606,10 +1579,7 @@ cards.push({
                           type="button"
                           onClick={() => handleDone(task)}
                           title={safeT("today.actionDoneTitle", "Marcar como completada")}
-                          aria-label={safeT(
-                            "today.actionDoneTitle",
-                            "Marcar como completada"
-                          )}
+                          aria-label={safeT("today.actionDoneTitle", "Marcar como completada")}
                           className="w-9 h-9 rounded-full border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 inline-flex items-center justify-center"
                         >
                           <Check size={16} color="#10B981" />
@@ -1686,7 +1656,7 @@ cards.push({
 
       {/* ✅ AYUDA iOS: activar dictado del teclado */}
       {showIosDictationHelp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-content-center bg-black/40">
           <div className="bg-white rounded-2xl p-5 w-[90%] max-w-sm shadow-xl">
             <h2 className="text-base font-semibold mb-1">
               {safeT("today.iosDict.helpTitle", "Activa Dictado en iPhone")}
@@ -1728,6 +1698,89 @@ cards.push({
                 className="w-full rounded-full bg-slate-100 text-slate-700 text-xs font-semibold py-2.5"
               >
                 {safeT("today.iosDict.hideForever", "No mostrar más")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ AYUDA: “Compartir → Remi” (iOS / Android) */}
+      {showShareToRemiHelp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl p-5 w-[90%] max-w-sm shadow-xl">
+            <h2 className="text-base font-semibold mb-1">
+              {safeT("today.shareToRemiModal.title", "Compartir a Remi")}
+            </h2>
+
+            <p className="text-xs text-slate-600 mb-3">
+              {safeT(
+                "today.shareToRemiModal.body",
+                "Guarda texto desde cualquier app usando “Compartir”."
+              )}
+            </p>
+
+            <div className="rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-[12px] text-slate-700 mb-4">
+              <div className="font-semibold mb-1">
+                {isIOSDevice
+                  ? safeT("today.shareToRemiModal.iosTitle", "En iPhone (iOS)")
+                  : safeT("today.shareToRemiModal.androidTitle", "En Android")}
+              </div>
+
+              {isIOSDevice ? (
+                <ul className="list-disc pl-4 space-y-1">
+                  <li>{safeT("today.shareToRemiModal.iosStep1", "Abre WhatsApp/Correo/Notas.")}</li>
+                  <li>{safeT("today.shareToRemiModal.iosStep2", "Pulsa “Compartir”.")}</li>
+                  <li>
+                    {safeT(
+                      "today.shareToRemiModal.iosStep3",
+                      "Si ves “Remi”, tócalo y se abrirá listo para ordenar."
+                    )}
+                  </li>
+                  <li>
+                    {safeT(
+                      "today.shareToRemiModal.iosStep4",
+                      "Si no aparece, usa “Copiar” y luego pega en Remi (en iOS a veces depende del sistema/versión)."
+                    )}
+                  </li>
+                </ul>
+              ) : (
+                <ul className="list-disc pl-4 space-y-1">
+                  <li>{safeT("today.shareToRemiModal.androidStep1", "Abre WhatsApp/Correo/Notas.")}</li>
+                  <li>{safeT("today.shareToRemiModal.androidStep2", "Pulsa “Compartir”.")}</li>
+                  <li>
+                    {safeT(
+                      "today.shareToRemiModal.androidStep3",
+                      "Elige “Remi” y se abrirá con el texto listo para ordenar."
+                    )}
+                  </li>
+                  <li>
+                    {safeT(
+                      "today.shareToRemiModal.androidStep4",
+                      "Si no aparece, asegúrate de tener Remi instalada como app (PWA) y prueba de nuevo."
+                    )}
+                  </li>
+                </ul>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => setShowShareToRemiHelp(false)}
+                className="w-full rounded-full bg-[#7d59c9] text-white text-xs font-semibold py-2.5 shadow-md"
+              >
+                {safeT("today.shareToRemiModal.ok", "Entendido")}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  dismissTip(SHARE_TO_REMI_DISMISS_KEY);
+                  setShowShareToRemiHelp(false);
+                }}
+                className="w-full rounded-full bg-slate-100 text-slate-700 text-xs font-semibold py-2.5"
+              >
+                {safeT("today.shareToRemiModal.hideForever", "No mostrar más")}
               </button>
             </div>
           </div>
