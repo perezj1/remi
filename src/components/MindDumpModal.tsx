@@ -146,7 +146,7 @@ const MODAL_I18N: Record<UiLang, Record<string, string>> = {
     "capture.listening": "Listening…",
     "capture.placeholder": "Dump your thoughts here…",
     "capture.iosKeyboardMicHint":
-      "On iPhone: use the keyboard microphone to диктate.",
+      "On iPhone: use the keyboard microphone to dictate.",
     "capture.speakHold": "Hold to speak",
 
     "capture.toast.micDenied": "Microphone permission denied.",
@@ -542,7 +542,9 @@ export default function MindDumpModal({
       const clip = await navigator.clipboard.readText();
       const normalizedClip = normalizeIncomingText(clip);
       if (!normalizedClip) {
-        toast.message(t("capture.toast.clipboardEmpty", "No hay texto en el portapapeles."));
+        toast.message(
+          t("capture.toast.clipboardEmpty", "No hay texto en el portapapeles.")
+        );
         return;
       }
       setText((prev) => (prev ? `${prev} ${normalizedClip}` : normalizedClip));
@@ -670,7 +672,9 @@ export default function MindDumpModal({
     if (!s) return;
 
     if (!node) {
-      setText((prev) => (prev ? `${prev}${prev.endsWith("\n") ? "" : "\n"}${s}` : s));
+      setText((prev) =>
+        prev ? `${prev}${prev.endsWith("\n") ? "" : "\n"}${s}` : s
+      );
       return;
     }
 
@@ -751,7 +755,13 @@ export default function MindDumpModal({
         { id: "appointment" as const, re: /^(meeting|appointment)\b/i },
         { id: "idea" as const, re: /^(idea)\b/i },
       ],
-      scheduleTokens: [/\bon\b/i, /\bevery\b/i, /\bbefore\b/i, /\btoday\b/i, /\btomorrow\b/i],
+      scheduleTokens: [
+        /\bon\b/i,
+        /\bevery\b/i,
+        /\bbefore\b/i,
+        /\btoday\b/i,
+        /\btomorrow\b/i,
+      ],
       timeTokens: [/\bat\b/i, /\b\d{1,2}:\d{2}\b/, /\b\d{1,2}\s?(am|pm)\b/i],
       reminderTokens: [/\bremind\b/i, /\bnotify\b/i],
     };
@@ -765,7 +775,13 @@ export default function MindDumpModal({
         { id: "appointment" as const, re: /^(termin|meeting)\b/i },
         { id: "idea" as const, re: /^(idee)\b/i },
       ],
-      scheduleTokens: [/\bam\b/i, /\bjeden\b/i, /\bvor\b/i, /\bheute\b/i, /\bmorgen\b/i],
+      scheduleTokens: [
+        /\bam\b/i,
+        /\bjeden\b/i,
+        /\bvor\b/i,
+        /\bheute\b/i,
+        /\bmorgen\b/i,
+      ],
       timeTokens: [/\bum\b/i, /\b\d{1,2}:\d{2}\b/],
       reminderTokens: [/\berinner\b/i, /\bbenachrichtig\b/i],
     };
@@ -775,69 +791,131 @@ export default function MindDumpModal({
   }, [uiLang]);
 
   // ✅ ROOT chips: label (UI) + word (lo que se inserta)
-  const rootChips = useMemo(
-    () =>
-      [
-        {
-          id: "buy" as const,
-          label: t("capture.chip.buy", "Comprar"),
-          word: t("capture.chip.buyWord", "Comprar"),
-        },
-        {
-          id: "call" as const,
-          label: t("capture.chip.call", "Llamar"),
-          word: t("capture.chip.callWord", "Llamar"),
-        },
-        {
-          id: "pay" as const,
-          label: t("capture.chip.pay", "Pagar"),
-          word: t("capture.chip.payWord", "Pagar"),
-        },
-        {
-          id: "birthday" as const,
-          label: t("capture.chip.birthday", "Cumpleaños"),
-          word: t("capture.chip.birthdayWord", "Cumpleaños"),
-        },
-        {
-          id: "appointment" as const,
-          label: t("capture.chip.appt", "Cita"),
-          word: t("capture.chip.apptWord", "Cita"),
-        },
-        {
-          id: "idea" as const,
-          label: t("capture.chip.idea", "Idea"),
-          word: t("capture.chip.ideaWord", "Idea:"),
-        },
-      ] as const,
+  // ✅ IMPORTANTE: IDEA primero, luego separador visual "|", luego el resto (Comprar/Llamar/Pagar/…)
+  const rootChips = useMemo(() => {
+    const ideaChip = {
+      id: "idea" as const,
+      label: t("capture.chip.idea", "Idea"),
+      word: t("capture.chip.ideaWord", "Idea:"),
+    };
+
+    const others = [
+      {
+        id: "buy" as const,
+        label: t("capture.chip.buy", "Comprar"),
+        word: t("capture.chip.buyWord", "Comprar"),
+      },
+      {
+        id: "call" as const,
+        label: t("capture.chip.call", "Llamar"),
+        word: t("capture.chip.callWord", "Llamar"),
+      },
+      {
+        id: "pay" as const,
+        label: t("capture.chip.pay", "Pagar"),
+        word: t("capture.chip.payWord", "Pagar"),
+      },
+      {
+        id: "birthday" as const,
+        label: t("capture.chip.birthday", "Cumpleaños"),
+        word: t("capture.chip.birthdayWord", "Cumpleaños"),
+      },
+      {
+        id: "appointment" as const,
+        label: t("capture.chip.appt", "Cita"),
+        word: t("capture.chip.apptWord", "Cita"),
+      },
+    ] as const;
+
+    return [ideaChip, ...others] as const;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [uiLang]
-  );
+  }, [uiLang]);
 
   const scheduleChips = useMemo(() => {
     if (uiLang === "en") {
       return [
-        { id: "on", label: t("capture.chip.schedule.on", "on"), insert: withGap(t("capture.chip.schedule.on", "on")) },
-        { id: "every", label: t("capture.chip.schedule.every", "every"), insert: withGap(t("capture.chip.schedule.every", "every")) },
-        { id: "before", label: t("capture.chip.schedule.before", "before"), insert: withGap(t("capture.chip.schedule.before", "before")) },
-        { id: "today", label: t("capture.chip.schedule.today", "today"), insert: withGap(t("capture.chip.schedule.today", "today")) },
-        { id: "tomorrow", label: t("capture.chip.schedule.tomorrow", "tomorrow"), insert: withGap(t("capture.chip.schedule.tomorrow", "tomorrow")) },
+        {
+          id: "on",
+          label: t("capture.chip.schedule.on", "on"),
+          insert: withGap(t("capture.chip.schedule.on", "on")),
+        },
+        {
+          id: "every",
+          label: t("capture.chip.schedule.every", "every"),
+          insert: withGap(t("capture.chip.schedule.every", "every")),
+        },
+        {
+          id: "before",
+          label: t("capture.chip.schedule.before", "before"),
+          insert: withGap(t("capture.chip.schedule.before", "before")),
+        },
+        {
+          id: "today",
+          label: t("capture.chip.schedule.today", "today"),
+          insert: withGap(t("capture.chip.schedule.today", "today")),
+        },
+        {
+          id: "tomorrow",
+          label: t("capture.chip.schedule.tomorrow", "tomorrow"),
+          insert: withGap(t("capture.chip.schedule.tomorrow", "tomorrow")),
+        },
       ];
     }
     if (uiLang === "de") {
       return [
-        { id: "am", label: t("capture.chip.schedule.am", "am"), insert: withGap(t("capture.chip.schedule.am", "am")) },
-        { id: "jeden", label: t("capture.chip.schedule.jeden", "jeden"), insert: withGap(t("capture.chip.schedule.jeden", "jeden")) },
-        { id: "vor", label: t("capture.chip.schedule.vor", "vor"), insert: withGap(t("capture.chip.schedule.vor", "vor")) },
-        { id: "heute", label: t("capture.chip.schedule.heute", "heute"), insert: withGap(t("capture.chip.schedule.heute", "heute")) },
-        { id: "morgen", label: t("capture.chip.schedule.morgen", "morgen"), insert: withGap(t("capture.chip.schedule.morgen", "morgen")) },
+        {
+          id: "am",
+          label: t("capture.chip.schedule.am", "am"),
+          insert: withGap(t("capture.chip.schedule.am", "am")),
+        },
+        {
+          id: "jeden",
+          label: t("capture.chip.schedule.jeden", "jeden"),
+          insert: withGap(t("capture.chip.schedule.jeden", "jeden")),
+        },
+        {
+          id: "vor",
+          label: t("capture.chip.schedule.vor", "vor"),
+          insert: withGap(t("capture.chip.schedule.vor", "vor")),
+        },
+        {
+          id: "heute",
+          label: t("capture.chip.schedule.heute", "heute"),
+          insert: withGap(t("capture.chip.schedule.heute", "heute")),
+        },
+        {
+          id: "morgen",
+          label: t("capture.chip.schedule.morgen", "morgen"),
+          insert: withGap(t("capture.chip.schedule.morgen", "morgen")),
+        },
       ];
     }
     return [
-      { id: "el", label: t("capture.chip.schedule.el", "el"), insert: withGap(t("capture.chip.schedule.el", "el")) },
-      { id: "cada", label: t("capture.chip.schedule.cada", "cada"), insert: withGap(t("capture.chip.schedule.cada", "cada")) },
-      { id: "antesDel", label: t("capture.chip.schedule.antesDel", "antes del"), insert: withGap(t("capture.chip.schedule.antesDel", "antes del")) },
-      { id: "hoy", label: t("capture.chip.schedule.hoy", "hoy"), insert: withGap(t("capture.chip.schedule.hoy", "hoy")) },
-      { id: "manana", label: t("capture.chip.schedule.manana", "mañana"), insert: withGap(t("capture.chip.schedule.manana", "mañana")) },
+      {
+        id: "el",
+        label: t("capture.chip.schedule.el", "el"),
+        insert: withGap(t("capture.chip.schedule.el", "el")),
+      },
+      {
+        id: "cada",
+        label: t("capture.chip.schedule.cada", "cada"),
+        insert: withGap(t("capture.chip.schedule.cada", "cada")),
+      },
+      {
+        id: "antesDel",
+        label: t("capture.chip.schedule.antesDel", "antes del"),
+        insert: withGap(t("capture.chip.schedule.antesDel", "antes del")),
+      },
+      {
+        id: "hoy",
+        label: t("capture.chip.schedule.hoy", "hoy"),
+        insert: withGap(t("capture.chip.schedule.hoy", "hoy")),
+      },
+      {
+        id: "manana",
+        label: t("capture.chip.schedule.manana", "mañana"),
+        insert: withGap(t("capture.chip.schedule.manana", "mañana")),
+      },
     ];
   }, [uiLang]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -865,12 +943,23 @@ export default function MindDumpModal({
   }, [uiLang]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const reminderChips = useMemo(() => {
-    const fallbackDailyLabel = uiLang === "en" ? "every day" : uiLang === "de" ? "jeden Tag" : "cada día";
-    const fallbackDayBeforeLabel = uiLang === "en" ? "day before" : uiLang === "de" ? "Vortag" : "día de antes";
+    const fallbackDailyLabel =
+      uiLang === "en" ? "every day" : uiLang === "de" ? "jeden Tag" : "cada día";
+    const fallbackDayBeforeLabel =
+      uiLang === "en" ? "day before" : uiLang === "de" ? "Vortag" : "día de antes";
 
-    const fallbackDailyInsert = uiLang === "en" ? "standard reminder" : uiLang === "de" ? "Standard-Erinnerung" : "recordatorio estándar";
+    const fallbackDailyInsert =
+      uiLang === "en"
+        ? "standard reminder"
+        : uiLang === "de"
+        ? "Standard-Erinnerung"
+        : "recordatorio estándar";
     const fallbackDayBeforeInsert =
-      uiLang === "en" ? "remind the day before" : uiLang === "de" ? "am Vortag erinnern" : "recordar el día de antes";
+      uiLang === "en"
+        ? "remind the day before"
+        : uiLang === "de"
+        ? "am Vortag erinnern"
+        : "recordar el día de antes";
 
     return [
       {
@@ -881,7 +970,9 @@ export default function MindDumpModal({
       {
         id: "dayBefore",
         label: t("capture.chip.reminder.dayBeforeLabel", fallbackDayBeforeLabel),
-        insert: withGap(t("capture.chip.reminder.dayBeforeInsert", fallbackDayBeforeInsert)),
+        insert: withGap(
+          t("capture.chip.reminder.dayBeforeInsert", fallbackDayBeforeInsert)
+        ),
       },
     ];
   }, [uiLang]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -921,7 +1012,13 @@ export default function MindDumpModal({
 
     const word =
       rootChips.find((c) => c.id === id)?.word ??
-      (id === "buy" ? "Comprar" : id === "call" ? "Llamar" : id === "pay" ? "Pagar" : id);
+      (id === "buy"
+        ? "Comprar"
+        : id === "call"
+        ? "Llamar"
+        : id === "pay"
+        ? "Pagar"
+        : id);
 
     insertAtCursor(withGap(word));
   };
@@ -976,7 +1073,10 @@ export default function MindDumpModal({
       : t("capture.chips.title4", "Recordatorio");
 
   return (
-    <div className="fixed inset-0 z-[1000]" onContextMenu={(e) => e.preventDefault()}>
+    <div
+      className="fixed inset-0 z-[1000]"
+      onContextMenu={(e) => e.preventDefault()}
+    >
       <style>{`
         @keyframes remiRipple {
           from { transform: scale(0); opacity: .35; }
@@ -1029,19 +1129,33 @@ export default function MindDumpModal({
         >
           <div className="px-5 pt-4 pb-4 flex items-start justify-between">
             <div className="min-w-0 pr-3">
-              <div className="text-[16px] font-semibold leading-tight" style={{ color: "#ffffff" }}>
+              <div
+                className="text-[16px] font-semibold leading-tight"
+                style={{ color: "#ffffff" }}
+              >
                 {t("capture.title", "Vacía tu mente")}
               </div>
 
-              <div className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.88)" }}>
-                {t("capture.subtitle", "Habla, escribe o pega texto. Remi se encarga.")}
+              <div
+                className="text-[11px] mt-1"
+                style={{ color: "rgba(255,255,255,0.88)" }}
+              >
+                {t(
+                  "capture.subtitle",
+                  "Habla, escribe o pega texto. Remi se encarga."
+                )}
               </div>
 
               {showTalkButton && listening && (
-                <div className="text-[11px] mt-2" style={{ color: "rgba(255,255,255,0.92)" }}>
+                <div
+                  className="text-[11px] mt-2"
+                  style={{ color: "rgba(255,255,255,0.92)" }}
+                >
                   {t("capture.listening", "Escuchando…")}{" "}
                   {interim ? (
-                    <span style={{ color: "rgba(255,255,255,0.70)" }}>{interim}</span>
+                    <span style={{ color: "rgba(255,255,255,0.70)" }}>
+                      {interim}
+                    </span>
                   ) : null}
                 </div>
               )}
@@ -1072,7 +1186,13 @@ export default function MindDumpModal({
                 gap: 10,
               }}
             >
-              <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.92)" }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 800,
+                  color: "rgba(255,255,255,0.92)",
+                }}
+              >
                 {chipTitle}
               </div>
 
@@ -1095,7 +1215,10 @@ export default function MindDumpModal({
                     title={t("capture.chips.backHint", "Volver a atajos")}
                     aria-label={t("capture.chips.backHint", "Volver a atajos")}
                   >
-                    <Sparkles size={14} style={{ display: "inline-block", marginRight: 6 }} />
+                    <Sparkles
+                      size={14}
+                      style={{ display: "inline-block", marginRight: 6 }}
+                    />
                     {t("capture.chips.back", "Atajos")}
                   </button>
                 )}
@@ -1111,12 +1234,27 @@ export default function MindDumpModal({
                 WebkitOverflowScrolling: "touch",
                 gap: 8,
                 paddingBottom: 2,
+                alignItems: "center",
               }}
             >
               {chipStage === "ROOT" && (
                 <>
-                  {rootChips.map((c) => (
-                    <Chip key={c.id} label={c.label} onClick={() => handleRootChip(c.id)} />
+                  {/* ✅ IDEA primero */}
+                  <Chip
+                    label={rootChips[0].label}
+                    onClick={() => handleRootChip(rootChips[0].id)}
+                  />
+
+                  {/* ✅ separador visual | */}
+                  <ChipSeparator />
+
+                  {/* ✅ el resto */}
+                  {rootChips.slice(1).map((c) => (
+                    <Chip
+                      key={c.id}
+                      label={c.label}
+                      onClick={() => handleRootChip(c.id)}
+                    />
                   ))}
                 </>
               )}
@@ -1124,7 +1262,11 @@ export default function MindDumpModal({
               {chipStage === "SCHEDULE" && (
                 <>
                   {scheduleChips.map((c) => (
-                    <Chip key={c.id} label={c.label} onClick={() => handleScheduleChip(c.insert)} />
+                    <Chip
+                      key={c.id}
+                      label={c.label}
+                      onClick={() => handleScheduleChip(c.insert)}
+                    />
                   ))}
                 </>
               )}
@@ -1132,7 +1274,11 @@ export default function MindDumpModal({
               {chipStage === "TIME" && (
                 <>
                   {timeChips.map((c) => (
-                    <Chip key={c.id} label={c.label} onClick={() => handleTimeChip(c.insert)} />
+                    <Chip
+                      key={c.id}
+                      label={c.label}
+                      onClick={() => handleTimeChip(c.insert)}
+                    />
                   ))}
                 </>
               )}
@@ -1140,7 +1286,11 @@ export default function MindDumpModal({
               {chipStage === "REMINDER" && (
                 <>
                   {reminderChips.map((c) => (
-                    <Chip key={c.id} label={c.label} onClick={() => handleReminderChip(c.insert)} />
+                    <Chip
+                      key={c.id}
+                      label={c.label}
+                      onClick={() => handleReminderChip(c.insert)}
+                    />
                   ))}
                 </>
               )}
@@ -1185,15 +1335,21 @@ export default function MindDumpModal({
                     ? Math.min(startRaw, current.length)
                     : current.length;
                 const end =
-                  typeof endRaw === "number" ? Math.min(endRaw, current.length) : start;
+                  typeof endRaw === "number"
+                    ? Math.min(endRaw, current.length)
+                    : start;
 
-                const next = current.slice(0, start) + normalized + current.slice(end);
+                const next =
+                  current.slice(0, start) + normalized + current.slice(end);
 
                 requestAnimationFrame(() => {
                   const node = textareaRef.current;
                   if (!node) return;
                   try {
-                    const pos = Math.min(start + normalized.length, node.value.length);
+                    const pos = Math.min(
+                      start + normalized.length,
+                      node.value.length
+                    );
                     node.selectionStart = node.selectionEnd = pos;
                     caretRef.current = pos;
                     setCaretTick((n) => n + 1);
@@ -1213,7 +1369,10 @@ export default function MindDumpModal({
 
           {ios && (
             <div className="mt-3 text-xs" style={{ color: REMI_SUB }}>
-              {t("capture.iosKeyboardMicHint", "En iPhone: usa el micrófono del teclado para dictar.")}
+              {t(
+                "capture.iosKeyboardMicHint",
+                "En iPhone: usa el micrófono del teclado para dictar."
+              )}
             </div>
           )}
         </div>
@@ -1458,7 +1617,7 @@ export default function MindDumpModal({
         </div>
 
         {/* FAB Guardar encima del teclado */}
-        {showSaveFab && (
+        {isFocused && kbdOffset > 80 && (
           <button
             data-no-focus
             type="button"
@@ -1468,7 +1627,7 @@ export default function MindDumpModal({
             style={{
               position: "fixed",
               right: 16,
-              bottom: `calc(env(safe-area-inset-bottom) + ${saveFabBottomPx}px)`,
+              bottom: `calc(env(safe-area-inset-bottom) + ${Math.max(14, kbdOffset + 14)}px)`,
               width: 56,
               height: 56,
               borderRadius: 999,
@@ -1514,5 +1673,26 @@ function Chip({ label, onClick }: { label: string; onClick: () => void }) {
     >
       {label}
     </button>
+  );
+}
+
+function ChipSeparator() {
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        flex: "0 0 auto",
+        height: 30,
+        display: "inline-flex",
+        alignItems: "center",
+        padding: "0 6px",
+        color: "rgba(255,255,255,0.55)",
+        fontSize: 12,
+        fontWeight: 900,
+        userSelect: "none",
+      }}
+    >
+      |
+    </div>
   );
 }

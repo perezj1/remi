@@ -464,6 +464,13 @@ tasks: {
     pushErrorToast: "Couldn’t enable notifications",
 
     tip: {
+      smartShortcuts: {
+            title: "Smart shortcuts (save 10s)",
+            body: "Add words with 1 tap.\nE.g. Idea / Buy / at 6:00 PM.",
+            cta: "Try now",
+            prefill: "Buy: milk, bread, eggs",
+          },
+
       install: {
         title: "Install Remi as an app",
         body: "Open it in one tap and it runs smoother like a real app.",

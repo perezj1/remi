@@ -27,6 +27,9 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { registerPushSubscription } from "@/lib/registerPush";
 
+// ✅ HOOK deck (snap 1 tarjeta por gesto)
+import { useSnapTipDeck } from "@/hooks/useSnapTipDeck";
+
 // ✅ modal de “Vacía tu mente”
 import MindDumpModal from "@/components/MindDumpModal";
 
@@ -847,7 +850,7 @@ export default function TodayPage() {
       });
     }
 
-    // 2) Activar notificaciones (condición exacta que pediste)
+    // 2) Activar notificaciones
     if (shouldShowPushTip) {
       cards.push({
         id: "push",
@@ -884,33 +887,9 @@ export default function TodayPage() {
       });
     }
 
-    // 4) Tareas sin fecha (si existen)
-    if (noDateCount > 0) {
-      const key =
-        noDateCount === 1
-          ? "today.tip.noDate.title_one"
-          : "today.tip.noDate.title_other";
+    
 
-      cards.push({
-        id: "no-date",
-        title: safeT(
-          key,
-          `Tienes ${noDateCount} tarea${noDateCount === 1 ? "" : "s"} sin fecha`,
-          { count: noDateCount }
-        ),
-        body: safeT(
-          "today.tip.noDate.body",
-          "¿Las ordenamos? En 30s te dejo la lista limpia."
-        ),
-        cta: safeT("today.tip.noDate.cta", "Ver sin fecha"),
-        icon: <CalendarDays size={18} />,
-        bg: "",
-        border: "rgba(16,185,129,0.65)",
-        onClick: () => setFilter("NO_DATE"),
-      });
-    }
-
-    // 5) NUEVO: Palabras que ahorran tiempo (abre modal ejemplos, sin permisos)
+    // 5) Palabras que ahorran tiempo (abre modal ejemplos)
     cards.push({
       id: "shortcuts",
       title: safeT("today.tip.shortcuts.title", "Palabras que ahorran tiempo"),
@@ -925,7 +904,7 @@ export default function TodayPage() {
       onClick: () => setShowShortcutsModal(true),
     });
 
-    // 6) NUEVO: Cierre del día (condición tarde/noche + inactividad)
+    // 6) Cierre del día
     if (shouldShowDayCloseTip) {
       cards.push({
         id: "day-close",
@@ -1000,27 +979,51 @@ export default function TodayPage() {
         ),
     });
 
-    
-    // 10) atajos inteligentes
+   // 10) ✅ Atajos inteligentes (sin repetir “Palabras que ahorran tiempo”)
 cards.push({
   id: "smart-shortcuts",
-  title: safeT("today.tip.shortcuts.title", "Atajos inteligentes (ahorran 10s)"),
-  body: safeT(
-    "today.tip.shortcuts.body",
-    "Usa los atajos como Comprar/Llamar/Pagar para empezar en 1 toque."
+  title: safeT(
+    "today.tip.smartShortcuts.title",
+    "Atajos inteligentes (ahorran 10s)"
   ),
-  cta: safeT("today.tip.shortcuts.cta", "Probar ahora"),
+  body: safeT(
+    "today.tip.smartShortcuts.body",
+    "Agrega palabras con 1 toque. Ej: Idea / Comprar / a las 18:00."
+  ),
+  cta: safeT("today.tip.smartShortcuts.cta", "Probar ahora"),
   icon: <Sparkles size={18} />,
   bg: "",
   border: "rgba(125,89,201,0.70)",
   onClick: () =>
     handleOpenMindDump(
-      
     ),
 });
 
+    // 4) Tareas sin fecha (si existen)
+    if (noDateCount > 0) {
+      const key =
+        noDateCount === 1
+          ? "today.tip.noDate.title_one"
+          : "today.tip.noDate.title_other";
 
-
+      cards.push({
+        id: "no-date",
+        title: safeT(
+          key,
+          `Tienes ${noDateCount} tarea${noDateCount === 1 ? "" : "s"} sin fecha`,
+          { count: noDateCount }
+        ),
+        body: safeT(
+          "today.tip.noDate.body",
+          "¿Las ordenamos? En 30s te dejo la lista limpia."
+        ),
+        cta: safeT("today.tip.noDate.cta", "Ver sin fecha"),
+        icon: <CalendarDays size={18} />,
+        bg: "",
+        border: "rgba(16,185,129,0.65)",
+        onClick: () => setFilter("NO_DATE"),
+      });
+    }
 
     // 11) Semana
     cards.push({
@@ -1087,7 +1090,6 @@ cards.push({
       });
     }
 
-    // ✅ IMPORTANTE: eliminado el tip “clear-mind” (Mente despejada %)
     return cards;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -1100,77 +1102,16 @@ cards.push({
     shouldShowDayCloseTip,
   ]);
 
-  // ✅ Deck: índice activo para los “puntitos”
+  // ✅ Deck: ahora con hook
   const deckRef = useRef<HTMLDivElement | null>(null);
-  const [activeTipIndex, setActiveTipIndex] = useState(0);
-  const rafRef = useRef<number | null>(null);
-
-  const computeActiveTipIndex = () => {
-    const el = deckRef.current;
-    if (!el) return;
-
-    const children = Array.from(el.children) as HTMLElement[];
-    if (children.length === 0) return;
-
-    const centerX = el.scrollLeft + el.clientWidth / 2;
-
-    let bestIdx = 0;
-    let bestDist = Number.POSITIVE_INFINITY;
-
-    for (let i = 0; i < children.length; i++) {
-      const node = children[i];
-      const nodeCenter = node.offsetLeft + node.offsetWidth / 2;
-      const dist = Math.abs(nodeCenter - centerX);
-      if (dist < bestDist) {
-        bestDist = dist;
-        bestIdx = i;
-      }
-    }
-
-    setActiveTipIndex(bestIdx);
-  };
-
-  useEffect(() => {
-    const el = deckRef.current;
-    if (!el) return;
-
-    const onScroll = () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      rafRef.current = requestAnimationFrame(() => {
-        computeActiveTipIndex();
-      });
-    };
-
-    el.addEventListener("scroll", onScroll, { passive: true });
-    computeActiveTipIndex();
-
-    return () => {
-      el.removeEventListener("scroll", onScroll);
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tipCards.length]);
-
-  useEffect(() => {
-    setActiveTipIndex((i) => Math.max(0, Math.min(i, tipCards.length - 1)));
-  }, [tipCards.length]);
-
-  const scrollToTip = (index: number) => {
-    const el = deckRef.current;
-    if (!el) return;
-
-    const child = el.querySelector(
-      `[data-tip-index="${index}"]`
-    ) as HTMLElement | null;
-
-    if (!child) return;
-
-    const target =
-      child.offsetLeft - (el.clientWidth / 2 - child.clientWidth / 2);
-
-    el.scrollTo({ left: target, behavior: "smooth" });
-  };
+  const {
+    activeIndex: activeTipIndex,
+    scrollToIndex: scrollToTip,
+    bind: deckBind,
+  } = useSnapTipDeck(deckRef, tipCards.length, {
+    maxStep: 1,
+    settleMs: 120,
+  });
 
   return (
     <div className="remi-page">
@@ -1365,6 +1306,7 @@ cards.push({
       <div style={{ padding: "0 18px", marginTop: 14, marginBottom: 10 }}>
         <div
           ref={deckRef}
+          {...deckBind}
           className="remi-tipDeck"
           style={{
             display: "flex",
@@ -1373,6 +1315,7 @@ cards.push({
             WebkitOverflowScrolling: "touch",
             scrollSnapType: "x mandatory",
             scrollBehavior: "smooth",
+            overscrollBehaviorX: "contain",
             paddingLeft: `calc(50% - ${DECK_CARD_W / 2}px)`,
             paddingRight: `calc(50% - ${DECK_CARD_W / 2}px)`,
             paddingTop: 6,
@@ -1455,10 +1398,7 @@ cards.push({
           >
             {renderFilterButton("TODAY", safeT("today.tabsToday", "Hoy"))}
             {renderFilterButton("WEEK", safeT("today.tabsWeek", "Semana"))}
-            {renderFilterButton(
-              "NO_DATE",
-              safeT("today.tabsNoDate", "Sin fecha")
-            )}
+            {renderFilterButton("NO_DATE", safeT("today.tabsNoDate", "Sin fecha"))}
           </div>
         </div>
 
@@ -1480,10 +1420,7 @@ cards.push({
                   {safeT("today.noUrgentTitle", "Todo bajo control")}
                 </p>
                 <p className="text-[12px] text-slate-500">
-                  {safeT(
-                    "today.noUrgentSubtitle",
-                    "No hay nada urgente ahora mismo"
-                  )}
+                  {safeT("today.noUrgentSubtitle", "No hay nada urgente ahora mismo")}
                 </p>
               </div>
             </div>
@@ -1499,10 +1436,7 @@ cards.push({
                   {safeT("today.noUrgentTitle", "Todo bajo control")}
                 </p>
                 <p className="text-[12px] text-slate-500">
-                  {safeT(
-                    "today.noUrgentSubtitle",
-                    "No hay nada urgente ahora mismo"
-                  )}
+                  {safeT("today.noUrgentSubtitle", "No hay nada urgente ahora mismo")}
                 </p>
               </div>
             </div>
@@ -1535,7 +1469,7 @@ cards.push({
                   <div className="flex-1 h-px bg-slate-300/70" />
                 </button>
 
-                {/* ✅ Contenido plegable (por defecto abierto) */}
+                {/* ✅ Contenido plegable */}
                 {!isCollapsed(group.key) && (
                   <div className="space-y-2">
                     {group.items.map((task) => {
@@ -1593,10 +1527,7 @@ cards.push({
                             <button
                               type="button"
                               onClick={() => handleDone(task)}
-                              title={safeT(
-                                "today.actionDoneTitle",
-                                "Marcar como completada"
-                              )}
+                              title={safeT("today.actionDoneTitle", "Marcar como completada")}
                               aria-label={safeT(
                                 "today.actionDoneTitle",
                                 "Marcar como completada"
@@ -1674,10 +1605,7 @@ cards.push({
                         <button
                           type="button"
                           onClick={() => handleDone(task)}
-                          title={safeT(
-                            "today.actionDoneTitle",
-                            "Marcar como completada"
-                          )}
+                          title={safeT("today.actionDoneTitle", "Marcar como completada")}
                           aria-label={safeT(
                             "today.actionDoneTitle",
                             "Marcar como completada"
@@ -1696,7 +1624,7 @@ cards.push({
         </div>
       </div>
 
-      {/* ✅ MODAL: ejemplos “Atajos que ahorran 10s” (sin permisos) */}
+      {/* ✅ MODAL: ejemplos “Atajos que ahorran 10s” */}
       {showShortcutsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl p-5 w-[90%] max-w-sm shadow-xl">
@@ -1884,6 +1812,7 @@ function TipCard({
       data-tip-index={dataTipIndex}
       style={{
         scrollSnapAlign: "center",
+        scrollSnapStop: "always",
         flex: `0 0 ${DECK_CARD_W}px`,
         width: DECK_CARD_W,
         height: DECK_CARD_H,
@@ -1943,7 +1872,7 @@ function TipCard({
             lineHeight: 1.35,
             color: "rgba(15,23,42,0.55)",
             fontWeight: 500,
-            whiteSpace: "pre-line", // ✅ respeta \n como salto de línea
+            whiteSpace: "pre-line",
           }}
         >
           {item.body}

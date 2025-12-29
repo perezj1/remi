@@ -494,6 +494,12 @@ tasks: {
 
     // Tips (deck)
     tip: {
+      smartShortcuts: {
+        title: "Atajos inteligentes (ahorran 10s)",
+        body: "Agrega palabras con 1 toque. \nEj: Idea / Comprar / a las 18:00.",
+        cta: "Probar ahora",
+        prefill: "Comprar: leche, pan, huevos",
+      },
       install: {
         title: "Instala Remi como app",
         body: "Ábrela en 1 toque y funciona más fluida como una app.",

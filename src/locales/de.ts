@@ -469,6 +469,14 @@ tasks: {
     pushErrorToast: "Benachrichtigungen konnten nicht aktiviert werden",
 
     tip: {
+
+       smartShortcuts: {
+      title: "Smarte Shortcuts (spart 10 Sek.)",
+      body: "Füge Wörter mit 1 Tap hinzu.\nZ.B. Idee / Kaufen / um 18:00.",
+      cta: "Jetzt testen",
+      prefill: "Kaufen: Milch, Brot, Eier",
+    },
+
       install: {
         title: "Installiere Remi als App",
         body: "In 1 Tipp öffnen – und es läuft flüssiger wie eine echte App.",
