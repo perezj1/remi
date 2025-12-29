@@ -4,6 +4,7 @@ import {
   useMemo,
   useState,
   useRef,
+  useCallback,
   type CSSProperties,
   type ReactNode,
 } from "react";
@@ -66,8 +67,9 @@ const TIP_DISMISS_KEY = "remi_tip_dismissed_v1";
 // ✅ key NUEVA para que vuelva a aparecer el tip “Compartir → Remi”
 const SHARE_TO_REMI_DISMISS_KEY = "share-to-remi-help";
 
-// ✅ NUEVO: controla el auto-open solo cuando la app vuelve a estar visible (no en refresh/navegación interna)
-const AUTO_OPEN_VISIBLE_KEY = "remi_auto_open_visible_seen_v1";
+// ✅ NUEVO: anti doble-disparo auto-open
+const AUTO_OPEN_LAST_TS_KEY = "remi_auto_open_last_ts_v1";
+const AUTO_OPEN_COOLDOWN_MS = 1500;
 
 type DateGroup = {
   key: string;
@@ -181,6 +183,27 @@ export default function TodayPage() {
   // ✅ evita que el “auto-open” abra un modal vacío justo después de “share”
   const skipNextAutoOpenRef = useRef(false);
 
+  // ✅ NUEVO: saber si ya hay algo abierto (para no abrir Remi encima)
+  const anyModalOpenRef = useRef(false);
+  useEffect(() => {
+    anyModalOpenRef.current =
+      mindDumpOpen ||
+      mentalDumpOpen ||
+      showPushModal ||
+      showShortcutsModal ||
+      showIosDictationHelp ||
+      showShareToRemiHelp ||
+      profileOpen;
+  }, [
+    mindDumpOpen,
+    mentalDumpOpen,
+    showPushModal,
+    showShortcutsModal,
+    showIosDictationHelp,
+    showShareToRemiHelp,
+    profileOpen,
+  ]);
+
   // ✅ Ahora: Hoy (default), Semana, Sin fecha
   const [filter, setFilter] = useState<FilterMode>("TODAY");
 
@@ -252,61 +275,24 @@ export default function TodayPage() {
     return () => window.clearInterval(id);
   }, []);
 
-  // ✅ NUEVO: al entrar en la app o volver a verla, resetea la “bandera” para permitir auto-open 1 vez.
-  // - No se dispara en refresh/navegación interna (porque no cambia visibilityState a hidden->visible).
-  useEffect(() => {
+  // ✅ NUEVO: función central de auto-open (cold start + resume)
+  const openMindDumpAuto = useCallback(() => {
     if (typeof window === "undefined") return;
-
-    // Por si ya carga visible: marcamos "visible" como visto (para no abrir automáticamente por refresh)
-    try {
-      if (document.visibilityState === "visible") {
-        sessionStorage.setItem(AUTO_OPEN_VISIBLE_KEY, "1");
-      }
-    } catch {}
-
-    const onVisibility = () => {
-      try {
-        if (document.visibilityState === "visible") {
-          // Al volver a estar visible, permitimos auto-open una vez
-          sessionStorage.removeItem(AUTO_OPEN_VISIBLE_KEY);
-        } else if (document.visibilityState === "hidden") {
-          // Marcamos que ya estuvo visible (evita que un refresh posterior lo trate como “entrada”)
-          sessionStorage.setItem(AUTO_OPEN_VISIBLE_KEY, "1");
-        }
-      } catch {}
-    };
-
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => document.removeEventListener("visibilitychange", onVisibility);
-  }, []);
-
-  // ✅ Auto-open del MindDumpModal al entrar en "/"
-  useEffect(() => {
     if (location.pathname !== "/") return;
-    if (typeof window === "undefined") return;
 
-    // ✅ NUEVO: no abrir al refrescar o navegar a "/" mientras la app ya está visible.
-    // Solo abre si venimos de "hidden -> visible" (porque entonces se remove la key arriba).
-    try {
-      const alreadyVisibleThisSession = !!sessionStorage.getItem(
-        AUTO_OPEN_VISIBLE_KEY
-      );
-      if (alreadyVisibleThisSession) return;
-      // Consumimos el “permiso” (para que no vuelva a abrir por cambios de location.key)
-      sessionStorage.setItem(AUTO_OPEN_VISIBLE_KEY, "1");
-    } catch {
-      // si sessionStorage falla, mejor no auto-abrir para no molestar
-      return;
-    }
-
+    // Si venimos de share (flag), NO abras vacío
     if (isShareEntry(location.search)) return;
 
+    // Si el flujo de share pidió "saltarse 1 auto-open", respétalo
     if (skipNextAutoOpenRef.current) {
       skipNextAutoOpenRef.current = false;
       return;
     }
 
-    // Si hay texto pendiente (share/dictado), no abras vacío primero.
+    // Si ya hay algo abierto, no abras encima
+    if (anyModalOpenRef.current) return;
+
+    // Si hay texto pendiente (share/dictado), no abras vacío primero
     try {
       const hasShareDraft = !!sessionStorage.getItem(SHARE_DRAFT_KEY);
       if (hasShareDraft) return;
@@ -316,11 +302,60 @@ export default function TodayPage() {
       if (hasNavDictation) return;
     } catch {}
 
+    // Cooldown anti doble-disparo (visibility + pageshow pueden coincidir)
+    try {
+      const now = Date.now();
+      const last = Number(sessionStorage.getItem(AUTO_OPEN_LAST_TS_KEY) || "0");
+      if (now - last < AUTO_OPEN_COOLDOWN_MS) return;
+      sessionStorage.setItem(AUTO_OPEN_LAST_TS_KEY, String(now));
+    } catch {}
+
     setMindDumpInitialText("");
     setMindDumpInitialNonce((n) => n + 1);
     setMindDumpOpen(true);
+  }, [location.pathname, location.search]);
+
+  // ✅ NUEVO: Auto-open en "cold start" (pero NO en refresh)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (location.pathname !== "/") return;
+
+    // Evitar auto-open en refresh (reload)
+    try {
+      const nav = performance
+        .getEntriesByType?.("navigation")
+        ?.at(0) as PerformanceNavigationTiming | undefined;
+      if (nav?.type === "reload") return;
+    } catch {
+      // si no hay soporte, no bloqueamos
+    }
+
+    openMindDumpAuto();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.key, location.pathname, location.search]);
+  }, []);
+
+  // ✅ NUEVO: Auto-open al volver desde segundo plano / restauración (resume)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        openMindDumpAuto();
+      }
+    };
+
+    const onPageShow = () => {
+      openMindDumpAuto();
+    };
+
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pageshow", onPageShow);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pageshow", onPageShow);
+    };
+  }, [openMindDumpAuto]);
 
   // ---------- Leer draft compartido cuando llegamos desde /share-target ----------
   useEffect(() => {
@@ -572,104 +607,106 @@ export default function TodayPage() {
   }, [profileOpen]);
 
   // ---------- Agrupar tareas ----------
-  const { dateGroups, noDateTasks }: { dateGroups: DateGroup[]; noDateTasks: BrainItem[] } =
-    useMemo(() => {
-      if (tasks.length === 0) {
-        return { dateGroups: [], noDateTasks: [] };
+  const {
+    dateGroups,
+    noDateTasks,
+  }: { dateGroups: DateGroup[]; noDateTasks: BrainItem[] } = useMemo(() => {
+    if (tasks.length === 0) {
+      return { dateGroups: [], noDateTasks: [] };
+    }
+
+    const today = new Date();
+    const todayMid = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+    const tomorrowMid = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate() + 1
+    );
+
+    const todayIso = todayMid.toISOString().slice(0, 10);
+
+    const groupsMap = new Map<string, DateGroup>();
+    const noDate: BrainItem[] = [];
+
+    const addTaskToDate = (dateMid: Date, task: BrainItem) => {
+      const dMid = new Date(
+        dateMid.getFullYear(),
+        dateMid.getMonth(),
+        dateMid.getDate()
+      );
+      const iso = dMid.toISOString().slice(0, 10);
+
+      let group = groupsMap.get(iso);
+      if (!group) {
+        let label: string;
+        if (iso === todayIso) label = safeT("inbox.sectionToday", "Hoy");
+        else if (isSameDay(dMid, tomorrowMid))
+          label = safeT("inbox.sectionTomorrow", "Mañana");
+        else {
+          label = dMid.toLocaleDateString(undefined, {
+            weekday: "short",
+            day: "numeric",
+            month: "short",
+          });
+        }
+
+        group = { key: iso, label, items: [], dateMs: dMid.getTime() };
+        groupsMap.set(iso, group);
       }
 
-      const today = new Date();
-      const todayMid = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate()
-      );
-      const tomorrowMid = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate() + 1
-      );
+      if (!group.items.includes(task)) {
+        group.items.push(task);
+      }
+    };
 
-      const todayIso = todayMid.toISOString().slice(0, 10);
+    for (const task of tasks) {
+      const mode = (task as any).reminder_mode as ReminderMode | undefined;
 
-      const groupsMap = new Map<string, DateGroup>();
-      const noDate: BrainItem[] = [];
+      if (!task.due_date) {
+        noDate.push(task);
+        continue;
+      }
 
-      const addTaskToDate = (dateMid: Date, task: BrainItem) => {
-        const dMid = new Date(
-          dateMid.getFullYear(),
-          dateMid.getMonth(),
-          dateMid.getDate()
-        );
-        const iso = dMid.toISOString().slice(0, 10);
+      const due = new Date(task.due_date as string);
+      const dueMid = new Date(due.getFullYear(), due.getMonth(), due.getDate());
 
-        let group = groupsMap.get(iso);
-        if (!group) {
-          let label: string;
-          if (iso === todayIso) label = safeT("inbox.sectionToday", "Hoy");
-          else if (isSameDay(dMid, tomorrowMid))
-            label = safeT("inbox.sectionTomorrow", "Mañana");
-          else {
-            label = dMid.toLocaleDateString(undefined, {
-              weekday: "short",
-              day: "numeric",
-              month: "short",
-            });
-          }
+      addTaskToDate(dueMid, task);
 
-          group = { key: iso, label, items: [], dateMs: dMid.getTime() };
-          groupsMap.set(iso, group);
-        }
+      if (mode === "DAY_BEFORE_AND_DUE") {
+        const dayBefore = new Date(dueMid);
+        dayBefore.setDate(dayBefore.getDate() - 1);
+        addTaskToDate(dayBefore, task);
+      }
 
-        if (!group.items.includes(task)) {
-          group.items.push(task);
-        }
-      };
+      if (mode === "DAILY_UNTIL_DUE") {
+        const todayMidTime = todayMid.getTime();
+        const dueMidTime = dueMid.getTime();
 
-      for (const task of tasks) {
-        const mode = (task as any).reminder_mode as ReminderMode | undefined;
-
-        if (!task.due_date) {
-          noDate.push(task);
-          continue;
-        }
-
-        const due = new Date(task.due_date as string);
-        const dueMid = new Date(due.getFullYear(), due.getMonth(), due.getDate());
-
-        addTaskToDate(dueMid, task);
-
-        if (mode === "DAY_BEFORE_AND_DUE") {
-          const dayBefore = new Date(dueMid);
-          dayBefore.setDate(dayBefore.getDate() - 1);
-          addTaskToDate(dayBefore, task);
-        }
-
-        if (mode === "DAILY_UNTIL_DUE") {
-          const todayMidTime = todayMid.getTime();
-          const dueMidTime = dueMid.getTime();
-
-          if (dueMidTime >= todayMidTime) {
-            let cursor = new Date(todayMid);
-            while (cursor.getTime() < dueMidTime) {
-              addTaskToDate(cursor, task);
-              cursor = new Date(
-                cursor.getFullYear(),
-                cursor.getMonth(),
-                cursor.getDate() + 1
-              );
-            }
+        if (dueMidTime >= todayMidTime) {
+          let cursor = new Date(todayMid);
+          while (cursor.getTime() < dueMidTime) {
+            addTaskToDate(cursor, task);
+            cursor = new Date(
+              cursor.getFullYear(),
+              cursor.getMonth(),
+              cursor.getDate() + 1
+            );
           }
         }
       }
+    }
 
-      const dateGroupsArr = Array.from(groupsMap.values())
-        .filter((g) => g.items.length > 0)
-        .sort((a, b) => (a.dateMs ?? 0) - (b.dateMs ?? 0));
+    const dateGroupsArr = Array.from(groupsMap.values())
+      .filter((g) => g.items.length > 0)
+      .sort((a, b) => (a.dateMs ?? 0) - (b.dateMs ?? 0));
 
-      return { dateGroups: dateGroupsArr, noDateTasks: noDate };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [tasks, t]);
+    return { dateGroups: dateGroupsArr, noDateTasks: noDate };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tasks, t]);
 
   const filteredDateGroups = useMemo(() => {
     if (filter === "NO_DATE") return [];
@@ -961,7 +998,7 @@ export default function TodayPage() {
       onClick: () => void handlePasteFromClipboard(),
     });
 
-    // 8) ✅ Compartir a Remi (flujo) — CTA “Probar” + abre modal iOS/Android + “No mostrar más”
+    // 8) ✅ Compartir a Remi (flujo)
     if (!dismissedTips[SHARE_TO_REMI_DISMISS_KEY]) {
       cards.push({
         id: "share-to-remi",
@@ -1008,7 +1045,7 @@ export default function TodayPage() {
       onClick: () => handleOpenMindDump(""),
     });
 
-    // 4) ✅ Tareas sin fecha (si existen) — después de “Atajos inteligentes”
+    // 4) ✅ Tareas sin fecha (si existen)
     if (noDateCount > 0) {
       const key =
         noDateCount === 1 ? "today.tip.noDate.title_one" : "today.tip.noDate.title_other";
@@ -1074,7 +1111,7 @@ export default function TodayPage() {
       onClick: () => handleOpenMindDump(safeT("today.tip.birthday.prefill", "Cumpleaños de ___ el ___")),
     });
 
-    // ✅ “sin tareas sin fecha” (solo si NO hay tareas sin fecha)
+    // ✅ “sin tareas sin fecha”
     if (noDateCount === 0) {
       cards.push({
         id: "clean-no-date",
