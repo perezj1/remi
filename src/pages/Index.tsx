@@ -8,16 +8,13 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
 import {
   BrainItem,
   ReminderMode,
-  RepeatType,
-  createIdea,
-  createTask,
   fetchActiveIdeas,
   fetchActiveTasks,
   setTaskStatus,
@@ -31,13 +28,6 @@ import { registerPushSubscription } from "@/lib/registerPush";
 // ✅ HOOK deck (snap 1 tarjeta por gesto)
 import { useSnapTipDeck } from "@/hooks/useSnapTipDeck";
 
-// ✅ modal de “Vacía tu mente”
-import MindDumpModal from "@/components/MindDumpModal";
-
-// ✅ modal de revisión/creación
-import MentalDumpModal from "@/components/MentalDumpModal";
-
-import { SHARE_DRAFT_KEY } from "@/pages/ShareTarget";
 import {
   List,
   Check,
@@ -61,9 +51,6 @@ import { useModalUi } from "@/contexts/ModalUiContext";
 
 const AVATAR_KEY = "remi_avatar";
 
-// ✅ debe coincidir con BottomNav.tsx (por si llega texto dictado desde otra pantalla)
-const NAV_DICTATION_KEY = "remi_nav_dictation_pending_v1";
-
 // ✅ persistir “no mostrar más” para tips
 const TIP_DISMISS_KEY = "remi_tip_dismissed_v1";
 
@@ -72,13 +59,6 @@ const SHARE_TO_REMI_DISMISS_KEY = "share-to-remi-help";
 
 // ✅ NUEVO: key tip multi-dispositivo
 const MULTI_DEVICE_TIP_KEY = "multi-device";
-
-// ✅ NUEVO: anti doble-disparo auto-open
-const AUTO_OPEN_LAST_TS_KEY = "remi_auto_open_last_ts_v1";
-const AUTO_OPEN_COOLDOWN_MS = 1500;
-
-// ✅ NUEVO: solo 1 auto-open por sesión (cold start)
-const AUTO_OPEN_BOOT_KEY = "remi_auto_open_boot_v1";
 
 type DateGroup = {
   key: string;
@@ -96,15 +76,6 @@ function isSameDay(a: Date, b: Date): boolean {
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate()
   );
-}
-
-function isShareEntry(search: string): boolean {
-  try {
-    const params = new URLSearchParams(search);
-    return params.get("shared") === "1";
-  } catch {
-    return false;
-  }
 }
 
 type TipCardItem = {
@@ -127,33 +98,24 @@ const NO_DATE_GROUP_KEY = "__NO_DATE__";
 
 export default function TodayPage() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { user, profile } = useAuth();
   const { t } = useI18n();
 
-  // ✅ NUEVO: registrar modales para ocultar BottomNav
+  // ✅ registrar modales para ocultar BottomNav
   const { setModalOpen } = useModalUi();
 
-  const safeT = (key: string, fallback: string, vars?: Record<string, any>) => {
-    const v = t(key as any, vars as any);
-    if (!v || v === key) return fallback;
-    return v;
-  };
+  const safeT = useCallback(
+    (key: string, fallback: string, vars?: Record<string, any>) => {
+      const v = t(key as any, vars as any);
+      if (!v || v === key) return fallback;
+      return v;
+    },
+    [t],
+  );
 
   const [tasks, setTasks] = useState<BrainItem[]>([]);
   const [ideas, setIdeas] = useState<BrainItem[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // ✅ modal inicial (MindDumpModal)
-  const [mindDumpOpen, setMindDumpOpen] = useState(false);
-  const [mindDumpInitialText, setMindDumpInitialText] = useState<string>("");
-  const [mindDumpInitialNonce, setMindDumpInitialNonce] = useState(0);
-
-  // ✅ modal de revisión
-  const [mentalDumpOpen, setMentalDumpOpen] = useState(false);
-  const [mentalDumpInitialText, setMentalDumpInitialText] =
-    useState<string>("");
-  const [mentalDumpInitialNonce, setMentalDumpInitialNonce] = useState(0);
 
   const [profileOpen, setProfileOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -195,48 +157,7 @@ export default function TodayPage() {
 
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
 
-  // ✅ evita que el “auto-open” abra un modal vacío justo después de “share”
-  const skipNextAutoOpenRef = useRef(false);
-
-  // ✅ NUEVO: saber si ya hay algo abierto (para no abrir Remi encima)
-  const anyModalOpenRef = useRef(false);
-  useEffect(() => {
-    anyModalOpenRef.current =
-      mindDumpOpen ||
-      mentalDumpOpen ||
-      showPushModal ||
-      showShortcutsModal ||
-      showIosDictationHelp ||
-      showShareToRemiHelp ||
-      showMultiDeviceHelp ||
-      profileOpen;
-  }, [
-    mindDumpOpen,
-    mentalDumpOpen,
-    showPushModal,
-    showShortcutsModal,
-    showIosDictationHelp,
-    showShareToRemiHelp,
-    showMultiDeviceHelp,
-    profileOpen,
-  ]);
-
-  // ✅ NUEVO: detectar “resume real” (solo si estuvo hidden)
-  const wasHiddenRef = useRef(false);
-
-  // ✅ NUEVO: registrar cada modal en el contador global -> App.tsx ocultará BottomNav
-  useEffect(() => {
-    if (!mindDumpOpen) return;
-    setModalOpen(true);
-    return () => setModalOpen(false);
-  }, [mindDumpOpen, setModalOpen]);
-
-  useEffect(() => {
-    if (!mentalDumpOpen) return;
-    setModalOpen(true);
-    return () => setModalOpen(false);
-  }, [mentalDumpOpen, setModalOpen]);
-
+  // ✅ registrar modales en el contador global -> App.tsx ocultará BottomNav
   useEffect(() => {
     if (!showPushModal) return;
     setModalOpen(true);
@@ -280,14 +201,6 @@ export default function TodayPage() {
   };
 
   const activeTasksCount = tasks.length;
-
-  // ✅ MindDump -> abre revisión (MentalDumpModal)
-  const openReviewFromMindDump = (text: string) => {
-    setMentalDumpInitialText(text);
-    setMentalDumpInitialNonce((n) => n + 1);
-    setMentalDumpOpen(true);
-    setMindDumpOpen(false);
-  };
 
   // ✅ helper: ocultar tips
   const dismissTip = (id: string) => {
@@ -338,180 +251,49 @@ export default function TodayPage() {
     return () => window.clearInterval(id);
   }, []);
 
-  // ✅ NUEVO: función central de auto-open (cold start + resume)
-  const openMindDumpAuto = useCallback(() => {
+  // ✅ Abrir el capture global desde cualquier página
+  const openCapture = useCallback((prefill?: string) => {
     if (typeof window === "undefined") return;
-    if (location.pathname !== "/") return;
-
-    // Si venimos de share (flag), NO abras vacío
-    if (isShareEntry(location.search)) return;
-
-    // Si el flujo de share pidió "saltarse 1 auto-open", respétalo
-    if (skipNextAutoOpenRef.current) {
-      skipNextAutoOpenRef.current = false;
-      return;
-    }
-
-    // Si ya hay algo abierto, no abras encima
-    if (anyModalOpenRef.current) return;
-
-    // Si hay texto pendiente (share/dictado), no abras vacío primero
-    try {
-      const hasShareDraft = !!sessionStorage.getItem(SHARE_DRAFT_KEY);
-      if (hasShareDraft) return;
-    } catch {}
-    try {
-      const hasNavDictation = !!sessionStorage.getItem(NAV_DICTATION_KEY);
-      if (hasNavDictation) return;
-    } catch {}
-
-    // Cooldown anti doble-disparo (visibility + pageshow pueden coincidir)
-    try {
-      const now = Date.now();
-      const last = Number(
-        sessionStorage.getItem(AUTO_OPEN_LAST_TS_KEY) || "0",
-      );
-      if (now - last < AUTO_OPEN_COOLDOWN_MS) return;
-      sessionStorage.setItem(AUTO_OPEN_LAST_TS_KEY, String(now));
-    } catch {}
-
-    setMindDumpInitialText("");
-    setMindDumpInitialNonce((n) => n + 1);
-    setMindDumpOpen(true);
-  }, [location.pathname, location.search]);
-
-  // ✅ CAMBIO: Auto-open en "cold start" SOLO 1 vez por sesión (y NO en reload)
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (location.pathname !== "/") return;
-
-    // ✅ Solo 1 vez por sesión (evita que reabra al volver a / desde otras tabs)
-    try {
-      if (sessionStorage.getItem(AUTO_OPEN_BOOT_KEY) === "1") return;
-      sessionStorage.setItem(AUTO_OPEN_BOOT_KEY, "1");
-    } catch {
-      // si sessionStorage no está disponible, no bloqueamos
-    }
-
-    // Evitar auto-open en refresh (reload)
-    try {
-      const nav = performance
-        .getEntriesByType?.("navigation")
-        ?.at(0) as PerformanceNavigationTiming | undefined;
-      if (nav?.type === "reload") return;
-    } catch {
-      // si no hay soporte, no bloqueamos
-    }
-
-    openMindDumpAuto();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    window.dispatchEvent(
+      new CustomEvent("remi-open-capture", {
+        detail: { initialText: prefill ?? "" },
+      }),
+    );
   }, []);
 
-  // ✅ CAMBIO: Auto-open al volver desde segundo plano SOLO si realmente estuvo hidden
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const onVisibility = () => {
-      if (document.visibilityState === "hidden") {
-        wasHiddenRef.current = true;
-        return;
-      }
-      if (document.visibilityState === "visible") {
-        if (!wasHiddenRef.current) return; // ✅ NO era un “resume real”
-        wasHiddenRef.current = false;
-        openMindDumpAuto();
-      }
-    };
-
-    // ✅ opcional: pageshow SOLO si viene de bfcache (iOS/Safari), para “resume”
-    const onPageShow = (ev: PageTransitionEvent) => {
-      if ((ev as any)?.persisted) {
-        openMindDumpAuto();
-      }
-    };
-
-    document.addEventListener("visibilitychange", onVisibility);
-    window.addEventListener("pageshow", onPageShow);
-
-    return () => {
-      document.removeEventListener("visibilitychange", onVisibility);
-      window.removeEventListener("pageshow", onPageShow);
-    };
-  }, [openMindDumpAuto]);
-
-  // ---------- Leer draft compartido cuando llegamos desde /share-target ----------
-  useEffect(() => {
-    if (!user || typeof window === "undefined") return;
-
-    const hasSharedFlag = isShareEntry(location.search);
-
-    const raw = sessionStorage.getItem(SHARE_DRAFT_KEY);
-    if (!raw) {
-      if (hasSharedFlag) {
-        skipNextAutoOpenRef.current = true;
-        navigate("/", { replace: true });
-      }
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(raw) as { text?: unknown; ts?: unknown };
-      const text = String(parsed?.text ?? "").trim();
-
-      sessionStorage.removeItem(SHARE_DRAFT_KEY);
-
-      if (!text) {
-        if (hasSharedFlag) {
-          skipNextAutoOpenRef.current = true;
-          navigate("/", { replace: true });
-        }
-        return;
-      }
-
-      setMindDumpInitialText(text);
-      setMindDumpInitialNonce((n) => n + 1);
-      setMindDumpOpen(true);
-
-      if (hasSharedFlag) {
-        skipNextAutoOpenRef.current = true;
-        navigate("/", { replace: true });
-      }
-    } catch (e) {
-      console.error("Invalid share draft JSON", e);
-      try {
-        sessionStorage.removeItem(SHARE_DRAFT_KEY);
-      } catch {}
-      if (hasSharedFlag) {
-        skipNextAutoOpenRef.current = true;
-        navigate("/", { replace: true });
-      }
-    }
-  }, [user?.id, location.search, navigate]);
-
   // ---------- Cargar tareas, ideas y resumen ----------
-  useEffect(() => {
+  const loadData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
 
-    (async () => {
-      try {
-        const [tks, ids, summaryData] = await Promise.all([
-          fetchActiveTasks(user.id),
-          fetchActiveIdeas(user.id),
-          fetchRemiStatusSummary(user.id),
-        ]);
-        setTasks(tks);
-        setIdeas(ids);
-        setStatusSummary(summaryData);
-      } catch (err) {
-        console.error(err);
-        alert(safeT("today.errorLoadingTasks", "Error cargando tareas"));
-      } finally {
-        setLoading(false);
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+    try {
+      const [tks, ids, summaryData] = await Promise.all([
+        fetchActiveTasks(user.id),
+        fetchActiveIdeas(user.id),
+        fetchRemiStatusSummary(user.id),
+      ]);
+      setTasks(tks);
+      setIdeas(ids);
+      setStatusSummary(summaryData);
+    } catch (err) {
+      console.error(err);
+      alert(safeT("today.errorLoadingTasks", "Error cargando tareas"));
+    } finally {
+      setLoading(false);
+    }
+  }, [safeT, user]);
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
+
+  // ✅ cuando se crea algo desde el modal global, recargamos
+  useEffect(() => {
+    if (!user) return;
+    const onChanged = () => void loadData();
+    window.addEventListener("remi-items-changed", onChanged);
+    return () => window.removeEventListener("remi-items-changed", onChanged);
+  }, [loadData, user]);
 
   // ---------- mente despejada ----------
   const mindClearPercent = useMemo(() => {
@@ -575,7 +357,6 @@ export default function TodayPage() {
         }
 
         // Si todavía no está concedido, este dispositivo no puede tener sub activa
-        // (y queremos mostrar el modal para activarlo en ESTE dispositivo)
         if (Notification.permission !== "granted") {
           setHasPushSubscription(false);
           setShowPushModal(true);
@@ -587,7 +368,6 @@ export default function TodayPage() {
         const sub = await registration.pushManager.getSubscription();
 
         if (!sub) {
-          // no hay sub en este dispositivo => mostrar modal para activarlo aquí
           setHasPushSubscription(false);
           setShowPushModal(true);
           return;
@@ -606,14 +386,12 @@ export default function TodayPage() {
 
         if (error) {
           console.error("Error checking push subscription (device)", error);
-          // en caso de duda, no bloqueamos: mostramos el modal para re-registrar
           setHasPushSubscription(false);
           setShowPushModal(true);
           return;
         }
 
         if (data) {
-          // este dispositivo ya está registrado
           setHasPushSubscription(true);
           setShowPushModal(false);
           return;
@@ -660,60 +438,6 @@ export default function TodayPage() {
 
     setAvatarUrl(finalUrl ?? null);
   }, [user, profile]);
-
-  // ✅ “remi-open-capture” ahora abre el MindDumpModal (y puede traer texto pendiente)
-  useEffect(() => {
-    const handler = (ev: Event) => {
-      let pending: string | null = null;
-      try {
-        pending = sessionStorage.getItem(NAV_DICTATION_KEY);
-      } catch {
-        pending = null;
-      }
-
-      if (pending && pending.trim().length > 0) {
-        const clean = pending.trim();
-        try {
-          sessionStorage.removeItem(NAV_DICTATION_KEY);
-        } catch {}
-        setMindDumpInitialText(clean);
-        setMindDumpInitialNonce((n) => n + 1);
-        setMindDumpOpen(true);
-        return;
-      }
-
-      const ce = ev as CustomEvent<any>;
-      const incomingText =
-        typeof ce?.detail?.initialText === "string"
-          ? ce.detail.initialText
-          : null;
-
-      if (incomingText && incomingText.trim().length > 0) {
-        setMindDumpInitialText(incomingText.trim());
-        setMindDumpInitialNonce((n) => n + 1);
-      } else {
-        setMindDumpInitialText("");
-        setMindDumpInitialNonce((n) => n + 1);
-      }
-
-      setMindDumpOpen(true);
-    };
-
-    window.addEventListener("remi-open-capture", handler as EventListener);
-    return () =>
-      window.removeEventListener("remi-open-capture", handler as EventListener);
-  }, []);
-
-  // Descarga mental (manual) -> abre MindDumpModal también
-  useEffect(() => {
-    const handler = () => {
-      setMindDumpInitialText("");
-      setMindDumpInitialNonce((n) => n + 1);
-      setMindDumpOpen(true);
-    };
-    window.addEventListener("remi-open-mental-dump", handler);
-    return () => window.removeEventListener("remi-open-mental-dump", handler);
-  }, []);
 
   // cerrar menú perfil al click fuera
   useEffect(() => {
@@ -834,7 +558,7 @@ export default function TodayPage() {
 
     return { dateGroups: dateGroupsArr, noDateTasks: noDate };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tasks, t]);
+  }, [tasks, safeT]);
 
   const filteredDateGroups = useMemo(() => {
     if (filter === "NO_DATE") return [];
@@ -866,30 +590,6 @@ export default function TodayPage() {
     (g) => g.items.length > 0,
   );
   const hasNoDateTasks = filter === "NO_DATE" && noDateTasks.length > 0;
-
-  // ---------- crear ----------
-  const handleCreateTask = async (
-    title: string,
-    dueDate: string | null,
-    reminderMode: ReminderMode,
-    repeatType: RepeatType,
-  ) => {
-    if (!user) return;
-    const created = await createTask(
-      user.id,
-      title,
-      dueDate,
-      reminderMode,
-      repeatType,
-    );
-    setTasks((prev) => [...prev, created]);
-  };
-
-  const handleCreateIdea = async (title: string) => {
-    if (!user) return;
-    const created = await createIdea(user.id, title);
-    setIdeas((prev) => [created, ...prev]);
-  };
 
   const handleDone = async (task: BrainItem) => {
     const updated = await setTaskStatus(task.id, "DONE");
@@ -995,33 +695,29 @@ export default function TodayPage() {
     );
   };
 
-  const shouldAutoPreview = mentalDumpInitialText.trim().length > 0;
-
-  const handleOpenMindDump = (prefill?: string) => {
-    setMindDumpInitialText(prefill ?? "");
-    setMindDumpInitialNonce((n) => n + 1);
-    setMindDumpOpen(true);
-  };
-
   const handlePasteFromClipboard = async () => {
     try {
       if (!("clipboard" in navigator) || !navigator.clipboard?.readText) {
         toast.error("El portapapeles no está disponible aquí");
-        handleOpenMindDump("");
+        openCapture("");
         return;
       }
 
       const txt = (await navigator.clipboard.readText())?.trim?.() ?? "";
       if (!txt) {
-        toast.message("Portapapeles vacío (o sin permiso). Abro Remi igualmente 🙂");
-        handleOpenMindDump("");
+        toast.message(
+          "Portapapeles vacío (o sin permiso). Abro Remi igualmente 🙂",
+        );
+        openCapture("");
         return;
       }
-      handleOpenMindDump(txt);
+      openCapture(txt);
     } catch (e) {
       console.error(e);
-      toast.error("No pude leer el portapapeles (permiso). Abro Remi igualmente 🙂");
-      handleOpenMindDump("");
+      toast.error(
+        "No pude leer el portapapeles (permiso). Abro Remi igualmente 🙂",
+      );
+      openCapture("");
     }
   };
 
@@ -1055,7 +751,10 @@ export default function TodayPage() {
       cards.push({
         id: "install",
         title: safeT("today.tip.install.title", "Instala Remi como app"),
-        body: safeT("today.tip.install.body", "Ábrela en 1 toque y funciona más fluida como una app."),
+        body: safeT(
+          "today.tip.install.body",
+          "Ábrela en 1 toque y funciona más fluida como una app.",
+        ),
         cta: safeT("today.tip.install.cta", "Instalar"),
         icon: <Download size={18} />,
         bg: "",
@@ -1085,7 +784,10 @@ export default function TodayPage() {
     if (isIOSDevice && !dismissedTips["ios-dictation"]) {
       cards.push({
         id: "ios-dictation",
-        title: safeT("today.tip.iosDict.title", "Activa el micrófono del teclado"),
+        title: safeT(
+          "today.tip.iosDict.title",
+          "Activa el micrófono del teclado",
+        ),
         body: safeT(
           "today.tip.iosDict.body",
           "Si no ves el micro en el teclado, actívalo en Ajustes y dicta más rápido.",
@@ -1098,11 +800,14 @@ export default function TodayPage() {
       });
     }
 
-    // ✅ NUEVO: Multi-dispositivo (justo después del tip iOS)
+    // ✅ Multi-dispositivo
     if (!dismissedTips[MULTI_DEVICE_TIP_KEY]) {
       cards.push({
         id: MULTI_DEVICE_TIP_KEY,
-        title: safeT("today.tip.multidevice.title", "Remi contigo en móvil, iPad y PC"),
+        title: safeT(
+          "today.tip.multidevice.title",
+          "Remi contigo en móvil, iPad y PC",
+        ),
         body: safeT(
           "today.tip.multidevice.body",
           "Vacía tu cabeza donde estés. Todo se sincroniza y tú eliges en qué dispositivo quieres notificaciones.",
@@ -1135,12 +840,15 @@ export default function TodayPage() {
       cards.push({
         id: "day-close",
         title: safeT("today.tip.dayClose.title", "Cierre de 60 segundos"),
-        body: safeT("today.tip.dayClose.body", "¿Qué te preocupa para mañana? Suéltalo y listo."),
+        body: safeT(
+          "today.tip.dayClose.body",
+          "¿Qué te preocupa para mañana? Suéltalo y listo.",
+        ),
         cta: safeT("today.tip.dayClose.cta", "Soltar"),
         icon: <HeartPulse size={18} />,
         bg: "",
         border: "rgba(244,63,94,0.60)",
-        onClick: () => handleOpenMindDump(""),
+        onClick: () => openCapture(""),
       });
     }
 
@@ -1163,7 +871,10 @@ export default function TodayPage() {
     if (!dismissedTips[SHARE_TO_REMI_DISMISS_KEY]) {
       cards.push({
         id: "share-to-remi",
-        title: safeT("today.tip.shareToRemi.title", "Guarda cosas con “Compartir”"),
+        title: safeT(
+          "today.tip.shareToRemi.title",
+          "Guarda cosas con “Compartir”",
+        ),
         body: safeT(
           "today.tip.shareToRemi.body",
           "Desde WhatsApp/Correo/Notas: Compartir → Remi. Se abre listo para ordenar.",
@@ -1189,13 +900,18 @@ export default function TodayPage() {
       bg: "",
       border: "rgba(16,185,129,0.65)",
       onClick: () =>
-        handleOpenMindDump(safeT("today.tip.natural.prefill", "Pagar la luz mañana 18:00")),
+        openCapture(
+          safeT("today.tip.natural.prefill", "Pagar la luz mañana 18:00"),
+        ),
     });
 
     // 10) ✅ Atajos inteligentes
     cards.push({
       id: "smart-shortcuts",
-      title: safeT("today.tip.smartShortcuts.title", "Atajos inteligentes (ahorran 10s)"),
+      title: safeT(
+        "today.tip.smartShortcuts.title",
+        "Atajos inteligentes (ahorran 10s)",
+      ),
       body: safeT(
         "today.tip.smartShortcuts.body",
         "Agrega palabras con 1 toque. Ej: Idea / Comprar / a las 18:00.",
@@ -1204,13 +920,15 @@ export default function TodayPage() {
       icon: <Sparkles size={18} />,
       bg: "",
       border: "rgba(125,89,201,0.70)",
-      onClick: () => handleOpenMindDump(""),
+      onClick: () => openCapture(""),
     });
 
     // 4) ✅ Tareas sin fecha (si existen)
     if (noDateCount > 0) {
       const key =
-        noDateCount === 1 ? "today.tip.noDate.title_one" : "today.tip.noDate.title_other";
+        noDateCount === 1
+          ? "today.tip.noDate.title_one"
+          : "today.tip.noDate.title_other";
 
       cards.push({
         id: "no-date",
@@ -1219,7 +937,10 @@ export default function TodayPage() {
           `Tienes ${noDateCount} tarea${noDateCount === 1 ? "" : "s"} sin fecha`,
           { count: noDateCount },
         ),
-        body: safeT("today.tip.noDate.body", "¿Las ordenamos? En 30s te dejo la lista limpia."),
+        body: safeT(
+          "today.tip.noDate.body",
+          "¿Las ordenamos? En 30s te dejo la lista limpia.",
+        ),
         cta: safeT("today.tip.noDate.cta", "Ver sin fecha"),
         icon: <CalendarDays size={18} />,
         bg: "",
@@ -1255,7 +976,7 @@ export default function TodayPage() {
       icon: <HeartPulse size={18} />,
       bg: "",
       border: "rgba(244,63,94,0.60)",
-      onClick: () => handleOpenMindDump(""),
+      onClick: () => openCapture(""),
     });
 
     // 13) Cumpleaños
@@ -1270,7 +991,10 @@ export default function TodayPage() {
       icon: <Sparkles size={18} />,
       bg: "",
       border: "rgba(253,186,116,0.85)",
-      onClick: () => handleOpenMindDump(safeT("today.tip.birthday.prefill", "Cumpleaños de ___ el ___")),
+      onClick: () =>
+        openCapture(
+          safeT("today.tip.birthday.prefill", "Cumpleaños de ___ el ___"),
+        ),
     });
 
     // ✅ “sin tareas sin fecha”
@@ -1278,7 +1002,10 @@ export default function TodayPage() {
       cards.push({
         id: "clean-no-date",
         title: safeT("today.tip.cleanNoDate.title", "✅ Sin tareas sin fecha"),
-        body: safeT("today.tip.cleanNoDate.body", "Perfecto. Ahora es fácil priorizar."),
+        body: safeT(
+          "today.tip.cleanNoDate.body",
+          "Perfecto. Ahora es fácil priorizar.",
+        ),
         cta: safeT("today.tip.cleanNoDate.cta", "Ver hoy"),
         icon: <Sparkles size={18} />,
         bg: "",
@@ -1291,21 +1018,25 @@ export default function TodayPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     noDateTasks.length,
-    t,
+    safeT,
     isStandalone,
     isIOSDevice,
     dismissedTips,
     shouldShowPushTip,
     shouldShowDayCloseTip,
+    openCapture,
   ]);
 
   // ✅ Deck: ahora con hook
   const deckRef = useRef<HTMLDivElement | null>(null);
-  const { activeIndex: activeTipIndex, scrollToIndex: scrollToTip, bind: deckBind } =
-    useSnapTipDeck(deckRef, tipCards.length, {
-      maxStep: 1,
-      settleMs: 120,
-    });
+  const {
+    activeIndex: activeTipIndex,
+    scrollToIndex: scrollToTip,
+    bind: deckBind,
+  } = useSnapTipDeck(deckRef, tipCards.length, {
+    maxStep: 1,
+    settleMs: 120,
+  });
 
   return (
     <div className="remi-page">
@@ -1335,13 +1066,23 @@ export default function TodayPage() {
           position: "relative",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+          }}
+        >
           <div>
             <p style={{ fontSize: 12, opacity: 0.8 }}>
-              {safeT("today.greeting", `Hola, ${displayName}`, { name: displayName })}
+              {safeT("today.greeting", `Hola, ${displayName}`, {
+                name: displayName,
+              })}
             </p>
             <h1 style={{ fontSize: 20, margin: "4px 0 2px", fontWeight: 600 }}>
-              {safeT("today.tasksToday", `Tienes ${activeTasksCount} tareas`, { count: activeTasksCount })}
+              {safeT("today.tasksToday", `Tienes ${activeTasksCount} tareas`, {
+                count: activeTasksCount,
+              })}
             </h1>
             <p style={{ fontSize: 11, opacity: 0.85 }}>
               {safeT("today.prioritize", "Prioriza lo importante")}
@@ -1412,22 +1153,36 @@ export default function TodayPage() {
                     color: "#8b8fa6",
                   }}
                 >
-                  {safeT("today.profileLoggedInAs", `Conectado como ${displayName}`, {
-                    name: displayName,
-                  })}
+                  {safeT(
+                    "today.profileLoggedInAs",
+                    `Conectado como ${displayName}`,
+                    { name: displayName },
+                  )}
                 </div>
 
-                <button type="button" onClick={handleOpenProfile} style={menuButtonStyle}>
+                <button
+                  type="button"
+                  onClick={handleOpenProfile}
+                  style={menuButtonStyle}
+                >
                   <User size={16} style={{ marginRight: 8 }} />
                   <span>{safeT("today.menuProfile", "Perfil")}</span>
                 </button>
 
-                <button type="button" onClick={handleShareApp} style={menuButtonStyle}>
+                <button
+                  type="button"
+                  onClick={handleShareApp}
+                  style={menuButtonStyle}
+                >
                   <Share2 size={16} style={{ marginRight: 8 }} />
                   <span>{safeT("today.menuShareApp", "Compartir app")}</span>
                 </button>
 
-                <button type="button" onClick={handleInstallApp} style={menuButtonStyle}>
+                <button
+                  type="button"
+                  onClick={handleInstallApp}
+                  style={menuButtonStyle}
+                >
                   <Smartphone size={16} style={{ marginRight: 8 }} />
                   <span>{safeT("today.menuInstallApp", "Instalar app")}</span>
                 </button>
@@ -1529,7 +1284,9 @@ export default function TodayPage() {
                   borderRadius: 999,
                   border: "none",
                   cursor: "pointer",
-                  background: isActive ? "rgba(125,89,201,0.95)" : "rgba(148,163,184,0.55)",
+                  background: isActive
+                    ? "rgba(125,89,201,0.95)"
+                    : "rgba(148,163,184,0.55)",
                   transition: "width 0.18s ease, background 0.18s ease",
                 }}
               />
@@ -1541,7 +1298,15 @@ export default function TodayPage() {
       {/* CONTENIDO */}
       <div style={{ padding: "0 18px 18px" }}>
         {/* Filtros */}
-        <div style={{ marginTop: 8, marginBottom: 8, display: "flex", justifyContent: "center", alignItems: "center" }}>
+        <div
+          style={{
+            marginTop: 8,
+            marginBottom: 8,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
           <div
             className="remi-tabs"
             style={{
@@ -1556,7 +1321,10 @@ export default function TodayPage() {
           >
             {renderFilterButton("TODAY", safeT("today.tabsToday", "Hoy"))}
             {renderFilterButton("WEEK", safeT("today.tabsWeek", "Semana"))}
-            {renderFilterButton("NO_DATE", safeT("today.tabsNoDate", "Sin fecha"))}
+            {renderFilterButton(
+              "NO_DATE",
+              safeT("today.tabsNoDate", "Sin fecha"),
+            )}
           </div>
         </div>
 
@@ -1578,7 +1346,10 @@ export default function TodayPage() {
                   {safeT("today.noUrgentTitle", "Todo bajo control")}
                 </p>
                 <p className="text-[12px] text-slate-500">
-                  {safeT("today.noUrgentSubtitle", "No hay nada urgente ahora mismo")}
+                  {safeT(
+                    "today.noUrgentSubtitle",
+                    "No hay nada urgente ahora mismo",
+                  )}
                 </p>
               </div>
             </div>
@@ -1594,7 +1365,10 @@ export default function TodayPage() {
                   {safeT("today.noUrgentTitle", "Todo bajo control")}
                 </p>
                 <p className="text-[12px] text-slate-500">
-                  {safeT("today.noUrgentSubtitle", "No hay nada urgente ahora mismo")}
+                  {safeT(
+                    "today.noUrgentSubtitle",
+                    "No hay nada urgente ahora mismo",
+                  )}
                 </p>
               </div>
             </div>
@@ -1616,7 +1390,9 @@ export default function TodayPage() {
                     size={16}
                     className="text-slate-500 transition-transform"
                     style={{
-                      transform: isCollapsed(group.key) ? "rotate(-90deg)" : "rotate(0deg)",
+                      transform: isCollapsed(group.key)
+                        ? "rotate(-90deg)"
+                        : "rotate(0deg)",
                     }}
                   />
                   <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
@@ -1656,7 +1432,10 @@ export default function TodayPage() {
                             </p>
 
                             <div className="mt-1 flex items-center gap-1 text-[12px] text-slate-500">
-                              <CalendarDays size={14} className="text-slate-400" />
+                              <CalendarDays
+                                size={14}
+                                className="text-slate-400"
+                              />
                               <span className="truncate">{dueStr}</span>
                             </div>
                           </div>
@@ -1683,8 +1462,14 @@ export default function TodayPage() {
                             <button
                               type="button"
                               onClick={() => handleDone(task)}
-                              title={safeT("today.actionDoneTitle", "Marcar como completada")}
-                              aria-label={safeT("today.actionDoneTitle", "Marcar como completada")}
+                              title={safeT(
+                                "today.actionDoneTitle",
+                                "Marcar como completada",
+                              )}
+                              aria-label={safeT(
+                                "today.actionDoneTitle",
+                                "Marcar como completada",
+                              )}
                               className="w-9 h-9 rounded-full border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 inline-flex items-center justify-center"
                             >
                               <Check size={16} color="#10B981" />
@@ -1712,7 +1497,9 @@ export default function TodayPage() {
                   size={16}
                   className="text-slate-500 transition-transform"
                   style={{
-                    transform: isCollapsed(NO_DATE_GROUP_KEY) ? "rotate(-90deg)" : "rotate(0deg)",
+                    transform: isCollapsed(NO_DATE_GROUP_KEY)
+                      ? "rotate(-90deg)"
+                      : "rotate(0deg)",
                   }}
                 />
                 <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
@@ -1745,8 +1532,13 @@ export default function TodayPage() {
                         </p>
 
                         <div className="mt-1 flex items-center gap-1 text-[12px] text-slate-500">
-                          <CalendarDays size={14} className="text-slate-400" />
-                          <span className="truncate">{safeT("today.dueNoDate", "Sin fecha")}</span>
+                          <CalendarDays
+                            size={14}
+                            className="text-slate-400"
+                          />
+                          <span className="truncate">
+                            {safeT("today.dueNoDate", "Sin fecha")}
+                          </span>
                         </div>
                       </div>
 
@@ -1754,8 +1546,14 @@ export default function TodayPage() {
                         <button
                           type="button"
                           onClick={() => handleDone(task)}
-                          title={safeT("today.actionDoneTitle", "Marcar como completada")}
-                          aria-label={safeT("today.actionDoneTitle", "Marcar como completada")}
+                          title={safeT(
+                            "today.actionDoneTitle",
+                            "Marcar como completada",
+                          )}
+                          aria-label={safeT(
+                            "today.actionDoneTitle",
+                            "Marcar como completada",
+                          )}
                           className="w-9 h-9 rounded-full border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 inline-flex items-center justify-center"
                         >
                           <Check size={16} color="#10B981" />
@@ -1778,7 +1576,10 @@ export default function TodayPage() {
               {safeT("today.shortcutsModal.title", "Ver ejemplos")}
             </h2>
             <p className="text-xs text-slate-600 mb-4">
-              {safeT("today.shortcutsModal.body", "Toca un ejemplo para abrir Remi con ese texto.")}
+              {safeT(
+                "today.shortcutsModal.body",
+                "Toca un ejemplo para abrir Remi con ese texto.",
+              )}
             </p>
 
             <div className="space-y-2 mb-4">
@@ -1794,7 +1595,7 @@ export default function TodayPage() {
                   type="button"
                   onClick={() => {
                     setShowShortcutsModal(false);
-                    handleOpenMindDump(ex);
+                    openCapture(ex);
                   }}
                   className="w-full text-left rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 px-3 py-2 text-[12px] text-slate-800"
                 >
@@ -1808,7 +1609,7 @@ export default function TodayPage() {
                 type="button"
                 onClick={() => {
                   setShowShortcutsModal(false);
-                  handleOpenMindDump("");
+                  openCapture("");
                 }}
                 className="w-full rounded-full bg-[#7d59c9] text-white text-xs font-semibold py-2.5 shadow-md"
               >
@@ -1877,7 +1678,7 @@ export default function TodayPage() {
         </div>
       )}
 
-      {/* ✅ NUEVO: AYUDA Multi-dispositivo */}
+      {/* ✅ AYUDA Multi-dispositivo */}
       {showMultiDeviceHelp && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl p-5 w-[90%] max-w-sm shadow-xl">
@@ -1964,7 +1765,7 @@ export default function TodayPage() {
         </div>
       )}
 
-      {/* ✅ AYUDA: “Compartir → Remi” (iOS / Android) */}
+      {/* ✅ AYUDA: “Compartir → Remi” */}
       {showShareToRemiHelp && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl p-5 w-[90%] max-w-sm shadow-xl">
@@ -1973,7 +1774,10 @@ export default function TodayPage() {
             </h2>
 
             <p className="text-xs text-slate-600 mb-3">
-              {safeT("today.shareToRemiModal.body", "Guarda texto desde cualquier app usando “Compartir”.")}
+              {safeT(
+                "today.shareToRemiModal.body",
+                "Guarda texto desde cualquier app usando “Compartir”.",
+              )}
             </p>
 
             <div className="rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-[12px] text-slate-700 mb-4">
@@ -2062,7 +1866,9 @@ export default function TodayPage() {
                 disabled={registeringPush}
                 className="w-full rounded-full bg-[#7d59c9] text-white text-xs font-semibold py-2.5 shadow-md disabled:opacity-70"
               >
-                {registeringPush ? safeT("today.pushEnabling", "Activando…") : safeT("today.pushEnable", "Activar")}
+                {registeringPush
+                  ? safeT("today.pushEnabling", "Activando…")
+                  : safeT("today.pushEnable", "Activar")}
               </button>
 
               <button
@@ -2076,26 +1882,6 @@ export default function TodayPage() {
           </div>
         </div>
       )}
-
-      {/* ✅ MODAL NUEVO */}
-      <MindDumpModal
-        open={mindDumpOpen}
-        onClose={() => setMindDumpOpen(false)}
-        onOpenReview={openReviewFromMindDump}
-        initialText={mindDumpInitialText}
-        initialTextNonce={mindDumpInitialNonce}
-      />
-
-      {/* ✅ MODAL DE REVISIÓN / CREACIÓN */}
-      <MentalDumpModal
-        open={mentalDumpOpen}
-        onClose={() => setMentalDumpOpen(false)}
-        onCreateTask={handleCreateTask}
-        onCreateIdea={handleCreateIdea}
-        initialText={mentalDumpInitialText}
-        initialTextNonce={mentalDumpInitialNonce}
-        autoPreview={shouldAutoPreview}
-      />
     </div>
   );
 }
@@ -2156,7 +1942,9 @@ function TipCard({
           boxShadow: "0 14px 30px rgba(15,23,42,0.08)",
         }}
       >
-        <div style={{ transform: "scale(1.7)", color: "#7d59c9" }}>{item.icon}</div>
+        <div style={{ transform: "scale(1.7)", color: "#7d59c9" }}>
+          {item.icon}
+        </div>
       </div>
 
       <div style={{ padding: "6px 6px 0" }}>
@@ -2186,7 +1974,14 @@ function TipCard({
       </div>
 
       {item.cta ? (
-        <div style={{ width: "100%", display: "flex", justifyContent: "center", paddingBottom: 2 }}>
+        <div
+          style={{
+            width: "100%",
+            display: "flex",
+            justifyContent: "center",
+            paddingBottom: 2,
+          }}
+        >
           <div
             style={{
               display: "inline-flex",

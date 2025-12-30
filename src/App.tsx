@@ -35,6 +35,9 @@ import ShareTargetPage from "@/pages/ShareTarget";
 import { syncOfflineQueue } from "@/lib/syncOfflineQueue";
 import { toast } from "sonner";
 
+// ✅ NUEVO: Host global de captura (modales globales)
+import RemiCaptureHost from "@/components/RemiCaptureHost";
+
 // ---- RUTAS PROTEGIDAS ----
 function RequireAuth({ children }: { children: JSX.Element }) {
   const { user } = useAuth();
@@ -53,7 +56,7 @@ function AppRoutes() {
   const { lang, setLang } = useI18n();
   const location = useLocation();
 
-  // ✅ lee si hay algún modal abierto (incluidos los de Index si los “registras”)
+  // ✅ lee si hay algún modal abierto
   const { isAnyModalOpen } = useModalUi();
 
   // ✅ Idioma desde perfil
@@ -109,6 +112,11 @@ function AppRoutes() {
 
   // ✅ Ocultar también si hay un modal abierto
   const hideBottomNav = hideBottomNavRoute || isAnyModalOpen;
+
+  // ✅ Montar el host SOLO cuando:
+  // - hay usuario logueado
+  // - y NO estamos en rutas públicas/técnicas
+  const shouldMountCaptureHost = !!user && !hideBottomNavRoute;
 
   return (
     <>
@@ -190,6 +198,9 @@ function AppRoutes() {
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
+
+      {/* ✅ AQUÍ: el host global (fuera de Routes) */}
+      {shouldMountCaptureHost && <RemiCaptureHost />}
 
       {/* Bottom nav solo si hay usuario y no está oculto por ruta o modal */}
       {user && !hideBottomNav && <BottomNav />}
