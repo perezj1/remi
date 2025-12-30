@@ -77,6 +77,9 @@ const MULTI_DEVICE_TIP_KEY = "multi-device";
 const AUTO_OPEN_LAST_TS_KEY = "remi_auto_open_last_ts_v1";
 const AUTO_OPEN_COOLDOWN_MS = 1500;
 
+// ✅ NUEVO: solo 1 auto-open por sesión (cold start)
+const AUTO_OPEN_BOOT_KEY = "remi_auto_open_boot_v1";
+
 type DateGroup = {
   key: string;
   label: string;
@@ -217,6 +220,9 @@ export default function TodayPage() {
     showMultiDeviceHelp,
     profileOpen,
   ]);
+
+  // ✅ NUEVO: detectar “resume real” (solo si estuvo hidden)
+  const wasHiddenRef = useRef(false);
 
   // ✅ NUEVO: registrar cada modal en el contador global -> App.tsx ocultará BottomNav
   useEffect(() => {
@@ -374,10 +380,18 @@ export default function TodayPage() {
     setMindDumpOpen(true);
   }, [location.pathname, location.search]);
 
-  // ✅ NUEVO: Auto-open en "cold start" (pero NO en refresh)
+  // ✅ CAMBIO: Auto-open en "cold start" SOLO 1 vez por sesión (y NO en reload)
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (location.pathname !== "/") return;
+
+    // ✅ Solo 1 vez por sesión (evita que reabra al volver a / desde otras tabs)
+    try {
+      if (sessionStorage.getItem(AUTO_OPEN_BOOT_KEY) === "1") return;
+      sessionStorage.setItem(AUTO_OPEN_BOOT_KEY, "1");
+    } catch {
+      // si sessionStorage no está disponible, no bloqueamos
+    }
 
     // Evitar auto-open en refresh (reload)
     try {
@@ -393,18 +407,27 @@ export default function TodayPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ✅ NUEVO: Auto-open al volver desde segundo plano / restauración (resume)
+  // ✅ CAMBIO: Auto-open al volver desde segundo plano SOLO si realmente estuvo hidden
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const onVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        wasHiddenRef.current = true;
+        return;
+      }
       if (document.visibilityState === "visible") {
+        if (!wasHiddenRef.current) return; // ✅ NO era un “resume real”
+        wasHiddenRef.current = false;
         openMindDumpAuto();
       }
     };
 
-    const onPageShow = () => {
-      openMindDumpAuto();
+    // ✅ opcional: pageshow SOLO si viene de bfcache (iOS/Safari), para “resume”
+    const onPageShow = (ev: PageTransitionEvent) => {
+      if ((ev as any)?.persisted) {
+        openMindDumpAuto();
+      }
     };
 
     document.addEventListener("visibilitychange", onVisibility);

@@ -496,7 +496,7 @@ tasks: {
       title: "Multidispositivo: no olvides nada, estés donde estés",
       p1: "Remi está pensado para que puedas soltar cosas en 5 segundos, desde cualquier dispositivo.",
       stepsTitle: "Cómo usarlo (rápido)",
-      step1: "Captura donde te pille: móvil, iPad/tablet o PC. Escribe, habla o pega texto.",
+      step1: "Captura en cualquier lugar: móvil, iPad/tablet o PC. Escribe, habla o pega texto.",
       step2: "Todo se sincroniza: lo que guardas en un dispositivo aparece en los demás.",
       step3: "Notificaciones por dispositivo: activa avisos solo en los que quieras (ej: móvil ON, PC OFF).",
       examplesTitle: "Ejemplos que funcionan",
