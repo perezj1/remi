@@ -110,6 +110,8 @@ function AppRoutes() {
   const hideBottomNavRoute =
     pathname.startsWith("/landing") || pathname.startsWith("/share-target");
 
+  const isAuthRoute = pathname.startsWith("/auth");
+
   // ✅ Ocultar también si hay un modal abierto
   const hideBottomNav = hideBottomNavRoute || isAnyModalOpen;
 
@@ -118,8 +120,24 @@ function AppRoutes() {
   // - y NO estamos en rutas públicas/técnicas
   const shouldMountCaptureHost = !!user && !hideBottomNavRoute;
 
+  // ✅ “Shell” global: altura correcta en móvil + fondo consistente
+  const isPublicShell = hideBottomNavRoute || isAuthRoute || !user;
+  const shellBgClass = isPublicShell ? "bg-white" : "bg-[#F6F7FB]";
+
+  // ✅ Reserva inferior global para que el contenido nunca quede debajo de la BottomNav
+  // Ajusta NAV_RESERVE_PX si cambias el tamaño visual de la pill nav.
+  const NAV_RESERVE_PX = 110;
+  const shouldReserveBottomSpace = !!user && !hideBottomNavRoute;
+
   return (
-    <>
+    <div
+      className={`min-h-[100dvh] ${shellBgClass} text-slate-900`}
+      style={{
+        paddingBottom: shouldReserveBottomSpace
+          ? `calc(${NAV_RESERVE_PX}px + env(safe-area-inset-bottom))`
+          : "env(safe-area-inset-bottom)",
+      }}
+    >
       <ScrollToTop />
 
       <Routes>
@@ -199,14 +217,14 @@ function AppRoutes() {
         <Route path="*" element={<NotFound />} />
       </Routes>
 
-      {/* ✅ AQUÍ: el host global (fuera de Routes) */}
+      {/* ✅ Host global (fuera de Routes) */}
       {shouldMountCaptureHost && <RemiCaptureHost />}
 
       {/* Bottom nav solo si hay usuario y no está oculto por ruta o modal */}
       {user && !hideBottomNav && <BottomNav />}
 
       <InstallPrompt />
-    </>
+    </div>
   );
 }
 

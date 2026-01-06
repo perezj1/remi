@@ -29,7 +29,6 @@ function formatDue(due: string, fallbackLocale?: string) {
   const dt = new Date(due);
   if (Number.isNaN(dt.getTime())) return null;
 
-  // Formato tipo: "26 dic, 18:55" (según locale del navegador)
   const fmt = new Intl.DateTimeFormat(fallbackLocale, {
     day: "2-digit",
     month: "short",
@@ -55,7 +54,6 @@ export default function TasksPage() {
     {}
   );
 
-  // siempre arriba al entrar / recargar
   useEffect(() => {
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, behavior: "auto" });
@@ -80,12 +78,10 @@ export default function TasksPage() {
     })();
   }, [user, t]);
 
-  // ✅ Memo para que no cambie por referencia en cada render
   const filtered = useMemo(() => {
     return items.filter((item) => item.type === "task");
   }, [items]);
 
-  // ✅ Memo para que dateGroups sea estable
   const dateGroups: DateGroup[] = useMemo(() => {
     if (filtered.length === 0) return [];
 
@@ -94,11 +90,7 @@ export default function TasksPage() {
     const tomorrowMid = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
 
     const todayGroup: DateGroup = { key: "TODAY", label: t("inbox.sectionToday"), items: [] };
-    const tomorrowGroup: DateGroup = {
-      key: "TOMORROW",
-      label: t("inbox.sectionTomorrow"),
-      items: [],
-    };
+    const tomorrowGroup: DateGroup = { key: "TOMORROW", label: t("inbox.sectionTomorrow"), items: [] };
     const noDateGroup: DateGroup = { key: "NO_DATE", label: t("inbox.sectionNoDate"), items: [] };
 
     const otherDateGroupsMap = new Map<string, { group: DateGroup; dateMs: number }>();
@@ -121,10 +113,7 @@ export default function TasksPage() {
               day: "numeric",
               month: "short",
             });
-            stored = {
-              group: { key, label, items: [] },
-              dateMs: dMid.getTime(),
-            };
+            stored = { group: { key, label, items: [] }, dateMs: dMid.getTime() };
             otherDateGroupsMap.set(key, stored);
           }
           stored.group.items.push(item);
@@ -135,7 +124,6 @@ export default function TasksPage() {
     }
 
     const groups: DateGroup[] = [];
-
     if (todayGroup.items.length > 0) groups.push(todayGroup);
     if (tomorrowGroup.items.length > 0) groups.push(tomorrowGroup);
 
@@ -144,24 +132,20 @@ export default function TasksPage() {
       .map((x) => x.group);
 
     groups.push(...otherDateGroups);
-
     if (noDateGroup.items.length > 0) groups.push(noDateGroup);
 
     return groups;
   }, [filtered, t]);
 
-  // ✅ Firma estable para disparar el effect solo cuando cambien los grupos
   const groupKeysSignature = useMemo(() => {
     return dateGroups.map((g) => g.key).join("|");
   }, [dateGroups]);
 
-  // ✅ Inicializar / limpiar collapsedGroups SOLO cuando cambie la firma de grupos
   useEffect(() => {
     setCollapsedGroups((prev) => {
       let changed = false;
       const next: Record<string, boolean> = { ...prev };
 
-      // añadir keys nuevas (por defecto: expandido => false)
       for (const g of dateGroups) {
         if (next[g.key] === undefined) {
           next[g.key] = false;
@@ -169,7 +153,6 @@ export default function TasksPage() {
         }
       }
 
-      // eliminar keys que ya no existen
       for (const k of Object.keys(next)) {
         if (!dateGroups.some((g) => g.key === k)) {
           delete next[k];
@@ -177,11 +160,10 @@ export default function TasksPage() {
         }
       }
 
-      return changed ? next : prev; // ✅ IMPORTANTÍSIMO: si no hay cambios, no re-render
+      return changed ? next : prev;
     });
   }, [groupKeysSignature, dateGroups]);
 
-  // marcar como hecha o borrar según estado actual
   const handlePrimaryAction = async (item: BrainItem) => {
     try {
       if (item.status !== "DONE") {
@@ -206,23 +188,18 @@ export default function TasksPage() {
   const filterLabel = t("inbox.tasksTab");
 
   return (
-<div className="remi-page min-h-dvh bg-[#F6F7FB] text-slate-900 flex flex-col">
-    <header
-      className="bg-[#7d59c9] text-white px-4 pb-8 rounded-b-3xl shadow-md"
-      style={{ paddingTop: "calc(2rem + env(safe-area-inset-top))" }} // 2rem = pt-8
-
-    > 
-       <h1 className="text-lg font-semibold">{t("inbox.title")}</h1>
+    <div className="remi-page min-h-[100dvh] bg-[#F6F7FB] text-slate-900 flex flex-col">
+      <header
+        className="bg-[#7d59c9] text-white px-4 pb-8 rounded-b-3xl shadow-md"
+        style={{ paddingTop: "calc(2rem + env(safe-area-inset-top))" }}
+      >
+        <h1 className="text-lg font-semibold">{t("inbox.title")}</h1>
         <p className="text-xs text-white/80">{t("inbox.subtitle")}</p>
       </header>
 
       {/* Contenido scrollable */}
-<main
-  className="flex-1 px-4 pt-2 bg-[#F6F7FB] remi-scroll"
-  style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom))" }}
->
-
-              {/* Chip con el filtro actual + contador */}
+      <main className="flex-1 px-4 pb-6 pt-2 bg-[#F6F7FB] remi-scroll">
+        {/* Chip con el filtro actual + contador */}
         <div className="mb-2 flex items-center justify-between">
           <div className="remi-tabs">
             <div className="remi-tab remi-tab--active cursor-default select-none">
@@ -243,7 +220,7 @@ export default function TasksPage() {
 
           {!loading && filtered.length === 0 && (
             <div className="rounded-2xl bg-white border border-slate-100 shadow-[0_14px_34px_rgba(15,23,42,0.06)] px-4 py-4 flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-[rgba(143,49,243,0.10)] text-[#7d59c9] flex items-center justify-content-center shrink-0 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-[rgba(143,49,243,0.10)] text-[#7d59c9] flex items-center justify-center shrink-0">
                 <List size={18} />
               </div>
               <div className="min-w-0">
@@ -261,7 +238,6 @@ export default function TasksPage() {
 
               return (
                 <div key={group.key} className="pt-2">
-                  {/* Separador retráctil: chevron + label + línea */}
                   <button
                     type="button"
                     onClick={() =>
@@ -306,12 +282,10 @@ export default function TasksPage() {
                             key={item.id}
                             className="rounded-2xl bg-white border border-slate-100 shadow-[0_14px_34px_rgba(15,23,42,0.06)] px-4 py-3 flex items-center gap-3"
                           >
-                            {/* icono */}
                             <div className="w-10 h-10 rounded-full bg-[rgba(143,49,243,0.10)] text-[#7d59c9] flex items-center justify-center shrink-0">
                               <List size={18} />
                             </div>
 
-                            {/* texto */}
                             <div className="flex-1 min-w-0">
                               <p
                                 className="text-[14px] font-semibold text-slate-900 leading-snug"
@@ -330,7 +304,6 @@ export default function TasksPage() {
                               </div>
                             </div>
 
-                            {/* acciones derecha */}
                             <div className="flex items-center gap-2">
                               <button
                                 type="button"
@@ -373,7 +346,6 @@ export default function TasksPage() {
         </div>
       </main>
 
-      {/* Modal para editar una tarea */}
       <TaskEditModal
         open={editOpen}
         task={editingTask}
