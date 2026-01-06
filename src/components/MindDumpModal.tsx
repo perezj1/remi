@@ -1127,7 +1127,14 @@ export default function MindDumpModal({
             boxShadow: "0 10px 30px rgba(0,0,0,0.10)",
           }}
         >
-          <div className="px-5 pt-4 pb-4 flex items-start justify-between">
+          <div
+  className="pb-4 flex items-start justify-between"
+  style={{
+    paddingTop: "calc(16px + env(safe-area-inset-top))",
+    paddingLeft: "calc(20px + env(safe-area-inset-left))",
+    paddingRight: "calc(20px + env(safe-area-inset-right))",
+  }}
+>
             <div className="min-w-0 pr-3">
               <div
                 className="text-[16px] font-semibold leading-tight"
@@ -1177,7 +1184,13 @@ export default function MindDumpModal({
           </div>
 
           {/* ✅ Smart chips bar (AUTO) */}
-          <div style={{ padding: "0 20px 14px" }}>
+          <div
+  style={{
+    paddingBottom: 14,
+    paddingLeft: "calc(20px + env(safe-area-inset-left))",
+    paddingRight: "calc(20px + env(safe-area-inset-right))",
+  }}
+>
             <div
               style={{
                 display: "flex",

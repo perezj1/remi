@@ -116,6 +116,13 @@
     border-color: hsl(var(--border));
   }
 
+  /* ✅ FIX iOS: evita problemas con 100vh (barras dinámicas) */
+  html,
+  body {
+    height: 100%;
+    height: -webkit-fill-available; /* fallback iOS */
+  }
+
   body {
     margin: 0;
     padding: 0;
@@ -123,6 +130,16 @@
       "Segoe UI", sans-serif;
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+
+    /* ✅ FIX iOS: que el body siempre tenga “alto real visible” */
+    min-height: 100dvh;
+    min-height: -webkit-fill-available; /* fallback iOS */
+  }
+
+  /* ✅ si tu app vive en #root, esto ayuda a que el shell no “recorte” */
+  #root {
+    min-height: 100dvh;
+    min-height: -webkit-fill-available; /* fallback iOS */
   }
 
   button,
@@ -134,9 +151,13 @@
 /* --------- CONTENEDOR TIPO APP REMI --------- */
 
 /* contenedor de fondo */
-/* contenedor de fondo */
 .remi-root {
-  min-height: 100vh;
+  /* ✅ iOS-safe viewport height */
+  min-height: 100vh; /* fallback */
+  min-height: 100svh;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available; /* iOS fallback */
+
   background: hsl(var(--background));
 }
 
@@ -144,12 +165,19 @@
 .remi-shell {
   width: 100%;
   max-width: 430px; /* móvil */
-  height: 100vh;
+
+  /* ✅ NO encerrar con height:100vh en iOS */
+  min-height: 100vh; /* fallback */
+  min-height: 100svh;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available; /* iOS fallback */
+
   margin: 0 auto;
   background: hsl(var(--card));
   border-radius: 0;
   box-shadow: none;
   overflow: hidden;
+
   display: flex;
   flex-direction: column;
   position: relative;
@@ -173,9 +201,6 @@
     box-shadow: none;
   }
 
-
-
-
   /* opcional: que la bottom nav no quede “exageradamente separada” */
   .remi-bottom-nav-inner {
     max-width: 900px; /* ajusta a gusto */
@@ -183,16 +208,17 @@
   }
 }
 
-
 /* página interior scrollable */
 .remi-page {
   flex: 1;
   min-height: 0; /* clave para que funcione el scroll */
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: calc(80px + env(safe-area-inset-bottom)); /* ✅ safe area + hueco bottom nav */
-  background: var(--remi-bg); /* ✅ AÑADE ESTO */
 
+  /* ✅ ya lo tenías: correcto (safe area + hueco bottom nav) */
+  padding-bottom: calc(80px + env(safe-area-inset-bottom));
+
+  background: var(--remi-bg); /* ✅ AÑADE ESTO */
 }
 
 /* ocultar scroll feo en móvil */
@@ -331,8 +357,11 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: calc(78px + env(safe-area-inset-bottom)); /* ✅ safe area */
-  padding: 0 18px calc(12px + env(safe-area-inset-bottom)); /* ✅ safe area */
+
+  /* ✅ ya lo tenías: correcto con safe area */
+  height: calc(78px + env(safe-area-inset-bottom));
+  padding: 0 18px calc(12px + env(safe-area-inset-bottom));
+
   background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(18px);
   border-top-left-radius: 24px;
@@ -441,7 +470,11 @@
 .remi-modal-card {
   width: 100%;
   max-width: 420px;
-  max-height: 86vh;
+
+  /* ✅ FIX iOS: evita vh “mentiroso” también en modales */
+  max-height: 86dvh;
+  max-height: 86vh; /* fallback si un browser no soporta dvh */
+
   margin: 0 16px;
   border-radius: 24px;
   background: white;
@@ -580,6 +613,10 @@
     @apply min-h-screen flex justify-center;
     background-color: #f5f4ff;
     padding: 16px;
+
+    /* ✅ FIX iOS adicional (no rompe Tailwind): */
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
   }
 
   .landing-page {
@@ -590,6 +627,10 @@
     position: relative;
     padding-bottom: 2rem;
     color: hsl(var(--foreground));
+
+    /* ✅ FIX iOS adicional */
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
   }
 
   @media (min-width: 1024px) {
