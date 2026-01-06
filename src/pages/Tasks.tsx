@@ -206,7 +206,7 @@ export default function TasksPage() {
   const filterLabel = t("inbox.tasksTab");
 
   return (
-    <div className="remi-page min-h-dvh bg-[#F6F7FB] text-slate-900 flex flex-col">
+<div className="remi-page min-h-[100dvh] bg-[#F6F7FB] text-slate-900 flex flex-col">
     <header
       className="bg-[#7d59c9] text-white px-4 pb-8 rounded-b-3xl shadow-md"
       style={{ paddingTop: "calc(32px + env(safe-area-inset-top))" }}
