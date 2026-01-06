@@ -1052,20 +1052,27 @@ export default function TodayPage() {
             width: 0;
             height: 0;
           }
+            // ⬇️ deja espacio para la BottomNav + safe area iPhone
+      paddingBottom: "calc(96px + env(safe-area-inset-bottom))",
         `}
       </style>
 
       {/* CABECERA */}
       <div
-        style={{
-          padding: "16px 20px 18px",
-          background: "linear-gradient(#7d59c9, #7d59c9)",
-          color: "white",
-          borderBottomLeftRadius: "24px",
-          borderBottomRightRadius: "24px",
-          position: "relative",
-        }}
-      >
+  style={{
+    // ⬇️ antes: padding: "16px 20px 18px",
+    paddingTop: "calc(16px + env(safe-area-inset-top))",
+    paddingBottom: 18,
+    paddingLeft: "calc(20px + env(safe-area-inset-left))",
+    paddingRight: "calc(20px + env(safe-area-inset-right))",
+
+    background: "linear-gradient(#7d59c9, #7d59c9)",
+    color: "white",
+    borderBottomLeftRadius: "24px",
+    borderBottomRightRadius: "24px",
+    position: "relative",
+  }}
+>
         <div
           style={{
             display: "flex",

@@ -1380,14 +1380,7 @@ export default function MindDumpModal({
             inputMode="text"
           />
 
-          {ios && (
-            <div className="mt-3 text-xs" style={{ color: REMI_SUB }}>
-              {t(
-                "capture.iosKeyboardMicHint",
-                "En iPhone: usa el micrófono del teclado para dictar."
-              )}
-            </div>
-          )}
+         
         </div>
 
         {/* bottom flotante */}
@@ -1489,6 +1482,29 @@ export default function MindDumpModal({
                 </div>
               )}
             </div>
+
+               {ios && (
+  <div
+    style={{
+      position: "absolute",
+      left: 0,
+      right: 0,
+      bottom: "calc(100% + 10px)", // ✅ encima de la pill
+      textAlign: "center",
+      fontSize: 12,
+      lineHeight: "16px",
+      color: REMI_SUB,
+      padding: "0 12px",
+      pointerEvents: "none", // ✅ no afecta clicks
+    }}
+  >
+    {t(
+      "capture.iosKeyboardMicHint",
+      "En iPhone: usa el micrófono del teclado para dictar."
+    )}
+  </div>
+)}
+
 
             {/* pill */}
             <div
