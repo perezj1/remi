@@ -223,15 +223,14 @@ export default function IdeasPage() {
 <header
   className="bg-[#7d59c9] text-white px-4 pb-8 rounded-b-3xl shadow-md"
   style={{ paddingTop: "calc(16px + var(--sat))" }}
->        <h1 className="text-lg font-semibold">{t("inbox.title")}</h1>
+>     
+   <h1 className="text-lg font-semibold">{t("inbox.title")}</h1>
         <p className="text-xs text-white/80">{t("inbox.subtitle")}</p>
       </header>
 
       {/* Contenido scrollable */}
-<main
-  className="flex-1 px-4 pt-2 bg-[#F6F7FB] remi-scroll"
-  style={{ paddingBottom: "calc(96px + var(--sab))" }}
->        {/* Chip con el filtro actual + contador */}
+      <main className="flex-1 px-4 pb-24 pt-2 bg-[#F6F7FB] remi-scroll">
+        {/* Chip con el filtro actual + contador */}
         <div className="mb-2 flex items-center justify-between">
           <div className="remi-tabs">
             <div className="remi-tab remi-tab--active cursor-default select-none">
