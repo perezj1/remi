@@ -206,7 +206,7 @@ export default function TasksPage() {
   const filterLabel = t("inbox.tasksTab");
 
   return (
-<div className="remi-page min-h-screen bg-white text-slate-900 flex flex-col">
+<div className="remi-page min-h-dvh bg-[#F6F7FB] text-slate-900 flex flex-col">
     <header
       className="bg-[#7d59c9] text-white px-4 pb-8 rounded-b-3xl shadow-md"
       style={{ paddingTop: "calc(2rem + env(safe-area-inset-top))" }} // 2rem = pt-8
@@ -217,7 +217,10 @@ export default function TasksPage() {
       </header>
 
       {/* Contenido scrollable */}
- <main className="flex-1 px-4 pb-24 pt-2 bg-[#F6F7FB] remi-scroll">
+<main
+  className="flex-1 px-4 pt-2 bg-[#F6F7FB] remi-scroll"
+  style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom))" }}
+>
 
               {/* Chip con el filtro actual + contador */}
         <div className="mb-2 flex items-center justify-between">
