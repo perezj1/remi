@@ -574,7 +574,7 @@ export default function ProfilePage() {
       {/* HEADER */}
       <div
         style={{
-          padding: "16px 20px 40px",
+          padding: `calc(16px + env(safe-area-inset-top)) 20px 40px`,
           background: "#7d59c9",
           color: "white",
           borderBottomLeftRadius: "28px",
