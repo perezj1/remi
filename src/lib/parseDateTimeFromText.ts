@@ -1048,14 +1048,14 @@ function parseTimeOverrideAny(text: string): TimeOverride | null {
   // 2) ES: "a las 4 de la tarde" / "a als 4 de la tarde" / "4 de la mañana"
   {
     const m = s.match(
-      /\b(?:a\s+(?:las|la|als)\s*)?(\d{1,2})(?:[:\.](\d{2}))?\s*(?:de|por)\s+la\s+(mañana|tarde|noche)\b/i
+      /\b(?:a\s+(?:las|la|als)\s*)?(\d{1,2})(?:[:\.](\d{2}))?\s*(?:de|por)\s+la\s+(manana|tarde|noche)\b/i
     );
     if (m) {
       const h = parseInt(m[1], 10);
       const min = m[2] ? parseInt(m[2], 10) : 0;
       const part = normalize(m[3]);
       if (h >= 1 && h <= 12 && min >= 0 && min <= 59) {
-        const mer: Meridiem = part === "mañana" ? "AM" : "PM"; // tarde/noche => PM
+        const mer: Meridiem = part === "manana" ? "AM" : "PM"; // tarde/noche => PM
         return {
           hour: to24hFrom12h(h, mer),
           minute: min,
