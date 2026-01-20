@@ -37,7 +37,7 @@ help: "Turn this task into a habit that Remi will always remind you of at the ch
       missingToken: "Missing link token.",
   loadError: "Failed to load the link.",
   loginHint: "If you’re not logged in, you’ll be asked to sign in or create an account to add it.",
-
+sentIndicator: "Shared by you",
   },
 
 
@@ -453,6 +453,9 @@ tasks: {
     greeting: "Hi, {{name}}",
     tasksToday: "You have {{count}} tasks",
     prioritize: "Focus on what matters",
+    done: "Done",
+    delete: "Delete",
+     actionEditTitle: "Edit",
 
     defaultUserName: "User",
 

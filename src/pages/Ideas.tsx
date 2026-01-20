@@ -1,9 +1,8 @@
 // src/pages/Ideas.tsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   BrainItem,
-  BrainItemStatus,
   fetchInboxItems,
   setTaskStatus,
   deleteBrainItem,
@@ -15,21 +14,17 @@ import {
   Pencil,
   ChevronDown,
   Calendar,
+  Share2,
 } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
 import IdeaEditModal from "@/components/IdeaEditModal";
+import { createShareInvite, shareTextOrCopy } from "@/lib/shareInvitesApi";
 
 type DateGroup = {
   key: string;
   label: string;
   items: BrainItem[];
 };
-
-function statusLabel(status: BrainItemStatus, t: (key: string) => string): string {
-  if (status === "DONE") return t("inbox.statusDone");
-  if (status === "ACTIVE") return t("inbox.statusActive");
-  return t("inbox.statusArchived");
-}
 
 function isSameDay(a: Date, b: Date): boolean {
   return (
@@ -43,7 +38,6 @@ function formatDue(due: string, fallbackLocale?: string) {
   const dt = new Date(due);
   if (Number.isNaN(dt.getTime())) return null;
 
-  // Formato tipo: "26 dic, 18:55" (según locale del navegador)
   const fmt = new Intl.DateTimeFormat(fallbackLocale, {
     day: "2-digit",
     month: "short",
@@ -64,10 +58,16 @@ export default function IdeasPage() {
   const [editingIdea, setEditingIdea] = useState<BrainItem | null>(null);
   const [editOpen, setEditOpen] = useState(false);
 
-  // ✅ Retráctil: estado de grupos colapsados
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(
-    {}
+    {},
   );
+
+  // ✅ indicador: solo lo que tú has compartido (no lo recibido)
+  const shouldShowSentIndicator = useCallback((item: BrainItem) => {
+    const sharedCount = (item as any)?.shared_count ?? 0;
+    const receivedFromShare = !!(item as any)?.received_from_share;
+    return !receivedFromShare && Number(sharedCount) > 0;
+  }, []);
 
   // siempre arriba al entrar / recargar
   useEffect(() => {
@@ -94,12 +94,12 @@ export default function IdeasPage() {
     })();
   }, [user, t]);
 
-  // ✅ Memo: filtrado estable
+  // ✅ Memo para que no cambie por referencia en cada render
   const filtered = useMemo(() => {
     return items.filter((item) => item.type === "idea");
   }, [items]);
 
-  // ✅ Memo: agrupación estable (mismo patrón que Tasks)
+  // ✅ Agrupar por fecha igual que Tasks (si tienen due_date)
   const dateGroups: DateGroup[] = useMemo(() => {
     if (filtered.length === 0) return [];
 
@@ -149,7 +149,6 @@ export default function IdeasPage() {
     }
 
     const groups: DateGroup[] = [];
-
     if (todayGroup.items.length > 0) groups.push(todayGroup);
     if (tomorrowGroup.items.length > 0) groups.push(tomorrowGroup);
 
@@ -158,18 +157,15 @@ export default function IdeasPage() {
       .map((x) => x.group);
 
     groups.push(...otherDateGroups);
-
     if (noDateGroup.items.length > 0) groups.push(noDateGroup);
 
     return groups;
   }, [filtered, t]);
 
-  // ✅ Firma estable para el effect
   const groupKeysSignature = useMemo(() => {
     return dateGroups.map((g) => g.key).join("|");
   }, [dateGroups]);
 
-  // ✅ Inicializar / limpiar collapsedGroups sin bucle
   useEffect(() => {
     setCollapsedGroups((prev) => {
       let changed = false;
@@ -177,7 +173,7 @@ export default function IdeasPage() {
 
       for (const g of dateGroups) {
         if (next[g.key] === undefined) {
-          next[g.key] = false; // por defecto expandido
+          next[g.key] = false;
           changed = true;
         }
       }
@@ -193,7 +189,6 @@ export default function IdeasPage() {
     });
   }, [groupKeysSignature, dateGroups]);
 
-  // marcar como hecha o borrar según estado actual
   const handlePrimaryAction = async (item: BrainItem) => {
     try {
       if (item.status !== "DONE") {
@@ -215,23 +210,34 @@ export default function IdeasPage() {
     setEditOpen(true);
   };
 
+  const handleShare = async (item: BrainItem) => {
+    try {
+      if (!item?.id) return;
+      const res = await createShareInvite(item.id);
+      await shareTextOrCopy(res.shareMessage);
+      alert(t("shareInvite.sharedOk"));
+    } catch (err) {
+      console.error(err);
+      alert(t("shareInvite.sharedError"));
+    }
+  };
+
   const filterLabel = t("inbox.ideasTab");
 
   return (
-<div className="remi-page min-h-screen bg-white text-slate-900 flex flex-col">
-    <header
-      className="bg-[#7d59c9] text-white px-4 pb-8 rounded-b-3xl shadow-md"
-      style={{ paddingTop: "calc(2rem + env(safe-area-inset-top))" }} // 2rem = pt-8
+    <div className="remi-page min-h-dvh bg-[#F6F7FB] text-slate-900 flex flex-col">
+      <header
+        className="bg-[#7d59c9] text-white px-4 pb-8 rounded-b-3xl shadow-md"
+        style={{ paddingTop: "calc(2rem + env(safe-area-inset-top))" }}
+      >
+        <h1 className="text-lg font-semibold">{t("inbox.title")}</h1>
+        <p className="text-xs text-white/80">{t("inbox.subtitle")}</p>
+      </header>
 
-    >
-  <h1 className="text-lg font-semibold">{t("inbox.title")}</h1>
-  <p className="text-xs text-white/80">{t("inbox.subtitle")}</p>
-</header>
-
-      {/* Contenido scrollable */}
- <main className="flex-1 px-4 pb-24 pt-2 bg-[#F6F7FB] remi-scroll">
-
-          {/* Chip con el filtro actual + contador */}
+      <main
+        className="flex-1 px-4 pt-2 bg-[#F6F7FB] remi-scroll"
+        style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom))" }}
+      >
         <div className="mb-2 flex items-center justify-between">
           <div className="remi-tabs">
             <div className="remi-tab remi-tab--active cursor-default select-none">
@@ -270,7 +276,6 @@ export default function IdeasPage() {
 
               return (
                 <div key={group.key} className="pt-2">
-                  {/* Separador retráctil: chevron + label + línea */}
                   <button
                     type="button"
                     onClick={() =>
@@ -304,71 +309,106 @@ export default function IdeasPage() {
                             new Date(item.due_date as string).toLocaleString()
                           : t("today.dueNoDate");
 
-                        // Botón principal: DONE -> trash (rojo), ACTIVE -> check (verde)
-                        const primaryBtnClass = isDone
-                          ? "bg-red-50 border-red-200 hover:bg-red-100"
-                          : "bg-emerald-50 border-emerald-200 hover:bg-emerald-100";
-
-                        const primaryIconColor = isDone ? "#DC2626" : "#10B981";
+                        // Botón derecho: Completado / Eliminar (si está DONE) — pill + pequeño
+                        const rightBtnBase =
+                          "flex-1 h-9 rounded-full border inline-flex items-center justify-center gap-2 text-[12px] font-semibold";
+                        const rightBtnClass = isDone
+                          ? `${rightBtnBase} bg-red-50 border-red-200 hover:bg-red-100 text-red-600`
+                          : `${rightBtnBase} bg-emerald-50 border-emerald-200 hover:bg-emerald-100 text-emerald-700`;
 
                         return (
                           <div
                             key={item.id}
-                            className="rounded-2xl bg-white border border-slate-100 shadow-[0_14px_34px_rgba(15,23,42,0.06)] px-4 py-3 flex items-center gap-3"
+                            className="rounded-2xl bg-white border border-slate-100 shadow-[0_14px_34px_rgba(15,23,42,0.06)] px-4 py-3"
                           >
-                            {/* icono */}
-                            <div className="w-10 h-10 rounded-full bg-[rgba(251,191,36,0.18)] text-[#F59E0B] flex items-center justify-center shrink-0">
-                              <Lightbulb size={18} />
-                            </div>
+                            {/* Header row */}
+                            <div className="flex items-start gap-3">
+                              {/* icono + indicador share (cuadro rojo) */}
+                              <div className="w-10 h-10 rounded-full bg-[rgba(251,191,36,0.18)] text-[#F59E0B] flex items-center justify-center shrink-0 relative">
+                                <Lightbulb size={18} />
 
-                            {/* texto */}
-                            <div className="flex-1 min-w-0">
-                              <p
-                                className="text-[14px] font-semibold text-slate-900 leading-snug"
-                                style={{
-                                  whiteSpace: "normal",
-                                  wordBreak: "break-word",
-                                  overflowWrap: "anywhere",
-                                }}
-                              >
-                                {item.title}
-                              </p>
-
-                              <div className="mt-1 flex items-center gap-1 text-[12px] text-slate-500">
-                                <Calendar size={14} className="text-slate-400" />
-                                <span className="truncate">{dueText}</span>
+                                {shouldShowSentIndicator(item) && (
+                                  <span
+                                    className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm"
+                                    aria-label={t("shareInvite.sentIndicator")}
+                                    title={t("shareInvite.sentIndicator")}
+                                  >
+                                    <Share2 size={10} className="text-slate-500" />
+                                  </span>
+                                )}
                               </div>
-                            </div>
 
-                            {/* acciones derecha */}
-                            <div className="flex items-center gap-2">
+                              <div className="flex-1 min-w-0">
+                                <p
+                                  className="text-[14px] font-semibold text-slate-900 leading-snug"
+                                  style={{
+                                    whiteSpace: "normal",
+                                    wordBreak: "break-word",
+                                    overflowWrap: "anywhere",
+                                  }}
+                                >
+                                  {item.title}
+                                </p>
+
+                                <div className="mt-1 flex items-center gap-1 text-[12px] text-slate-500">
+                                  <Calendar size={14} className="text-slate-400" />
+                                  <span className="truncate">{dueText}</span>
+                                </div>
+                              </div>
+
+                              {/* Edit icon top-right (solo lápiz, sin círculo) */}
                               <button
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   openEditModal(item);
                                 }}
-                                className="w-9 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center"
-                                aria-label="Edit"
-                                title="Edit"
+                                className="p-1.5 hover:bg-slate-50 rounded-lg inline-flex items-center justify-center shrink-0"
+                                aria-label={t("today.actionEditTitle")}
+                                title={t("today.actionEditTitle")}
                               >
-                                <Pencil size={16} color="#94A3B8" />
+                                <Pencil size={18} className="text-slate-400" />
+                              </button>
+                            </div>
+
+                            {/* Footer row: two pill buttons */}
+                            <div className="mt-3 flex items-center gap-3">
+                              {/* Left: Compartir */}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void handleShare(item);
+                                }}
+                                className="flex-1 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center gap-2 text-[12px] font-semibold text-slate-700"
+                                aria-label={t("shareInvite.share")}
+                                title={t("shareInvite.share")}
+                              >
+                                <Share2 size={15} className="text-slate-400" />
+                                <span>{t("shareInvite.share")}</span>
                               </button>
 
+                              {/* Right: Completado / Eliminar */}
                               <button
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handlePrimaryAction(item);
                                 }}
-                                className={`w-9 h-9 rounded-full border inline-flex items-center justify-center ${primaryBtnClass}`}
-                                aria-label={isDone ? "Delete" : "Done"}
-                                title={isDone ? "Delete" : "Done"}
+                                className={rightBtnClass}
+                                aria-label={isDone ? t("today.delete") : t("today.done")}
+                                title={isDone ? t("today.delete") : t("today.done")}
                               >
                                 {isDone ? (
-                                  <Trash2 size={16} color={primaryIconColor} />
+                                  <>
+                                    <Trash2 size={15} className="text-red-600" />
+                                    <span>{t("today.delete")}</span>
+                                  </>
                                 ) : (
-                                  <Check size={16} color={primaryIconColor} />
+                                  <>
+                                    <Check size={15} className="text-emerald-600" />
+                                    <span>{t("today.done")}</span>
+                                  </>
                                 )}
                               </button>
                             </div>
@@ -383,7 +423,6 @@ export default function IdeasPage() {
         </div>
       </main>
 
-      {/* Modal para editar / convertir una idea */}
       <IdeaEditModal
         open={editOpen}
         idea={editingIdea}
@@ -393,7 +432,7 @@ export default function IdeasPage() {
         }}
         onConverted={(convertedTask) => {
           setItems((prev) =>
-            prev.map((i) => (i.id === convertedTask.id ? convertedTask : i))
+            prev.map((i) => (i.id === convertedTask.id ? convertedTask : i)),
           );
         }}
       />

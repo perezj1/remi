@@ -39,7 +39,7 @@ shareInvite: {
       missingToken: "Link-Token fehlt.",
   loadError: "Link konnte nicht geladen werden.",
   loginHint: "Wenn du nicht eingeloggt bist, musst du dich anmelden oder ein Konto erstellen, um es hinzuzufügen.",
-
+sentIndicator: "Von dir geteilt",
   },
 
 
@@ -458,6 +458,9 @@ tasks: {
     greeting: "Hallo, {{name}}",
     tasksToday: "Du hast {{count}} Aufgaben",
     prioritize: "Fokussiere das Wichtige",
+    done: "Erledigt",
+    delete: "Löschen",
+    actionEditTitle: "Bearbeiten",
 
     defaultUserName: "Nutzer",
 

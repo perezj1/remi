@@ -2,11 +2,22 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+export type ShareInviteStatus = "pending" | "accepted" | "rejected" | "expired";
+
 export type ShareInvitePublic = {
-  status: "pending" | "accepted" | "rejected" | "expired";
+  status: ShareInviteStatus;
   senderDisplayName: string | null;
+
+  // Solo cuando status === "pending"
   previewLines?: string[];
   dueDate?: string | null;
+
+  // Extra (no rompe: viene como campos adicionales del get-share-invite)
+  type?: "task" | "idea" | null;
+  reminderMode?: "NONE" | "ON_DUE_DATE" | "DAY_BEFORE_AND_DUE" | "DAILY_UNTIL_DUE" | null;
+  repeatType?: string;
+  isHabit?: boolean;
+  habitOffsetMinutes?: number;
 };
 
 export type CreateShareInviteResult = {
@@ -28,7 +39,9 @@ export type AcceptShareInviteResult = {
  * Input: brainItemId (existing brain_items row id)
  * Output: { token, shareUrl, shareMessage, lang }
  */
-export async function createShareInvite(brainItemId: string): Promise<CreateShareInviteResult> {
+export async function createShareInvite(
+  brainItemId: string,
+): Promise<CreateShareInviteResult> {
   if (!brainItemId) throw new Error("Missing brainItemId");
 
   const { data, error } = await supabase.functions.invoke("create-share-invite", {
@@ -49,7 +62,7 @@ export async function createShareInvite(brainItemId: string): Promise<CreateShar
 /**
  * Calls the public Edge Function get-share-invite (JWT disabled)
  * Input: token
- * Output: preview info (minimal)
+ * Output: preview info (+ optional extra fields)
  */
 export async function getShareInvite(token: string): Promise<ShareInvitePublic> {
   if (!token) throw new Error("Missing token");
@@ -73,7 +86,9 @@ export async function getShareInvite(token: string): Promise<ShareInvitePublic> 
  * Input: token
  * Output: { ok, newBrainItemId }
  */
-export async function acceptShareInvite(token: string): Promise<AcceptShareInviteResult> {
+export async function acceptShareInvite(
+  token: string,
+): Promise<AcceptShareInviteResult> {
   if (!token) throw new Error("Missing token");
 
   const { data, error } = await supabase.functions.invoke("accept-share-invite", {
@@ -84,7 +99,6 @@ export async function acceptShareInvite(token: string): Promise<AcceptShareInvit
     throw new Error(error.message || "accept-share-invite failed");
   }
 
-  // Some responses may include ok + warning fields
   const ok = !!data?.ok;
   const newBrainItemId = (data?.newBrainItemId ?? null) as string | null;
 

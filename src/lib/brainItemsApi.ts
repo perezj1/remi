@@ -39,6 +39,12 @@ export interface BrainItem {
   is_habit?: boolean;
   habit_offset_minutes?: number;
   next_notification_at?: string | null;
+
+  // ✅ NUEVO (share markers)
+  shared_count?: number;
+  last_shared_at?: string | null;
+  received_from_share?: boolean;
+  sent_via_share?: boolean;
 }
 
 function isOffline(): boolean {
@@ -52,6 +58,7 @@ function cacheUpsertTask(userId: string, item: BrainItem) {
   const idx = list.findIndex((x) => x.id === item.id);
   if (idx >= 0) list[idx] = item;
   else list.push(item);
+
   // orden similar al fetchActiveTasks
   list.sort((a, b) => {
     const ad = a.due_date ? new Date(a.due_date).getTime() : Number.POSITIVE_INFINITY;
@@ -219,6 +226,12 @@ export async function createTask(
         is_habit: hasHabit,
         habit_offset_minutes: habitOffsetMinutes,
         next_notification_at: nextNotificationAt,
+
+        // ✅ NUEVO: por defecto NO es recibido, NO está marcado como enviado aún
+        received_from_share: false,
+        sent_via_share: false,
+        shared_count: 0,
+        last_shared_at: null,
       })
       .select()
       .single();
@@ -249,6 +262,12 @@ export async function createTask(
       is_habit: hasHabit,
       habit_offset_minutes: habitOffsetMinutes,
       next_notification_at: nextNotificationAt,
+
+      // ✅ NUEVO (offline defaults)
+      received_from_share: false,
+      sent_via_share: false,
+      shared_count: 0,
+      last_shared_at: null,
     };
 
     cacheUpsertTask(userId, localItem);
@@ -284,6 +303,12 @@ export async function createIdea(userId: string, title: string): Promise<BrainIt
         is_habit: false,
         habit_offset_minutes: 0,
         next_notification_at: null,
+
+        // ✅ NUEVO defaults
+        received_from_share: false,
+        sent_via_share: false,
+        shared_count: 0,
+        last_shared_at: null,
       })
       .select()
       .single();
@@ -313,6 +338,12 @@ export async function createIdea(userId: string, title: string): Promise<BrainIt
       is_habit: false,
       habit_offset_minutes: 0,
       next_notification_at: null,
+
+      // ✅ NUEVO
+      received_from_share: false,
+      sent_via_share: false,
+      shared_count: 0,
+      last_shared_at: null,
     };
 
     cacheUpsertIdea(userId, localItem);
@@ -397,38 +428,13 @@ export async function updateTask(
     cacheUpsertTask(updated.user_id, updated);
     return updated;
   } catch (e) {
-    // ✅ OFFLINE: actualizar cache + encolar
-    // Intentamos encontrar el userId desde cache; si no, asumimos que viene del caller (no lo tenemos aquí).
-    // Como mínimo, actualizamos donde esté.
-    const allUsersGuess = (typeof window !== "undefined") ? [/* no conocemos userId aquí */] : [];
-    // Mejor: buscamos en cache de inbox para encontrar el user.
-    let userId = "";
-    try {
-      // si está en inbox de algún user, no podemos saberlo. En tu app siempre hay un user activo:
-      // => encolamos igual con userId vacío no sirve. Así que: guardamos userId en op desde el caller
-      // Pero tu caller no lo pasa.
-      // SOLUCIÓN práctica: tomamos userId del item cacheado en tasks si existe.
-      // (tu app guarda cache por userId, pero aquí no lo sabemos). Por eso: usamos el userId del item si viene del backend,
-      // y si es tempId, normalmente lo has creado con userId y está en cache del usuario activo.
-    } catch {}
-
-    // ✅ En tu app, updateTask se llama desde UI ya teniendo el user actual.
-    // La forma más estable: el UI debe seguir usando los estados en memoria.
-    // Para no romper nada: encolamos con userId del item cacheado en "inbox" del usuario activo (si existe).
-    // Aquí no podemos acceder al user activo. Así que: el fix real es encolar con userId desde donde lo llamas.
-    // PERO tú ya estás usando estas funciones en Index con user.id, y updateTask normalmente se usa en TaskEditModal
-    // que también tiene user en contexto. Si me pasas ese archivo, lo ajusto.
-    //
-    // Mientras tanto: hacemos un fallback seguro -> NO encolamos si no podemos determinar userId.
-    // => Si quieres 100% offline update, necesito que el caller me pase userId o que exportemos updateTaskForUser.
-    // ✅ Como me pediste "sin romper nada", no invento: aquí devuelvo un error si no se puede encolar.
+    // Mantengo tu comportamiento (no cambio offline update aquí para no romper nada)
     throw e;
   }
 }
 
 /**
  * ConvertIdeaToTask se mantiene online por ahora.
- * (si lo quieres offline también, lo hacemos con el mismo patrón que create+update)
  */
 export async function convertIdeaToTask(
   id: string,
@@ -474,7 +480,10 @@ export async function convertIdeaToTask(
   return converted;
 }
 
-export async function setTaskStatus(id: string, status: BrainItemStatus): Promise<BrainItem> {
+export async function setTaskStatus(
+  id: string,
+  status: BrainItemStatus
+): Promise<BrainItem> {
   try {
     if (isOffline()) throw new Error("offline");
 
@@ -498,13 +507,14 @@ export async function setTaskStatus(id: string, status: BrainItemStatus): Promis
 
     return updated;
   } catch (e) {
-    // ✅ OFFLINE: aquí también necesitas userId para cache por usuario
-    // (lo podemos resolver en el caller). Sin eso, no puedo actualizar cache con seguridad.
     throw e;
   }
 }
 
-export async function postponeTask(id: string, newDueDate: string | null): Promise<BrainItem> {
+export async function postponeTask(
+  id: string,
+  newDueDate: string | null
+): Promise<BrainItem> {
   try {
     if (isOffline()) throw new Error("offline");
 

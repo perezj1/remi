@@ -24,6 +24,8 @@ import {
 } from "@/lib/brainItemsApi";
 import { supabase } from "@/integrations/supabase/client";
 import { registerPushSubscription } from "@/lib/registerPush";
+import { createShareInvite, shareTextOrCopy } from "@/lib/shareInvitesApi";
+
 
 // ✅ HOOK deck (snap 1 tarjeta por gesto)
 import { useSnapTipDeck } from "@/hooks/useSnapTipDeck";
@@ -112,6 +114,14 @@ export default function TodayPage() {
     },
     [t],
   );
+
+  const shouldShowSentIndicator = useCallback((task: BrainItem) => {
+  const sharedCount = (task as any)?.shared_count ?? 0;
+  const receivedFromShare = !!(task as any)?.received_from_share;
+
+  // Solo lo que tú has compartido (no lo recibido)
+  return !receivedFromShare && Number(sharedCount) > 0;
+}, []);
 
   const [tasks, setTasks] = useState<BrainItem[]>([]);
   const [ideas, setIdeas] = useState<BrainItem[]>([]);
@@ -595,6 +605,18 @@ export default function TodayPage() {
     const updated = await setTaskStatus(task.id, "DONE");
     setTasks((prev) => prev.filter((tt) => tt.id !== updated.id));
   };
+
+  const handleShareTask = async (task: BrainItem) => {
+  try {
+    const res = await createShareInvite(task.id);
+    await shareTextOrCopy(res.shareMessage);
+    alert(safeT("shareInvite.sharedOk", "Listo. Enlace copiado/compartido."));
+  } catch (e) {
+    console.error(e);
+    alert(safeT("shareInvite.sharedError", "No se pudo compartir. Inténtalo de nuevo."));
+  }
+};
+
 
   const handlePostpone = async (task: BrainItem, option: "DAY" | "WEEK") => {
     const base = task.due_date ? new Date(task.due_date) : new Date();
@@ -1422,9 +1444,20 @@ export default function TodayPage() {
                           key={task.id}
                           className="rounded-2xl bg-white border border-slate-100 shadow-[0_14px_34px_rgba(15,23,42,0.06)] px-4 py-3 flex items-center gap-3"
                         >
-                          <div className="w-10 h-10 rounded-full bg-[rgba(143,49,243,0.10)] text-[#7d59c9] flex items-center justify-center shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-[rgba(143,49,243,0.10)] text-[#7d59c9] flex items-center justify-center shrink-0 relative">
                             <List size={18} />
+
+                            {shouldShowSentIndicator(task) && (
+                              <span
+                                className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm"
+                                title={safeT("shareInvite.sentIndicator", "Compartida por ti")}
+                                aria-label={safeT("shareInvite.sentIndicator", "Compartida por ti")}
+                              >
+                                <Share2 size={10} className="text-slate-500" />
+                              </span>
+                            )}
                           </div>
+
 
                           <div className="flex-1 min-w-0">
                             <p
@@ -1448,23 +1481,16 @@ export default function TodayPage() {
                           </div>
 
                           <div className="flex items-center gap-2">
-                            {hasDue && (
-                              <button
-                                type="button"
-                                onClick={() => handlePostpone(task, "DAY")}
-                                title={safeT(
-                                  "today.actionPostpone1dTitle",
-                                  "Aplazar: añade 1 día a la fecha límite",
-                                )}
-                                aria-label={safeT(
-                                  "today.actionPostpone1dTitle",
-                                  "Aplazar: añade 1 día a la fecha límite",
-                                )}
-                                className="w-9 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center"
-                              >
-                                <CalendarPlus size={16} color="#94A3B8" />
-                              </button>
-                            )}
+                           <button
+                              type="button"
+                              onClick={() => handleShareTask(task)}
+                              title={safeT("shareInvite.share", "Compartir")}
+                              aria-label={safeT("shareInvite.share", "Compartir")}
+                              className="w-9 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center"
+                            >
+                              <Share2 size={16} color="#94A3B8" />
+                            </button>
+
 
                             <button
                               type="button"
@@ -1522,9 +1548,20 @@ export default function TodayPage() {
                       key={task.id}
                       className="rounded-2xl bg-white border border-slate-100 shadow-[0_14px_34px_rgba(15,23,42,0.06)] px-4 py-3 flex items-center gap-3"
                     >
-                      <div className="w-10 h-10 rounded-full bg-[rgba(143,49,243,0.10)] text-[#7d59c9] flex items-center justify-center shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-[rgba(143,49,243,0.10)] text-[#7d59c9] flex items-center justify-center shrink-0 relative">
                         <List size={18} />
+
+                        {shouldShowSentIndicator(task) && (
+                          <span
+                            className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm"
+                            title={safeT("shareInvite.sentIndicator", "Compartida por ti")}
+                            aria-label={safeT("shareInvite.sentIndicator", "Compartida por ti")}
+                          >
+                            <Share2 size={10} className="text-slate-500" />
+                          </span>
+                        )}
                       </div>
+
 
                       <div className="flex-1 min-w-0">
                         <p
@@ -1552,20 +1589,25 @@ export default function TodayPage() {
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
+                          onClick={() => handleShareTask(task)}
+                          title={safeT("shareInvite.share", "Compartir")}
+                          aria-label={safeT("shareInvite.share", "Compartir")}
+                          className="w-9 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center"
+                        >
+                          <Share2 size={16} color="#94A3B8" />
+                        </button>
+
+                        <button
+                          type="button"
                           onClick={() => handleDone(task)}
-                          title={safeT(
-                            "today.actionDoneTitle",
-                            "Marcar como completada",
-                          )}
-                          aria-label={safeT(
-                            "today.actionDoneTitle",
-                            "Marcar como completada",
-                          )}
+                          title={safeT("today.actionDoneTitle", "Marcar como completada")}
+                          aria-label={safeT("today.actionDoneTitle", "Marcar como completada")}
                           className="w-9 h-9 rounded-full border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 inline-flex items-center justify-center"
                         >
                           <Check size={16} color="#10B981" />
                         </button>
                       </div>
+
                     </div>
                   ))}
                 </div>

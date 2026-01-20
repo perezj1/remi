@@ -37,7 +37,7 @@ export const es = {
     missingToken: "Falta el token del enlace.",
   loadError: "No se pudo cargar el enlace.",
   loginHint: "Si no has iniciado sesión, te pediremos entrar o crear una cuenta para poder añadirlo.",
-
+ sentIndicator: "Tarea compartida",
   },
 
 
@@ -476,6 +476,9 @@ tasks: {
     greeting: "Hola, {{name}}",
     tasksToday: "Tienes {{count}} tareas",
     prioritize: "Prioriza lo importante",
+     done: "Hecho",
+    delete: "Eliminar",
+    actionEditTitle: "Editar",
 
     defaultUserName: "Usuario",
 
