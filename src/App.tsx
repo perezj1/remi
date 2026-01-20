@@ -26,7 +26,6 @@ import ScrollToTop from "@/components/ScrollToTop";
 import LandingPage from "@/pages/Landing";
 import ShareInvitePage from "@/pages/ShareInvitePage";
 
-
 // ✅ Provider + hook para ocultar BottomNav cuando hay modales abiertos
 import { ModalUiProvider, useModalUi } from "@/contexts/ModalUiContext";
 
@@ -37,8 +36,11 @@ import ShareTargetPage from "@/pages/ShareTarget";
 import { syncOfflineQueue } from "@/lib/syncOfflineQueue";
 import { toast } from "sonner";
 
-// ✅ NUEVO: Host global de captura (modales globales)
+// ✅ Host global de captura (modales globales)
 import RemiCaptureHost from "@/components/RemiCaptureHost";
+
+// ✅ Supabase client (ruta correcta)
+import { supabase } from "@/integrations/supabase/client";
 
 // ---- RUTAS PROTEGIDAS ----
 function RequireAuth({ children }: { children: JSX.Element }) {
@@ -51,6 +53,35 @@ function RequireAuth({ children }: { children: JSX.Element }) {
     );
   }
   return children;
+}
+
+// ✅ helper: actualiza last_active_at con throttle (30 min por dispositivo)
+async function touchLastActive(userId: string) {
+  if (!userId) return;
+
+  const key = `remi:last_active_sent_at:${userId}`;
+  const nowMs = Date.now();
+  const throttleMs = 30 * 60 * 1000;
+
+  try {
+    const last = Number(localStorage.getItem(key) || "0");
+    if (last && nowMs - last < throttleMs) return;
+
+    localStorage.setItem(key, String(nowMs));
+
+    const { error } = await supabase
+      .from("remi_user_settings")
+      .update({ last_active_at: new Date(nowMs).toISOString() })
+      .eq("user_id", userId);
+
+    // Si falla, permitimos reintento pronto
+    if (error) {
+      localStorage.removeItem(key);
+      console.error("[App] touchLastActive failed:", error);
+    }
+  } catch (e) {
+    console.error("[App] touchLastActive error:", e);
+  }
 }
 
 function AppRoutes() {
@@ -69,6 +100,18 @@ function AppRoutes() {
       setLang(pLang);
     }
   }, [profile, lang, setLang]);
+
+  // ✅ NUEVO: marcar actividad del usuario (last_active_at)
+  React.useEffect(() => {
+    if (!user?.id) return;
+    touchLastActive(user.id);
+  }, [user?.id]);
+
+  // ✅ NUEVO: también marcar actividad al cambiar de ruta (throttle 30 min)
+  React.useEffect(() => {
+    if (!user?.id) return;
+    touchLastActive(user.id);
+  }, [location.pathname, user?.id]);
 
   // ✅ OFFLINE: sincroniza al entrar (si hay red) y cuando vuelva la señal
   React.useEffect(() => {
@@ -115,6 +158,7 @@ function AppRoutes() {
   const isAuthRoute = pathname.startsWith("/auth");
 
   // ✅ Ocultar también si hay un modal abierto
+  // Importante: el provider debe marcar "isAnyModalOpen" en TRUE cuando haya modales.
   const hideBottomNav = hideBottomNavRoute || isAnyModalOpen;
 
   // ✅ Montar el host SOLO cuando:
@@ -127,9 +171,12 @@ function AppRoutes() {
   const shellBgClass = isPublicShell ? "bg-white" : "bg-[#F6F7FB]";
 
   // ✅ Reserva inferior global para que el contenido nunca quede debajo de la BottomNav
-  // Ajusta NAV_RESERVE_PX si cambias el tamaño visual de la pill nav.
   const NAV_RESERVE_PX = 110;
-  const shouldReserveBottomSpace = !!user && !hideBottomNavRoute;
+
+  // ✅ FIX BottomNav + modales:
+  // Si hay un modal abierto, NO reservamos espacio abajo.
+  // (Si reservas, aunque ocultes el BottomNav, el layout queda “como si existiera”.)
+  const shouldReserveBottomSpace = !!user && !hideBottomNav;
 
   return (
     <div
@@ -217,7 +264,6 @@ function AppRoutes() {
 
         {/* share page */}
         <Route path="/share/:token" element={<ShareInvitePage />} />
-
 
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
