@@ -367,7 +367,7 @@ export default function IdeasPage() {
                                 aria-label={t("today.actionEditTitle")}
                                 title={t("today.actionEditTitle")}
                               >
-                                <Pencil size={18} className="text-slate-400" />
+                                <Pencil size={14} className="text-slate-400" />
                               </button>
                             </div>
 
