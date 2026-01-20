@@ -1186,14 +1186,14 @@ function parseTimeOverrideAny(text: string): TimeOverride | null {
         // "martes a las 4" => interpretamos por defecto como PM (16:00)
         // (y si el usuario quiere AM, lo dice con "mañana", "am", "morgens", etc.)
         if (h >= 1 && h <= 11) {
-          return {
-            hour: h + 12,
-            minute: min,
-            matchedText: m[0],
-            hadExplicitMeridiem: false,
-            assumedPmByDefault: true,
-          };
-        }
+  return {
+    hour: h, // ✅ AM por defecto
+    minute: min,
+    matchedText: m[0],
+    hadExplicitMeridiem: false,
+    assumedPmByDefault: false,
+  };
+}
 
         // h = 0 o h = 12
         return {
@@ -1216,14 +1216,14 @@ function parseTimeOverrideAny(text: string): TimeOverride | null {
       if (h >= 0 && h < 24 && min >= 0 && min <= 59) {
         // Si es 1..11 con "uhr" suele ser 24h/ambig, pero mantenemos la misma regla por defecto (PM)
         if (h >= 1 && h <= 11) {
-          return {
-            hour: h + 12,
-            minute: min,
-            matchedText: m[0],
-            hadExplicitMeridiem: false,
-            assumedPmByDefault: true,
-          };
-        }
+  return {
+    hour: h, // ✅ AM por defecto
+    minute: min,
+    matchedText: m[0],
+    hadExplicitMeridiem: false,
+    assumedPmByDefault: false,
+  };
+}
         return {
           hour: h,
           minute: min,
