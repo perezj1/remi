@@ -14,6 +14,32 @@ help: "Turn this task into a habit that Remi will always remind you of at the ch
 },
 
 
+  shareInvite: {
+    share: "Share",
+    sharedOk: "Done. Link copied/shared.",
+    sharedError: "Could not share. Please try again.",
+    message: "{{name}} wants you to remember: {{text}}",
+
+     pageTitle: "Add to Remi",
+    pageSubtitle: "Save this reminder to your account.",
+    loading: "Loading…",
+    invalidLinkTitle: "Invalid link",
+    goHome: "Go to home",
+    someone: "Someone",
+    due: "Due",
+    acceptCta: "Add to Remi",
+    accepting: "Adding…",
+    acceptError: "Could not add. Please try again.",
+    alreadyAccepted: "This link has already been used.",
+    expired: "This link has expired.",
+    rejected: "This link was rejected.",
+    openRemi: "Open Remi",
+      missingToken: "Missing link token.",
+  loadError: "Failed to load the link.",
+  loginHint: "If you’re not logged in, you’ll be asked to sign in or create an account to add it.",
+
+  },
+
 
 // ENGLISH
 mentalDump: {

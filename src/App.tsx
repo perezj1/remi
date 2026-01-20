@@ -24,6 +24,8 @@ import InstallPrompt from "@/components/InstallPrompt";
 import StatusPage from "@/pages/Status";
 import ScrollToTop from "@/components/ScrollToTop";
 import LandingPage from "@/pages/Landing";
+import ShareInvitePage from "@/pages/ShareInvitePage";
+
 
 // ✅ Provider + hook para ocultar BottomNav cuando hay modales abiertos
 import { ModalUiProvider, useModalUi } from "@/contexts/ModalUiContext";
@@ -212,6 +214,10 @@ function AppRoutes() {
 
         {/* Landing pública */}
         <Route path="/landing" element={<LandingPage />} />
+
+        {/* share page */}
+        <Route path="/share/:token" element={<ShareInvitePage />} />
+
 
         {/* 404 */}
         <Route path="*" element={<NotFound />} />

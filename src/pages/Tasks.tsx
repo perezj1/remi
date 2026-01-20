@@ -7,9 +7,18 @@ import {
   setTaskStatus,
   deleteBrainItem,
 } from "@/lib/brainItemsApi";
-import { List, Check, Trash2, Pencil, ChevronDown, Calendar } from "lucide-react";
+import {
+  List,
+  Check,
+  Trash2,
+  Pencil,
+  ChevronDown,
+  Calendar,
+  Share2,
+} from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
 import TaskEditModal from "@/components/TaskEditModal";
+import { createShareInvite, shareTextOrCopy } from "@/lib/shareInvitesApi";
 
 type DateGroup = {
   key: string;
@@ -203,26 +212,36 @@ export default function TasksPage() {
     setEditOpen(true);
   };
 
+  const handleShare = async (item: BrainItem) => {
+    try {
+      if (!item?.id) return;
+      const res = await createShareInvite(item.id);
+      await shareTextOrCopy(res.shareMessage);
+      alert(t("shareInvite.sharedOk"));
+    } catch (err) {
+      console.error(err);
+      alert(t("shareInvite.sharedError"));
+    }
+  };
+
   const filterLabel = t("inbox.tasksTab");
 
   return (
-<div className="remi-page min-h-dvh bg-[#F6F7FB] text-slate-900 flex flex-col">
-    <header
-      className="bg-[#7d59c9] text-white px-4 pb-8 rounded-b-3xl shadow-md"
-      style={{ paddingTop: "calc(2rem + env(safe-area-inset-top))" }} // 2rem = pt-8
-
-    > 
-       <h1 className="text-lg font-semibold">{t("inbox.title")}</h1>
+    <div className="remi-page min-h-dvh bg-[#F6F7FB] text-slate-900 flex flex-col">
+      <header
+        className="bg-[#7d59c9] text-white px-4 pb-8 rounded-b-3xl shadow-md"
+        style={{ paddingTop: "calc(2rem + env(safe-area-inset-top))" }} // 2rem = pt-8
+      >
+        <h1 className="text-lg font-semibold">{t("inbox.title")}</h1>
         <p className="text-xs text-white/80">{t("inbox.subtitle")}</p>
       </header>
 
       {/* Contenido scrollable */}
-<main
-  className="flex-1 px-4 pt-2 bg-[#F6F7FB] remi-scroll"
-  style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom))" }}
->
-
-              {/* Chip con el filtro actual + contador */}
+      <main
+        className="flex-1 px-4 pt-2 bg-[#F6F7FB] remi-scroll"
+        style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom))" }}
+      >
+        {/* Chip con el filtro actual + contador */}
         <div className="mb-2 flex items-center justify-between">
           <div className="remi-tabs">
             <div className="remi-tab remi-tab--active cursor-default select-none">
@@ -343,6 +362,19 @@ export default function TasksPage() {
                                 title="Edit"
                               >
                                 <Pencil size={16} color="#94A3B8" />
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void handleShare(item);
+                                }}
+                                className="w-9 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center"
+                                aria-label={t("shareInvite.share")}
+                                title={t("shareInvite.share")}
+                              >
+                                <Share2 size={16} color="#94A3B8" />
                               </button>
 
                               <button

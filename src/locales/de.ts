@@ -16,6 +16,32 @@ help: "Mach aus dieser Aufgabe eine Gewohnheit, an die Remi dich immer zur gewä
 },
   
 
+shareInvite: {
+    share: "Teilen",
+    sharedOk: "Fertig. Link wurde geteilt/kopiert.",
+    sharedError: "Teilen nicht möglich. Bitte erneut versuchen.",
+    message: "{{name}} möchte, dass du dir merkst: {{text}}",
+
+    pageTitle: "Zu Remi hinzufügen",
+    pageSubtitle: "Speichere diese Erinnerung in deinem Konto.",
+    loading: "Lädt…",
+    invalidLinkTitle: "Ungültiger Link",
+    goHome: "Zur Startseite",
+    someone: "Jemand",
+    due: "Fällig",
+    acceptCta: "Zu Remi hinzufügen",
+    accepting: "Wird hinzugefügt…",
+    acceptError: "Konnte nicht hinzugefügt werden. Bitte erneut versuchen.",
+    alreadyAccepted: "Dieser Link wurde bereits verwendet.",
+    expired: "Dieser Link ist abgelaufen.",
+    rejected: "Dieser Link wurde abgelehnt.",
+    openRemi: "Remi öffnen",
+      missingToken: "Link-Token fehlt.",
+  loadError: "Link konnte nicht geladen werden.",
+  loginHint: "Wenn du nicht eingeloggt bist, musst du dich anmelden oder ein Konto erstellen, um es hinzuzufügen.",
+
+  },
+
 
  // GERMAN
 mentalDump: {

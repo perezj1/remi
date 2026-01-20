@@ -13,6 +13,34 @@ export const es = {
   },
 },
 
+ shareInvite: {
+    share: "Compartir",
+    sharedOk: "Listo. Enlace copiado/compartido.",
+    sharedError: "No se pudo compartir. Inténtalo de nuevo.",
+    message: "{{name}} quiere que recuerdes: {{text}}",
+
+    pageTitle: "Añadir a Remi",
+    pageSubtitle: "Guarda este recordatorio en tu cuenta.",
+    loading: "Cargando…",
+    invalidLinkTitle: "Enlace no válido",
+    goHome: "Volver al inicio",
+    someone: "Alguien",
+    
+    due: "Fecha",
+    acceptCta: "Añadir a Remi",
+    accepting: "Añadiendo…",
+    acceptError: "No se pudo añadir. Inténtalo de nuevo.",
+    alreadyAccepted: "Este enlace ya se ha usado.",
+    expired: "Este enlace ha caducado.",
+    rejected: "Este enlace fue rechazado.",
+    openRemi: "Abrir Remi",
+    missingToken: "Falta el token del enlace.",
+  loadError: "No se pudo cargar el enlace.",
+  loginHint: "Si no has iniciado sesión, te pediremos entrar o crear una cuenta para poder añadirlo.",
+
+  },
+
+
 
 mentalDump: {
  whyLabel: "Por qué:",
