@@ -172,8 +172,11 @@ function AppRoutes() {
   const shouldMountCaptureHost = !!user && !hideBottomNavRoute && !isShareUrl;
 
   // ✅ “Shell” global: altura correcta en móvil + fondo consistente
-  const isPublicShell = hideBottomNavRoute || isAuthRoute || !user || isShareUrl;
-  const shellBgClass = isPublicShell ? "bg-white" : "bg-[#F6F7FB]";
+  const isPublicShell = hideBottomNavRoute || isAuthRoute || !user;
+
+// ✅ Para share: usa el mismo fondo suave (evita “blanco infinito”)
+const shellBgClass =
+  isShareUrl ? "bg-[#F6F7FB]" : isPublicShell ? "bg-white" : "bg-[#F6F7FB]";
 
   // ✅ Reserva inferior global para que el contenido nunca quede debajo de la BottomNav
   const NAV_RESERVE_PX = 110;
