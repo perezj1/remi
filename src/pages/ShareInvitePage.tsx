@@ -183,7 +183,7 @@ const messageLine2 = useMemo(() => {
       >
         <div className="mx-auto w-full max-w-sm">
           {/* Card (más centrada verticalmente) */}
-          <div className="min-h-[calc(100dvh-220px)] flex items-start justify-center pt-32">
+          <div className="min-h-[calc(100dvh-220px)] flex items-start justify-center pt-24">
             <div className="w-full rounded-[36px] bg-white/85 backdrop-blur border border-white/70 shadow-[0_18px_55px_rgba(15,23,42,0.14)] p-7">
               {/* Icono superior (Share2) */}
               <div className="flex justify-center">
