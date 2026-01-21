@@ -971,7 +971,170 @@ landing: {
 
       copyright: "© Remi 2025. Todos los derechos reservados.",
     },
+    
+extra: {
+      hero: {
+        kicker: "Dile a Remi lo que no quieres olvidar.",
+        description:
+          "Escribe una frase. Remi interpreta el texto y crea el recordatorio: fecha y hora, repetición si es un hábito, y el modo de recordatorio cuando toca.",
+        bullets: {
+          a: "Solo escribe: cero formato, cero fricción",
+          b: "Remi interpreta: fechas, horas, hábitos y repetición",
+          c: "Recordatorios listos para que no dependa de tu memoria",
+          d: "En todos tus dispositivos: ordenador, móvil, iPad y tablet",
+        },
+      },
 
+      trustRow: { a: "Rápida", b: "Simple", c: "Hecha para vaciar la mente" },
+
+      problem: {
+        title: "Tu cerebro no es una lista de tareas.",
+        text:
+          "Ideas, recados, pendientes… cuando lo llevas todo en la cabeza, pagas con estrés y olvidos.",
+        micro:
+          "Remi es tu descarga mental: lo escribes una vez y sigues con tu día.",
+      },
+
+      how: {
+        title: "Cómo funciona",
+        subtitle: "Escribes. Remi lo entiende. Y te lo recuerda.",
+        step1Title: "1) Escribe lo que no quieres olvidar",
+        step1Text: "Una frase, tal cual te sale. Sin menús, sin pensar en campos.",
+        step2Title: "2) Remi lo interpreta",
+        step2Text:
+          "Detecta fecha y hora, si es un hábito (repetición), y ajusta el recordatorio.",
+        step3Title: "3) Te lo devuelve cuando toca",
+        step3Text:
+          "Remi te lo pone delante en el momento adecuado para que no lo cargues tú.",
+      },
+
+      interpret: {
+        title: "Texto → recordatorio automático",
+        text:
+          "No necesitas configurar mil cosas. Remi entiende el lenguaje natural y lo convierte en un recordatorio útil.",
+        chips: ["Fecha y hora", "Hábito / repetición", "Modo de recordatorio"],
+        exampleLabel: "Ejemplos",
+        examples: [
+          "“Mañana a las 18: llamar al seguro”",
+          "“Cada lunes: gimnasio”",
+          "“El día 5 pagar el alquiler”",
+        ],
+        helperLine: "Escribe una frase y listo",
+      },
+
+      shareFeature: {
+        badge: "Nuevo",
+        title: "Comparte tareas e ideas para aliviar la carga mental",
+        text:
+          "Ayuda a otras personas a liberar su mente: comparte una tarea o una idea como un enlace. Así pueden añadirla y dejar de cargar con “no se me puede olvidar…”.",
+        points: [
+          "Útil para familia, pareja y equipos",
+          "Comparte recordatorios, recados e ideas en segundos",
+          "Perfecto para ayudar cuando alguien está estresado o saturado",
+        ],
+        exampleLabel: "Ejemplo",
+        example:
+          "“Añadir a Remi: ‘Mañana 18:00 llamar al seguro’ → te llega como link y lo añades en un toque.”",
+        helperLine: "Ayuda rápida, sin explicación",
+        ctaTry: "Probar Remi",
+        tag: "Compartir",
+      },
+
+      everywhere: {
+        title: "Multi-dispositivo de verdad",
+        text:
+          "Remi está disponible donde estás tú: trabajo, casa, calle. Mismo acceso, mismos recordatorios.",
+        points: [
+          "Ordenador para capturar mientras trabajas",
+          "Móvil / iPad / tablet para capturar al vuelo",
+          "Úsala al instante en el navegador o instálala como app (PWA)",
+        ],
+      },
+
+      install: {
+        title: "Instala Remi para recibir recordatorios",
+        text:
+          "Para recibir notificaciones con tus recordatorios, instala Remi ahora desde tu navegador (PWA).",
+        helper:
+          "Disfrútala como una verdadera app: más ligera, rápida y siempre actualizada.",
+        badge: "App mode",
+        bullet1: "Notificaciones para recordatorios",
+        bullet2: "Icono en la pantalla de inicio",
+        bullet3: "Pantalla completa, sensación de app",
+        mini1: "Ligera y rápida",
+        mini2: "Siempre actualizada",
+        mini3: "Hecha para capturar rápido",
+        ctaHint: "Pulsa “Instalar ahora” y sigue los pasos según tu dispositivo.",
+        device: {
+          desktop: "Ordenador",
+          phone: "Móvil",
+          tablet: "Tablet",
+        },
+        pwaCard: {
+          subtitle: "Notificaciones y acceso rápido",
+          appLike: "Como app, pero mejor",
+        },
+      },
+
+      social: {
+        title: "Construida con feedback real",
+        subtitle: "Remi se mejora continuamente con pruebas y comentarios de usuarios.",
+        note: "",
+        // Estos textos vienen hardcodeados en tu Landing.tsx actual
+        testimonials: [
+          {
+            quote:
+              "“Gracias a mi compañero de trabajo por recomendarme Remi, cada dia que lo uso noto menos carga mental y olvido menos cosas.”",
+            author: "Sarah",
+          },
+          {
+            quote: "“Es como tener un asistente de memoria personal, Me encanta!.”",
+            author: "Christian",
+          },
+          {
+            quote:
+              "“Muy facil de usar y muy útil. sobre todo la opcion de compartir tasks o ideas.”",
+            author: "Erika",
+          },
+        ],
+      },
+
+      modal: {
+        installLabel: "Instalar ahora",
+        title: "Instalar Remi",
+        description:
+          "Instala Remi desde tu navegador para recibir notificaciones con tus recordatorios y usarla como una app.",
+        alreadyInstalled:
+          "Remi ya está instalada en este dispositivo. Tus recordatorios pueden llegar como notificaciones.",
+        promptText:
+          "Instálala para recibir notificaciones con tus recordatorios y tener acceso rápido desde el icono.",
+        sectionIOS: "En iPhone / iPad (Safari)",
+        sectionDesktop: "En ordenador (Chrome/Edge)",
+        installRequired:
+          "La instalación es necesaria para recibir notificaciones con tus recordatorios.",
+        iosSteps: [
+          "Abre el menú de compartir (icono de compartir en Safari).",
+          "Pulsa “Añadir a pantalla de inicio”.",
+          "Confirma “Añadir”.",
+        ],
+        desktopSteps: [
+          "En Chrome/Edge, busca el icono de “Instalar” en la barra de direcciones o en el menú.",
+          "Pulsa “Instalar”.",
+        ],
+        close: "Cerrar",
+        openInBrowser: "Abrir en navegador",
+        directInstallHint:
+          "Si tu navegador soporta instalación directa, aparecerá un botón de instalación en este modal.",
+      },
+
+      iosBanner: {
+        title: "Instala Remi en tu iPhone - GRATIS",
+        step1: "Pulsa el botón Compartir",
+        step2: "Elige «Añadir a pantalla de inicio» y confirma.",
+        closeAria: "Cerrar",
+      },
+    },
+  
   
 
   },

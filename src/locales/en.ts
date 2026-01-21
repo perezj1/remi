@@ -939,8 +939,168 @@ landing: {
       licenses: "Licenses",
     },
 
-    copyright: "© Remi 2025. All rights reserved.",
+    copyright: "© Remi 2025. All rights reserved.",    
   },
+
+  extra: {
+      hero: {
+        kicker: "Tell Remi what you don’t want to forget.",
+        description:
+          "Write one sentence. Remi interprets the text and creates the reminder: date & time, repetition if it’s a habit, and the reminder mode when it matters.",
+        bullets: {
+          a: "Just write: zero formatting, zero friction",
+          b: "Remi interprets: dates, times, habits & repetition",
+          c: "Reminders ready—so you don’t rely on memory",
+          d: "On all your devices: desktop, phone, iPad & tablet",
+        },
+      },
+
+      trustRow: { a: "Fast", b: "Simple", c: "Built to clear your mind" },
+
+      problem: {
+        title: "Your brain is not a to-do list.",
+        text:
+          "Ideas, errands, loose ends… carrying everything in your head costs stress and forgetfulness.",
+        micro: "Remi is your mental offload: write it once and keep going with your day.",
+      },
+
+      how: {
+        title: "How it works",
+        subtitle: "You write. Remi understands. And it reminds you.",
+        step1Title: "1) Write what you don’t want to forget",
+        step1Text: "One sentence, just as it comes out. No menus, no fields.",
+        step2Title: "2) Remi interprets it",
+        step2Text:
+          "It detects date & time, whether it’s a habit (repetition), and sets the reminder.",
+        step3Title: "3) It brings it back when it matters",
+        step3Text:
+          "Remi puts it in front of you at the right moment so you don’t carry it in your head.",
+      },
+
+      interpret: {
+        title: "Text → automatic reminder",
+        text:
+          "No endless setup. Remi understands natural language and turns it into a useful reminder.",
+        chips: ["Date & time", "Habit / repetition", "Reminder mode"],
+        exampleLabel: "Examples",
+        examples: [
+          "“Tomorrow at 6: call the insurance”",
+          "“Every Monday: gym”",
+          "“On the 5th: pay rent”",
+        ],
+        helperLine: "Write one sentence and done",
+      },
+
+      shareFeature: {
+        badge: "New",
+        title: "Share tasks and ideas to reduce mental load",
+        text:
+          "Help someone clear their mind: share a task or idea as a link, so they can add it and stop carrying the “don’t forget” burden.",
+        points: [
+          "Great for families, couples, and teams",
+          "Share reminders, errands, and ideas in seconds",
+          "Perfect when someone is stressed or overwhelmed",
+        ],
+        exampleLabel: "Example",
+        example:
+          "“Add to Remi: ‘Tomorrow 6:00 pm call the insurance’ → you receive a link and add it in one tap.”",
+        helperLine: "Quick help, no friction",
+        ctaTry: "Try Remi",
+        tag: "Share",
+      },
+
+      everywhere: {
+        title: "Truly multi-device",
+        text:
+          "Remi is available wherever you are: work, home, on the go. Same access, same reminders.",
+        points: [
+          "Desktop to capture while working",
+          "Phone / iPad / tablet to capture on the go",
+          "Use it instantly in the browser or install it as an app (PWA)",
+        ],
+      },
+
+      install: {
+        title: "Install Remi to get reminders",
+        text:
+          "To receive reminder notifications, install Remi now from your browser (PWA).",
+        helper: "Enjoy it like a real app: lighter, faster, and always up to date.",
+        badge: "App mode",
+        bullet1: "Notifications for reminders",
+        bullet2: "Home screen icon",
+        bullet3: "Full-screen app feel",
+        mini1: "Lightweight & fast",
+        mini2: "Always up to date",
+        mini3: "Built for fast capture",
+        ctaHint: "Tap “Install now” and follow the steps for your device.",
+        device: {
+          desktop: "Desktop",
+          phone: "Phone",
+          tablet: "Tablet",
+        },
+        pwaCard: {
+          subtitle: "Notifications & quick access",
+          appLike: "Like an app—only better",
+        },
+      },
+
+      social: {
+        title: "Built with real feedback",
+        subtitle: "Remi improves continuously with testing and user comments.",
+        note: "",
+        testimonials: [
+          {
+            quote:
+              "“Thanks to my coworker for recommending Remi—every day I use it, I feel less mental load and forget fewer things.”",
+            author: "Sarah",
+          },
+          {
+            quote: "“It’s like having a personal memory assistant. I love it!”",
+            author: "Christian",
+          },
+          {
+            quote:
+              "“Very easy to use and very useful—especially the option to share tasks or ideas.”",
+            author: "Erika",
+          },
+        ],
+      },
+
+      modal: {
+        installLabel: "Install now",
+        title: "Install Remi",
+        description:
+          "Install Remi from your browser to receive reminder notifications and use it like an app.",
+        alreadyInstalled:
+          "Remi is already installed on this device. Your reminders can arrive as notifications.",
+        promptText:
+          "Install it to receive reminder notifications and get quick access from the icon.",
+        sectionIOS: "On iPhone / iPad (Safari)",
+        sectionDesktop: "On desktop (Chrome/Edge)",
+        installRequired: "Installation is required to receive reminder notifications.",
+        iosSteps: [
+          "Open the Share menu (Share icon in Safari).",
+          "Tap “Add to Home Screen”.",
+          "Confirm “Add”.",
+        ],
+        desktopSteps: [
+          "In Chrome/Edge, look for the install icon in the address bar or the menu.",
+          "Click “Install”.",
+        ],
+        close: "Close",
+        openInBrowser: "Open in browser",
+        directInstallHint:
+          "If your browser supports direct install, an install button will appear in this modal.",
+      },
+
+      iosBanner: {
+        title: "Install Remi on your iPhone — FREE",
+        step1: "Tap the Share button",
+        step2: "Choose “Add to Home Screen” and confirm.",
+        closeAria: "Close",
+      },
+    },
+  
 
 
 

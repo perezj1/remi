@@ -855,7 +855,7 @@ landing: {
       mentalLoad: {
         title: "Mentale Last im Griff",
         description:
-          "Hol alles aus deinem Kopf heraus, was dich beschäftigt: große und kleine Aufgaben, Erledigungen, Ideen, Dinge, die du nicht vergessen willst. Remi speichert sie und bringt sie genau dann zurück, wenn du sie brauchst.",
+          "Hol alles aus deinem Kopf heraus, was dich beschäftigt: grosse und kleine Aufgaben, Erledigungen, Ideen, Dinge, die du nicht vergessen willst. Remi speichert sie und bringt sie genau dann zurück, wenn du sie brauchst.",
       },
 
       quickCapture: {
@@ -894,7 +894,7 @@ landing: {
       "Wir benutzen unseren Kopf als Aufgabenliste, Kalender, Haushaltsorganisation und Speicher für alles Unerledigte. Das erzeugt Stress und ein ständiges Gefühl mentaler Überlastung. Remi hilft dir, diese Last schnell und einfach in einen externen, klaren und vertrauenswürdigen Ort auszulagern, damit du deine Aufmerksamkeit auf das richten kannst, was wirklich zählt.",
     step1Title: "Hol alles aus deinem Kopf",
     step1Description:
-      "Immer wenn dir etwas in den Sinn kommt – eine Aufgabe, eine Idee, ein Erledigung –, schreibst du es in Remi. Ohne groß nachzudenken: einfach notieren und weitermachen.",
+      "Immer wenn dir etwas in den Sinn kommt – eine Aufgabe, eine Idee, ein Erledigung –, schreibst du es in Remi. Ohne gross nachzudenken: einfach notieren und weitermachen.",
 
     step2Title: "Lass Remi mit dir Ordnung schaffen",
     step2Description:
@@ -919,7 +919,7 @@ landing: {
 
     feature1: "Komplett kostenlos",
     feature2: "Für alle Arten von Menschen und Denkweisen gemacht",
-    feature3: "Funktioniert gleichermaßen gut für Aufgaben und Ideen",
+    feature3: "Funktioniert gleichermassen gut für Aufgaben und Ideen",
   },
 
   footer: {
@@ -950,8 +950,168 @@ landing: {
       licenses: "Lizenzen",
     },
 
-    copyright: "© Remi 2025. Alle Rechte vorbehalten.",
+    copyright: "© Remi 2025. Alle Rechte vorbehalten.",   
   },
+
+   extra: {
+      hero: {
+        kicker: "Sag Remi, was du nicht vergessen willst.",
+        description:
+          "Schreib einen Satz. Remi interpretiert den Text und erstellt die Erinnerung: Datum & Uhrzeit, Wiederholung wenn es ein Habit ist, und den Erinnerungsmodus, wenn es zählt.",
+        bullets: {
+          a: "Einfach schreiben: kein Format, keine Reibung",
+          b: "Remi interpretiert: Datum, Uhrzeit, Habits & Wiederholung",
+          c: "Erinnerungen fertig – du musst dich nicht darauf verlassen, es zu merken",
+          d: "Auf all deinen Geräten: Computer, Handy, iPad & Tablet",
+        },
+      },
+
+      trustRow: { a: "Schnell", b: "Einfach", c: "Für einen leeren Kopf gemacht" },
+
+      problem: {
+        title: "Dein Kopf ist keine To-do-Liste.",
+        text:
+          "Ideen, Erledigungen, offene Punkte… alles im Kopf zu behalten kostet Stress und führt zu Vergessen.",
+        micro: "Remi ist dein mentaler Entlaster: einmal aufschreiben und weiter mit dem Tag.",
+      },
+
+      how: {
+        title: "So funktioniert’s",
+        subtitle: "Du schreibst. Remi versteht. Und erinnert dich.",
+        step1Title: "1) Schreib, was du nicht vergessen willst",
+        step1Text: "Ein Satz, so wie er rauskommt. Keine Menüs, keine Felder.",
+        step2Title: "2) Remi interpretiert es",
+        step2Text:
+          "Erkennt Datum & Uhrzeit, ob es ein Habit ist (Wiederholung), und setzt die Erinnerung.",
+        step3Title: "3) Zur richtigen Zeit wieder da",
+        step3Text:
+          "Remi bringt es im richtigen Moment zurück, damit du es nicht im Kopf tragen musst.",
+      },
+
+      interpret: {
+        title: "Text → automatische Erinnerung",
+        text:
+          "Keine endlose Konfiguration. Remi versteht natürliche Sprache und macht daraus eine nützliche Erinnerung.",
+        chips: ["Datum & Uhrzeit", "Habit / Wiederholung", "Erinnerungsmodus"],
+        exampleLabel: "Beispiele",
+        examples: [
+          "„Morgen um 18: Versicherung anrufen“",
+          "„Jeden Montag: Fitnessstudio“",
+          "„Am 5.: Miete zahlen“",
+        ],
+        helperLine: "Ein Satz reicht",
+      },
+
+      shareFeature: {
+        badge: "Neu",
+        title: "Reminders & Ideen teilen – mentale Last reduzieren",
+        text:
+          "Hilf anderen, den Kopf freizubekommen: Teile eine Aufgabe oder Idee als Link. So kann man sie direkt hinzufügen und muss sie nicht im Kopf behalten.",
+        points: [
+          "Ideal für Familie, Partner und Teams",
+          "Erinnerungen, Erledigungen und Ideen in Sekunden teilen",
+          "Perfekt, wenn jemand gestresst oder überlastet ist",
+        ],
+        exampleLabel: "Beispiel",
+        example:
+          "„Zu Remi hinzufügen: ‚Morgen 18:00 Versicherung anrufen‘ → Link öffnen und mit einem Tap hinzufügen.“",
+        helperLine: "Schnell helfen, ohne Aufwand",
+        ctaTry: "Remi testen",
+        tag: "Teilen",
+      },
+
+      everywhere: {
+        title: "Echtes Multi-Device",
+        text:
+          "Remi ist da, wo du bist: Arbeit, Zuhause, unterwegs. Gleicher Zugriff, gleiche Erinnerungen.",
+        points: [
+          "Computer für schnelle Erfassung bei der Arbeit",
+          "Handy / iPad / Tablet für unterwegs",
+          "Sofort im Browser nutzen oder als App (PWA) installieren",
+        ],
+      },
+
+      install: {
+        title: "Installiere Remi für Erinnerungen",
+        text:
+          "Damit du Benachrichtigungen für deine Erinnerungen bekommst, installiere Remi jetzt im Browser (PWA).",
+        helper: "Wie eine echte App: leichter, schneller und immer aktuell.",
+        badge: "App mode",
+        bullet1: "Benachrichtigungen für Erinnerungen",
+        bullet2: "Icon auf dem Homescreen",
+        bullet3: "Vollbild-App-Gefühl",
+        mini1: "Leicht und schnell",
+        mini2: "Immer aktuell",
+        mini3: "Für schnelle Erfassung gemacht",
+        ctaHint: "Tippe auf „Jetzt installieren“ und folge den Schritten für dein Gerät.",
+        device: {
+          desktop: "Computer",
+          phone: "Handy",
+          tablet: "Tablet",
+        },
+        pwaCard: {
+          subtitle: "Benachrichtigungen & Schnellzugriff",
+          appLike: "Wie eine App – nur besser",
+        },
+      },
+
+      social: {
+        title: "Mit echtem Feedback gebaut",
+        subtitle: "Remi wird laufend mit Tests und Nutzer-Feedback verbessert.",
+        note: "",
+        testimonials: [
+          {
+            quote:
+              "„Danke an meinen Kollegen für die Empfehlung von Remi – jeden Tag, an dem ich es nutze, spüre ich weniger mentale Last und vergesse weniger.“",
+            author: "Sarah",
+          },
+          {
+            quote: "„Wie ein persönlicher Gedächtnis-Assistent. Ich liebe es!“",
+            author: "Christian",
+          },
+          {
+            quote:
+              "„Sehr einfach zu nutzen und sehr hilfreich – besonders die Funktion, Tasks oder Ideen zu teilen.“",
+            author: "Erika",
+          },
+        ],
+      },
+
+      modal: {
+        installLabel: "Jetzt installieren",
+        title: "Remi installieren",
+        description:
+          "Installiere Remi im Browser, um Benachrichtigungen für Erinnerungen zu erhalten und es wie eine App zu nutzen.",
+        alreadyInstalled:
+          "Remi ist auf diesem Gerät bereits installiert. Deine Erinnerungen können als Benachrichtigungen erscheinen.",
+        promptText:
+          "Installiere es, um Benachrichtigungen für Erinnerungen zu erhalten und schnell über das Icon zuzugreifen.",
+        sectionIOS: "Auf iPhone / iPad (Safari)",
+        sectionDesktop: "Am Computer (Chrome/Edge)",
+        installRequired:
+          "Die Installation ist nötig, um Benachrichtigungen für Erinnerungen zu erhalten.",
+        iosSteps: [
+          "Öffne das Teilen-Menü (Share-Icon in Safari).",
+          "Tippe auf „Zum Home-Bildschirm“.",
+          "Bestätige „Hinzufügen“.",
+        ],
+        desktopSteps: [
+          "In Chrome/Edge findest du das „Installieren“-Icon in der Adressleiste oder im Menü.",
+          "Klicke auf „Installieren“.",
+        ],
+        close: "Schliessen",
+        openInBrowser: "Im Browser öffnen",
+        directInstallHint:
+          "Wenn dein Browser eine Direktinstallation unterstützt, erscheint in diesem Modal ein Install-Button.",
+      },
+
+      iosBanner: {
+        title: "Installiere Remi auf deinem iPhone – GRATIS",
+        step1: "Tippe auf Teilen",
+        step2: "Wähle „Zum Home-Bildschirm“ und bestätige.",
+        closeAria: "Schliessen",
+      },
+    },
 
  
 

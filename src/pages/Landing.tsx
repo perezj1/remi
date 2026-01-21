@@ -48,355 +48,6 @@ const landingCopyByLang: Record<RemiLocale, any> = {
   de: de.landing,
 };
 
-/**
- * Copy adicional SOLO para esta landing (sin tocar tus archivos de locales).
- */
-const extraCopyByLang: Record<
-  RemiLocale,
-  {
-    hero: {
-      kicker: string;
-      description: string;
-      bullets: { a: string; b: string; c: string; d: string };
-    };
-    trustRow: { a: string; b: string; c: string };
-    problem: { title: string; text: string; micro: string };
-    how: {
-      title: string;
-      subtitle: string;
-      step1Title: string;
-      step1Text: string;
-      step2Title: string;
-      step2Text: string;
-      step3Title: string;
-      step3Text: string;
-    };
-    interpret: {
-      title: string;
-      text: string;
-      chips: string[];
-      exampleLabel: string;
-      examples: string[];
-    };
-    everywhere: {
-      title: string;
-      text: string;
-      points: string[];
-    };
-    install: {
-      title: string;
-      text: string;
-      helper: string;
-      badge: string;
-      bullet1: string;
-      bullet2: string;
-      bullet3: string;
-      mini1: string;
-      mini2: string;
-      mini3: string;
-      ctaHint: string;
-    };
-    social: { title: string; subtitle: string; note: string };
-    pricing: {
-      title: string;
-      subtitle: string;
-      freeName: string;
-      proName: string;
-      freeItems: string[];
-      proItems: string[];
-      footnote: string;
-    };
-  }
-> = {
-  es: {
-    hero: {
-      kicker: "Dile a Remi lo que no quieres olvidar.",
-      description:
-        "Escribe una frase. Remi interpreta el texto y crea el recordatorio: fecha y hora, repetición si es un hábito, y el modo de recordatorio cuando toca.",
-      bullets: {
-        a: "Solo escribe: cero formato, cero fricción",
-        b: "Remi interpreta: fechas, horas, hábitos y repetición",
-        c: "Recordatorios listos para que no dependa de tu memoria",
-        d: "En todos tus dispositivos: ordenador, móvil, iPad y tablet",
-      },
-    },
-    trustRow: { a: "Rápida", b: "Simple", c: "Hecha para vaciar la mente" },
-    problem: {
-      title: "Tu cerebro no es una lista de tareas.",
-      text:
-        "Ideas, recados, pendientes… cuando lo llevas todo en la cabeza, pagas con estrés y olvidos.",
-      micro:
-        "Remi es tu descarga mental: lo escribes una vez y sigues con tu día.",
-    },
-    how: {
-      title: "Cómo funciona",
-      subtitle: "Escribes. Remi lo entiende. Y te lo recuerda.",
-      step1Title: "1) Escribe lo que no quieres olvidar",
-      step1Text: "Una frase, tal cual te sale. Sin menús, sin pensar en campos.",
-      step2Title: "2) Remi lo interpreta",
-      step2Text:
-        "Detecta fecha y hora, si es un hábito (repetición), y ajusta el recordatorio.",
-      step3Title: "3) Te lo devuelve cuando toca",
-      step3Text:
-        "Remi te lo pone delante en el momento adecuado para que no lo cargues tú.",
-    },
-    interpret: {
-      title: "Texto → recordatorio automático",
-      text:
-        "No necesitas configurar mil cosas. Remi entiende el lenguaje natural y lo convierte en un recordatorio útil.",
-      chips: ["Fecha y hora", "Hábito / repetición", "Modo de recordatorio"],
-      exampleLabel: "Ejemplos",
-      examples: [
-        "“Mañana a las 18: llamar al seguro”",
-        "“Cada lunes: gimnasio”",
-        "“El día 5 pagar el alquiler”",
-      ],
-    },
-    everywhere: {
-      title: "Multi-dispositivo de verdad",
-      text:
-        "Remi está disponible donde estás tú: trabajo, casa, calle. Mismo acceso, mismos recordatorios.",
-      points: [
-        "Ordenador para capturar mientras trabajas",
-        "Móvil / iPad / tablet para capturar al vuelo",
-        "Úsala al instante en el navegador o instálala como app (PWA)",
-      ],
-    },
-    install: {
-      title: "Instala Remi para recibir recordatorios",
-      text:
-        "Para recibir notificaciones con tus recordatorios, instala Remi ahora desde tu navegador (PWA).",
-      helper:
-        "Disfrútala como una verdadera app: más ligera, rápida y siempre actualizada.",
-      badge: "App mode",
-      bullet1: "Notificaciones para recordatorios",
-      bullet2: "Icono en la pantalla de inicio",
-      bullet3: "Pantalla completa, sensación de app",
-      mini1: "Ligera y rápida",
-      mini2: "Siempre actualizada",
-      mini3: "Hecha para capturar rápido",
-      ctaHint:
-        "Pulsa “Instalar ahora” y sigue los pasos según tu dispositivo.",
-    },
-    social: {
-      title: "Construida con feedback real",
-      subtitle:
-        "Remi se mejora continuamente con pruebas y comentarios de usuarios.",
-      note:
-        "Añade aquí testimonios reales cuando los tengas (mejor no inventarlos).",
-    },
-    pricing: {
-      title: "Precios",
-      subtitle: "Empieza gratis. Paga solo si te aporta más.",
-      freeName: "Gratis",
-      proName: "Pro (opcional)",
-      freeItems: [
-        "Crear recordatorios desde texto",
-        "Ideas y tareas",
-        "Multi-dispositivo básico",
-      ],
-      proItems: [
-        "Automatizaciones / recordatorios avanzados",
-        "Funciones extra de productividad",
-        "Acceso anticipado a nuevas features",
-      ],
-      footnote:
-        "Si aún no tienes el pricing definido, deja esta sección oculta y actívala más adelante.",
-    },
-  },
-  en: {
-    hero: {
-      kicker: "Tell Remi what you don’t want to forget.",
-      description:
-        "Write one sentence. Remi interprets it and creates the reminder: date & time, repetition if it’s a habit, and the reminder mode when it matters.",
-      bullets: {
-        a: "Just write: zero formatting, zero friction",
-        b: "Remi interprets: dates, times, habits & repetition",
-        c: "Reminders ready—so you don’t rely on memory",
-        d: "On all your devices: desktop, phone, iPad & tablet",
-      },
-    },
-    trustRow: { a: "Fast", b: "Simple", c: "Built for mind-dumping" },
-    problem: {
-      title: "Your brain is not a to-do list.",
-      text:
-        "Ideas, errands, loose ends… carrying it all in your head costs stress and forgotten stuff.",
-      micro:
-        "Remi is your mental offload: write it once and move on with your day.",
-    },
-    how: {
-      title: "How it works",
-      subtitle: "You write. Remi understands. Then it reminds you.",
-      step1Title: "1) Write what you don’t want to forget",
-      step1Text: "One sentence—just like you’d say it. No forms, no fields.",
-      step2Title: "2) Remi interprets it",
-      step2Text:
-        "It detects date & time, whether it’s a habit (repetition), and sets the reminder mode.",
-      step3Title: "3) It brings it back at the right time",
-      step3Text:
-        "Remi surfaces it when it matters—so you don’t carry it in your head.",
-    },
-    interpret: {
-      title: "Text → automatic reminder",
-      text:
-        "No endless setup. Remi turns natural language into a useful reminder.",
-      chips: ["Date & time", "Habit / repetition", "Reminder mode"],
-      exampleLabel: "Examples",
-      examples: [
-        "“Tomorrow at 6pm: call the insurance”",
-        "“Every Monday: gym”",
-        "“On the 5th: pay rent”",
-      ],
-    },
-    everywhere: {
-      title: "Truly multi-device",
-      text:
-        "Remi is there wherever you are—work, home, on the go. Same access, same reminders.",
-      points: [
-        "Desktop for quick capture while working",
-        "Phone / iPad / tablet for on-the-go capture",
-        "Use it instantly in the browser or install as an app (PWA)",
-      ],
-    },
-    install: {
-      title: "Install Remi to get reminders",
-      text:
-        "To receive reminder notifications, install Remi now from your browser (PWA).",
-      helper:
-        "Enjoy it like a real app—lighter, faster, and always up to date.",
-      badge: "App mode",
-      bullet1: "Notifications for reminders",
-      bullet2: "Home screen icon",
-      bullet3: "Full-screen app feel",
-      mini1: "Lightweight & fast",
-      mini2: "Always up to date",
-      mini3: "Built for fast capture",
-      ctaHint: "Tap “Install now” and follow the steps for your device.",
-    },
-    social: {
-      title: "Built with real feedback",
-      subtitle:
-        "Remi improves continuously with real testing and user comments.",
-      note:
-        "Add real testimonials here when you have them (better not to invent them).",
-    },
-    pricing: {
-      title: "Pricing",
-      subtitle: "Start free. Upgrade only if it truly helps.",
-      freeName: "Free",
-      proName: "Pro (optional)",
-      freeItems: [
-        "Create reminders from text",
-        "Ideas & tasks",
-        "Basic multi-device",
-      ],
-      proItems: [
-        "Advanced automations / reminders",
-        "Extra productivity features",
-        "Early access to new features",
-      ],
-      footnote:
-        "If pricing isn’t decided yet, keep this section hidden and enable it later.",
-    },
-  },
-  de: {
-    hero: {
-      kicker: "Sag Remi, was du nicht vergessen willst.",
-      description:
-        "Schreib einen Satz. Remi interpretiert ihn und erstellt die Erinnerung: Datum & Uhrzeit, Wiederholung wenn es ein Habit ist, und den passenden Erinnerungsmodus.",
-      bullets: {
-        a: "Einfach schreiben: kein Format-Stress, keine Reibung",
-        b: "Remi versteht: Datum, Uhrzeit, Habits & Wiederholung",
-        c: "Erinnerungen fertig – du musst es dir nicht merken",
-        d: "Auf allen Geräten: Computer, Handy, iPad & Tablet",
-      },
-    },
-    trustRow: { a: "Schnell", b: "Einfach", c: "Für Brain-Dump gemacht" },
-    problem: {
-      title: "Dein Kopf ist keine To-do-Liste.",
-      text:
-        "Ideen, Erledigungen, offene Punkte… alles im Kopf zu behalten bedeutet Stress und Vergessen.",
-      micro:
-        "Remi ist dein mentales Auslagern: einmal schreiben und weiterleben.",
-    },
-    how: {
-      title: "So funktioniert’s",
-      subtitle: "Du schreibst. Remi versteht. Und erinnert dich.",
-      step1Title: "1) Schreib, was du nicht vergessen willst",
-      step1Text:
-        "Ein Satz – so wie du es sagen würdest. Keine Formulare, keine Felder.",
-      step2Title: "2) Remi interpretiert es",
-      step2Text:
-        "Es erkennt Datum & Uhrzeit, ob es ein Habit ist (Wiederholung), und setzt den Erinnerungsmodus.",
-      step3Title: "3) Zur richtigen Zeit wieder da",
-      step3Text:
-        "Remi bringt es zurück, wenn es wichtig ist – nicht wenn du zufällig dran denkst.",
-    },
-    interpret: {
-      title: "Text → automatische Erinnerung",
-      text:
-        "Keine endlose Konfiguration. Remi macht aus natürlicher Sprache eine brauchbare Erinnerung.",
-      chips: ["Datum & Uhrzeit", "Habit / Wiederholung", "Erinnerungsmodus"],
-      exampleLabel: "Beispiele",
-      examples: [
-        "„Morgen um 18 Uhr: Versicherung anrufen“",
-        "„Jeden Montag: Fitnessstudio“",
-        "„Am 5.: Miete zahlen“",
-      ],
-    },
-    everywhere: {
-      title: "Echtes Multi-Device",
-      text:
-        "Remi ist da, wo du bist: Arbeit, Zuhause, unterwegs. Gleicher Zugriff, gleiche Erinnerungen.",
-      points: [
-        "Computer für schnelle Erfassung bei der Arbeit",
-        "Handy / iPad / Tablet für unterwegs",
-        "Sofort im Browser nutzen oder als App (PWA) installieren",
-      ],
-    },
-    install: {
-      title: "Installiere Remi für Erinnerungen",
-      text:
-        "Damit du Benachrichtigungen für deine Erinnerungen bekommst, installiere Remi jetzt im Browser (PWA).",
-      helper:
-        "Wie eine echte App – leichter, schneller und immer aktuell.",
-      badge: "App mode",
-      bullet1: "Benachrichtigungen für Erinnerungen",
-      bullet2: "Icon auf dem Homescreen",
-      bullet3: "Vollbild-App-Gefühl",
-      mini1: "Leicht und schnell",
-      mini2: "Immer aktuell",
-      mini3: "Für schnelle Erfassung",
-      ctaHint: "Tippe auf „Jetzt installieren“ und folge den Schritten.",
-    },
-    social: {
-      title: "Mit echtem Feedback gebaut",
-      subtitle:
-        "Remi wird laufend mit echten Tests und Rückmeldungen verbessert.",
-      note:
-        "Hier später echte Testimonials hinzufügen (lieber nicht erfinden).",
-    },
-    pricing: {
-      title: "Preise",
-      subtitle: "Starte gratis. Upgrade nur, wenn es dir wirklich hilft.",
-      freeName: "Gratis",
-      proName: "Pro (optional)",
-      freeItems: [
-        "Erinnerungen aus Text erstellen",
-        "Ideen & Aufgaben",
-        "Basis Multi-Device",
-      ],
-      proItems: [
-        "Erweiterte Automationen / Reminder",
-        "Zusätzliche Produktivitäts-Features",
-        "Früher Zugriff auf neue Features",
-      ],
-      footnote:
-        "Wenn die Preise noch nicht fix sind, diese Sektion ausblenden und später aktivieren.",
-    },
-  },
-};
-
 // Tipado mínimo para beforeinstallprompt (no está en lib.dom.d.ts por defecto)
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -424,8 +75,11 @@ const LandingPage: React.FC = () => {
   const [lang, setLang] = React.useState<RemiLocale>(() => {
     if (typeof window === "undefined") return "es";
 
-    const stored = window.localStorage.getItem("landingLang") as RemiLocale | null;
-    if (stored && (["es", "en", "de"] as RemiLocale[]).includes(stored)) return stored;
+    const stored = window.localStorage.getItem(
+      "landingLang",
+    ) as RemiLocale | null;
+    if (stored && (["es", "en", "de"] as RemiLocale[]).includes(stored))
+      return stored;
 
     const browserLang = window.navigator.language.toLowerCase();
     if (browserLang.startsWith("es")) return "es";
@@ -434,11 +88,13 @@ const LandingPage: React.FC = () => {
   });
 
   React.useEffect(() => {
-    if (typeof window !== "undefined") window.localStorage.setItem("landingLang", lang);
+    if (typeof window !== "undefined")
+      window.localStorage.setItem("landingLang", lang);
   }, [lang]);
 
   const t = landingCopyByLang[lang];
-  const x = extraCopyByLang[lang];
+  // ✅ ahora todo lo "extra" viene del archivo de idioma:
+  const x = t.extra;
 
   const handleShareRemi = async () => {
     const url = `${window.location.origin}/landing`;
@@ -465,8 +121,9 @@ const LandingPage: React.FC = () => {
     React.useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = React.useState(false);
 
-  // ✅ NUEVO: banner iOS (el de tu captura)
-  const [showIosInstallBanner, setShowIosInstallBanner] = React.useState(false);
+  // ✅ banner iOS
+  const [showIosInstallBanner, setShowIosInstallBanner] =
+    React.useState(false);
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
@@ -485,66 +142,28 @@ const LandingPage: React.FC = () => {
       setShowIosInstallBanner(false);
     };
 
-    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt as any);
+    window.addEventListener(
+      "beforeinstallprompt",
+      onBeforeInstallPrompt as any,
+    );
     window.addEventListener("appinstalled", onAppInstalled);
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt as any);
+      window.removeEventListener(
+        "beforeinstallprompt",
+        onBeforeInstallPrompt as any,
+      );
       window.removeEventListener("appinstalled", onAppInstalled);
     };
   }, []);
 
-  const installLabel =
-    lang === "es" ? "Instalar ahora" : lang === "de" ? "Jetzt installieren" : "Install now";
+  // ✅ ahora todo esto viene de x.modal / x.iosBanner
+  const installLabel = x.modal.installLabel;
+  const modalTitle = x.modal.title;
+  const modalDesc = x.modal.description;
 
-  const modalTitle =
-    lang === "es"
-      ? "Instalar Remi"
-      : lang === "de"
-      ? "Remi installieren"
-      : "Install Remi";
-
-  const modalDesc =
-    lang === "es"
-      ? "Instala Remi desde tu navegador para recibir notificaciones con tus recordatorios y usarla como una app."
-      : lang === "de"
-      ? "Installiere Remi im Browser, um Benachrichtigungen für Erinnerungen zu erhalten und es wie eine App zu nutzen."
-      : "Install Remi from your browser to receive reminder notifications and use it like an app.";
-
-  const iosSteps =
-    lang === "es"
-      ? [
-          "Abre el menú de compartir (icono de compartir en Safari).",
-          "Pulsa “Añadir a pantalla de inicio”.",
-          "Confirma “Añadir”.",
-        ]
-      : lang === "de"
-      ? [
-          "Öffne das Teilen-Menü (Share-Icon in Safari).",
-          "Tippe auf „Zum Home-Bildschirm“.",
-          "Bestätige „Hinzufügen“.",
-        ]
-      : [
-          "Open the Share menu (Share icon in Safari).",
-          "Tap “Add to Home Screen”.",
-          "Confirm “Add”.",
-        ];
-
-  const desktopSteps =
-    lang === "es"
-      ? [
-          "En Chrome/Edge, busca el icono de “Instalar” en la barra de direcciones o en el menú.",
-          "Pulsa “Instalar”.",
-        ]
-      : lang === "de"
-      ? [
-          "In Chrome/Edge findest du das „Installieren“-Icon in der Adressleiste oder im Menü.",
-          "Klicke auf „Installieren“.",
-        ]
-      : [
-          "In Chrome/Edge, look for the install icon in the address bar or the menu.",
-          "Click “Install”.",
-        ];
+  const iosSteps = x.modal.iosSteps;
+  const desktopSteps = x.modal.desktopSteps;
 
   const handleInstallNow = async () => {
     if (installed) return;
@@ -561,9 +180,7 @@ const LandingPage: React.FC = () => {
     // iOS/Safari/otros: sin prompt directo => el modal muestra instrucciones
   };
 
-  // ✅ NUEVO: click del CTA de la landing
-  // - iOS => banner como tu captura
-  // - resto => como ahora (abre modal)
+  // click CTA instalar en landing
   const handleInstallCtaClick = () => {
     if (installed) return;
 
@@ -576,27 +193,10 @@ const LandingPage: React.FC = () => {
     setInstallOpen(true);
   };
 
-  // Textos banner iOS (como en la captura)
-  const iosBannerTitle =
-    lang === "es"
-      ? "Instala Remi en tu iPhone - GRATIS"
-      : lang === "de"
-      ? "Installiere Remi auf deinem iPhone – GRATIS"
-      : "Install Remi on your iPhone — FREE";
-
-  const iosBannerStep1 =
-    lang === "es"
-      ? "Pulsa el botón Compartir"
-      : lang === "de"
-      ? "Tippe auf Teilen"
-      : "Tap the Share button";
-
-  const iosBannerStep2 =
-    lang === "es"
-      ? "Elige «Añadir a pantalla de inicio» y confirma."
-      : lang === "de"
-      ? "Wähle „Zum Home-Bildschirm“ und bestätige."
-      : "Choose “Add to Home Screen” and confirm.";
+  // Textos banner iOS desde locales
+  const iosBannerTitle = x.iosBanner.title;
+  const iosBannerStep1 = x.iosBanner.step1;
+  const iosBannerStep2 = x.iosBanner.step2;
 
   return (
     <div className="remi-page landing-shell text-foreground">
@@ -605,12 +205,14 @@ const LandingPage: React.FC = () => {
           <LanguageSwitcher lang={lang} onChange={setLang} />
         </div>
 
-        {/* ✅ NUEVO: Banner iOS estilo tu captura (solo cuando se pulsa Instalar en iOS) */}
+        {/* ✅ Banner iOS */}
         {showIosInstallBanner && !installed && (
-<div className="fixed bottom-4 left-4 right-4 z-[999] flex justify-center">
+          <div className="fixed bottom-4 left-4 right-4 z-[999] flex justify-center">
             <div className="bg-white rounded-2xl shadow-lg px-4 py-3 flex items-start gap-3 max-w-md w-full border border-slate-200">
               <div className="flex-1 text-sm">
-                <div className="font-semibold text-slate-900">{iosBannerTitle}</div>
+                <div className="font-semibold text-slate-900">
+                  {iosBannerTitle}
+                </div>
 
                 <div className="text-xs text-slate-600 mt-1 space-y-1">
                   <div className="flex items-center gap-2">
@@ -661,7 +263,7 @@ const LandingPage: React.FC = () => {
 
               <button
                 onClick={() => setShowIosInstallBanner(false)}
-                aria-label={lang === "es" ? "Cerrar" : lang === "de" ? "Schließen" : "Close"}
+                aria-label={x.iosBanner.closeAria}
                 className="ml-1 text-slate-400 hover:text-slate-600"
               >
                 ✕
@@ -713,10 +315,22 @@ const LandingPage: React.FC = () => {
                 <div className="mx-auto lg:mx-0 max-w-xl">
                   <div className="grid gap-2 text-left text-sm md:text-[15px] text-slate-900">
                     {[
-                      { icon: <Zap className="w-4 h-4" />, text: x.hero.bullets.a },
-                      { icon: <Wand2 className="w-4 h-4" />, text: x.hero.bullets.b },
-                      { icon: <Bell className="w-4 h-4" />, text: x.hero.bullets.c },
-                      { icon: <Tablet className="w-4 h-4" />, text: x.hero.bullets.d },
+                      {
+                        icon: <Zap className="w-4 h-4" />,
+                        text: x.hero.bullets.a,
+                      },
+                      {
+                        icon: <Wand2 className="w-4 h-4" />,
+                        text: x.hero.bullets.b,
+                      },
+                      {
+                        icon: <Bell className="w-4 h-4" />,
+                        text: x.hero.bullets.c,
+                      },
+                      {
+                        icon: <Tablet className="w-4 h-4" />,
+                        text: x.hero.bullets.d,
+                      },
                     ].map((b, idx) => (
                       <div key={idx} className="flex items-start gap-2">
                         <div className="mt-0.5 text-[#7d59c9]">{b.icon}</div>
@@ -756,9 +370,18 @@ const LandingPage: React.FC = () => {
 
                 <div className="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-2">
                   {[
-                    { icon: <ShieldCheck className="w-3.5 h-3.5" />, text: x.trustRow.a },
-                    { icon: <Zap className="w-3.5 h-3.5" />, text: x.trustRow.b },
-                    { icon: <TrendingDown className="w-3.5 h-3.5" />, text: x.trustRow.c },
+                    {
+                      icon: <ShieldCheck className="w-3.5 h-3.5" />,
+                      text: x.trustRow.a,
+                    },
+                    {
+                      icon: <Zap className="w-3.5 h-3.5" />,
+                      text: x.trustRow.b,
+                    },
+                    {
+                      icon: <TrendingDown className="w-3.5 h-3.5" />,
+                      text: x.trustRow.c,
+                    },
                   ].map((it, idx) => (
                     <span
                       key={idx}
@@ -779,19 +402,17 @@ const LandingPage: React.FC = () => {
                       <Wand2 className="w-5 h-5 text-[#7d59c9]" />
                     </div>
                     <div className="text-left">
-                      <p className="text-sm font-semibold text-slate-900">{x.interpret.exampleLabel}</p>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {x.interpret.exampleLabel}
+                      </p>
                       <p className="text-xs text-muted-foreground">
-                        {lang === "es"
-                          ? "Escribe una frase y listo"
-                          : lang === "de"
-                          ? "Ein Satz reicht"
-                          : "One sentence is enough"}
+                        {x.interpret.helperLine}
                       </p>
                     </div>
                   </div>
 
                   <div className="rounded-2xl bg-[#f7f4ff] border border-[#e8ddff] p-4 text-sm text-slate-900 leading-relaxed">
-                    {x.interpret.examples.map((ex, idx) => (
+                    {x.interpret.examples.map((ex: string, idx: number) => (
                       <div key={idx} className="flex gap-2">
                         <span className="text-[#7d59c9] font-semibold">•</span>
                         <span>{ex}</span>
@@ -800,7 +421,7 @@ const LandingPage: React.FC = () => {
                   </div>
 
                   <div className="mt-5 flex flex-wrap gap-2">
-                    {x.interpret.chips.map((chip, idx) => (
+                    {x.interpret.chips.map((chip: string, idx: number) => (
                       <span
                         key={idx}
                         className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs text-slate-700 inline-flex items-center gap-2"
@@ -827,9 +448,15 @@ const LandingPage: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-b from-background via-secondary/10 to-background" />
           <div className="relative z-10 px-6">
             <div className="max-w-4xl mx-auto text-center space-y-4 animate-fade-in">
-              <h2 className="text-3xl md:text-4xl font-extrabold">{x.problem.title}</h2>
-              <p className="text-base md:text-lg text-muted-foreground">{x.problem.text}</p>
-              <p className="text-sm md:text-base text-slate-900">{x.problem.micro}</p>
+              <h2 className="text-3xl md:text-4xl font-extrabold">
+                {x.problem.title}
+              </h2>
+              <p className="text-base md:text-lg text-muted-foreground">
+                {x.problem.text}
+              </p>
+              <p className="text-sm md:text-base text-slate-900">
+                {x.problem.micro}
+              </p>
             </div>
           </div>
         </section>
@@ -839,8 +466,12 @@ const LandingPage: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-b from-background via-secondary/15 to-background" />
           <div className="relative z-10 px-6">
             <div className="text-center max-w-3xl mx-auto mb-10 md:mb-14 space-y-3 animate-fade-in">
-              <h2 className="text-3xl md:text-4xl font-extrabold">{x.how.title}</h2>
-              <p className="text-base md:text-lg text-muted-foreground">{x.how.subtitle}</p>
+              <h2 className="text-3xl md:text-4xl font-extrabold">
+                {x.how.title}
+              </h2>
+              <p className="text-base md:text-lg text-muted-foreground">
+                {x.how.subtitle}
+              </p>
             </div>
 
             <div className="mx-auto w-full max-w-6xl grid md:grid-cols-3 gap-6">
@@ -848,30 +479,145 @@ const LandingPage: React.FC = () => {
                 <div className="w-12 h-12 rounded-2xl bg-[#f4f0ff] flex items-center justify-center mb-4">
                   <Zap className="w-6 h-6 text-[#7d59c9]" />
                 </div>
-                <h3 className="text-xl font-semibold text-slate-900 mb-2">{x.how.step1Title}</h3>
-                <p className="text-sm md:text-base text-muted-foreground leading-relaxed">{x.how.step1Text}</p>
+                <h3 className="text-xl font-semibold text-slate-900 mb-2">
+                  {x.how.step1Title}
+                </h3>
+                <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+                  {x.how.step1Text}
+                </p>
               </Card>
 
               <Card className="landing-card p-6 md:p-8 animate-fade-in">
                 <div className="w-12 h-12 rounded-2xl bg-[#f4f0ff] flex items-center justify-center mb-4">
                   <Wand2 className="w-6 h-6 text-[#7d59c9]" />
                 </div>
-                <h3 className="text-xl font-semibold text-slate-900 mb-2">{x.how.step2Title}</h3>
-                <p className="text-sm md:text-base text-muted-foreground leading-relaxed">{x.how.step2Text}</p>
+                <h3 className="text-xl font-semibold text-slate-900 mb-2">
+                  {x.how.step2Title}
+                </h3>
+                <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+                  {x.how.step2Text}
+                </p>
               </Card>
 
               <Card className="landing-card p-6 md:p-8 animate-fade-in">
                 <div className="w-12 h-12 rounded-2xl bg-[#f4f0ff] flex items-center justify-center mb-4">
                   <Bell className="w-6 h-6 text-[#7d59c9]" />
                 </div>
-                <h3 className="text-xl font-semibold text-slate-900 mb-2">{x.how.step3Title}</h3>
-                <p className="text-sm md:text-base text-muted-foreground leading-relaxed">{x.how.step3Text}</p>
+                <h3 className="text-xl font-semibold text-slate-900 mb-2">
+                  {x.how.step3Title}
+                </h3>
+                <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+                  {x.how.step3Text}
+                </p>
               </Card>
             </div>
           </div>
         </section>
 
-        {/* FEATURES (tarjetas comentadas) + INSTALAR */}
+        {/* SHARE FEATURE */}
+        <section className="py-14 md:py-20 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-background via-secondary/10 to-background" />
+          <div className="relative z-10 px-6">
+            <div className="mx-auto w-full max-w-6xl grid lg:grid-cols-2 gap-6 items-stretch">
+              <Card className="landing-card p-6 md:p-8 shadow-elegant">
+                <div className="flex flex-col items-start gap-3">
+  {/* Fila 1: icono + NEU */}
+  <div className="flex items-center gap-3">
+    <div className="w-12 h-12 rounded-2xl bg-[#f4f0ff] flex items-center justify-center">
+      <Share2 className="w-6 h-6 text-[#7d59c9]" />
+    </div>
+
+    <p className="text-xs font-semibold tracking-[0.18em] uppercase text-[#7d59c9]">
+      {x.shareFeature.badge}
+    </p>
+  </div>
+
+  {/* Fila 2: título debajo (centrado) */}
+<p className="text-xl md:text-2xl font-extrabold text-slate-900 text-center w-full">
+  {x.shareFeature.title}
+</p>
+
+
+  {/* Pill debajo (sin cambiar formato) */}
+  <span className="text-[11px] font-medium text-[#7d59c9] bg-[#f4f0ff] px-2.5 py-1 rounded-full">
+    {x.shareFeature.tag}
+  </span>
+</div>
+
+
+
+                <p className="mt-4 text-sm md:text-base text-muted-foreground leading-relaxed">
+                  {x.shareFeature.text}
+                </p>
+
+                <div className="mt-5 grid gap-3">
+                  {x.shareFeature.points.map((p: string, idx: number) => (
+                    <div key={idx} className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-[#f4f0ff] border border-[#e2d9ff] flex items-center justify-center mt-0.5">
+                        <Check className="w-3.5 h-3.5 text-[#7d59c9]" />
+                      </div>
+                      <span className="text-sm md:text-base text-slate-900 leading-snug">
+                        {p}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              <Card className="landing-card p-6 md:p-8 shadow-elegant">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-[#f4f0ff] flex items-center justify-center">
+                    <Share2 className="w-5 h-5 text-[#7d59c9]" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {x.shareFeature.exampleLabel}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {x.shareFeature.helperLine}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-2xl bg-[#f7f4ff] border border-[#e8ddff] p-4 text-sm text-slate-900 leading-relaxed">
+                  <div className="flex gap-2">
+                    <span className="text-[#7d59c9] font-semibold">•</span>
+                    <span>{x.shareFeature.example}</span>
+                  </div>
+                </div>
+
+                <div className="mt-5 flex flex-col sm:flex-row gap-3">
+                  <Button
+                    onClick={() => navigate("/auth")}
+                    className="
+                      w-full
+                      inline-flex items-center justify-center gap-2
+                      font-semibold
+                      bg-[linear-gradient(135deg,hsl(260_52%_57%),hsl(280_70%_65%))]
+                      text-white
+                      shadow-none border-0
+                    "
+                  >
+                    {x.shareFeature.ctaTry}
+                    <ArrowRight className="ml-2 w-4 h-4" />
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleShareRemi}
+                    className="w-full inline-flex items-center justify-center gap-2"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    <span>{t.hero.shareButtonLabel}</span>
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          </div>
+        </section>
+
+        {/* FEATURES + INSTALAR */}
         <section className="py-16 md:py-24 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-background via-secondary/20 to-background" />
           <div className="relative z-10 px-6">
@@ -882,12 +628,10 @@ const LandingPage: React.FC = () => {
                   {t.features.title.highlighted}
                 </span>
               </h2>
-              <p className="text-base md:text-lg text-muted-foreground">{t.features.subtitle}</p>
+              <p className="text-base md:text-lg text-muted-foreground">
+                {t.features.subtitle}
+              </p>
             </div>
-
-            {/*
-              ✅ TARJETAS ANTERIORES (sobran en este apartado) — comentadas
-            */}
 
             <div className="mx-auto w-full max-w-5xl grid lg:grid-cols-2 gap-6 items-stretch">
               <div className="space-y-4 text-center lg:text-left">
@@ -895,19 +639,27 @@ const LandingPage: React.FC = () => {
                   {x.install.title}
                 </h3>
 
-                <p className="text-base md:text-lg text-muted-foreground">{x.install.text}</p>
+                <p className="text-base md:text-lg text-muted-foreground">
+                  {x.install.text}
+                </p>
 
-                <p className="text-sm md:text-base text-slate-900">{x.install.helper}</p>
+                <p className="text-sm md:text-base text-slate-900">
+                  {x.install.helper}
+                </p>
 
                 <div className="grid gap-3 max-w-xl mx-auto lg:mx-0 pt-2">
-                  {[x.install.bullet1, x.install.bullet2, x.install.bullet3].map((p, idx) => (
-                    <div key={idx} className="flex items-start gap-3">
-                      <div className="w-6 h-6 rounded-full bg-[#f4f0ff] border border-[#e2d9ff] flex items-center justify-center mt-0.5">
-                        <Check className="w-3.5 h-3.5 text-[#7d59c9]" />
+                  {[x.install.bullet1, x.install.bullet2, x.install.bullet3].map(
+                    (p: string, idx: number) => (
+                      <div key={idx} className="flex items-start gap-3">
+                        <div className="w-6 h-6 rounded-full bg-[#f4f0ff] border border-[#e2d9ff] flex items-center justify-center mt-0.5">
+                          <Check className="w-3.5 h-3.5 text-[#7d59c9]" />
+                        </div>
+                        <span className="text-sm md:text-base text-slate-900 leading-snug">
+                          {p}
+                        </span>
                       </div>
-                      <span className="text-sm md:text-base text-slate-900 leading-snug">{p}</span>
-                    </div>
-                  ))}
+                    ),
+                  )}
                 </div>
 
                 <div className="pt-3 flex justify-center lg:justify-start">
@@ -934,15 +686,15 @@ const LandingPage: React.FC = () => {
                 <div className="flex flex-wrap justify-center lg:justify-start gap-2 pt-2">
                   <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f4f0ff] text-[11px] font-medium text-[#7d59c9]">
                     <Monitor className="w-3.5 h-3.5" />
-                    {lang === "es" ? "Ordenador" : lang === "de" ? "Computer" : "Desktop"}
+                    {x.install.device.desktop}
                   </span>
                   <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f4f0ff] text-[11px] font-medium text-[#7d59c9]">
                     <Smartphone className="w-3.5 h-3.5" />
-                    {lang === "es" ? "Móvil" : lang === "de" ? "Handy" : "Phone"}
+                    {x.install.device.phone}
                   </span>
                   <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f4f0ff] text-[11px] font-medium text-[#7d59c9]">
                     <Tablet className="w-3.5 h-3.5" />
-                    iPad / {lang === "es" ? "Tablet" : lang === "de" ? "Tablet" : "Tablet"}
+                    iPad / {x.install.device.tablet}
                   </span>
                   <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f4f0ff] text-[11px] font-medium text-[#7d59c9]">
                     <Globe className="w-3.5 h-3.5" />
@@ -959,13 +711,11 @@ const LandingPage: React.FC = () => {
                       <Download className="w-6 h-6 text-[#7d59c9]" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-slate-900">{x.install.badge}</p>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {x.install.badge}
+                      </p>
                       <p className="text-xs text-muted-foreground">
-                        {lang === "es"
-                          ? "Notificaciones y acceso rápido"
-                          : lang === "de"
-                          ? "Benachrichtigungen & Schnellzugriff"
-                          : "Notifications & quick access"}
+                        {x.install.pwaCard.subtitle}
                       </p>
                     </div>
                   </div>
@@ -985,11 +735,7 @@ const LandingPage: React.FC = () => {
                     <div>
                       <p className="text-sm font-semibold text-slate-900">Remi</p>
                       <p className="text-xs text-muted-foreground">
-                        {lang === "es"
-                          ? "Como app, pero mejor"
-                          : lang === "de"
-                          ? "Wie eine App – nur besser"
-                          : "Like an app—only better"}
+                        {x.install.pwaCard.appLike}
                       </p>
                     </div>
                   </div>
@@ -1015,7 +761,7 @@ const LandingPage: React.FC = () => {
                     {x.interpret.exampleLabel}
                   </p>
                   <div className="grid gap-2 text-sm text-slate-900">
-                    {x.interpret.examples.map((ex, idx) => (
+                    {x.interpret.examples.map((ex: string, idx: number) => (
                       <div key={idx} className="flex gap-2">
                         <span className="text-[#7d59c9] font-semibold">•</span>
                         <span>{ex}</span>
@@ -1028,53 +774,40 @@ const LandingPage: React.FC = () => {
           </div>
         </section>
 
-        {/* SOCIAL PROOF (sin inventar) */}
+        {/* SOCIAL PROOF */}
         <section className="py-14 md:py-20 relative">
           <div className="px-6">
             <div className="max-w-5xl mx-auto text-center space-y-3 animate-fade-in">
-              <h2 className="text-3xl md:text-4xl font-extrabold">{x.social.title}</h2>
-              <p className="text-base md:text-lg text-muted-foreground">{x.social.subtitle}</p>
+              <h2 className="text-3xl md:text-4xl font-extrabold">
+                {x.social.title}
+              </h2>
+              <p className="text-base md:text-lg text-muted-foreground">
+                {x.social.subtitle}
+              </p>
 
               <div className="mt-8 grid md:grid-cols-2 gap-6 text-left">
-                <Card className="landing-card p-6 md:p-7">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-[#f4f0ff] flex items-center justify-center">
-                      <Quote className="w-5 h-5 text-[#7d59c9]" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {lang === "es"
-                          ? "“Aquí va un testimonio real cuando lo tengas.”"
-                          : lang === "de"
-                          ? "„Hier kommt ein echtes Testimonial, sobald du es hast.“"
-                          : "“Add a real testimonial here when you have it.”"}
-                      </p>
-                      <p className="mt-3 text-xs font-semibold text-slate-900">
-                        — {lang === "es" ? "Usuario/a" : "User"}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-
-                <Card className="landing-card p-6 md:p-7">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-[#f4f0ff] flex items-center justify-center">
-                      <Quote className="w-5 h-5 text-[#7d59c9]" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {lang === "es"
-                          ? "“Otro testimonio real (mejor no inventarlo).”"
-                          : lang === "de"
-                          ? "„Noch ein echtes Testimonial (lieber nicht erfinden).“"
-                          : "“Another real testimonial (better not to invent it).”"}
-                      </p>
-                      <p className="mt-3 text-xs font-semibold text-slate-900">
-                        — {lang === "es" ? "Usuario/a" : "User"}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
+                {x.social.testimonials.map(
+                  (
+                    it: { quote: string; author: string },
+                    idx: number,
+                  ) => (
+                    <Card key={idx} className="landing-card p-6 md:p-7">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-[#f4f0ff] flex items-center justify-center">
+                          <Quote className="w-5 h-5 text-[#7d59c9]" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground leading-relaxed">
+                            {it.quote}
+                          </p>
+                          <p className="mt-3 text-xs font-semibold text-slate-900">
+                            — {it.author}
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
+                  ),
+                )}
               </div>
 
               <p className="text-xs text-muted-foreground mt-4">{x.social.note}</p>
@@ -1086,10 +819,15 @@ const LandingPage: React.FC = () => {
         <section className="py-16 md:py-24 relative">
           <div className="px-6">
             <div className="mx-auto w-full max-w-6xl grid lg:grid-cols-2 gap-12 md:gap-16 items-center">
-              <div className="space-y-6 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+              <div
+                className="space-y-6 animate-fade-in"
+                style={{ animationDelay: "0.2s" }}
+              >
                 <h2 className="text-3xl md:text-4xl font-extrabold leading-tight tracking-tight text-center lg:text-left">
                   {t.mentalLoad.title.part1}{" "}
-                  <span className="text-[#7d59c9]">{t.mentalLoad.title.highlighted}</span>
+                  <span className="text-[#7d59c9]">
+                    {t.mentalLoad.title.highlighted}
+                  </span>
                 </h2>
 
                 <div className="space-y-6 animate-fade-in">
@@ -1103,7 +841,9 @@ const LandingPage: React.FC = () => {
                         <p className="text-[11px] md:text-xs font-semibold tracking-[0.18em] uppercase text-[#7d59c9]">
                           {t.mentalLoad.badge}
                         </p>
-                        <h3 className="text-xl md:text-2xl font-bold text-slate-900">{t.mentalLoad.headline}</h3>
+                        <h3 className="text-xl md:text-2xl font-bold text-slate-900">
+                          {t.mentalLoad.headline}
+                        </h3>
                         <p className="text-xs md:text-sm leading-relaxed text-[#6f6c80] max-w-xs mx-auto">
                           {t.mentalLoad.subheadline}
                         </p>
@@ -1136,13 +876,17 @@ const LandingPage: React.FC = () => {
                   <div className="space-y-4 whitespace-pre-line">
                     {[1, 2, 3].map((step) => {
                       const titleKey =
-                        step === 1 ? "step1Title" : step === 2 ? "step2Title" : "step3Title";
+                        step === 1
+                          ? "step1Title"
+                          : step === 2
+                            ? "step2Title"
+                            : "step3Title";
                       const descKey =
                         step === 1
                           ? "step1Description"
                           : step === 2
-                          ? "step2Description"
-                          : "step3Description";
+                            ? "step2Description"
+                            : "step3Description";
 
                       return (
                         <div className="flex items-start gap-3" key={step}>
@@ -1181,7 +925,9 @@ const LandingPage: React.FC = () => {
 
                 <h2 className="text-3xl font-extrabold leading-tight tracking-tight">
                   {t.cta.title.part1}{" "}
-                  <span className="text-[#7d59c9]">{t.cta.title.highlighted}</span>
+                  <span className="text-[#7d59c9]">
+                    {t.cta.title.highlighted}
+                  </span>
                 </h2>
 
                 <p className="text-sm leading-relaxed text-[#6f6c80] max-w-xs mx-auto">
@@ -1217,14 +963,16 @@ const LandingPage: React.FC = () => {
                 </div>
 
                 <div className="mt-2 space-y-3 text-left text-xs text-[#6f6c80]">
-                  {[t.cta.feature1, t.cta.feature2, t.cta.feature3].map((txt: string, idx: number) => (
-                    <div className="flex items-center gap-2" key={idx}>
-                      <div className="w-5 h-5 rounded-full bg-[#f4f0ff] border border-[#e2d9ff] flex items-center justify-center">
-                        <Check className="w-3 h-3 text-[#7d59c9]" />
+                  {[t.cta.feature1, t.cta.feature2, t.cta.feature3].map(
+                    (txt: string, idx: number) => (
+                      <div className="flex items-center gap-2" key={idx}>
+                        <div className="w-5 h-5 rounded-full bg-[#f4f0ff] border border-[#e2d9ff] flex items-center justify-center">
+                          <Check className="w-3 h-3 text-[#7d59c9]" />
+                        </div>
+                        <span>{txt}</span>
                       </div>
-                      <span>{txt}</span>
-                    </div>
-                  ))}
+                    ),
+                  )}
                 </div>
               </div>
             </div>
@@ -1258,7 +1006,7 @@ const LandingPage: React.FC = () => {
                   </span>
                   <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f4f0ff] text-[11px] font-medium text-[#7d59c9]">
                     <Monitor className="w-3.5 h-3.5" />
-                    {lang === "es" ? "Multi-dispositivo" : lang === "de" ? "Multi-Device" : "Multi-device"}
+                    {t.footer.multiDeviceLabel ?? "Multi-device"}
                   </span>
                   <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f4f0ff] text-[11px] font-medium text-[#7d59c9]">
                     <Download className="w-3.5 h-3.5" />
@@ -1275,7 +1023,7 @@ const LandingPage: React.FC = () => {
           </div>
         </footer>
 
-        {/* MODAL DE INSTALACIÓN (igual que antes; solo se abre en no-iOS) */}
+        {/* MODAL DE INSTALACIÓN */}
         <Dialog open={installOpen} onOpenChange={setInstallOpen}>
           <DialogContent className="sm:max-w-[520px] bg-white border border-slate-200 shadow-2xl">
             <DialogHeader>
@@ -1288,22 +1036,14 @@ const LandingPage: React.FC = () => {
 
             {installed ? (
               <div className="mt-2 rounded-2xl bg-[#f7f4ff] border border-[#e8ddff] p-4 text-sm text-slate-900">
-                {lang === "es"
-                  ? "Remi ya está instalada en este dispositivo. Tus recordatorios pueden llegar como notificaciones."
-                  : lang === "de"
-                  ? "Remi ist auf diesem Gerät bereits installiert. Deine Erinnerungen können als Benachrichtigungen erscheinen."
-                  : "Remi is already installed on this device. Your reminders can arrive as notifications."}
+                {x.modal.alreadyInstalled}
               </div>
             ) : (
               <>
                 {deferredPrompt ? (
                   <div className="mt-3 space-y-3">
                     <div className="rounded-2xl bg-[#f7f4ff] border border-[#e8ddff] p-4 text-sm text-slate-900">
-                      {lang === "es"
-                        ? "Instálala para recibir notificaciones con tus recordatorios y tener acceso rápido desde el icono."
-                        : lang === "de"
-                        ? "Installiere es, um Benachrichtigungen für Erinnerungen zu erhalten und schnell über das Icon zuzugreifen."
-                        : "Install it to receive reminder notifications and get quick access from the icon."}
+                      {x.modal.promptText}
                     </div>
 
                     <Button
@@ -1325,34 +1065,24 @@ const LandingPage: React.FC = () => {
                   <div className="mt-3 space-y-4">
                     <div className="rounded-2xl bg-[#f7f4ff] border border-[#e8ddff] p-4">
                       <p className="text-sm font-semibold text-slate-900">
-                        {isIOS()
-                          ? lang === "es"
-                            ? "En iPhone / iPad (Safari)"
-                            : lang === "de"
-                            ? "Auf iPhone / iPad (Safari)"
-                            : "On iPhone / iPad (Safari)"
-                          : lang === "es"
-                          ? "En ordenador (Chrome/Edge)"
-                          : lang === "de"
-                          ? "Am Computer (Chrome/Edge)"
-                          : "On desktop (Chrome/Edge)"}
+                        {isIOS() ? x.modal.sectionIOS : x.modal.sectionDesktop}
                       </p>
 
                       <p className="mt-2 text-xs text-muted-foreground">
-                        {lang === "es"
-                          ? "La instalación es necesaria para recibir notificaciones con tus recordatorios."
-                          : lang === "de"
-                          ? "Die Installation ist nötig, um Benachrichtigungen für Erinnerungen zu erhalten."
-                          : "Installation is required to receive reminder notifications."}
+                        {x.modal.installRequired}
                       </p>
 
                       <div className="mt-3 grid gap-2 text-sm text-slate-900">
-                        {(isIOS() ? iosSteps : desktopSteps).map((s, idx) => (
-                          <div key={idx} className="flex items-start gap-2">
-                            <span className="text-[#7d59c9] font-semibold">{idx + 1}.</span>
-                            <span className="leading-snug">{s}</span>
-                          </div>
-                        ))}
+                        {(isIOS() ? iosSteps : desktopSteps).map(
+                          (s: string, idx: number) => (
+                            <div key={idx} className="flex items-start gap-2">
+                              <span className="text-[#7d59c9] font-semibold">
+                                {idx + 1}.
+                              </span>
+                              <span className="leading-snug">{s}</span>
+                            </div>
+                          ),
+                        )}
                       </div>
                     </div>
 
@@ -1362,7 +1092,7 @@ const LandingPage: React.FC = () => {
                         className="w-full"
                         onClick={() => setInstallOpen(false)}
                       >
-                        {lang === "es" ? "Cerrar" : lang === "de" ? "Schließen" : "Close"}
+                        {x.modal.close}
                       </Button>
 
                       <Button
@@ -1371,20 +1101,12 @@ const LandingPage: React.FC = () => {
                         onClick={() => window.open(window.location.origin, "_blank")}
                       >
                         <ExternalLink className="w-4 h-4" />
-                        {lang === "es"
-                          ? "Abrir en navegador"
-                          : lang === "de"
-                          ? "Im Browser öffnen"
-                          : "Open in browser"}
+                        {x.modal.openInBrowser}
                       </Button>
                     </div>
 
                     <p className="text-xs text-muted-foreground">
-                      {lang === "es"
-                        ? "Si tu navegador soporta instalación directa, aparecerá un botón de instalación en este modal."
-                        : lang === "de"
-                        ? "Wenn dein Browser eine Direktinstallation unterstützt, erscheint in diesem Modal ein Install-Button."
-                        : "If your browser supports direct install, an install button will appear in this modal."}
+                      {x.modal.directInstallHint}
                     </p>
                   </div>
                 )}
