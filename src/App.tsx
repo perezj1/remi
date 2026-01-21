@@ -150,24 +150,29 @@ function AppRoutes() {
   const state = location.state as LocationState | null;
   const from = state?.from || "/";
 
-  // Ocultar bottom nav en rutas públicas/“técnicas”
   const pathname = location.pathname.toLowerCase();
-  const hideBottomNavRoute =
-    pathname.startsWith("/landing") || pathname.startsWith("/share-target");
+  const search = location.search.toLowerCase();
+
+  // ✅ NUEVO: si la URL contiene "share" (en path o query), NO queremos modales globales
+  // Esto cubre: /share/:token, /share-target, y cualquier ruta con ?share=...
+  const isShareUrl = pathname.includes("/share") || search.includes("share");
+
+  // Ocultar bottom nav en rutas públicas/“técnicas”
+  const hideBottomNavRoute = pathname.startsWith("/landing") || pathname.startsWith("/share-target");
 
   const isAuthRoute = pathname.startsWith("/auth");
 
-  // ✅ Ocultar también si hay un modal abierto
-  // Importante: el provider debe marcar "isAnyModalOpen" en TRUE cuando haya modales.
-  const hideBottomNav = hideBottomNavRoute || isAnyModalOpen;
+  // ✅ NUEVO: Ocultar también si es share URL (para evitar overlays en share)
+  const hideBottomNav = hideBottomNavRoute || isAnyModalOpen || isShareUrl;
 
   // ✅ Montar el host SOLO cuando:
   // - hay usuario logueado
   // - y NO estamos en rutas públicas/técnicas
-  const shouldMountCaptureHost = !!user && !hideBottomNavRoute;
+  // ✅ NUEVO: y NO estamos en share URLs (para que no aparezcan modales)
+  const shouldMountCaptureHost = !!user && !hideBottomNavRoute && !isShareUrl;
 
   // ✅ “Shell” global: altura correcta en móvil + fondo consistente
-  const isPublicShell = hideBottomNavRoute || isAuthRoute || !user;
+  const isPublicShell = hideBottomNavRoute || isAuthRoute || !user || isShareUrl;
   const shellBgClass = isPublicShell ? "bg-white" : "bg-[#F6F7FB]";
 
   // ✅ Reserva inferior global para que el contenido nunca quede debajo de la BottomNav
@@ -175,8 +180,8 @@ function AppRoutes() {
 
   // ✅ FIX BottomNav + modales:
   // Si hay un modal abierto, NO reservamos espacio abajo.
-  // (Si reservas, aunque ocultes el BottomNav, el layout queda “como si existiera”.)
-  const shouldReserveBottomSpace = !!user && !hideBottomNav;
+  // ✅ NUEVO: Si es share URL, tampoco reservamos.
+  const shouldReserveBottomSpace = !!user && !hideBottomNav && !isShareUrl;
 
   return (
     <div
@@ -270,9 +275,11 @@ function AppRoutes() {
       </Routes>
 
       {/* ✅ Host global (fuera de Routes) */}
+      {/* ✅ NUEVO: nunca montar en URLs de share */}
       {shouldMountCaptureHost && <RemiCaptureHost />}
 
       {/* Bottom nav solo si hay usuario y no está oculto por ruta o modal */}
+      {/* ✅ NUEVO: también ocultar en URLs de share */}
       {user && !hideBottomNav && <BottomNav />}
 
       <InstallPrompt />
