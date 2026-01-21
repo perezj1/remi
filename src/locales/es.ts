@@ -38,6 +38,7 @@ export const es = {
   loadError: "No se pudo cargar el enlace.",
   loginHint: "Si no has iniciado sesión, te pediremos entrar o crear una cuenta para poder añadirlo.",
  sentIndicator: "Tarea compartida",
+ messageLine1: "{{name}} quiere que recuerdes:"
   },
 
 

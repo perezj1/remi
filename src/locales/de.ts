@@ -40,6 +40,7 @@ shareInvite: {
   loadError: "Link konnte nicht geladen werden.",
   loginHint: "Wenn du nicht eingeloggt bist, musst du dich anmelden oder ein Konto erstellen, um es hinzuzufügen.",
 sentIndicator: "Von dir geteilt",
+messageLine1: "{{name}} möchte, dass du dir merkst:"
   },
 
 

@@ -38,6 +38,7 @@ help: "Turn this task into a habit that Remi will always remind you of at the ch
   loadError: "Failed to load the link.",
   loginHint: "If you’re not logged in, you’ll be asked to sign in or create an account to add it.",
 sentIndicator: "Shared by you",
+messageLine1: "{{name}} wants you to remember:"
   },
 
 
