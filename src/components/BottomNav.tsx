@@ -1,4 +1,5 @@
 // src/components/BottomNav.tsx
+import React, { useMemo, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
@@ -10,10 +11,12 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
-import { useMemo, useRef, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSpeechDictation } from "@/hooks/useSpeechDictation";
 import { requestMicPermission } from "@/lib/micPermission";
+
+// ✅ NUEVO: para ocultar cuando hay modales
+import { useModalUi } from "@/contexts/ModalUiContext";
 
 type UiLang = "es" | "en" | "de";
 
@@ -101,6 +104,9 @@ export default function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { t, lang } = useI18n();
+
+  // ✅ NUEVO
+  const { isAnyModalOpen } = useModalUi();
 
   const { pathname } = location;
 
@@ -287,8 +293,9 @@ export default function BottomNav() {
     };
   }, []);
 
-  // Solo esconder en Index ("/") cuando hay teclado y un campo enfocado
-  const hideNav = pathname === "/" && keyboardVisible && fieldFocused;
+  // ✅ NUEVO: esconder también si hay cualquier modal abierto
+  const hideNav =
+    isAnyModalOpen || (pathname === "/" && keyboardVisible && fieldFocused);
 
   return (
     <nav
@@ -320,10 +327,7 @@ export default function BottomNav() {
           active={pathname === "/status"}
         />
 
-        {/* ✅ Botón central:
-            - Ahora SIEMPRE es "+"
-            - Abre el nuevo modal en Index (igual que en iPhone)
-        */}
+        {/* ✅ Botón central */}
         <div style={{ position: "relative", ...noSelectStyle }}>
           <button
             className="flex h-14 w-14 items-center justify-center rounded-full border-1 border-white bg-[#7d59c9] text-white shadow-[0_8px_20px_rgba(143,49,243,0.2)] -translate-y-0"
@@ -368,13 +372,6 @@ export default function BottomNav() {
           active={isIdeasActive}
         />
       </div>
-
-      {/* Dictado comentado => no mostramos errores */}
-      {/* {!isIOS && error ? (
-        <div style={{ marginTop: 8, textAlign: "center", fontSize: 11, color: "#b91c1c" }}>
-          {String(error)}
-        </div>
-      ) : null} */}
 
       <style>
         {`
