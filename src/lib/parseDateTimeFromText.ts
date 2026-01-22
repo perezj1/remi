@@ -7,8 +7,9 @@ export interface ParsedResult {
   cleanTitle: string;
   dueDateISO: string | null;
   repeatHint: "daily" | "weekly" | "monthly" | "yearly" | null;
-  reminderHint?: "DAY_BEFORE_AND_DUE" | "DAILY_UNTIL_DUE" | null;
+  reminderHint?: "DAY_BEFORE_AND_DUE" | "DAILY_UNTIL_DUE" | "WEEK_BEFORE_AND_DUE" | null;
 }
+
 
 const ALL_LOCALES: RemiLocale[] = ["es", "de", "en"];
 
@@ -61,7 +62,7 @@ function escapeRegExp(str: string) {
 function replaceWholeWords(s: string, map: Record<string, string>) {
   const keys = Object.keys(map).sort((a, b) => b.length - a.length);
   if (!keys.length) return s;
-  const pattern = new RegExp(`\\b(${keys.map(escapeRegExp).join("|")})\\b`, "g");
+const pattern = new RegExp(`\\b(${keys.map(escapeRegExp).join("|")})\\b`, "gi");
   return s.replace(pattern, (m) => map[m] ?? m);
 }
 
@@ -761,6 +762,12 @@ function detectReminderHint(
   // ---- Español ----
   if (locale === "es") {
     if (
+      /\b(una\s+semana\s+antes|1\s+semana\s+antes|siete\s+dias\s+antes|7\s*dias\s+antes|semana\s+antes)\b/.test(text)
+    ) {
+      return "WEEK_BEFORE_AND_DUE";
+    }
+
+    if (
       /\b(dia antes|dia de antes|el dia antes|el dia de antes|un dia antes|un dia de antes|1 dia antes|1 dia de antes|la vispera|el dia anterior|la noche anterior)\b/.test(
         text
       )
@@ -778,6 +785,10 @@ function detectReminderHint(
   }
 
   if (locale === "en") {
+     if (/\b(week\s+before|one\s+week\s+before|1\s+week\s+before)\b/.test(text)) {
+      return "WEEK_BEFORE_AND_DUE";
+    }
+
     if (
       /\b(the day before|one day before|1 day before|day before|the previous day|the night before)\b/.test(
         text
@@ -791,6 +802,14 @@ function detectReminderHint(
   }
 
   if (locale === "de") {
+     if (
+      /\b(eine\s+woche\s+vorher|eine\s+woche\s+davor|eine\s+woche\s+vor|1\s+woche\s+vorher|1\s+woche\s+davor)\b/.test(
+        text
+      )
+    ) {
+      return "WEEK_BEFORE_AND_DUE";
+    }
+
     if (
       /\b(einen tag davor|am tag davor|1 tag davor|einen tag vorher|am tag vorher|am vortag|am abend davor)\b/.test(
         text
@@ -801,6 +820,7 @@ function detectReminderHint(
     if (/\b(jeden tag bis|taglich bis|täglich bis|taeglich bis)\b/.test(text)) {
       return "DAILY_UNTIL_DUE";
     }
+    
   }
 
   return null;
@@ -1185,15 +1205,15 @@ function parseTimeOverrideAny(text: string): TimeOverride | null {
         // Aquí viene la parte clave para ti:
         // "martes a las 4" => interpretamos por defecto como PM (16:00)
         // (y si el usuario quiere AM, lo dice con "mañana", "am", "morgens", etc.)
-        if (h >= 1 && h <= 11) {
-  return {
-    hour: h, // ✅ AM por defecto
-    minute: min,
-    matchedText: m[0],
-    hadExplicitMeridiem: false,
-    assumedPmByDefault: false,
-  };
-}
+         if (h >= 1 && h <= 11) {
+          return {
+            hour: h + 12, // ✅ PM por defecto (4 -> 16)
+            minute: min,
+            matchedText: m[0],
+            hadExplicitMeridiem: false,
+            assumedPmByDefault: true,
+          };
+        }
 
         // h = 0 o h = 12
         return {
@@ -1215,15 +1235,16 @@ function parseTimeOverrideAny(text: string): TimeOverride | null {
       const min = m[2] ? parseInt(m[2], 10) : 0;
       if (h >= 0 && h < 24 && min >= 0 && min <= 59) {
         // Si es 1..11 con "uhr" suele ser 24h/ambig, pero mantenemos la misma regla por defecto (PM)
-        if (h >= 1 && h <= 11) {
-  return {
-    hour: h, // ✅ AM por defecto
-    minute: min,
-    matchedText: m[0],
-    hadExplicitMeridiem: false,
-    assumedPmByDefault: false,
-  };
-}
+                if (h >= 1 && h <= 11) {
+          return {
+            hour: h + 12, // ✅ PM por defecto (4 -> 16)
+            minute: min,
+            matchedText: m[0],
+            hadExplicitMeridiem: false,
+            assumedPmByDefault: true,
+          };
+        }
+
         return {
           hour: h,
           minute: min,

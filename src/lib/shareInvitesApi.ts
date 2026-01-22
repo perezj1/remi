@@ -1,6 +1,8 @@
 // src/lib/shareInvitesApi.ts
 
 import { supabase } from "@/integrations/supabase/client";
+import type { ReminderMode } from "@/lib/brainItemsApi";
+
 
 export type ShareInviteStatus = "pending" | "accepted" | "rejected" | "expired";
 
@@ -14,7 +16,7 @@ export type ShareInvitePublic = {
 
   // Extra (no rompe: viene como campos adicionales del get-share-invite)
   type?: "task" | "idea" | null;
-  reminderMode?: "NONE" | "ON_DUE_DATE" | "DAY_BEFORE_AND_DUE" | "DAILY_UNTIL_DUE" | null;
+reminderMode?: ReminderMode | null;
   repeatType?: string;
   isHabit?: boolean;
   habitOffsetMinutes?: number;

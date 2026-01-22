@@ -57,6 +57,8 @@ mentalDump: {
 detectedReminder: {
   DAY_BEFORE_AND_DUE: "I detected “{word}” → I marked it as: day before + due date.",
   DAILY_UNTIL_DUE: "I detected “{word}” → I marked it as: daily until the due date.",
+WEEK_BEFORE_AND_DUE: "I detected “{word}” → set it to: 1 week before + due date.",
+
 },
 
   why: {
@@ -76,6 +78,9 @@ detectedReminder: {
   reminderOff: "Off",
   reminderDailyUntilDue: "Daily notification (until the due date)",
   reminderDayBeforeAndDue: "Notification (day before + due date)",
+reminderWeekBeforeAndDue: "Notification (1 week before + due date)",
+
+  
 
   buttonLabel: "Clear your mind",
   
@@ -359,7 +364,7 @@ chip: {
   holdToTalk: "Press and hold to talk",
   listening: "Listening…",
   iosKeyboardMicHint: "On iPhone: use the keyboard microphone to speak.",
-speakHold: "Hold to talk",
+  speakHold: "Hold to talk",
 
   textareaPlaceholder: "Examples:",
 
@@ -451,6 +456,7 @@ tasks: {
   },
 
   today: {
+    dueLabel: "Due date",
     greeting: "Hi, {{name}}",
     tasksToday: "You have {{count}} tasks",
     prioritize: "Focus on what matters",

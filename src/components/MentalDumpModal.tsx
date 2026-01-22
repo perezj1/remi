@@ -350,6 +350,16 @@ function detectReminderSignal(
     return until ?? daily;
   }
 
+  if (reminderHint === "WEEK_BEFORE_AND_DUE") {
+  const before =
+    s.match(
+      /\b(una\s+semana\s+antes|1\s+semana\s+antes|siete\s+d[ií]as\s+antes|7\s*d[ií]as\s+antes|week\s+before|one\s+week\s+before|eine\s+woche\s+vorher|eine\s+woche\s+davor|eine\s+woche\s+vor)\b/i
+    )?.[0] ?? null;
+
+  return before;
+}
+
+
   return null;
 }
 
@@ -523,15 +533,18 @@ export default function MentalDumpModal({
   }
 
   function formatReminderMode(mode: ReminderMode): string {
-    switch (mode) {
-      case "DAY_BEFORE_AND_DUE":
-        return t("mentalDump.reminderDayBeforeAndDue");
-      case "DAILY_UNTIL_DUE":
-        return t("mentalDump.reminderDailyUntilDue");
-      default:
-        return t("mentalDump.reminderOff");
-    }
+  switch (mode) {
+    case "DAY_BEFORE_AND_DUE":
+      return t("mentalDump.reminderDayBeforeAndDue");
+    case "WEEK_BEFORE_AND_DUE":
+      return t("mentalDump.reminderWeekBeforeAndDue");
+    case "DAILY_UNTIL_DUE":
+      return t("mentalDump.reminderDailyUntilDue");
+    default:
+      return t("mentalDump.reminderOff");
   }
+}
+
 
   function computeTaskFieldsFromText(
     text: string
@@ -560,10 +573,12 @@ export default function MentalDumpModal({
 
     let reminderMode: ReminderMode = "NONE";
     if (dueDate) {
-      if (reminderHint === "DAY_BEFORE_AND_DUE") reminderMode = "DAY_BEFORE_AND_DUE";
-      else if (reminderHint === "DAILY_UNTIL_DUE") reminderMode = "DAILY_UNTIL_DUE";
-      else reminderMode = "DAILY_UNTIL_DUE";
-    }
+  if (reminderHint === "DAY_BEFORE_AND_DUE") reminderMode = "DAY_BEFORE_AND_DUE";
+  else if (reminderHint === "WEEK_BEFORE_AND_DUE") reminderMode = "WEEK_BEFORE_AND_DUE";
+  else if (reminderHint === "DAILY_UNTIL_DUE") reminderMode = "DAILY_UNTIL_DUE";
+  else reminderMode = "DAILY_UNTIL_DUE";
+}
+
 
     const detectedDateText = detectDateSignal(cleanedText);
     const detectedTimeText = detectTimeSignal(cleanedText);
@@ -1291,6 +1306,7 @@ export default function MentalDumpModal({
                                     <option value="NONE">{t("mentalDump.reminderOff")}</option>
                                     <option value="DAILY_UNTIL_DUE">{t("mentalDump.reminderDailyUntilDue")}</option>
                                     <option value="DAY_BEFORE_AND_DUE">{t("mentalDump.reminderDayBeforeAndDue")}</option>
+                                    <option value="WEEK_BEFORE_AND_DUE">{t("mentalDump.reminderWeekBeforeAndDue")}</option>
                                   </select>
 
                                   <div className="text-[11px] text-slate-500">

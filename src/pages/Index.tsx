@@ -165,38 +165,20 @@ export default function TodayPage() {
   // ✅ tick para re-evaluar “Cierre del día” sin recargar
   const [nowTick, setNowTick] = useState(0);
 
+const anyModalOpen =
+  showPushModal ||
+  showShortcutsModal ||
+  showIosDictationHelp ||
+  showShareToRemiHelp ||
+  showMultiDeviceHelp;
+
+ useEffect(() => {
+    setModalOpen(anyModalOpen);
+  }, [anyModalOpen, setModalOpen]);
+
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
 
-  // ✅ registrar modales en el contador global -> App.tsx ocultará BottomNav
-  useEffect(() => {
-    if (!showPushModal) return;
-    setModalOpen(true);
-    return () => setModalOpen(false);
-  }, [showPushModal, setModalOpen]);
-
-  useEffect(() => {
-    if (!showShortcutsModal) return;
-    setModalOpen(true);
-    return () => setModalOpen(false);
-  }, [showShortcutsModal, setModalOpen]);
-
-  useEffect(() => {
-    if (!showIosDictationHelp) return;
-    setModalOpen(true);
-    return () => setModalOpen(false);
-  }, [showIosDictationHelp, setModalOpen]);
-
-  useEffect(() => {
-    if (!showShareToRemiHelp) return;
-    setModalOpen(true);
-    return () => setModalOpen(false);
-  }, [showShareToRemiHelp, setModalOpen]);
-
-  useEffect(() => {
-    if (!showMultiDeviceHelp) return;
-    setModalOpen(true);
-    return () => setModalOpen(false);
-  }, [showMultiDeviceHelp, setModalOpen]);
+  
 
   // ✅ Ahora: Hoy (default), Semana, Sin fecha
   const [filter, setFilter] = useState<FilterMode>("TODAY");
@@ -560,6 +542,13 @@ export default function TodayPage() {
           }
         }
       }
+
+      if (mode === "WEEK_BEFORE_AND_DUE") {
+  const weekBefore = new Date(dueMid);
+  weekBefore.setDate(weekBefore.getDate() - 7);
+  addTaskToDate(weekBefore, task);
+}
+
     }
 
     const dateGroupsArr = Array.from(groupsMap.values())

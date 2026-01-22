@@ -57,6 +57,8 @@ mentalDump: {
   detectedReminder: {
     DAY_BEFORE_AND_DUE: "Detecté “{word}” → lo marqué como: día antes + día límite.",
     DAILY_UNTIL_DUE: "Detecté “{word}” → lo marqué como: diario hasta la fecha límite.",
+        WEEK_BEFORE_AND_DUE: "Detecté “{word}” → lo marqué como: 1 semana antes + día límite.",
+
   },
 
   why: {
@@ -77,6 +79,8 @@ mentalDump: {
   reminderOff: "Off",
   reminderDailyUntilDue: "Notificación diaria (hasta la fecha)",
   reminderDayBeforeAndDue: "Notificación (día antes + día límite)",
+    reminderWeekBeforeAndDue: "Notificación (1 semana antes + día límite)",
+
 
   buttonLabel: "Vacía tu mente",
 
@@ -473,6 +477,7 @@ tasks: {
   // es.ts
 
   today: {
+    dueLabel: "Fecha Límite",
     // Header / general
     greeting: "Hola, {{name}}",
     tasksToday: "Tienes {{count}} tareas",

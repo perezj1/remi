@@ -16,7 +16,8 @@ export type ReminderMode =
   | "NONE"
   | "ON_DUE_DATE"
   | "DAY_BEFORE_AND_DUE"
-  | "DAILY_UNTIL_DUE";
+  | "DAILY_UNTIL_DUE"
+  | "WEEK_BEFORE_AND_DUE";
 
 export type RepeatType = "none" | "daily" | "weekly" | "monthly" | "yearly";
 
@@ -389,7 +390,11 @@ export async function updateTask(
 
   const safeReminderMode: ReminderMode =
     !dueDate &&
-    (reminderMode === "ON_DUE_DATE" || reminderMode === "DAY_BEFORE_AND_DUE")
+    (
+      reminderMode === "ON_DUE_DATE" ||
+      reminderMode === "DAY_BEFORE_AND_DUE" ||
+      reminderMode === "WEEK_BEFORE_AND_DUE"
+    )
       ? "NONE"
       : reminderMode;
 

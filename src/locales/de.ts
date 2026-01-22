@@ -59,6 +59,7 @@ mentalDump: {
 detectedReminder: {
   DAY_BEFORE_AND_DUE: "Ich habe „{word}“ erkannt → ich habe es markiert als: einen Tag vorher + Fälligkeitsdatum.",
   DAILY_UNTIL_DUE: "Ich habe „{word}“ erkannt → ich habe es markiert als: täglich bis zum Fälligkeitsdatum.",
+WEEK_BEFORE_AND_DUE: "Ich habe „{word}“ erkannt → gesetzt auf: 1 Woche vorher + Fälligkeitsdatum.",
 },
 
   why: {
@@ -78,6 +79,7 @@ detectedReminder: {
   reminderOff: "Aus",
   reminderDailyUntilDue: "Tägliche Benachrichtigung (bis zum Fälligkeitsdatum)",
   reminderDayBeforeAndDue: "Benachrichtigung (Tag davor + Fälligkeitstag)",
+reminderWeekBeforeAndDue: "Benachrichtigung (1 Woche vorher + Fälligkeitsdatum)",
 
   buttonLabel: "Kopf leeren",
   
@@ -456,6 +458,7 @@ tasks: {
   },
 
   today: {
+    dueLabel: "Fälligkeitsdatum",
     greeting: "Hallo, {{name}}",
     tasksToday: "Du hast {{count}} Aufgaben",
     prioritize: "Fokussiere das Wichtige",

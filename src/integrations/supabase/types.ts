@@ -17,7 +17,9 @@ export type ReminderMode =
   | "NONE"
   | "ON_DUE_DATE"
   | "DAY_BEFORE_AND_DUE"
-  | "DAILY_UNTIL_DUE";
+  | "DAILY_UNTIL_DUE"
+  | "WEEK_BEFORE_AND_DUE";
+
 
 export interface BrainItem {
   id: string;

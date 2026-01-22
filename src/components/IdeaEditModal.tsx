@@ -838,27 +838,33 @@ export default function IdeaEditModal({
               </label>
 
               <select
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-900 outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-300"
-                value={reminderMode}
-                disabled={remindersDisabled}
-                onChange={(e) => setReminderMode(e.target.value as ReminderMode)}
-                style={{
-                  opacity: remindersDisabled ? 0.6 : 1,
-                  cursor: remindersDisabled ? "not-allowed" : "pointer",
-                }}
-              >
-                <option value="NONE">{t("tasks.reminder.none") || "None"}</option>
-                <option value="ON_DUE_DATE">
-                  {t("tasks.reminder.onDue") || "On due date"}
-                </option>
-                <option value="DAY_BEFORE_AND_DUE">
-                  {t("tasks.reminder.dayBeforeAndDue") ||
-                    "Day before + due date"}
-                </option>
-                <option value="DAILY_UNTIL_DUE">
-                  {t("tasks.reminder.dailyUntilDue") || "Daily until due"}
-                </option>
-              </select>
+  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-900 outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-300"
+  value={reminderMode}
+  disabled={remindersDisabled}
+  onChange={(e) => setReminderMode(e.target.value as ReminderMode)}
+  style={{
+    opacity: remindersDisabled ? 0.6 : 1,
+    cursor: remindersDisabled ? "not-allowed" : "pointer",
+  }}
+>
+  <option value="NONE">{t("tasks.reminder.none") || "None"}</option>
+  <option value="ON_DUE_DATE">
+    {t("tasks.reminder.onDue") || "On due date"}
+  </option>
+  <option value="DAY_BEFORE_AND_DUE">
+    {t("tasks.reminder.dayBeforeAndDue") || "Day before + due date"}
+  </option>
+
+  {/* ✅ NUEVO */}
+  <option value="WEEK_BEFORE_AND_DUE">
+    {t("tasks.reminder.weekBeforeAndDue") || "Week before + due date"}
+  </option>
+
+  <option value="DAILY_UNTIL_DUE">
+    {t("tasks.reminder.dailyUntilDue") || "Daily until due"}
+  </option>
+</select>
+
             </div>
 
             <Separator />
