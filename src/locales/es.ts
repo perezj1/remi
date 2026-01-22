@@ -79,7 +79,7 @@ mentalDump: {
   reminderOff: "Off",
   reminderDailyUntilDue: "Notificación diaria (hasta la fecha)",
   reminderDayBeforeAndDue: "Notificación (día antes + día límite)",
-    reminderWeekBeforeAndDue: "Notificación (1 semana antes + día límite)",
+    reminderWeekBeforeAndDue: "Notificación (1 semana antes)",
 
 
   buttonLabel: "Vacía tu mente",
@@ -405,6 +405,7 @@ paste: {
   remindersOnDue: "Solo el día límite",
   remindersDayBeforeAndDue: "Día antes y día límite",
   remindersDailyUntilDue: "Cada día hasta la fecha límite",
+  reminderWeekBeforeAndDue: "Una semana antes hasta el día",
 
   back: "Atrás",
   saveTask: "Guardar tarea",
@@ -436,7 +437,11 @@ tasks: {
     onDue: "Solo el día límite",
     dayBeforeAndDue: "Día antes y día límite",
     dailyUntilDue: "Cada día hasta la fecha límite",
+    weekBeforeAndDue: "Cada día (1 Semana antes)",
+
   },
+
+
 
   save: "Guardar",
   footerHint: "Puedes editar esto cuando quieras.",

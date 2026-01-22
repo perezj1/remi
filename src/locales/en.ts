@@ -415,6 +415,7 @@ tasks: {
     onDue: "Only on due date",
     dayBeforeAndDue: "Day before and due date",
     dailyUntilDue: "Every day until due date",
+    weekBeforeAndDue: "Every day (1 week before)",
   },
 
   save: "Save",

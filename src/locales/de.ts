@@ -415,6 +415,7 @@ tasks: {
     onDue: "Nur am Fälligkeitstag",
     dayBeforeAndDue: "Am Vortag und am Fälligkeitstag",
     dailyUntilDue: "Jeden Tag bis zum Fälligkeitstag",
+    weekBeforeAndDue: "Jeden Tag (1 Woche vorher)",
   },
 
   save: "Speichern",
