@@ -19,7 +19,11 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
 import TaskEditModal from "@/components/TaskEditModal";
-import { createShareInvite, shareTextOrCopy } from "@/lib/shareInvitesApi";
+import {
+  createShareInviteCached,
+  prefetchShareInvite,
+  shareTextOrCopy,
+} from "@/lib/shareInvitesApi";
 
 type DateGroup = {
   key: string;
@@ -224,16 +228,17 @@ export default function TasksPage() {
   };
 
   const handleShare = async (item: BrainItem) => {
-    try {
-      if (!item?.id) return;
-      const res = await createShareInvite(item.id);
-      await shareTextOrCopy(res.shareMessage);
-      alert(t("shareInvite.sharedOk"));
-    } catch (err) {
-      console.error(err);
-      alert(t("shareInvite.sharedError"));
-    }
-  };
+  try {
+    if (!item?.id) return;
+    const res = await createShareInviteCached(item.id);
+    await shareTextOrCopy(res.shareMessage);
+    alert(t("shareInvite.sharedOk"));
+  } catch (err) {
+    console.error(err);
+    alert(t("shareInvite.sharedError"));
+  }
+};
+
 
   const filterLabel = t("inbox.tasksTab");
 
@@ -396,15 +401,17 @@ export default function TasksPage() {
                             {/* Footer row */}
                             <div className="mt-3 flex items-center gap-3">
                               <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  void handleShare(item);
-                                }}
-                                className={shareBtnClass}
-                                aria-label={shareLabel}
-                                title={shareLabel}
-                              >
+  type="button"
+  onPointerDown={() => prefetchShareInvite(item.id)}
+  onClick={(e) => {
+    e.stopPropagation();
+    void handleShare(item);
+  }}
+  className={shareBtnClass}
+  aria-label={shareLabel}
+  title={shareLabel}
+>
+
                                 <Share2 size={15} color="#94A3B8" />
                                 <span>{shareLabel}</span>
                               </button>

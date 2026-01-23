@@ -18,7 +18,11 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
 import IdeaEditModal from "@/components/IdeaEditModal";
-import { createShareInvite, shareTextOrCopy } from "@/lib/shareInvitesApi";
+import {
+  createShareInviteCached,
+  prefetchShareInvite,
+  shareTextOrCopy,
+} from "@/lib/shareInvitesApi";
 
 type DateGroup = {
   key: string;
@@ -211,16 +215,17 @@ export default function IdeasPage() {
   };
 
   const handleShare = async (item: BrainItem) => {
-    try {
-      if (!item?.id) return;
-      const res = await createShareInvite(item.id);
-      await shareTextOrCopy(res.shareMessage);
-      alert(t("shareInvite.sharedOk"));
-    } catch (err) {
-      console.error(err);
-      alert(t("shareInvite.sharedError"));
-    }
-  };
+  try {
+    if (!item?.id) return;
+    const res = await createShareInviteCached(item.id);
+    await shareTextOrCopy(res.shareMessage);
+    alert(t("shareInvite.sharedOk"));
+  } catch (err) {
+    console.error(err);
+    alert(t("shareInvite.sharedError"));
+  }
+};
+
 
   const filterLabel = t("inbox.ideasTab");
 
@@ -375,15 +380,17 @@ export default function IdeasPage() {
                             <div className="mt-3 flex items-center gap-3">
                               {/* Left: Compartir */}
                               <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  void handleShare(item);
-                                }}
-                                className="flex-1 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center gap-2 text-[12px] font-semibold text-slate-700"
-                                aria-label={t("shareInvite.share")}
-                                title={t("shareInvite.share")}
-                              >
+  type="button"
+  onPointerDown={() => prefetchShareInvite(item.id)}
+  onClick={(e) => {
+    e.stopPropagation();
+    void handleShare(item);
+  }}
+  className="flex-1 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center gap-2 text-[12px] font-semibold text-slate-700"
+  aria-label={t("shareInvite.share")}
+  title={t("shareInvite.share")}
+>
+
                                 <Share2 size={15} className="text-slate-400" />
                                 <span>{t("shareInvite.share")}</span>
                               </button>

@@ -24,7 +24,11 @@ import {
 } from "@/lib/brainItemsApi";
 import { supabase } from "@/integrations/supabase/client";
 import { registerPushSubscription } from "@/lib/registerPush";
-import { createShareInvite, shareTextOrCopy } from "@/lib/shareInvitesApi";
+import {
+  createShareInviteCached,
+  prefetchShareInvite,
+  shareTextOrCopy,
+} from "@/lib/shareInvitesApi";
 
 
 // ✅ HOOK deck (snap 1 tarjeta por gesto)
@@ -595,16 +599,24 @@ const anyModalOpen =
     setTasks((prev) => prev.filter((tt) => tt.id !== updated.id));
   };
 
-  const handleShareTask = async (task: BrainItem) => {
+    const handleShareTask = async (task: BrainItem) => {
   try {
-    const res = await createShareInvite(task.id);
+    // ✅ usa la promesa cacheada (si ya empezó en pointerdown, aquí casi “vuela”)
+    const res = await createShareInviteCached(task.id);
     await shareTextOrCopy(res.shareMessage);
     alert(safeT("shareInvite.sharedOk", "Listo. Enlace copiado/compartido."));
   } catch (e) {
     console.error(e);
-    alert(safeT("shareInvite.sharedError", "No se pudo compartir. Inténtalo de nuevo."));
+    alert(
+      safeT(
+        "shareInvite.sharedError",
+        "No se pudo compartir. Inténtalo de nuevo.",
+      ),
+    );
   }
 };
+
+
 
 
   const handlePostpone = async (task: BrainItem, option: "DAY" | "WEEK") => {
@@ -1471,14 +1483,16 @@ const anyModalOpen =
 
                           <div className="flex items-center gap-2">
                            <button
-                              type="button"
-                              onClick={() => handleShareTask(task)}
-                              title={safeT("shareInvite.share", "Compartir")}
-                              aria-label={safeT("shareInvite.share", "Compartir")}
-                              className="w-9 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center"
-                            >
-                              <Share2 size={16} color="#94A3B8" />
-                            </button>
+  type="button"
+  onPointerDown={() => prefetchShareInvite(task.id)}
+  onClick={() => handleShareTask(task)}
+  title={safeT("shareInvite.share", "Compartir")}
+  aria-label={safeT("shareInvite.share", "Compartir")}
+  className="w-9 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center"
+>
+  <Share2 size={16} color="#94A3B8" />
+</button>
+
 
 
                             <button
@@ -1577,14 +1591,16 @@ const anyModalOpen =
 
                       <div className="flex items-center gap-2">
                         <button
-                          type="button"
-                          onClick={() => handleShareTask(task)}
-                          title={safeT("shareInvite.share", "Compartir")}
-                          aria-label={safeT("shareInvite.share", "Compartir")}
-                          className="w-9 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center"
-                        >
-                          <Share2 size={16} color="#94A3B8" />
-                        </button>
+  type="button"
+  onPointerDown={() => prefetchShareInvite(task.id)}
+  onClick={() => handleShareTask(task)}
+  title={safeT("shareInvite.share", "Compartir")}
+  aria-label={safeT("shareInvite.share", "Compartir")}
+  className="w-9 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center"
+>
+  <Share2 size={16} color="#94A3B8" />
+</button>
+
 
                         <button
                           type="button"

@@ -3,7 +3,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { ReminderMode } from "@/lib/brainItemsApi";
 
-
 export type ShareInviteStatus = "pending" | "accepted" | "rejected" | "expired";
 
 export type ShareInvitePublic = {
@@ -16,7 +15,7 @@ export type ShareInvitePublic = {
 
   // Extra (no rompe: viene como campos adicionales del get-share-invite)
   type?: "task" | "idea" | null;
-reminderMode?: ReminderMode | null;
+  reminderMode?: ReminderMode | null;
   repeatType?: string;
   isHabit?: boolean;
   habitOffsetMinutes?: number;
@@ -51,7 +50,6 @@ export async function createShareInvite(
   });
 
   if (error) {
-    // supabase-js packs HTTP errors here
     throw new Error(error.message || "create-share-invite failed");
   }
   if (!data?.token || !data?.shareUrl || !data?.shareMessage) {
@@ -59,6 +57,59 @@ export async function createShareInvite(
   }
 
   return data as CreateShareInviteResult;
+}
+
+/* ------------------------------------------------------------------ */
+/* ✅ NUEVO: cache + prefetch (para que el click no espere tanto)      */
+/* ------------------------------------------------------------------ */
+
+const SHARE_INVITE_TTL_MS = 5 * 60 * 1000; // 5 min
+type CachedInvite = { ts: number; promise: Promise<CreateShareInviteResult> };
+const inviteCache = new Map<string, CachedInvite>();
+
+/**
+ * Devuelve (y comparte) una promesa cacheada para el mismo brainItemId.
+ * - Si ya hay una creación en curso, la reutiliza (dedupe).
+ * - TTL para evitar reusar links viejos demasiado tiempo.
+ */
+export function createShareInviteCached(
+  brainItemId: string,
+): Promise<CreateShareInviteResult> {
+  if (!brainItemId) return Promise.reject(new Error("Missing brainItemId"));
+
+  const now = Date.now();
+  const cached = inviteCache.get(brainItemId);
+
+  if (cached && now - cached.ts < SHARE_INVITE_TTL_MS) {
+    return cached.promise;
+  }
+
+  const p = createShareInvite(brainItemId).catch((err) => {
+    // si falla, no dejes basura en cache
+    inviteCache.delete(brainItemId);
+    throw err;
+  });
+
+  inviteCache.set(brainItemId, { ts: now, promise: p });
+  return p;
+}
+
+/**
+ * Lanza la creación del invite lo antes posible (sin bloquear UI).
+ * Útil en onPointerDown / onTouchStart.
+ */
+export function prefetchShareInvite(brainItemId: string): void {
+  try {
+    void createShareInviteCached(brainItemId);
+  } catch {
+    // no hacer nada; el click real manejará el error
+  }
+}
+
+/** Opcional: por si quieres limpiar manualmente */
+export function clearShareInviteCache(brainItemId?: string): void {
+  if (brainItemId) inviteCache.delete(brainItemId);
+  else inviteCache.clear();
 }
 
 /**
