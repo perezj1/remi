@@ -459,6 +459,22 @@ tasks: {
   },
 
   today: {
+
+shareRemindersModal: {
+  title: "Erinnerungen mit anderen teilen",
+  body: "Sende eine Aufgabe oder Idee per Link, damit jemand sie mit einem Tipp zu Remi hinzufügen kann.",
+  stepsTitle: "So funktioniert’s (kurz)",
+  step1: "Bei einer Aufgabe/Idee auf das Teilen-Symbol tippen.",
+  step2: "Sende den Link per WhatsApp, E-Mail usw.",
+  step3: "Die empfangende Person tippt auf „Zu Remi hinzufügen“.",
+  examplesTitle: "Beispiele, die super passen",
+  examplesBody: "• „Morgen Brot kaufen“ → ich schicke es meiner Partnerin/meinem Partner\n• „Arzt am Dienstag um 14:00“ → ich schicke es meiner Mutter\n• „Ladegerät mitbringen“ → ich schicke es einem Kollegen/einer Kollegin",
+  footer: "Das hilft anderen, Dinge zu erinnern, die für sie und für dich wichtig sind.",
+  ok: "Verstanden",
+  hideForever: "Nicht mehr anzeigen"
+},
+
+
     dueLabel: "Fälligkeitsdatum",
     greeting: "Hallo, {{name}}",
     tasksToday: "Du hast {{count}} Aufgaben",
@@ -518,6 +534,12 @@ tasks: {
     },
 
     tip: {
+
+   shareReminders: {
+      title: "Erinnerungen im Team",
+  body: "Teile Aufgaben oder Ideen.\nAndere fügen sie mit einem Tipp zu ihrem Remi hinzu.",
+  cta: "So geht’s",
+},
 
         multidevice: {
         title: "Remi auf Handy, iPad/Tablet und PC",

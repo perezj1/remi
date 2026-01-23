@@ -63,6 +63,10 @@ const TIP_DISMISS_KEY = "remi_tip_dismissed_v1";
 // ✅ key NUEVA para que vuelva a aparecer el tip “Compartir → Remi”
 const SHARE_TO_REMI_DISMISS_KEY = "share-to-remi-help";
 
+// ✅ Añade esto arriba con las otras keys (Index.tsx)
+const SHARE_REMINDERS_TIP_KEY = "share-reminders";
+
+
 // ✅ NUEVO: key tip multi-dispositivo
 const MULTI_DEVICE_TIP_KEY = "multi-device";
 
@@ -166,15 +170,19 @@ export default function TodayPage() {
   // ✅ modal ayuda: multi-dispositivo
   const [showMultiDeviceHelp, setShowMultiDeviceHelp] = useState(false);
 
+  // ✅ modal ayuda: compartir recordatorios (entre usuarios)
+  const [showShareRemindersHelp, setShowShareRemindersHelp] = useState(false);
+
   // ✅ tick para re-evaluar “Cierre del día” sin recargar
   const [nowTick, setNowTick] = useState(0);
 
 const anyModalOpen =
-  showPushModal ||
+    showPushModal ||
   showShortcutsModal ||
   showIosDictationHelp ||
   showShareToRemiHelp ||
-  showMultiDeviceHelp;
+  showMultiDeviceHelp ||
+  showShareRemindersHelp;
 
  useEffect(() => {
     setModalOpen(anyModalOpen);
@@ -890,25 +898,26 @@ const anyModalOpen =
       onClick: () => void handlePasteFromClipboard(),
     });
 
-    // 8) ✅ Compartir a Remi (flujo)
-    if (!dismissedTips[SHARE_TO_REMI_DISMISS_KEY]) {
-      cards.push({
-        id: "share-to-remi",
-        title: safeT(
-          "today.tip.shareToRemi.title",
-          "Guarda cosas con “Compartir”",
-        ),
-        body: safeT(
-          "today.tip.shareToRemi.body",
-          "Desde WhatsApp/Correo/Notas: Compartir → Remi. Se abre listo para ordenar.",
-        ),
-        cta: safeT("today.tip.shareToRemi.cta", "Probar"),
-        icon: <Share2 size={18} />,
-        bg: "",
-        border: "rgba(14,165,233,0.65)",
-        onClick: () => setShowShareToRemiHelp(true),
-      });
-    }
+      // ✅ 8) “Compartir recordatorios con otras personas” (entre usuarios)
+      if (!dismissedTips[SHARE_REMINDERS_TIP_KEY]) {
+        cards.push({
+          id: SHARE_REMINDERS_TIP_KEY,
+          title: safeT(
+            "today.tip.shareReminders.title",
+            "Comparte recordatorios con alguien",
+          ),
+          body: safeT(
+            "today.tip.shareReminders.body",
+            "Envía una tarea o idea por enlace. La otra persona la añade a su Remi en 1 toque.",
+          ),
+          cta: safeT("today.tip.shareReminders.cta", "Ver cómo"),
+          icon: <Share2 size={18} />,
+          bg: "",
+          border: "rgba(125,89,201,0.70)",
+          onClick: () => setShowShareRemindersHelp(true),
+        });
+      }
+
 
     // 9) Escribir como hablas
     cards.push({
@@ -1483,15 +1492,15 @@ const anyModalOpen =
 
                           <div className="flex items-center gap-2">
                            <button
-  type="button"
-  onPointerDown={() => prefetchShareInvite(task.id)}
-  onClick={() => handleShareTask(task)}
-  title={safeT("shareInvite.share", "Compartir")}
-  aria-label={safeT("shareInvite.share", "Compartir")}
-  className="w-9 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center"
->
-  <Share2 size={16} color="#94A3B8" />
-</button>
+                              type="button"
+                              onPointerDown={() => prefetchShareInvite(task.id)}
+                              onClick={() => handleShareTask(task)}
+                              title={safeT("shareInvite.share", "Compartir")}
+                              aria-label={safeT("shareInvite.share", "Compartir")}
+                              className="w-9 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center"
+                            >
+                              <Share2 size={16} color="#94A3B8" />
+                            </button>
 
 
 
@@ -1591,15 +1600,15 @@ const anyModalOpen =
 
                       <div className="flex items-center gap-2">
                         <button
-  type="button"
-  onPointerDown={() => prefetchShareInvite(task.id)}
-  onClick={() => handleShareTask(task)}
-  title={safeT("shareInvite.share", "Compartir")}
-  aria-label={safeT("shareInvite.share", "Compartir")}
-  className="w-9 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center"
->
-  <Share2 size={16} color="#94A3B8" />
-</button>
+                          type="button"
+                          onPointerDown={() => prefetchShareInvite(task.id)}
+                          onClick={() => handleShareTask(task)}
+                          title={safeT("shareInvite.share", "Compartir")}
+                          aria-label={safeT("shareInvite.share", "Compartir")}
+                          className="w-9 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center"
+                        >
+                          <Share2 size={16} color="#94A3B8" />
+                        </button>
 
 
                         <button
@@ -1827,75 +1836,77 @@ const anyModalOpen =
               {safeT("today.shareToRemiModal.title", "Compartir a Remi")}
             </h2>
 
+            ...
+          </div>
+        </div>
+      )}
+
+      {/* ✅ AYUDA: “Compartir recordatorios” */}
+      {showShareRemindersHelp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl p-5 w-[90%] max-w-sm shadow-xl">
+            <h2 className="text-base font-semibold mb-1">
+              {safeT(
+                "today.shareRemindersModal.title",
+                "Compartir recordatorios con otras personas",
+              )}
+            </h2>
+
             <p className="text-xs text-slate-600 mb-3">
               {safeT(
-                "today.shareToRemiModal.body",
-                "Guarda texto desde cualquier app usando “Compartir”.",
+                "today.shareRemindersModal.body",
+                "Envía una tarea o idea por enlace para que otra persona la añada a su Remi en 1 toque.",
               )}
             </p>
 
             <div className="rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-[12px] text-slate-700 mb-4">
               <div className="font-semibold mb-1">
-                {isIOSDevice
-                  ? safeT("today.shareToRemiModal.iosTitle", "En iPhone (iOS)")
-                  : safeT("today.shareToRemiModal.androidTitle", "En Android")}
+                {safeT("today.shareRemindersModal.stepsTitle", "Cómo funciona (rápido)")}
               </div>
-
-              {isIOSDevice ? (
-                <ul className="list-disc pl-4 space-y-1">
-                  <li>{safeT("today.shareToRemiModal.iosStep1", "Abre WhatsApp/Correo/Notas.")}</li>
-                  <li>{safeT("today.shareToRemiModal.iosStep2", "Pulsa “Compartir”.")}</li>
-                  <li>
-                    {safeT(
-                      "today.shareToRemiModal.iosStep3",
-                      "Si ves “Remi”, tócalo y se abrirá listo para ordenar.",
-                    )}
-                  </li>
-                  <li>
-                    {safeT(
-                      "today.shareToRemiModal.iosStep4",
-                      "Si no aparece, usa “Copiar” y luego pega en Remi (en iOS a veces depende del sistema/versión).",
-                    )}
-                  </li>
-                </ul>
-              ) : (
-                <ul className="list-disc pl-4 space-y-1">
-                  <li>{safeT("today.shareToRemiModal.androidStep1", "Abre WhatsApp/Correo/Notas.")}</li>
-                  <li>{safeT("today.shareToRemiModal.androidStep2", "Pulsa “Compartir”.")}</li>
-                  <li>
-                    {safeT(
-                      "today.shareToRemiModal.androidStep3",
-                      "Elige “Remi” y se abrirá con el texto listo para ordenar.",
-                    )}
-                  </li>
-                  <li>
-                    {safeT(
-                      "today.shareToRemiModal.androidStep4",
-                      "Si no aparece, asegúrate de tener Remi instalada como app (PWA) y prueba de nuevo.",
-                    )}
-                  </li>
-                </ul>
-              )}
+              <ul className="list-disc pl-4 space-y-1">
+                <li>{safeT("today.shareRemindersModal.step1", "Abre una tarea/idea y toca el icono de Compartir.")}</li>
+                <li>{safeT("today.shareRemindersModal.step2", "Se genera un enlace. Envíalo por WhatsApp, Mail, etc.")}</li>
+                <li>{safeT("today.shareRemindersModal.step3", "La otra persona abre el enlace y toca “Añadir a Remi”.")}</li>
+              </ul>
             </div>
+
+            <div className="rounded-xl bg-white border border-slate-200 px-3 py-2 text-[12px] text-slate-700 mb-4">
+              <div className="font-semibold mb-1">
+                {safeT("today.shareRemindersModal.examplesTitle", "Ejemplos que van genial")}
+              </div>
+              <div style={{ whiteSpace: "pre-line" }}>
+                {safeT(
+                  "today.shareRemindersModal.examplesBody",
+                  "• “Compra pan mañana” → se lo envío a mi pareja\n• “Cita del médico” → se lo envío a mi madre\n• “Traer cargador” → se lo envío al compañero",
+                )}
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 mb-4">
+              {safeT(
+                "today.shareRemindersModal.footer",
+                "Esto es para compartir con otras personas. “Enviar a Remi” es para guardar cosas desde otras apps en tu propio Remi.",
+              )}
+            </p>
 
             <div className="flex flex-col gap-2">
               <button
                 type="button"
-                onClick={() => setShowShareToRemiHelp(false)}
+                onClick={() => setShowShareRemindersHelp(false)}
                 className="w-full rounded-full bg-[#7d59c9] text-white text-xs font-semibold py-2.5 shadow-md"
               >
-                {safeT("today.shareToRemiModal.ok", "Entendido")}
+                {safeT("today.shareRemindersModal.ok", "Entendido")}
               </button>
 
               <button
                 type="button"
                 onClick={() => {
-                  dismissTip(SHARE_TO_REMI_DISMISS_KEY);
-                  setShowShareToRemiHelp(false);
+                  dismissTip(SHARE_REMINDERS_TIP_KEY);
+                  setShowShareRemindersHelp(false);
                 }}
                 className="w-full rounded-full bg-slate-100 text-slate-700 text-xs font-semibold py-2.5"
               >
-                {safeT("today.shareToRemiModal.hideForever", "No mostrar más")}
+                {safeT("today.shareRemindersModal.hideForever", "No volver mostrar")}
               </button>
             </div>
           </div>

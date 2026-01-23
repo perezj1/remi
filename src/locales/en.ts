@@ -457,6 +457,21 @@ tasks: {
   },
 
   today: {
+
+shareRemindersModal: {
+  title: "Share reminders with other people",
+  body: "Send a task or idea via a link so someone else can add it to their Remi in 1 tap.",
+  stepsTitle: "How it works (quick)",
+  step1: "On a task/idea, tap the Share icon.",
+  step2: "Send the link via WhatsApp, email, etc.",
+  step3: "The person who receives it taps “Add to Remi”.",
+  examplesTitle: "Examples that work great",
+  examplesBody: "• “Buy bread tomorrow” → I send it to my partner\n• “Doctor on Tuesday at 14:00” → I send it to my mom\n• “Bring charger” → I send it to my coworker",
+  footer: "This helps other people remember things that matter to them and to you.",
+  ok: "Got it",
+  hideForever: "Don’t show again"
+},
+
     dueLabel: "Due date",
     greeting: "Hi, {{name}}",
     tasksToday: "You have {{count}} tasks",
@@ -517,6 +532,12 @@ tasks: {
 
 
     tip: {
+
+  shareReminders: {
+    title: "Team reminders",
+  body: "Share tasks or ideas.\nOthers add them to their Remi in one tap.",
+  cta: "See how",
+},
 
       multidevice: {
         title: "Remi on your phone, iPad/tablet and PC",

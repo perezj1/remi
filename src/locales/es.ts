@@ -482,6 +482,22 @@ tasks: {
   // es.ts
 
   today: {
+
+    shareRemindersModal: {
+      title: "Compartir recordatorios con otras personas",
+      body: "Envía una tarea o idea por enlace para que otra persona la añada a su Remi en 1 toque.",
+      stepsTitle: "Cómo funciona (rápido)",
+      step1: "En una tarea/idea toca el icono de Compartir.",
+      step2: "Envía el enlace por WhatsApp, Mail, etc.",
+      step3: "La persona que lo recibe toca “Añadir a Remi”.",
+      examplesTitle: "Ejemplos que van genial",
+      examplesBody: "• “Compra pan mañana” → se lo envío a mi pareja\n• “Médico el martes a las 14:00” → se lo envío a mi madre\n• “Traer cargador” → se lo envío al compañero",
+      footer: "Esto ayuda a otras personas a recordar cosas importantes para ellos y para tí.",
+      ok: "Entendido",
+      hideForever: "No volver a mostrar"
+    },
+    
+
     dueLabel: "Fecha Límite",
     // Header / general
     greeting: "Hola, {{name}}",
@@ -552,6 +568,12 @@ tasks: {
     // Tips (deck)
     tip: {
 
+      shareReminders: {
+    title: "Recordatorios en equipo",
+    body: "Comparte tareas o ideas.\n Los demás las añaden a su Remi en 1 toque.",
+    cta: "Ver cómo"
+  },
+
  multidevice: {
         title: "Remi contigo en móvil, iPad/tablet y PC",
         body: "Vacía tu cabeza donde estés. Todo se sincroniza y tú eliges en qué dispositivo quieres notificaciones.",
@@ -615,7 +637,7 @@ tasks: {
 
       natural: {
         title: "Escribe como hablas",
-        body: "Ej: “Pagar la luz mañana a las 6 de la tarde”. Remi lo se encarga y tú descansas.",
+        body: "Ej: “Pagar la luz mañana a las 6 de la tarde”. Remi se encarga y tú descansas.",
         cta: "Probar ejemplo",
         prefill: "Pagar la luz mañana 18:00",
       },
