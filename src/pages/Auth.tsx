@@ -14,12 +14,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Mail, Lock } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react"; // ✅
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false); // ✅
   const [loading, setLoading] = useState(false);
   const { signUp, signIn, user } = useAuth();
   const { t } = useI18n();
@@ -67,11 +68,7 @@ const Auth = () => {
       <div className="relative flex flex-col items-center justify-center bg-[#7d59c9] text-white rounded-b-[40px] pt-8 pb-8 px-6 overflow-hidden">
         {/* Icono Remi flotando (sin círculo blanco) */}
         <div className="flex flex-col items-center mb-3">
-          <img
-            src="/icons/icon-192.png"
-            alt="Remi"
-            className="h-20 w-20"
-          />
+          <img src="/icons/icon-192.png" alt="Remi" className="h-20 w-20" />
           <div className="h-2 w-12 rounded-full bg-black/35 opacity-50 blur-[2px]" />
         </div>
 
@@ -119,16 +116,30 @@ const Auth = () => {
                 </Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"} // ✅
                     placeholder={t("auth.passwordPlaceholder")}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={6}
-                    className="pl-10 h-11"
+                    className="pl-10 pr-10 h-11" // ✅ deja espacio al ojo
                   />
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-muted-foreground hover:bg-slate-100"
+                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
                 </div>
               </div>
 
@@ -151,9 +162,7 @@ const Auth = () => {
                   onClick={() => setIsLogin(!isLogin)}
                   className="font-medium text-[#7d59c9] hover:text-[#7a28d0]"
                 >
-                  {isLogin
-                    ? t("auth.toggleToRegister")
-                    : t("auth.toggleToLogin")}
+                  {isLogin ? t("auth.toggleToRegister") : t("auth.toggleToLogin")}
                 </button>
               </div>
             </form>
