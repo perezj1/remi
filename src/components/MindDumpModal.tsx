@@ -2035,9 +2035,10 @@ export default function MindDumpModal({
 <div
   className="shrink-0"
   style={{
-    paddingBottom: `max(env(safe-area-inset-bottom), ${isKeyboardOpen ? Math.max(14, kbdOffset + 14) : 14}px)`,
+    paddingBottom: "max(env(safe-area-inset-bottom), 14px)",
   }}
 >
+
   <div
     className="mx-auto"
     style={{
@@ -2472,7 +2473,7 @@ export default function MindDumpModal({
 
 
         {/* FAB Guardar encima del teclado */}
-        {isFocused && kbdOffset > 80 && (
+{false && isFocused && kbdOffset > 80 && (
           <button
             data-no-focus
             type="button"
