@@ -62,9 +62,21 @@ function escapeRegExp(str: string) {
 function replaceWholeWords(s: string, map: Record<string, string>) {
   const keys = Object.keys(map).sort((a, b) => b.length - a.length);
   if (!keys.length) return s;
-const pattern = new RegExp(`\\b(${keys.map(escapeRegExp).join("|")})\\b`, "gi");
-  return s.replace(pattern, (m) => map[m] ?? m);
+
+  const pattern = new RegExp(`\\b(${keys.map(escapeRegExp).join("|")})\\b`, "gi");
+
+  return s.replace(pattern, (m) => {
+    const keyLower = m.toLowerCase();
+    const direct = map[keyLower];
+    if (direct != null) return direct;
+
+    // fallback: quitar acentos para mapas “mixtos”
+    const keyNoAccents = keyLower.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const noAccents = map[keyNoAccents];
+    return noAccents != null ? noAccents : m;
+  });
 }
+
 
 /* =========================================================
    1) NORMALIZACIÓN “DICTADO”: palabras -> dígitos (ES/EN/DE)

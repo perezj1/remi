@@ -313,6 +313,8 @@ export default function RemiCaptureHost() {
         onClose={() => setMindDumpOpen(false)}
         onOpenReview={openReviewFromMindDump}
         initialText={mindDumpInitialText}
+        onCreateTask={handleCreateTask}    
+        onCreateIdea={handleCreateIdea}   
         initialTextNonce={mindDumpInitialNonce}
       />
 

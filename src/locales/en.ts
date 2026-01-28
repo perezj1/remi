@@ -1,145 +1,138 @@
 // src/locales/en.ts
 export const en = {
-
   repeat: {
-   label: "Habit",
-help: "Turn this task into a habit that Remi will always remind you of at the chosen time.",
- 
-  options: {
-    daily: "Daily",
-    weekly: "Weekly",
-    monthly: "Monthly",
-    yearly: "Yearly",
-  },
-},
+    label: "Repeat",
+    help: "Turn this task into a habit that Remi will always remind you of at the chosen time.",
 
+    options: {
+      daily: "Daily",
+      weekly: "Weekly",
+      monthly: "Monthly",
+      yearly: "Yearly",
+    },
+  },
 
   shareInvite: {
     share: "Share",
     sharedOk: "Done. Link copied/shared.",
-    sharedError: "Could not share. Please try again.",
+    sharedError: "Couldn’t share. Please try again.",
     message: "{{name}} wants you to remember: {{text}}",
 
-     pageTitle: "Add to Remi",
+    pageTitle: "Add to Remi",
     pageSubtitle: "Save this reminder to your account.",
     loading: "Loading…",
     invalidLinkTitle: "Invalid link",
-    goHome: "Go to home",
+    goHome: "Back to home",
     someone: "Someone",
-    due: "Due",
+
+    due: "Date",
     acceptCta: "Add to Remi",
     accepting: "Adding…",
-    acceptError: "Could not add. Please try again.",
+    acceptError: "Couldn’t add it. Please try again.",
     alreadyAccepted: "This link has already been used.",
     expired: "This link has expired.",
     rejected: "This link was rejected.",
     openRemi: "Open Remi",
-      missingToken: "Missing link token.",
-  loadError: "Failed to load the link.",
-  loginHint: "If you’re not logged in, you’ll be asked to sign in or create an account to add it.",
-sentIndicator: "Shared by you",
-messageLine1: "{{name}} wants you to remember:"
+    missingToken: "Missing link token.",
+    loadError: "Couldn’t load the link.",
+    loginHint:
+      "If you’re not signed in, we’ll ask you to log in or create an account so you can add it.",
+    sentIndicator: "Shared task",
+    messageLine1: "{{name}} wants you to remember:",
   },
 
+  mentalDump: {
+    whyLabel: "Why:",
+    detectedLabel: "Detected:",
+    detectedManual: "Manual",
+    detectedDash: "—",
+    habitDetectedLabel: "Habit detected:",
+    detectedDefault: "Default",
+    habitLabel: "Repeat",
+    habitOn: "On",
+    habitOff: "Off",
 
-// ENGLISH
-mentalDump: {
-  whyLabel: "Why:",
-  detectedLabel: "Detected:",
-  detectedManual: "Manual",
-  detectedDash: "—",
-  habitDetectedLabel: "Detected habit:",
-  detectedDefault: "Default",
-  habitLabel: "Habit",
-  habitOn: "On",
-  habitOff: "Off",
+    detectedReminder: {
+      DAY_BEFORE_AND_DUE:
+        "Detected “{word}” → I set it to: day before + due day.",
+      DAILY_UNTIL_DUE:
+        "Detected “{word}” → I set it to: daily until the due date.",
+      WEEK_BEFORE_AND_DUE:
+        "Detected “{word}” → I set it to: 1 week before + due day.",
+    },
 
-detectedReminder: {
-  DAY_BEFORE_AND_DUE: "I detected “{word}” → I marked it as: day before + due date.",
-  DAILY_UNTIL_DUE: "I detected “{word}” → I marked it as: daily until the due date.",
-WEEK_BEFORE_AND_DUE: "I detected “{word}” → set it to: 1 week before + due date.",
+    why: {
+      verbTask: "Detected “{word}” → marked it as a task.",
+      prefixIdea: "Detected “{word}” → marked it as an idea.",
+      projectIdea: "Sounds like an idea/project → marked it as an idea.",
+      defaultTask: "No clear clue → marked it as a task.",
+      defaultIdea: "No clear clue → marked it as an idea.",
+      manualTask: "You marked it as a task.",
+      manualIdea: "You marked it as an idea.",
+    },
 
-},
+    dateLabel: "Date",
+    timeLabel: "Time",
+    reminderLabel: "Reminder",
+    reminderShortLabel: "Alert:",
+    reminderOff: "Off",
+    reminderDailyUntilDue: "Daily",
+    reminderDayBeforeAndDue: "1 day before",
+    reminderWeekBeforeAndDue: "1 week before",
 
-  why: {
-    verbTask: "I detected “{word}” → I marked it as a task.",
-    prefixIdea: "I detected “{word}” → I marked it as an idea.",
-    projectIdea: "It sounds like an idea/project → I marked it as an idea.",
-    defaultTask: "I didn’t see a clear clue → I marked it as a task.",
-    defaultIdea: "I didn’t see a clear clue → I marked it as an idea.",
-    manualTask: "You marked it as a task.",
-    manualIdea: "You marked it as an idea.",
+    buttonLabel: "Clear your mind",
+
+    title: "Intensive brain dump",
+    description:
+      "Spend 2–3 minutes emptying your head. Write everything you don’t want to forget: tasks, ideas, pending stuff. No need to organize anything—Remi turns it into reminders for you.",
+
+    inputLabel: "Write short phrases, separated by line breaks or commas.",
+    placeholder:
+      "Examples:\n" +
+      "Change the hallway light bulb tomorrow at 10\n" +
+      "Call mom on Sunday\n" +
+      "Every Monday at 14:00 use Remi\n" +
+      "Idea: trip to Italy in spring",
+
+    // Initial summary texts
+    summaryNone: "No phrases have been detected yet.",
+    summaryPrefix: "We detected",
+    summarySuffix: "possible reminders in your text.",
+
+    // Button states
+    submitSaving: "Saving...",
+    submitToPreview: "Review reminders",
+    submitConfirm: "Save to Remi",
+
+    // Preview
+    previewTitle: "Review your brain dump",
+    previewDescription:
+      "Enable or disable the lines you want to save, adjust the texts, and confirm to create tasks and ideas in Remi.",
+    previewNoneSelected: "No items selected.",
+    previewTaskLabel: "Task",
+    previewIdeaLabel: "Idea",
+    previewInclude: "Save",
+    previewBackToEdit: "Back to editing text",
+
+    // Habits
+    habitNone: "No Repeat",
+    habitDaily: "Daily repeat",
+    habitWeekly: "Weekly repeat",
+    habitMonthly: "Monthly repeat",
+    habitYearly: "Yearly repeat",
+
+    hints: {
+      0: "Just write. Remi organizes it and schedules everything for you, so it reminds you at the right time.",
+      1: "Paste or send text from WhatsApp, an email, or a note. Remi turns it into a reminder.",
+      2: "Tasks, ideas, errands… everything fits. Remi organizes it and reminds you when it’s time.",
+      3: "No perfect format needed. Write the way you talk.",
+      4: "Did someone tell you something important? Copy & paste. Remi saves it for you.",
+      5: "Write dates or times (e.g. “Tuesday 18:00”, “Jan 17 at 15:00…”). Remi detects them.",
+      6: 'Write “every day / every week, etc” if it’s a repeating habit.',
+      7: "One minute here = a more relaxed day and fewer forgotten things.",
+      8: "Quick tip: Write “Idea” to save notes without reminders.",
+    },
   },
-
-  dateLabel: "Date",
-  timeLabel: "Time",
-  reminderLabel: "Reminder",
-  reminderShortLabel: "Alert:",
-  reminderOff: "Off",
-  reminderDailyUntilDue: "Daily notification (until the due date)",
-  reminderDayBeforeAndDue: "Notification (day before + due date)",
-reminderWeekBeforeAndDue: "Notification (1 week before + due date)",
-
-  
-
-  buttonLabel: "Clear your mind",
-  
-
-  title: "Intensive brain dump",
-  description:
-    "Spend 2–3 minutes emptying your head. Write down everything you don’t want to forget: tasks, ideas, loose ends. You don’t need to organize anything: Remi turns it into reminders for you.",
-
-  inputLabel:
-    "Write short sentences, separated by line breaks or commas.",
-  placeholder:
-    "Examples:\n" +
-    "Change hallway light bulb tomorrow at 10\n" +
-    "Call mum on Sunday\n" +
-    "Use Remi every Monday at 14:00\n" +
-    "Trip idea to Italy in spring",
-
-  // Summary texts
-  summaryNone: "No sentences detected yet.",
-  summaryPrefix: "Detected",
-  summarySuffix: "possible reminders in your text.",
-
-  // Button states
-  submitSaving: "Saving...",
-  submitToPreview: "Review reminders",
-  submitConfirm: "Save to Remi",
-
-  // Preview
-  previewTitle: "Review your brain dump",
-  previewDescription:
-    "Turn on or off the lines you want to keep, adjust the texts and confirm to create tasks and ideas in Remi.",
-  previewNoneSelected: "No item selected.",
-  previewTaskLabel: "Task",
-  previewIdeaLabel: "Idea",
-  previewInclude: "Save",
-  previewBackToEdit: "Back to edit text",
-
-  // Habits
-  habitNone: "No habit",
-  habitDaily: "Daily habit",
-  habitWeekly: "Weekly habit",
-  habitMonthly: "Monthly habit",
-  habitYearly: "Yearly habit",
-
-  // Rotating hints
-hints: {
-  0: "Just write. Remi organizes and schedules everything for you, and reminds you when it’s time.",
-  1: "Paste or send text from WhatsApp, an email, or a note. Remi turns it into a reminder.",
-  2: "Tasks, ideas, errands… everything fits. Remi organizes it and reminds you when it’s time.",
-  3: "You don’t need perfect formatting. Write the way you speak.",
-  4: "Did someone tell you something important? Copy & paste. Remi saves it for you.",
-  5: "Write dates or times (e.g., “Tuesday 18:00, January 17 at 15:00…”). Remi detects them.",
-  6: "Write “every day / every week, etc.” if it’s a repeating habit.",
-  7: "One minute here = a calmer day and fewer forgotten things.",
-  8: "Quick tip: Write “Idea” to save notes without reminders.",
-}
-
-},
-
 
   common: {
     appName: "REMI",
@@ -150,14 +143,13 @@ hints: {
     close: "Close",
     confirm: "Confirm",
     loading: "Loading...",
-    paste: "Paste",
     speak: "Speak",
+    paste: "Paste",
   },
 
   index: {
-  clearMind: "Clear mind",
-},
-
+    clearMind: "Clear mind",
+  },
 
   nav: {
     today: "Today",
@@ -167,119 +159,125 @@ hints: {
   },
 
   bottomNav: {
-  today: "Today",
-  inbox: "Inbox",
-  status: "status",
-  holdToTalk: "Hold to talk",
-  listening: "Listening…",
-  dictationNotSupported: "Dictation not supported",
-   tasks: "Tasks",
+    today: "Today",
+    inbox: "Inbox",
+    status: "status",
+    holdToTalk: "Press and hold",
+    listening: "Listening…",
+    dictationNotSupported: "Dictation not supported",
+    tasks: "Tasks",
     ideas: "Ideas",
-},
+  },
 
-installPrompt: {
-  iosTitle: "Install Remi on your iPhone - FREE",
-  iosStep1BeforeShare: "1. Tap the",
-  iosShareLabel: "Share",
-  iosStep1AfterShare: "button.",
-  iosStep2BeforeAction: "2. Choose",
-  iosAddToHome: "Add to Home Screen",
-  iosStep2AfterAction: "and confirm.",
-  defaultTitle: "Install Remi",
-  defaultDescription: "Add Remi to your apps — FREE!",
-  buttonInstall: "Install",
-  close: "Close",
-},
+  installPrompt: {
+    iosTitle: "Install Remi on your iPhone — FREE",
+    iosStep1BeforeShare: "1. Tap the",
+    iosShareLabel: "Share",
+    iosStep1AfterShare: "button.",
+    iosStep2BeforeAction: "2. Choose",
+    iosAddToHome: "Add to Home Screen",
+    iosStep2AfterAction: "and confirm.",
+    defaultTitle: "Install Remi",
+    defaultDescription: "Add Remi to your list of apps — FREE!",
+    buttonInstall: "Install",
+    close: "Close",
+  },
 
+  status: {
+    back: "Back",
+    headerTitle: "Remi status",
+    headerSubtitle: "We helped your mind feel a bit lighter today.",
 
- status: {
-  back: "Back",
-  headerTitle: "Remi status",
-  headerSubtitle: "Today we helped your mind feel a little lighter.",
+    helperLabel: "Your external memory",
+    helperFallback:
+      "I’m here to store your tasks, ideas, and reminders so your mind doesn’t have to carry everything.",
 
-  helperLabel: "Your external memory",
-  helperFallback:
-    "I'm here to store your tasks, ideas and reminders so your mind doesn’t have to carry everything.",
+    mindClearLabel: "Clear mind",
+    mindClearDescription:
+      "Every thing you save in Remi is one less thing your mind has to carry.",
 
-  mindClearLabel: "Clear mind",
-  mindClearDescription:
-    "Every thing you store in Remi is one less thing your mind has to carry.",
+    todaySectionTitle: "What we achieved",
+    todaySectionSubtitle: "A quick summary of how we’re taking care of your mind.",
+    todayTasksLabel: "Today’s tasks",
+    todayTasksDescription: "Today we organized {{todayTotal}} tasks.",
 
-  todaySectionTitle: "What we’ve achieved",
-  todaySectionSubtitle:
-    "A summary of how we’re taking care of your mind.",
-  todayTasksLabel: "Today’s tasks",
-  todayTasksDescription:
-    "Today we’ve organised {{todayTotal}} tasks.",
+    streakSectionTitle: "Our streak",
+    streakValue: "{{streakDays}} days",
+    streakDescription:
+      "It’s been {{streakDays}} days without your mind having to remember everything by itself.",
 
-  streakSectionTitle: "Our streak",
-  streakValue: "{{streakDays}} days",
-  streakDescription:
-    "We’ve gone {{streakDays}} days without your mind having to remember everything on its own.",
+    memoryDelegatedTitle: "Delegated memory",
+    memoryDelegatedValue: "{{tasks}} tasks · {{ideas}} ideas",
+    memoryDelegatedDescription:
+      "Right now Remi is taking care of {{tasks}} tasks and {{ideas}} ideas.",
 
-  memoryDelegatedTitle: "Delegated memory",
-  memoryDelegatedValue: "{{tasks}} tasks · {{ideas}} ideas",
-  memoryDelegatedDescription:
-    "Right now Remi is taking care of {{tasks}} tasks and {{ideas}} ideas for you.",
+    weekSectionTitle: "Our week",
+    weekSectionSubtitle:
+      "Every day you use Remi, your head carries a bit less.",
+    weekActiveLabel: "Active days this week",
 
-  weekSectionTitle: "Our week",
-  weekSectionSubtitle:
-    "Every day you use Remi, your head carries a little less weight.",
-  weekActiveLabel: "Active days this week",
+    loading: "Updating your Remi summary…",
 
-  loading: "Updating your summary with Remi…",
+    // Moods
+    moodTitleCelebrate: "Amazing team!",
+    moodTitleHappy: "We’re doing great today",
+    moodTitleCalm: "Everything under control",
+    moodTitleWaiting: "I’m ready",
+    moodTitleConcerned: "One step at a time",
+    moodTitleDefault: "We’re in this together",
 
-  // Moods
-  moodTitleCelebrate: "Amazing team!",
-  moodTitleHappy: "We’re doing great today",
-  moodTitleCalm: "Everything under control",
-  moodTitleWaiting: "I’m ready",
-  moodTitleConcerned: "Let’s take it step by step",
-  moodTitleDefault: "We’re in this together",
+    moodSubtitleCelebrate:
+      "These days we’re taking great care of your head. We cleared {{cleared}} tasks today and Remi has {{totalItems}} items saved in total between tasks and ideas.",
+    moodSubtitleHappy:
+      "We cleared quite a bit from your mind today: you have {{todayTotal}} tasks organized and {{todayDone}} of them are already done.",
+    moodSubtitleCalm:
+      "Steady progress. We have {{todayTotal}} tasks saved for today and Remi remembers them for you.",
+    moodSubtitleWaiting:
+      "Your mind is light today, but we can offload a bit more into Remi so you don’t have to remember it yourself.",
+    moodSubtitleConcerned:
+      "Looks like there’s still a day ahead. We can start with one small task and let your mind breathe a bit more.",
+    moodSubtitleDefault:
+      "Every thing you save in Remi is one less thing your mind has to carry.",
+  },
 
-  moodSubtitleCelebrate:
-    "These days we’re taking great care of your mind. We’ve cleared {{cleared}} tasks for today and Remi is storing {{totalItems}} things in total between tasks and ideas.",
-  moodSubtitleHappy:
-    "We’ve cleared a good part of your mind today: you have {{todayTotal}} tasks organised and {{todayDone}} of them are already done.",
-  moodSubtitleCalm:
-    "We’re moving forward without rushing. We’ve saved {{todayTotal}} tasks for today and Remi is remembering them for you.",
-  moodSubtitleWaiting:
-    "Today your mind is light, but we can still offload a few more things into Remi so you don’t have to remember them yourself.",
-  moodSubtitleConcerned:
-    "Looks like there’s still some day ahead. We can start with one small task and let your mind breathe a bit more.",
-  moodSubtitleDefault:
-    "Every thing you store in Remi is one less thing your mind has to carry.",
-},
+  capture: {
+    modalPlaceholder: "Clear your mind here…",
 
+    chips: {
+      backHint: "Back to shortcuts",
+      title: "Smart shortcuts",
+      title2: "Date / Repeat",
+      title3: "Time",
+      title4: "Reminder",
+      back: "Shortcuts",
+    },
 
-capture: {
+    chip: {
+      // ROOT: word inserted into textarea
+      buyWord: "Buy",
+      callWord: "Call",
+      payWord: "Pay",
+      birthdayWord: "Birthday",
+      apptWord: "Appointment",
+      ideaWord: "Idea:",
 
-// dentro de capture: { ... }
-chips: {
-  backHint: "Back to shortcuts",
-  title: "Smart shortcuts",
-    title2: "Date / habit",
-    title3: "Time",
-    title4: "Reminder",
-    back: "Shortcuts",
-},
-chip: {
-  buyWord: "Buy",
-  callWord: "Call",
-  payWord: "Pay",
-  birthdayWord: "Birthday",
-  apptWord: "Meeting",
-  ideaWord: "Idea:",
-       buy: "Buy",
+      buy: "Buy",
       call: "Call",
       pay: "Pay",
       birthday: "Birthday",
       appt: "Appointment",
       idea: "Idea",
 
-  schedule: {
-   
-      on: "on",
+      // SCHEDULE
+      schedule: {
+        el: "on",
+        cada: "every",
+        antesDel: "before",
+        hoy: "today",
+        manana: "tomorrow",
+
+        // extras you already had
+        on: "on",
         every: "every",
         before: "before",
         today: "today",
@@ -289,269 +287,316 @@ chip: {
         vor: "before",
         heute: "today",
         morgen: "tomorrow",
-  },
+      },
 
-  time: {
-    prefix: "at",
-    t0900: "9:00",
-    t1800: "18:00",
-  },
+      // TIME
+      time: {
+        prefix: "at",
+        t0900: "09:00",
+        t1800: "18:00",
+      },
 
-  reminder: {
-     dailyLabel: "Every day",
+      // REMINDER
+      reminder: {
+        dailyLabel: "Every day",
         dailyInsert: "remind every day",
-     standardLabel: "Standard",
-      dayBeforeLabel: "day before",
-      noneLabel: "No reminders",
+        standardLabel: "Standard",
+        dayBeforeLabel: "day before",
+        noneLabel: "No reminders",
 
-      standardInsert: "remind",
-      dayBeforeInsert: "remind the day before",
-      noneInsert: "no reminders",
-  },
-},
-
-
-  tips: {
-    0: "Tip: Say or type “idea” to create notes without reminders",
-    1: "Tip: You can paste text from other apps",
-    2: "Tip: Don’t worry about formatting—write like you speak",
-    3: "Tip: Press and hold the microphone to dictate",
-  },
-
- paste: {
-    title: "Paste what you last copied?",
-    sub: "Tap PASTE to insert it here.",
-    button: "PASTE",
-    pasting: "Pasting…",
-    toastUnavailable: "Paste isn’t available here. Long-press and paste manually.",
-    toastEmpty: "Clipboard is empty (or I can’t read it).",
-    toastDenied: "I can’t read the clipboard. Long-press and paste manually.",
-  },
-
-   toast: {
-      micDenied: "Microphone permission denied.",
-      noSpeech: "I didn’t catch any speech. Try again.",
-      dictationError: "Dictation error.",
-      dictationStartError: "I couldn’t start dictation.",
-      pasteUnavailable: "Paste isn’t available here (clipboard not available).",
-      clipboardEmpty: "Your clipboard is empty.",
-      pasteError: "I couldn’t access the clipboard. Press and hold, then paste.",
-      writeSomething: "Write something first.",
+        standardInsert: "remind",
+        dayBeforeInsert: "remind the day before",
+        noneInsert: "no reminders",
+      },
     },
 
- textareaPlaceholderIOS:
-    "iPhone/iPad: use the keyboard microphone to dictate.\n" +
-    "If it’s missing: Settings > General > Keyboard > Enable Dictation.\n" +
-    "If it says “not available”: Settings > Privacy & Security > Microphone (enable your browser).",
+    tips: {
+      0: 'Tip: Say or write “idea” to create notes without a reminder',
+      1: "Tip: You can paste text from other apps",
+      2: "Tip: Don’t worry about formatting—write the way you talk",
+      3: "Tip: Press and hold the microphone to dictate",
+    },
 
-  repeatOn: "On",
-  repeatOff: "Off",
-  remindersDisabledByHabit: "Habits create their own reminders using the selected date and time.",
-  timeHour: "Hour",
-  timeMinute: "Minutes",
-  dateTimeLabel: "Date & time",
-  dateTimeNoneShort: "No date or time",
-  placeholder: "Write here…",
-  
+    paste: {
+      title: "Paste the latest copied text?",
+      sub: "Tap PASTE to insert it here.",
+      button: "PASTE",
+      pasting: "Pasting…",
+      toastUnavailable:
+        "Paste isn’t available here. Press and hold and paste manually.",
+      toastEmpty: "Clipboard is empty (or I can’t read it).",
+      toastDenied:
+        "I can’t read the clipboard. Press and hold and paste manually.",
+    },
 
-  title: "Clear your mind",
-  subtitle: "Speak, write, or paste text. Remi takes care of it.",
-  examplesTitle: "Examples:",
-  exampleVoice: "🎤 “Call mom on Sunday”",
-  exampleVoiceIOS: '🎤 “Use your keyboard microphone to dictate”',
-  examplePaste: "📋 “Every Tuesday at 18:00 we meet up”",
-  exampleIdea: "💡 Idea: trip to Italy in spring",
-  holdToTalk: "Press and hold to talk",
-  listening: "Listening…",
-  iosKeyboardMicHint: "On iPhone: use the keyboard microphone to speak.",
-  speakHold: "Hold to talk",
+    toast: {
+      micDenied: "Microphone permission denied.",
+      noSpeech: "I didn’t detect any speech. Try again.",
+      dictationError: "Dictation error.",
+      dictationStartError: "Couldn’t start dictation.",
+      pasteUnavailable: "Can’t paste here (clipboard not available).",
+      clipboardEmpty: "There’s no text in the clipboard.",
+      pasteError: "Couldn’t access the clipboard. Press and hold to paste.",
+      writeSomething: "Write something first.",
 
-  textareaPlaceholder: "Examples:",
+      pickDateFirst: "Pick a date first.",
+    },
 
-  ideaButton: "Idea",
-  taskButton: "Task",
+    textareaPlaceholderIOS:
+      "iPhone/iPad: use the keyboard microphone to dictate.\n" +
+      "If it doesn’t appear: Settings > General > Keyboard > Enable Dictation.\n" +
+      "If it says “not available”: Settings > Privacy & Security > Microphone (enable your browser).",
 
-  dueLabel: "Due date",
-  dueToday: "Today",
-  dueTomorrow: "Tomorrow",
-  dueWeek: "1 week",
-  dueNone: "No date",
-  dueHint: "You can adjust date and time manually.",
-  duePlaceholder: "Choose date and time",
+    repeatOn: "Enabled",
+    repeatOff: "Disabled",
+    remindersDisabledByHabit:
+      "Repeats create their own reminders using the selected date and time.",
+    timeHour: "Hour",
+    timeMinute: "Minutes",
+    dateTimeLabel: "Date and time",
+    dateTimeNoneShort: "No date or time",
+    placeholder: "Tap to type",
 
-  remindersLabel: "Reminders",
-  remindersNone: "No reminders",
-  remindersOnDue: "Only on due date",
-  remindersDayBeforeAndDue: "Day before and due date",
-  remindersDailyUntilDue: "Every day until due date",
+    title: "Clear your mind",
+    subtitle: "Speak, type, or paste text. Remi takes care of it.",
+    examplesTitle: "Examples:",
+    exampleVoice: '🎤 “Call mom on Sunday”',
+    exampleVoiceIOS: '🎤 “Use the keyboard mic to dictate”',
+    examplePaste: '📋 “Every Tuesday at 18:00 we meet”',
+    exampleIdea: "💡 Idea: trip to Italy in spring",
+    holdToTalk: "Press and hold to speak",
+    listening: "Listening…",
+    iosKeyboardMicHint: "On iPhone: use the keyboard microphone to speak.",
+    speakHold: "Press and hold to speak",
 
-  back: "Back",
-  saveTask: "Save task",
+    textareaPlaceholder: "Examples:",
 
-  toastTaskSaved: "Task saved successfully",
-  toastTaskError: "Error creating the task",
-  toastIdeaSaved: "Idea saved successfully",
-  toastIdeaError: "Error creating the idea",
-},
+    ideaButton: "Idea",
+    taskButton: "Task",
 
-tasks: {
-  weekdayLabels: "Mon|Tue|Wed|Thu|Fri|Sat|Sun",
+    dueLabel: "Due date",
+    dueToday: "Today",
+    dueTomorrow: "Tomorrow",
+    dueWeek: "1 week",
+    dueNone: "No date",
+    dueHint: "You can adjust date and time manually.",
+    duePlaceholder: "Choose date and time",
 
-  editLabel: "Edit",
-  editTitle: "Edit task",
-  editSubtitle: "Change the text, date & time, reminders and repeat.",
+    remindersLabel: "Reminders",
+    remindersNone: "No reminders",
+    remindersOnDue: "Only on due day",
+    remindersDayBeforeAndDue: "Day before and due day",
+    remindersDailyUntilDue: "Every day until due date",
+    reminderWeekBeforeAndDue: "One week before until due day",
 
-  fieldTitle: "Task",
-  fieldTitlePlaceholder: "Write your task...",
+    back: "Back",
+    saveTask: "Save task",
 
-  optionsTitle: "Options",
-
-  dueDateLabel: "Date & time",
-  clearDueDate: "Clear",
-
-  reminderLabel: "Reminders",
-  reminder: {
-    none: "No reminders",
-    onDue: "Only on due date",
-    dayBeforeAndDue: "Day before and due date",
-    dailyUntilDue: "Every day until due date",
-    weekBeforeAndDue: "Every day (1 week before)",
+    toastTaskSaved: "Task saved successfully",
+    toastTaskError: "Error creating task",
+    toastIdeaSaved: "Idea saved successfully",
+    toastIdeaError: "Error creating idea",
   },
 
-  save: "Save",
-  footerHint: "You can edit this anytime.",
-  updateError: "Error updating task",
-},
+  pill: {
+    type: {
+      label: "Type",
+      task: "Task",
+      idea: "Idea",
+    },
 
+    more: "Details",
+    less: "Hide",
+    detected: "Detected:",
+    date: "Date",
+    time: "Time",
+    reminder: "Reminder",
+    habit: "Repeat",
 
+    on: "On",
+    off: "Off",
+
+    remDaily: "Daily",
+    remDayBefore: "1 day before",
+    remWeekBefore: "1 week before",
+
+    habitDaily: "Daily",
+    habitWeekly: "Weekly",
+    habitMonthly: "Monthly",
+    habitYearly: "Yearly",
+  },
+
+  tasks: {
+    weekdayLabels: "M|T|W|T|F|S|S",
+
+    editLabel: "Edit",
+    editTitle: "Edit task",
+    editSubtitle: "Change the text, date and time, reminders, and repeat.",
+
+    fieldTitle: "Task",
+    fieldTitlePlaceholder: "Write your task...",
+
+    optionsTitle: "Options",
+
+    dueDateLabel: "Date and time",
+    clearDueDate: "Remove",
+
+    reminderLabel: "Reminders",
+    reminder: {
+      none: "No reminders",
+      onDue: "Only on due day",
+      dayBeforeAndDue: "Day before and due day",
+      dailyUntilDue: "Every day until due date",
+      weekBeforeAndDue: "Every day (1 week before)",
+    },
+
+    save: "Save",
+    footerHint: "You can edit this anytime.",
+    updateError: "Error updating task",
+  },
 
   auth: {
-    titleLogin: "Log in to REMI",
+    titleLogin: "Sign in to REMI",
     titleRegister: "Create your REMI account",
-    subtitleAuth2:"From MIND FULL to MINDFUL" ,
-
+    subtitleAuth2: "From MIND FULL to MINDFUL",
     email: "Email",
     password: "Password",
-    login: "Log in",
+    login: "Sign in",
     register: "Sign up",
-    logout: "Log out",
-     loginTitle: "Welcome back!",
-  registerTitle: "Start your journey!",
-  loginSubtitle: "Keep improving every day with REMI",
-  registerSubtitle: "Create your account and start reaching your goals",
-  emailLabel: "Email",
-  emailPlaceholder: "you@email.com",
-  passwordLabel: "Password",
-  passwordPlaceholder: "••••••••",
-  submitLogin: "Log in",
-  submitRegister: "Create account",
-  toggleToRegister: "Don't have an account? Sign up",
-  toggleToLogin: "Already have an account? Log in",
+    logout: "Sign out",
 
-  errorInvalidCredentials:
-    "Incorrect credentials. Please check your email and password.",
-  errorUserAlreadyRegistered:
-    "This email is already registered. Try logging in instead.",
-  errorGeneric: "Something went wrong. Please try again.",
-  signUpSuccess: "Account created! Let's set up your first goal.",
+    loginTitle: "Welcome back!",
+    registerTitle: "Start your journey!",
+    loginSubtitle: "Keep improving every day with REMI",
+    registerSubtitle: "Create your account and start achieving your goals",
+    emailLabel: "Email",
+    emailPlaceholder: "you@email.com",
+    passwordLabel: "Password",
+    passwordPlaceholder: "••••••••",
+    submitLogin: "Sign in",
+    submitRegister: "Create account",
+    toggleToRegister: "Don’t have an account? Sign up",
+    toggleToLogin: "Already have an account? Sign in",
+
+    errorInvalidCredentials:
+      "Incorrect credentials. Check your email and password.",
+    errorUserAlreadyRegistered:
+      "This email is already registered. Try signing in.",
+    errorGeneric: "Something went wrong. Please try again.",
+    signUpSuccess: "Account created! Now start clearing your mind.",
   },
 
   today: {
-
-shareRemindersModal: {
-  title: "Share reminders with other people",
-  body: "Send a task or idea via a link so someone else can add it to their Remi in 1 tap.",
-  stepsTitle: "How it works (quick)",
-  step1: "On a task/idea, tap the Share icon.",
-  step2: "Send the link via WhatsApp, email, etc.",
-  step3: "The person who receives it taps “Add to Remi”.",
-  examplesTitle: "Examples that work great",
-  examplesBody: "• “Buy bread tomorrow” → I send it to my partner\n• “Doctor on Tuesday at 14:00” → I send it to my mom\n• “Bring charger” → I send it to my coworker",
-  footer: "This helps other people remember things that matter to them and to you.",
-  ok: "Got it",
-  hideForever: "Don’t show again"
-},
+    shareRemindersModal: {
+      title: "Share reminders with other people",
+      body:
+        "Send a task or idea as a link so someone else can add it to their Remi in one tap.",
+      stepsTitle: "How it works (quick)",
+      step1: "On a task/idea, tap the Share icon.",
+      step2: "Send the link via WhatsApp, email, etc.",
+      step3: 'The recipient taps “Add to Remi”.',
+      examplesTitle: "Examples that work great",
+      examplesBody:
+        "• “Buy bread tomorrow” → I send it to my partner\n• “Doctor on Tuesday at 14:00” → I send it to my mom\n• “Bring charger” → I send it to my coworker",
+      footer:
+        "This helps other people remember things that matter to them—and to you.",
+      ok: "Got it",
+      hideForever: "Don’t show again",
+    },
 
     dueLabel: "Due date",
+
+    // Header / general
     greeting: "Hi, {{name}}",
     tasksToday: "You have {{count}} tasks",
-    prioritize: "Focus on what matters",
+    prioritize: "Prioritize what matters",
     done: "Done",
     delete: "Delete",
-     actionEditTitle: "Edit",
+    actionEditTitle: "Edit",
 
     defaultUserName: "User",
 
+    // Tabs
     tabsToday: "Today",
     tabsWeek: "Week",
     tabsNoDate: "No date",
 
+    // States
     loadingTasks: "Loading…",
     noUrgentTitle: "All under control",
     noUrgentSubtitle: "Nothing urgent right now",
 
+    // Dates / labels
     dueNoDate: "No date",
 
+    // Actions
     actionPostpone1dTitle: "Postpone: add 1 day to the due date",
-    actionDoneTitle: "Mark as done",
+    actionDoneTitle: "Mark as completed",
     postponeDayToast: "Postponed",
 
+    // Errors
     errorLoadingTasks: "Error loading tasks",
 
+    // Profile menu
     profileLoggedInAs: "Signed in as {{name}}",
     menuProfile: "Profile",
     menuShareApp: "Share app",
     menuInstallApp: "Install app",
 
+    // Share
     shareText:
-      "I’m using Remi to get tasks and ideas out of my head, and my mind feels much clearer and less stressed.\nI really recommend trying it — it helps a lot. Here’s the link 🙂",
+      "I use Remi to get tasks and ideas out of my head, and my mind feels much clearer and less stressed.\nI truly recommend it—it helps a lot. Here’s the link 🙂",
     shareCopied: "Link copied to clipboard",
 
+    // Push modal + toasts
     pushTitle: "Enable notifications",
     pushBody: "So you get reminders at the right moment.",
     pushEnable: "Enable",
     pushEnabling: "Enabling…",
     pushLater: "Not now",
     pushEnabledToast: "Notifications enabled",
-    pushErrorToast: "Couldn’t enable notifications",
+    pushErrorToast: "Couldn’t enable push",
 
     multideviceHelp: {
-      title: "Multi-device: don’t forget anything, wherever you are",
-      p1: "Remi is built so you can offload things in 5 seconds, from any device.",
+      title: "Multi-device: forget nothing, wherever you are",
+      p1:
+        "Remi is designed so you can offload things in 5 seconds, from any device.",
       stepsTitle: "How to use it (quick)",
-      step1: "Capture wherever you are: phone, iPad/tablet or PC. Type, speak or paste text.",
-      step2: "Everything syncs: what you save on one device appears on the others.",
-      step3: "Per-device notifications: enable alerts only where you want (e.g. phone ON, PC OFF).",
+      step1:
+        "Capture anywhere: phone, iPad/tablet, or PC. Type, speak, or paste text.",
+      step2:
+        "Everything syncs: what you save on one device shows up on the others.",
+      step3:
+        "Per-device notifications: enable alerts only where you want (e.g., phone ON, PC OFF).",
       examplesTitle: "Examples that work",
       examplesBody:
-        "• Phone ON → reminders on the go\n• PC OFF → zero interruptions while working\n• iPad ON → calm end-of-day review",
-      footer: "You offload the mental load in the moment. Remi nudges you when it’s time.",
+        "• Phone ON → reminders while you’re out\n• PC OFF → zero interruptions while working\n• iPad ON → calm review at the end of the day",
+      footer:
+        "You offload the mental load in the moment. Remi reminds you when and where it’s needed.",
       ok: "Got it",
       hideForever: "Don’t show again",
     },
 
-
     tip: {
-
-  shareReminders: {
-    title: "Team reminders",
-  body: "Share tasks or ideas.\nOthers add them to their Remi in one tap.",
-  cta: "See how",
-},
+      shareReminders: {
+        title: "Team reminders",
+        body: "Share tasks or ideas.\nOthers add them to their Remi in 1 tap.",
+        cta: "See how",
+      },
 
       multidevice: {
-        title: "Remi on your phone, iPad/tablet and PC",
-        body: "Offload your mind anywhere. Everything syncs, and you choose which devices should receive notifications.",
+        title: "Remi on phone, iPad/tablet, and PC",
+        body:
+          "Clear your head wherever you are. Everything syncs, and you choose which devices get notifications.",
         cta: "How it works",
       },
 
-
       smartShortcuts: {
-            title: "Smart shortcuts (save 10s)",
-            body: "Add words with 1 tap.\nE.g. Idea / Buy / at 6:00 PM.",
-            cta: "Try now",
-            prefill: "Buy: milk, bread, eggs",
-          },
+        title: "Smart shortcuts (save 10s)",
+        body: "Add words in 1 tap.\nE.g. Idea / Buy / at 18:00.",
+        cta: "Try now",
+        prefill: "Buy: milk, bread, eggs",
+      },
 
       install: {
         title: "Install Remi as an app",
@@ -561,65 +606,71 @@ shareRemindersModal: {
 
       push: {
         title: "Let Remi remind you",
-        body: "Enable notifications and drop the mental load. Remi taps your shoulder when it’s time.",
+        body:
+          "Enable notifications and drop the mental load. Remi taps you on the shoulder when it’s time.",
         cta: "Enable",
       },
 
       iosDict: {
-        title: "Enable the keyboard mic",
-        body: "If you don’t see the mic on the keyboard, enable it in Settings to dictate faster.",
-        cta: "Show me",
+        title: "Enable the keyboard microphone",
+        body:
+          "If you don’t see the mic on the keyboard, enable it in Settings and dictate faster.",
+        cta: "See how",
       },
 
       noDate: {
-        title_one: "You have {{count}} task with no date",
-        title_other: "You have {{count}} tasks with no date",
-        body: "Want to sort them? I’ll clean the list up in 30s.",
-        cta: "View no date",
+        title_one: "You have {{count}} task without a date",
+        title_other: "You have {{count}} tasks without a date",
+        body: "Shall we sort them? In 30s I’ll leave your list clean.",
+        cta: "View no-date",
       },
 
       shortcuts: {
         title: "Words that save time",
-        body: "An idea = start with ‘Idea’. \nA task = start with a verb.",
+        body: "An idea = start with ‘Idea’.\nA task = start with a verb.",
         cta: "See examples",
       },
 
       dayClose: {
         title: "60-second wrap-up",
         body: "What’s on your mind for tomorrow? Drop it and done.",
-        cta: "Drop it",
+        cta: "Offload",
       },
 
       paste: {
         title: "Have you tried pasting text?",
-        body: "Copy anything (WhatsApp, email, notes) and let Remi organize it.",
+        body: "Copy anything (WhatsApp, Email, Notes) and let Remi organize it.",
         cta: "Paste now",
       },
 
       shareToRemi: {
-        title: "Save things using Share",
-        body: "From WhatsApp/Mail/Notes: Share → Remi. \nIt opens ready to organize.",
+        title: 'Save things with “Share”',
+        body:
+          "From WhatsApp/Email/Notes: Share → Remi.\nOpens ready to organize.",
         cta: "Try",
-        toast: "Tip: in another app tap “Share” → “Remi” to send it directly 🙂",
+        toast:
+          "Tip: in another app tap “Share” → “Remi” to send it directly 🙂",
       },
 
       natural: {
-        title: "Write like you speak",
-        body: "Example: “Pay the electricity bill tomorrow at 6pm”. Remi handles it, and you can rest.",
+        title: "Write the way you talk",
+        body:
+          'E.g. “Pay the electric bill tomorrow at 6pm”. Remi handles it and you can relax.',
         cta: "Try example",
-        prefill: "Pay the electricity bill tomorrow 18:00",
+        prefill: "Pay the electric bill tomorrow 18:00",
       },
 
       week: {
         title: "Quick plan",
-        body: "See your week in one gesture. Urgent first — the rest out of your head.",
+        body:
+          "See your week in one gesture. Urgent first, everything else out of your head.",
         cta: "View week",
       },
 
       mental: {
-        title: "Mini break",
-        body: "Breathe in 4s, out 6s. Your mind doesn’t have to do everything today.",
-        cta: "Empty mind",
+        title: "Mini pause",
+        body: "Breathe in 4s, breathe out 6s. Your mind doesn’t need to do it all today.",
+        cta: "Clear mind",
       },
 
       birthday: {
@@ -630,32 +681,30 @@ shareRemindersModal: {
       },
 
       cleanNoDate: {
-        title: "✅ No undated tasks",
-        body: "Perfect. Prioritizing is easy now.",
+        title: "✅ No tasks without a date",
+        body: "Perfect. Now it’s easy to prioritize.",
         cta: "View today",
       },
     },
 
-    // en
-shareToRemiModal: {
-  title: "Share to Remi",
-  body: "Save text from any app using “Share”.",
-  iosTitle: "On iPhone (iOS)",
-  iosStep1: "Open WhatsApp/Mail/Notes.",
-  iosStep2: "Tap “Share”.",
-  iosStep3: "If you see “Remi”, tap it and it will open ready to organize.",
-  iosStep4:
-    "If it doesn’t appear, use “Copy” and then paste into Remi (on iOS it can depend on the system/version).",
-  androidTitle: "On Android",
-  androidStep1: "Open WhatsApp/Mail/Notes.",
-  androidStep2: "Select the text and/or tap “Share”.",
-  androidStep3: "Choose “Remi” and it will open with the text ready to organize.",
-  androidStep4:
-    "If it doesn’t appear, make sure Remi is installed as an app (PWA) and try again.",
-  ok: "Got it",
-  hideForever: "Don’t show again",
-},
-
+    shareToRemiModal: {
+      title: "Share to Remi",
+      body: "Save text from any app using “Share”.",
+      iosTitle: "On iPhone (iOS)",
+      iosStep1: "Open WhatsApp/Email/Notes.",
+      iosStep2: 'Tap “Share”.',
+      iosStep3: 'If you see “Remi”, tap it and it will open ready to organize.',
+      iosStep4:
+        "If it doesn’t appear, use “Copy” and then paste in Remi (on iOS it can depend on the system/version).",
+      androidTitle: "On Android",
+      androidStep1: "Open WhatsApp/Email/Notes.",
+      androidStep2: 'Select the text and/or tap “Share”.',
+      androidStep3: "Choose “Remi” and it will open with the text ready to organize.",
+      androidStep4:
+        "If it doesn’t appear, make sure Remi is installed as an app (PWA) and try again.",
+      ok: "Got it",
+      hideForever: "Don’t show again",
+    },
 
     shortcutsModal: {
       title: "See examples",
@@ -663,7 +712,7 @@ shareToRemiModal: {
       ex1: "Idea: Trip to Japan in spring",
       ex2: "Idea: Gift for ___",
       ex3: "Call the insurance tomorrow 10:00",
-      ex4: "Pay the electricity bill tomorrow 18:00",
+      ex4: "Pay the electric bill tomorrow 18:00",
       ex5: "Send an email to ___ today",
       openEmpty: "Open Remi",
       close: "Close",
@@ -672,7 +721,7 @@ shareToRemiModal: {
     iosDict: {
       helpTitle: "Enable Dictation on iPhone",
       helpBody:
-        "On iOS it’s usually here: Settings → General → Keyboard → Enable Dictation.",
+        "On iOS it’s usually: Settings → General → Keyboard → Enable Dictation.",
       helpStepsTitle: "Quick steps",
       step1: "Open Settings",
       step2: "General → Keyboard",
@@ -689,42 +738,38 @@ shareToRemiModal: {
     allTab: "All",
     statusDone: "Done",
     statusActive: "Active",
-    statusArchived: "Archived",    
-  subtitle: "Everything you've emptied from your mind appears here.",
-  itemsCount: "{{count}} items",
-  loading: "Loading inbox…",
-  emptyTitle: "Empty inbox",
-  emptySubtitle:
-    "Add new tasks or ideas from the Today screen.",
+    statusArchived: "Archived",
+    subtitle: "Everything you’ve cleared from your head shows up here.",
+    itemsCount: "{{count}} items",
+    loading: "Loading inbox…",
+    emptyTitle: "Inbox is empty",
+    emptySubtitle: "Add new tasks or ideas from the Today screen.",
 
-  itemTaskPrefix: "Task · ",
-  itemIdeaPrefix: "Idea · ",
-  errorLoading: "Error loading your inbox",
-  errorUpdating: "Error updating your inbox",
-
-  sectionToday: "Today",
-  sectionTomorrow: "Tomorrow",
-  sectionNoDate: "No date",
-
+    itemTaskPrefix: "Task · ",
+    itemIdeaPrefix: "Idea · ",
+    errorLoading: "Error loading your inbox",
+    errorUpdating: "Error updating your inbox",
+    sectionToday: "Today",
+    sectionTomorrow: "Tomorrow",
+    sectionNoDate: "No date",
   },
 
   ideas: {
     title: "Ideas",
-    emptyState: "Write your ideas here to free your mind.",    
-  subtitle: "All the ideas you don't want to lose are saved here.",
-  loading: "Loading ideas…",
-  emptyTitle: "No ideas yet",
-  emptySubtitle:
-    "Use the + button on the Today screen to save your ideas.",
-  savedAt: "Saved on {{date}}",
-  errorLoading: "Error loading your ideas",
-  updateError: "We couldn’t update this idea.",
-    convertError: "We couldn’t convert this idea into a task.",
+    emptyState: "Write down your ideas here to clear your mind.",
+    subtitle: "All the ideas you don’t want to lose are saved here.",
+    loading: "Loading ideas…",
+    emptyTitle: "No ideas yet",
+    emptySubtitle: "Use the + button on the Today screen to save your ideas.",
+    savedAt: "Saved on {{date}}",
+    errorLoading: "Error loading your ideas",
+    updateError: "Couldn’t update the idea.",
+    convertError: "Couldn’t convert the idea into a task.",
 
     editLabel: "Edit idea",
     editTitle: "Turn this idea into something actionable",
     editSubtitle:
-      "Refine the text or turn it into a task with a due date and reminder.",
+      "Improve the text or convert it into a task with a date and reminder.",
 
     fieldTitle: "Idea text",
     fieldTitlePlaceholder: "E.g. buy new shoes for the wedding",
@@ -746,7 +791,6 @@ shareToRemiModal: {
 
     footerHint:
       "Converting an idea into a task doesn’t duplicate it: the original idea becomes a task.",
-  
   },
 
   profile: {
@@ -760,280 +804,283 @@ shareToRemiModal: {
     changeAvatar: "Change avatar",
     save: "Save changes",
     shareProfile: "Share profile",
-    logout: "Log out",
+    logout: "Sign out",
     toastSaved: "Profile updated successfully.",
-    toastError: "Could not save profile.",
+    toastError: "Couldn’t save the profile.",
 
-     devicePushTitle: "Notifications on this device",
-  devicePushUnsupportedHint:
-    "This browser doesn’t support push notifications. Try Safari on iPhone or Chrome/Edge on Android/desktop.",
+    devicePushTitle: "Notifications on this device",
+    devicePushUnsupportedHint:
+      "This browser doesn’t support push notifications. Try Safari on iPhone or Chrome/Edge on Android/PC.",
     devicePushChecking: "Checking…",
-  devicePushUnsupportedLine: "This device/browser doesn’t support push.",
-  devicePushDeniedLine: "Permission denied on this device (browser settings).",
-  devicePushNeedsPermissionLine: "You haven’t granted permission on this device yet.",
-  devicePushNeedsRegisterLine: "Permission OK, but you still need to enable it here.",
-  devicePushActiveLine: "Active on this device ✅",
-   devicePushToggleAria: "Enable or pause notifications on this device",
-  pushDeviceEnabled: "Notifications enabled on this device",
+    devicePushUnsupportedLine: "This device/browser does not support push.",
+    devicePushDeniedLine:
+      "Permission denied on this device (browser settings).",
+    devicePushNeedsPermissionLine:
+      "You haven’t granted permission on this device yet.",
+    devicePushNeedsRegisterLine: "Permission OK, but you still need to enable it here.",
+    devicePushActiveLine: "Active on this device ✅",
+    devicePushToggleAria:
+      "Enable or pause notifications on this device",
+    pushDeviceEnabled: "Notifications enabled on this device",
 
-  back: "Profile",
-  memberSince: "Member since {{date}}",
+    back: "Profile",
+    memberSince: "Member since {{date}}",
 
-  sectionUserTitle: "User information",
-  sectionUserDescription:
-    "Edit your basic details and how REMI is displayed.",
+    sectionUserTitle: "User information",
+    sectionUserDescription: "Edit your basic details and how REMI is displayed.",
 
-  usernameLabel: "Username",
-  usernamePlaceholder: "Your name in REMI",
+    usernameLabel: "Username",
+    usernamePlaceholder: "Your name in REMI",
 
-  emailLabel: "Email",
-  emailPlaceholder: "you@email.com",
+    emailLabel: "Email",
+    emailPlaceholder: "you@email.com",
 
-  passwordLabel: "New password",
-  passwordPlaceholder: "Leave empty if you don't want to change it",
+    passwordLabel: "New password",
+    passwordPlaceholder: "Leave empty if you don’t want to change it",
 
-  languageLabel: "Language",
-  languageSpanish: "🇪🇸 Spanish",
-  languageEnglish: "🇬🇧 English",
-  languageGerman: "🇩🇪 German",
+    languageLabel: "Language",
+    languageSpanish: "🇪🇸 Spanish",
+    languageEnglish: "🇬🇧 English",
+    languageGerman: "🇩🇪 German",
 
-  notificationsLabel: "Notifications",
-  notificationsDescription: "Reminders for important tasks.",
+    notificationsLabel: "Notifications",
+    notificationsDescription: "Reminders for important tasks.",
 
-  saving: "Saving...",
-  saveChanges: "Save changes",
+    saving: "Saving...",
+    saveChanges: "Save changes",
 
-  sectionAccountTitle: "Account actions",
-  sectionAccountDescription:
-    "Share REMI or log out on this device.",
+    sectionAccountTitle: "Account actions",
+    sectionAccountDescription:
+      "Share REMI or sign out on this device.",
 
-  shareButton: "Share app",
-  logoutButton: "Log out",
+    shareButton: "Share app",
+    logoutButton: "Sign out",
 
-  shareText: "I’m using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\nI definitely recommend trying it, it really helps. Here’s the link. 🙂",
-  shareCopied: "REMI link copied to clipboard",
+    shareText:
+      "I’m using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\nI definitely recommend trying it, it really helps. Here’s the link. 🙂",
+    shareCopied: "REMI link copied to clipboard",
 
-  defaultUserName: "User",
+    defaultUserName: "User",
 
-  avatarTooBig: "The image must be smaller than 5 MB.",
-  avatarUploadError: "The image could not be uploaded. Please try again.",
-  passwordTooShort: "The new password must be at least 6 characters.",
-  authUpdateError: "Email/password could not be updated.",
-  updateSuccess: "Profile updated successfully.",
-  updateError: "Changes could not be saved.",
-  logoutError: "Could not log out. Please try again.",
+    avatarTooBig: "The image must be under 5 MB.",
+    avatarUploadError: "Couldn’t upload the image. Please try again.",
+    passwordTooShort: "The new password must be at least 6 characters.",
+    authUpdateError: "Couldn’t update email/password.",
+    updateSuccess: "Profile updated successfully.",
+    updateError: "Couldn’t save changes.",
+    logoutError: "Couldn’t sign out. Please try again.",
   },
+
   notifications: {
     dailyReminderTitle: "Your mind is full",
-    dailyReminderBody:
-      "Check your tasks for today in REMI and clear your head.",
-    dueTodayTitle: "You have tasks today",
-    dueTodayBody: "Open REMI to see what's pending.",
+    dailyReminderBody: "Check your tasks for today in REMI and clear your head.",
+    dueTodayTitle: "You have tasks due today",
+    dueTodayBody: "Open REMI to see what’s pending.",
   },
 
-landing: {
-  hero: {
-    badge: "Your external memory",
-    shareButtonLabel: "Share Remi",
-    shareText:
-      "I'm using Remi to organize everything I used to carry in my head, and I've greatly reduced my stress and mental load. Here’s the link:",
-    shareCopied: "Remi link copied to clipboard.",
-    title: {
-      part1: "Remember everything without",
-      highlighted: "mental stress",
-    },
-    description:
-      "Take tasks, ideas and reminders out of your head so you can focus on what really matters. Remi makes sure you remember what you need at exactly the right moment.",
-    ctaPrimary: "Start now",
-    ctaSecondary: "See how it works",
-    userStatsHighlight: "People who use Remi",
-    userStats:
-      "say they feel lighter and under much less mental load.",
-  },
-
-  features: {
-    title: {
-      part1: "Designed to",
-      highlighted: "free your mind",
-    },
-    subtitle:
-"Remi combines smart reminders, time management and quick capture so your head stops being your to-do list.",
-
-    items: {
-      reminders: {
-        title: "Personalized reminders",
-        description:
-          "Set whatever frequency you need: daily, weekly, monthly or custom. Remi adapts to your rhythm. Only what matters, at the right time.",
+  landing: {
+    hero: {
+      badge: "Your external memory",
+      shareButtonLabel: "Share Remi",
+      shareText:
+        "I’m using Remi to organize everything I used to keep in my head, and I’ve greatly reduced stress and mental load. Here’s the link:",
+      shareCopied: "Remi link copied to clipboard.",
+      title: {
+        part1: "Remember everything without",
+        highlighted: "mental stress",
       },
-      temporal: {
-        title: "Time control",
-        description:
-          "Decide how long you want to remember each thing. No more endless reminders. Your future self will thank you.",
+      description:
+        "Get tasks, ideas, and reminders out of your head so you can focus on what really matters. Remi makes sure you remember what you need, right when you need it.",
+      ctaPrimary: "Start now",
+      ctaSecondary: "See how it works",
+      userStatsHighlight: "People who use Remi",
+      userStats:
+        "say they feel lighter and with much less mental load.",
+    },
+
+    features: {
+      title: {
+        part1: "Designed to",
+        highlighted: "free your mind",
       },
-      mentalLoad: {
-        title: "Mental load under control",
-        description:
-          "Get everything that’s on your mind out of your head: big or small tasks, errands, ideas, things you don’t want to forget. Remi stores them and brings them back exactly when you need them.",
+      subtitle:
+        "Remi combines smart reminders, time management, and fast capture so your head stops being your to-do list.",
+
+      items: {
+        reminders: {
+          title: "Personalized reminders",
+          description:
+            "Set the frequency you need: daily, weekly, monthly, or custom. Remi adapts to your rhythm. Only what matters, at the right time.",
+        },
+        temporal: {
+          title: "Time control",
+          description:
+            "Define until when you want to be reminded of each thing. No endless reminders. Your future self will thank you.",
+        },
+        mentalLoad: {
+          title: "Mental load under control",
+          description:
+            "Get everything out of your head: big or small tasks, errands, ideas, things you don’t want to forget. Remi stores them and brings them back exactly when you need them.",
+        },
+
+        quickCapture: {
+          title: "Ultra-fast capture",
+          description:
+            "Write an idea or task in the moment—no complex menus. Open, type, done. Remi organizes the rest.",
+        },
+      },
+    },
+
+    mentalLoad: {
+      cardTitle: "Your mind status today",
+      cardDate: "Today",
+      cardStatus: "Clearer mind",
+
+      example1: "Important bills noted",
+      example1Freq: "Every month",
+      example2: "Birthday gifts planned",
+      example2Freq: "Throughout the year",
+      example3: "Daily tasks organized",
+      example3Freq: "Every morning",
+      badge: "Your external memory",
+      headline: "We’re doing great today",
+      subheadline:
+        "Today we cleared quite a bit from your mind: you have 5 tasks organized and 3 of them are already done.",
+      clearMindLabel: "Clear mind",
+      clearMindHelper:
+        "Every thing you save in Remi is one less thing your mind has to carry.",
+
+      title: {
+        part1: "Your mind is for creating,",
+        highlighted: "Remi is for remembering",
+      },
+      description:
+        "We use our mind as a to-do list, calendar, home management, and storage for pending things. That creates stress and constant mental load. Remi helps you offload that load easily and quickly into an external, clear, reliable place so you can focus on what truly matters.",
+      step1Title: "Get it all out of your head",
+      step1Description:
+        "Whenever something comes to mind—a task, an idea, an errand—you write it in Remi. Don’t overthink it: just write it and keep doing what you were doing.",
+
+      step2Title: "Let Remi organize it with you",
+      step2Description:
+        "If it’s an idea, save it with one tap and later you can edit it or convert it into a task.\nIf it’s a task, pick a due date and how you want Remi to remind you—fast, without having to touch it again.",
+
+      step3Title: "Get a clear head again",
+      step3Description:
+        "Your mind stops being storage and becomes what it should be: space to think, create, and be present—without fear of forgetting something important.",
+    },
+
+    cta: {
+      badge: "Start with something small today",
+      title: {
+        part1: "Build, little by little, a more",
+        highlighted: "light and calm mind",
+      },
+      description:
+        "You don’t need to change your whole life. Just get out of your head what you used to carry inside. Remi doesn’t force you to do anything at a specific time: Remi reminds you in time so you can decide when it’s best for you—without forgetting.",
+
+      ctaPrimary: "Try Remi now",
+      ctaSecondary: "Keep reading first",
+
+      feature1: "Completely free",
+      feature2: "Designed for all kinds of people and minds",
+      feature3: "Works equally well for tasks and ideas",
+    },
+
+    footer: {
+      description:
+        "Remi is your trusted external memory for all those things you don’t want to forget—but also don’t want to carry in your head all day.",
+
+      product: "Product",
+      productLinks: {
+        features: "Features",
+        pricing: "Pricing",
+        useCases: "Use cases",
+        roadmap: "Roadmap",
       },
 
-      quickCapture: {
-        title: "Ultra-fast capture",
-        description:
-          "Write down an idea or a task in a moment, without complicated menus. Open, type, done. Remi takes care of the rest.",
+      company: "Company",
+      companyLinks: {
+        about: "About Remi",
+        blog: "Blog",
+        careers: "Careers",
+        contact: "Contact",
       },
-    },
-  },
 
-  mentalLoad: {
-    cardTitle: "How your mind is today",
-    cardDate: "Today",
-    cardStatus: "Clearer mind",
+      legal: "Legal",
+      legalLinks: {
+        privacy: "Privacy policy",
+        terms: "Terms of use",
+        cookies: "Cookies",
+        licenses: "Licenses",
+      },
 
-    example1: "Important bills written down",
-    example1Freq: "Every month",
-    example2: "Birthday gifts planned",
-    example2Freq: "Throughout the year",
-    example3: "Today’s tasks organized",
-    example3Freq: "Every morning",
-
-    badge: "Your external memory",
-    headline: "We’re doing great today",
-    subheadline:
-      "Today we’ve cleared your mind quite a bit: you have 5 tasks organized and 3 of them are already done.",
-    clearMindLabel: "Clear mind",
-    clearMindHelper:
-      "Every thing you save in Remi is one less thing weighing on your mind.",
-
-    title: {
-      part1: "Your mind is for creating,",
-      highlighted: "Remi is for remembering",
-    },
-    description:
-      "We use our mind as a to-do list, a calendar, home management and storage for everything that’s pending. That creates stress and a constant feeling of mental load. Remi helps you unload that burden easily and quickly into an external, clear and reliable place so you can dedicate your attention to what really matters.",
-    step1Title: "Get everything out of your head",
-    step1Description:
-      "Whenever something comes to mind —a task, an idea, an errand— you write it down in Remi. Without overthinking it: just write it and go back to what you were doing.",
-
-    step2Title: "Let Remi organize it with you",
-    step2Description:
-      "If it’s an idea, you save it with one click and can edit it later or turn it into a task.\nIf it’s a task, you choose a due date and how you want Remi to remind you — fast and without having to touch it again.",
-
-    step3Title: "Get a clear head again",
-    step3Description:
-      "Your mind stops being a storage room and becomes what it should be: a space to think, create and be present, without the fear of forgetting anything important.",
-  },
-
-  cta: {
-    badge: "Start with something small today",
-    title: {
-      part1: "Little by little, build a",
-      highlighted: "lighter, calmer mind",
-    },
-    description:
-        "You don't need to change your whole life. Just take out of your head what you used to carry inside. Remi doesn't force you to do things at a specific time: Remi simply reminds you in time so you can choose when it suits you best, without forgetting.",
-
-    ctaPrimary: "Try Remi now",
-    ctaSecondary: "Keep reading first",
-
-    feature1: "Completely free",
-    feature2: "Designed for all kinds of people and minds",
-    feature3: "Works equally well for tasks and ideas",
-  },
-
-  footer: {
-    description:
-      "Remi is your trusted external memory for all those things you don’t want to forget, but don’t want to carry in your head all day either.",
-
-    product: "Product",
-    productLinks: {
-      features: "Features",
-      pricing: "Pricing",
-      useCases: "Use cases",
-      roadmap: "Roadmap",
+      copyright: "© Remi 2025. All rights reserved.",
     },
 
-    company: "Company",
-    companyLinks: {
-      about: "About Remi",
-      blog: "Blog",
-      careers: "Careers",
-      contact: "Contact",
-    },
-
-    legal: "Legal",
-    legalLinks: {
-      privacy: "Privacy policy",
-      terms: "Terms of use",
-      cookies: "Cookies",
-      licenses: "Licenses",
-    },
-
-    copyright: "© Remi 2025. All rights reserved.",    
-  },
-
-  extra: {
+    extra: {
       hero: {
         kicker: "Tell Remi what you don’t want to forget.",
         description:
-          "Write one sentence. Remi interprets the text and creates the reminder: date & time, repetition if it’s a habit, and the reminder mode when it matters.",
+          "Write a sentence. Remi interprets the text and creates the reminder: date and time, repeat if it’s a habit, and the reminder mode when it’s time.",
         bullets: {
           a: "Just write: zero formatting, zero friction",
-          b: "Remi interprets: dates, times, habits & repetition",
-          c: "Reminders ready—so you don’t rely on memory",
-          d: "On all your devices: desktop, phone, iPad & tablet",
+          b: "Remi interprets: dates, times, reminders, and repeat",
+          c: "Reminders ready so it doesn’t depend on your memory",
+          d: "On all your devices: computer, phone, iPad, and tablet",
         },
       },
 
-      trustRow: { a: "Fast", b: "Simple", c: "Built to clear your mind" },
+      trustRow: { a: "Fast", b: "Simple", c: "Made to clear your mind" },
 
       problem: {
         title: "Your brain is not a to-do list.",
         text:
-          "Ideas, errands, loose ends… carrying everything in your head costs stress and forgetfulness.",
-        micro: "Remi is your mental offload: write it once and keep going with your day.",
+          "Ideas, errands, to-dos… when you carry it all in your head, you pay with stress and forgetfulness.",
+        micro: "Remi is your brain dump: write it once and keep going with your day.",
       },
 
       how: {
         title: "How it works",
         subtitle: "You write. Remi understands. And it reminds you.",
         step1Title: "1) Write what you don’t want to forget",
-        step1Text: "One sentence, just as it comes out. No menus, no fields.",
+        step1Text:
+          "A sentence, just as it comes out. No menus, no thinking about fields.",
         step2Title: "2) Remi interprets it",
         step2Text:
-          "It detects date & time, whether it’s a habit (repetition), and sets the reminder.",
-        step3Title: "3) It brings it back when it matters",
+          "It detects date and time, whether it’s a habit (repeat), and adjusts the reminder.",
+        step3Title: "3) It brings it back when it’s time",
         step3Text:
-          "Remi puts it in front of you at the right moment so you don’t carry it in your head.",
+          "Remi puts it in front of you at the right moment so you don’t have to carry it.",
       },
 
       interpret: {
         title: "Text → automatic reminder",
         text:
-          "No endless setup. Remi understands natural language and turns it into a useful reminder.",
-        chips: ["Date & time", "Habit / repetition", "Reminder mode"],
+          "You don’t need to configure a thousand things. Remi understands natural language and turns it into a useful reminder.",
+        chips: ["Date and time", "Habit / repeat", "Reminder mode"],
         exampleLabel: "Examples",
         examples: [
-          "“Tomorrow at 6: call the insurance”",
+          "“Tomorrow at 18:00: call the insurance”",
           "“Every Monday: gym”",
           "“On the 5th: pay rent”",
         ],
-        helperLine: "Write one sentence and done",
+        helperLine: "Write a sentence and you’re done",
       },
 
       shareFeature: {
         badge: "New",
         title: "Share tasks and ideas to reduce mental load",
         text:
-          "Help someone clear their mind: share a task or idea as a link, so they can add it and stop carrying the “don’t forget” burden.",
+          "Help other people free their mind: share a task or an idea as a link. They can add it and stop carrying “I can’t forget this…”.",
         points: [
-          "Great for families, couples, and teams",
+          "Useful for family, partners, and teams",
           "Share reminders, errands, and ideas in seconds",
-          "Perfect when someone is stressed or overwhelmed",
+          "Perfect to help when someone is stressed or overloaded",
         ],
         exampleLabel: "Example",
         example:
-          "“Add to Remi: ‘Tomorrow 6:00 pm call the insurance’ → you receive a link and add it in one tap.”",
-        helperLine: "Quick help, no friction",
+          "“Add to Remi: ‘Tomorrow 18:00 call the insurance’ → you receive a link and add it in one tap.”",
+        helperLine: "Quick help, no explanation",
         ctaTry: "Try Remi",
         tag: "Share",
       },
@@ -1041,46 +1088,49 @@ landing: {
       everywhere: {
         title: "Truly multi-device",
         text:
-          "Remi is available wherever you are: work, home, on the go. Same access, same reminders.",
+          "Remi is available wherever you are: work, home, outside. Same access, same reminders.",
         points: [
-          "Desktop to capture while working",
+          "Computer to capture while you work",
           "Phone / iPad / tablet to capture on the go",
           "Use it instantly in the browser or install it as an app (PWA)",
         ],
       },
 
       install: {
-        title: "Install Remi to get reminders",
+        title: "Install Remi to receive reminders",
         text:
-          "To receive reminder notifications, install Remi now from your browser (PWA).",
-        helper: "Enjoy it like a real app: lighter, faster, and always up to date.",
+          "To receive notifications for your reminders, install Remi now from your browser (PWA).",
+        helper:
+          "Enjoy it like a real app: lighter, faster, and always up to date.",
         badge: "App mode",
         bullet1: "Notifications for reminders",
         bullet2: "Home screen icon",
-        bullet3: "Full-screen app feel",
-        mini1: "Lightweight & fast",
+        bullet3: "Full screen, app-like feel",
+        mini1: "Light and fast",
         mini2: "Always up to date",
-        mini3: "Built for fast capture",
-        ctaHint: "Tap “Install now” and follow the steps for your device.",
+        mini3: "Made for fast capture",
+        ctaHint:
+          "Tap “Install now” and follow the steps for your device.",
         device: {
-          desktop: "Desktop",
+          desktop: "Computer",
           phone: "Phone",
           tablet: "Tablet",
         },
         pwaCard: {
-          subtitle: "Notifications & quick access",
-          appLike: "Like an app—only better",
+          subtitle: "Notifications and quick access",
+          appLike: "Like an app, but better",
         },
       },
 
       social: {
         title: "Built with real feedback",
-        subtitle: "Remi improves continuously with testing and user comments.",
+        subtitle:
+          "Remi is continuously improved with user tests and comments.",
         note: "",
         testimonials: [
           {
             quote:
-              "“Thanks to my coworker for recommending Remi—every day I use it, I feel less mental load and forget fewer things.”",
+              "“Thanks to my coworker for recommending Remi. Every day I use it, I feel less mental load and I forget fewer things.”",
             author: "Sarah",
           },
           {
@@ -1099,27 +1149,28 @@ landing: {
         installLabel: "Install now",
         title: "Install Remi",
         description:
-          "Install Remi from your browser to receive reminder notifications and use it like an app.",
+          "Install Remi from your browser to receive notifications for your reminders and use it like an app.",
         alreadyInstalled:
           "Remi is already installed on this device. Your reminders can arrive as notifications.",
         promptText:
-          "Install it to receive reminder notifications and get quick access from the icon.",
+          "Install it to receive notifications for your reminders and get quick access from the icon.",
         sectionIOS: "On iPhone / iPad (Safari)",
-        sectionDesktop: "On desktop (Chrome/Edge)",
-        installRequired: "Installation is required to receive reminder notifications.",
+        sectionDesktop: "On computer (Chrome/Edge)",
+        installRequired:
+          "Installation is required to receive notifications for your reminders.",
         iosSteps: [
-          "Open the Share menu (Share icon in Safari).",
+          "Open the share menu (share icon in Safari).",
           "Tap “Add to Home Screen”.",
           "Confirm “Add”.",
         ],
         desktopSteps: [
-          "In Chrome/Edge, look for the install icon in the address bar or the menu.",
-          "Click “Install”.",
+          "In Chrome/Edge, look for the “Install” icon in the address bar or in the menu.",
+          "Tap “Install”.",
         ],
         close: "Close",
         openInBrowser: "Open in browser",
         directInstallHint:
-          "If your browser supports direct install, an install button will appear in this modal.",
+          "If your browser supports direct installation, an install button will appear in this modal.",
       },
 
       iosBanner: {
@@ -1129,9 +1180,5 @@ landing: {
         closeAria: "Close",
       },
     },
-  
-
-
-
-},
+  },
 } as const;

@@ -132,7 +132,10 @@ export default function TasksPage() {
       items: [],
     };
 
-    const otherDateGroupsMap = new Map<string, { group: DateGroup; dateMs: number }>();
+    const otherDateGroupsMap = new Map<
+      string,
+      { group: DateGroup; dateMs: number }
+    >();
 
     for (const item of filtered) {
       if (item.due_date) {
@@ -228,17 +231,16 @@ export default function TasksPage() {
   };
 
   const handleShare = async (item: BrainItem) => {
-  try {
-    if (!item?.id) return;
-    const res = await createShareInviteCached(item.id);
-    await shareTextOrCopy(res.shareMessage);
-    alert(t("shareInvite.sharedOk"));
-  } catch (err) {
-    console.error(err);
-    alert(t("shareInvite.sharedError"));
-  }
-};
-
+    try {
+      if (!item?.id) return;
+      const res = await createShareInviteCached(item.id);
+      await shareTextOrCopy(res.shareMessage);
+      alert(t("shareInvite.sharedOk"));
+    } catch (err) {
+      console.error(err);
+      alert(t("shareInvite.sharedError"));
+    }
+  };
 
   const filterLabel = t("inbox.tasksTab");
 
@@ -290,7 +292,9 @@ export default function TasksPage() {
                 <p className="text-[14px] font-semibold text-slate-900">
                   {t("inbox.emptyTitle")}
                 </p>
-                <p className="text-[12px] text-slate-500">{t("inbox.emptySubtitle")}</p>
+                <p className="text-[12px] text-slate-500">
+                  {t("inbox.emptySubtitle")}
+                </p>
               </div>
             </div>
           )}
@@ -369,7 +373,8 @@ export default function TasksPage() {
                                 <p
                                   className="text-[14px] font-semibold text-slate-900 leading-snug"
                                   style={{
-                                    whiteSpace: "normal",
+                                    // ✅ clave: respetar saltos de línea en title
+                                    whiteSpace: "pre-wrap",
                                     wordBreak: "break-word",
                                     overflowWrap: "anywhere",
                                   }}
@@ -401,17 +406,16 @@ export default function TasksPage() {
                             {/* Footer row */}
                             <div className="mt-3 flex items-center gap-3">
                               <button
-  type="button"
-  onPointerDown={() => prefetchShareInvite(item.id)}
-  onClick={(e) => {
-    e.stopPropagation();
-    void handleShare(item);
-  }}
-  className={shareBtnClass}
-  aria-label={shareLabel}
-  title={shareLabel}
->
-
+                                type="button"
+                                onPointerDown={() => prefetchShareInvite(item.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void handleShare(item);
+                                }}
+                                className={shareBtnClass}
+                                aria-label={shareLabel}
+                                title={shareLabel}
+                              >
                                 <Share2 size={15} color="#94A3B8" />
                                 <span>{shareLabel}</span>
                               </button>
@@ -420,7 +424,7 @@ export default function TasksPage() {
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handlePrimaryAction(item);
+                                  void handlePrimaryAction(item);
                                 }}
                                 className={rightBtnClass}
                                 aria-label={isDone ? deleteLabel : doneLabel}
@@ -455,7 +459,9 @@ export default function TasksPage() {
         task={editingTask}
         onClose={() => setEditOpen(false)}
         onUpdated={(updated) => {
-          setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+          setItems((prev) =>
+            prev.map((i) => (i.id === updated.id ? updated : i)),
+          );
         }}
       />
     </div>

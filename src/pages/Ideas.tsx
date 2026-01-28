@@ -215,17 +215,20 @@ export default function IdeasPage() {
   };
 
   const handleShare = async (item: BrainItem) => {
-  try {
-    if (!item?.id) return;
-    const res = await createShareInviteCached(item.id);
-    await shareTextOrCopy(res.shareMessage);
-    alert(t("shareInvite.sharedOk"));
-  } catch (err) {
-    console.error(err);
-    alert(t("shareInvite.sharedError"));
-  }
-};
+    try {
+      if (!item?.id) return;
+      const res = await createShareInviteCached(item.id);
 
+      // IMPORTANTE: si el shareTextOrCopy internamente "normaliza" saltos de línea,
+      // aquí ya no lo tocamos. La UI de Ideas (debajo) sí mostrará saltos de línea.
+      await shareTextOrCopy(res.shareMessage);
+
+      alert(t("shareInvite.sharedOk"));
+    } catch (err) {
+      console.error(err);
+      alert(t("shareInvite.sharedError"));
+    }
+  };
 
   const filterLabel = t("inbox.ideasTab");
 
@@ -314,6 +317,15 @@ export default function IdeasPage() {
                             new Date(item.due_date as string).toLocaleString()
                           : t("today.dueNoDate");
 
+                        // ✅ si existe body/content en el BrainItem, lo mostraremos respetando saltos de línea
+                        const ideaBody =
+                          (item as any)?.body ??
+                          (item as any)?.content ??
+                          (item as any)?.text ??
+                          "";
+
+                        const titleText = String(item.title ?? "");
+
                         // Botón derecho: Completado / Eliminar (si está DONE) — pill + pequeño
                         const rightBtnBase =
                           "flex-1 h-9 rounded-full border inline-flex items-center justify-center gap-2 text-[12px] font-semibold";
@@ -328,7 +340,7 @@ export default function IdeasPage() {
                           >
                             {/* Header row */}
                             <div className="flex items-start gap-3">
-                              {/* icono + indicador share (cuadro rojo) */}
+                              {/* icono + indicador share */}
                               <div className="w-10 h-10 rounded-full bg-[rgba(251,191,36,0.18)] text-[#F59E0B] flex items-center justify-center shrink-0 relative">
                                 <Lightbulb size={18} />
 
@@ -344,24 +356,41 @@ export default function IdeasPage() {
                               </div>
 
                               <div className="flex-1 min-w-0">
+                                {/* ✅ IMPORTANTE: pre-wrap para respetar saltos de línea */}
                                 <p
                                   className="text-[14px] font-semibold text-slate-900 leading-snug"
                                   style={{
-                                    whiteSpace: "normal",
+                                    whiteSpace: "pre-wrap",
                                     wordBreak: "break-word",
                                     overflowWrap: "anywhere",
                                   }}
                                 >
-                                  {item.title}
+                                  {titleText}
                                 </p>
 
-                                <div className="mt-1 flex items-center gap-1 text-[12px] text-slate-500">
+                                {/* ✅ opcional: mostrar body respetando saltos de línea (si existe) */}
+                                {ideaBody && String(ideaBody).trim().length > 0 && (
+                                  <p
+                                    className="mt-1 text-[12px] text-slate-600"
+                                    style={{
+                                      whiteSpace: "pre-wrap",
+                                      wordBreak: "break-word",
+                                      overflowWrap: "anywhere",
+                                      maxHeight: 96, // limita visualmente sin destruir \n
+                                      overflow: "hidden",
+                                    }}
+                                  >
+                                    {String(ideaBody)}
+                                  </p>
+                                )}
+
+                                <div className="mt-2 flex items-center gap-1 text-[12px] text-slate-500">
                                   <Calendar size={14} className="text-slate-400" />
                                   <span className="truncate">{dueText}</span>
                                 </div>
                               </div>
 
-                              {/* Edit icon top-right (solo lápiz, sin círculo) */}
+                              {/* Edit icon top-right */}
                               <button
                                 type="button"
                                 onClick={(e) => {
@@ -380,17 +409,16 @@ export default function IdeasPage() {
                             <div className="mt-3 flex items-center gap-3">
                               {/* Left: Compartir */}
                               <button
-  type="button"
-  onPointerDown={() => prefetchShareInvite(item.id)}
-  onClick={(e) => {
-    e.stopPropagation();
-    void handleShare(item);
-  }}
-  className="flex-1 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center gap-2 text-[12px] font-semibold text-slate-700"
-  aria-label={t("shareInvite.share")}
-  title={t("shareInvite.share")}
->
-
+                                type="button"
+                                onPointerDown={() => prefetchShareInvite(item.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void handleShare(item);
+                                }}
+                                className="flex-1 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center gap-2 text-[12px] font-semibold text-slate-700"
+                                aria-label={t("shareInvite.share")}
+                                title={t("shareInvite.share")}
+                              >
                                 <Share2 size={15} className="text-slate-400" />
                                 <span>{t("shareInvite.share")}</span>
                               </button>

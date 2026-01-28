@@ -1475,11 +1475,12 @@ const anyModalOpen =
                               style={{
                                 wordBreak: "break-word",
                                 overflowWrap: "anywhere",
-                                whiteSpace: "normal",
+                                whiteSpace: "pre-wrap",
                               }}
                             >
                               {task.title}
                             </p>
+
 
                             <div className="mt-1 flex items-center gap-1 text-[12px] text-slate-500">
                               <CalendarDays
@@ -1581,11 +1582,12 @@ const anyModalOpen =
                           style={{
                             wordBreak: "break-word",
                             overflowWrap: "anywhere",
-                            whiteSpace: "normal",
+                            whiteSpace: "pre-wrap",
                           }}
                         >
                           {task.title}
                         </p>
+
 
                         <div className="mt-1 flex items-center gap-1 text-[12px] text-slate-500">
                           <CalendarDays

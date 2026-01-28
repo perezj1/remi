@@ -1,19 +1,19 @@
 // src/locales/es.ts
 export const es = {
-
   repeat: {
-   label: "Hábito",
-  help: "Convierte esta tarea en un hábito que Remi te recordará siempre a la hora elegida.",
- 
-  options: {
-    daily: "Diario",
-    weekly: "Semanal",
-    monthly: "Mensual",
-    yearly: "Anual",
-  },
-},
+    label: "Repetición",
+    help:
+      "Convierte esta tarea en un hábito que Remi te recordará siempre a la hora elegida.",
 
- shareInvite: {
+    options: {
+      daily: "Diario",
+      weekly: "Semanal",
+      monthly: "Mensual",
+      yearly: "Anual",
+    },
+  },
+
+  shareInvite: {
     share: "Compartir",
     sharedOk: "Listo. Enlace copiado/compartido.",
     sharedError: "No se pudo compartir. Inténtalo de nuevo.",
@@ -25,7 +25,7 @@ export const es = {
     invalidLinkTitle: "Enlace no válido",
     goHome: "Volver al inicio",
     someone: "Alguien",
-    
+
     due: "Fecha",
     acceptCta: "Añadir a Remi",
     accepting: "Añadiendo…",
@@ -35,98 +35,95 @@ export const es = {
     rejected: "Este enlace fue rechazado.",
     openRemi: "Abrir Remi",
     missingToken: "Falta el token del enlace.",
-  loadError: "No se pudo cargar el enlace.",
-  loginHint: "Si no has iniciado sesión, te pediremos entrar o crear una cuenta para poder añadirlo.",
- sentIndicator: "Tarea compartida",
- messageLine1: "{{name}} quiere que recuerdes:"
+    loadError: "No se pudo cargar el enlace.",
+    loginHint:
+      "Si no has iniciado sesión, te pediremos entrar o crear una cuenta para poder añadirlo.",
+    sentIndicator: "Tarea compartida",
+    messageLine1: "{{name}} quiere que recuerdes:",
   },
 
-
-
-mentalDump: {
- whyLabel: "Por qué:",
-  detectedLabel: "Detectado:",
-  detectedManual: "Manual",
-  detectedDash: "—",
-  habitDetectedLabel: "Hábito detectado:",
+  mentalDump: {
+    whyLabel: "Por qué:",
+    detectedLabel: "Detectado:",
+    detectedManual: "Manual",
+    detectedDash: "—",
+    habitDetectedLabel: "Hábito detectado:",
     detectedDefault: "Por defecto",
-  habitLabel: "Hábito",
-  habitOn: "On",
-  habitOff: "Off",
+    habitLabel: "Repetición",
+    habitOn: "On",
+    habitOff: "Off",
 
-  detectedReminder: {
-    DAY_BEFORE_AND_DUE: "Detecté “{word}” → lo marqué como: día antes + día límite.",
-    DAILY_UNTIL_DUE: "Detecté “{word}” → lo marqué como: diario hasta la fecha límite.",
-        WEEK_BEFORE_AND_DUE: "Detecté “{word}” → lo marqué como: 1 semana antes + día límite.",
+    detectedReminder: {
+      DAY_BEFORE_AND_DUE:
+        "Detecté “{word}” → lo marqué como: día antes + día límite.",
+      DAILY_UNTIL_DUE:
+        "Detecté “{word}” → lo marqué como: diario hasta la fecha límite.",
+      WEEK_BEFORE_AND_DUE:
+        "Detecté “{word}” → lo marqué como: 1 semana antes + día límite.",
+    },
 
-  },
+    why: {
+      verbTask: "Detecté “{word}” → lo marqué como tarea.",
+      prefixIdea: "Detecté “{word}” → lo marqué como idea.",
+      projectIdea: "Suena a idea/proyecto → lo marqué como idea.",
+      defaultTask: "No vi una pista clara → lo marqué como tarea.",
+      defaultIdea: "No vi una pista clara → lo marqué como idea.",
+      manualTask: "Lo marcaste como tarea.",
+      manualIdea: "Lo marcaste como idea.",
+    },
 
-  why: {
-    verbTask: "Detecté “{word}” → lo marqué como tarea.",
-    prefixIdea: "Detecté “{word}” → lo marqué como idea.",
-    projectIdea: "Suena a idea/proyecto → lo marqué como idea.",
-    defaultTask: "No vi una pista clara → lo marqué como tarea.",
-    defaultIdea: "No vi una pista clara → lo marqué como idea.",
-    manualTask: "Lo marcaste como tarea.",
-    manualIdea: "Lo marcaste como idea.",
-      },    
-  
+    dateLabel: "Fecha",
+    timeLabel: "Hora",
+    reminderLabel: "Recordatorio",
+    reminderShortLabel: "Aviso:",
+    reminderOff: "Off",
+    reminderDailyUntilDue: "Diaria",
+    reminderDayBeforeAndDue: "1 día antes",
+    reminderWeekBeforeAndDue: "1 semana antes",
 
-  dateLabel: "Fecha",
-  timeLabel: "Hora",
-  reminderLabel: "Recordatorio",
-  reminderShortLabel: "Aviso:",
-  reminderOff: "Off",
-  reminderDailyUntilDue: "Notificación diaria (hasta la fecha)",
-  reminderDayBeforeAndDue: "Notificación (día antes + día límite)",
-    reminderWeekBeforeAndDue: "Notificación (1 semana antes)",
+    buttonLabel: "Vacía tu mente",
 
+    title: "Descarga mental intensiva",
+    description:
+      "Dedica 2–3 minutos a vaciar tu cabeza. Escribe todo lo que no quieres olvidar: tareas, ideas, cosas pendientes. No hace falta organizar nada: Remi lo convierte en recordatorios por ti.",
 
-  buttonLabel: "Vacía tu mente",
+    inputLabel: "Escribe frases sueltas, separadas por saltos de línea o comas.",
+    placeholder:
+      "Ejemplos:\n" +
+      "Cambiar bombilla del pasillo mañana a las 10\n" +
+      "Llamar a mamá el domingo\n" +
+      "Todos los lunes a las 14:00 usar Remi\n" +
+      "Idea viaje a Italia en primavera",
 
-  title: "Descarga mental intensiva",
-  description:
-    "Dedica 2–3 minutos a vaciar tu cabeza. Escribe todo lo que no quieres olvidar: tareas, ideas, cosas pendientes. No hace falta organizar nada: Remi lo convierte en recordatorios por ti.",
+    // Textos del resumen inicial
+    summaryNone: "Aún no se ha detectado ninguna frase.",
+    summaryPrefix: "Se han detectado",
+    summarySuffix: "posibles recordatorios en tu texto.",
 
-  inputLabel:
-    "Escribe frases sueltas, separadas por saltos de línea o comas.",
-  placeholder:
-    "Ejemplos:\n" +
-    "Cambiar bombilla del pasillo mañana a las 10\n" +
-    "Llamar a mamá el domingo\n" +
-    "Todos los lunes a las 14:00 usar Remi\n" +
-    "Idea viaje a Italia en primavera",
+    // Botones estados
+    submitSaving: "Guardando...",
+    submitToPreview: "Revisar recordatorios",
+    submitConfirm: "Guardar en Remi",
 
-  // Textos del resumen inicial
-  summaryNone: "Aún no se ha detectado ninguna frase.",
-  summaryPrefix: "Se han detectado",
-  summarySuffix: "posibles recordatorios en tu texto.",
+    // Vista previa
+    previewTitle: "Revisa tu descarga mental",
+    previewDescription:
+      "Activa o desactiva las líneas que quieras guardar, ajusta los textos y confirma para crear tareas e ideas en Remi.",
+    previewNoneSelected: "No hay ningún elemento seleccionado.",
+    previewTaskLabel: "Tarea",
+    previewIdeaLabel: "Idea",
+    previewInclude: "Guardar",
+    previewBackToEdit: "Volver a editar texto",
 
-  // Botones estados
-  submitSaving: "Guardando...",
-  submitToPreview: "Revisar recordatorios",
-  submitConfirm: "Guardar en Remi",
+    // Hábitos
+    habitNone: "Sin Repetición",
+    habitDaily: "Repetición diaria",
+    habitWeekly: "Repetición semanal",
+    habitMonthly: "Repetición mensual",
+    habitYearly: "Repetición anual",
 
-  // Vista previa
-  previewTitle: "Revisa tu descarga mental",
-  previewDescription:
-    "Activa o desactiva las líneas que quieras guardar, ajusta los textos y confirma para crear tareas e ideas en Remi.",
-  previewNoneSelected: "No hay ningún elemento seleccionado.",
-  previewTaskLabel: "Tarea",
-  previewIdeaLabel: "Idea",
-  previewInclude: "Guardar",
-  previewBackToEdit: "Volver a editar texto",
-
-  // Hábitos
-  habitNone: "Sin hábito",
-  habitDaily: "Hábito diario",
-  habitWeekly: "Hábito semanal",
-  habitMonthly: "Hábito mensual",
-  habitYearly: "Hábito anual",
-
-  // Pistas rotatorias (hints)
- 
-/*     0: "Tu solo escribe, Remi lo ordena y agenda todo por ti para recordartelo cuando llegue el momento.",
+    // Pistas rotatorias (hints)
+    /*     0: "Tu solo escribe, Remi lo ordena y agenda todo por ti para recordartelo cuando llegue el momento.",
     1: "Piensa en tu casa: cosas por arreglar, limpiar o comprar.",
     2: "Piensa en trabajo o estudios: tareas, mails, entregas que no quieres olvidar.",
     3: "Piensa en tu salud: citas médicas, dentista, revisiones o análisis.",
@@ -134,21 +131,18 @@ mentalDump: {
     5: "Piensa en dinero y papeleo: facturas, bancos, suscripciones, documentos.",
     6: "Piensa en ti: hábitos, proyectos, ideas que no quieres que se pierdan.",
     7:"No hace falta escribir perfecto. Usa tu lenguaje normal: “llamar al dentista el martes por la mañana”.", */
-  hints: {
-  0: "Tú solo escribe, Remi lo ordena y agenda todo por ti para recordartelo cuando llegue el momento.",
-  1: "Pega o envia texto de WhatsApp, un mail o una nota. Remi lo convierte en recordatorio.",
-  2: "Tareas, ideas, recados… todo entra. Remi lo ordena y te lo recuerda cuando llega el momento.",
-  3: "No necesitas formato perfecto. Escribe como hablas.",
-  4: "¿Te dijeron algo importante? Copia y pega. Remi lo guarda por ti.",
-  5: "Escribe fechas u horas (ej: “martes 18:00, 17 de Enero a las 15...”). Remi las detecta.",
-  6: "Escribe “cada día / cada semana, etc” si es un hábito repetitivo.",
-  7: "Un minuto aquí = un dia mas relajado y menos cosas olvidadas.",
-  8: "Consejo rápido: Escribe Idea para guardar notas sin recordatorios.",
-}
-  
-},
-
-
+    hints: {
+      0: "Tú solo escribe, Remi lo ordena y agenda todo por ti para recordartelo cuando llegue el momento.",
+      1: "Pega o envia texto de WhatsApp, un mail o una nota. Remi lo convierte en recordatorio.",
+      2: "Tareas, ideas, recados… todo entra. Remi lo ordena y te lo recuerda cuando llega el momento.",
+      3: "No necesitas formato perfecto. Escribe como hablas.",
+      4: "¿Te dijeron algo importante? Copia y pega. Remi lo guarda por ti.",
+      5: "Escribe fechas u horas (ej: “martes 18:00, 17 de Enero a las 15...”). Remi las detecta.",
+      6: "Escribe “cada día / cada semana, etc” si es un hábito repetitivo.",
+      7: "Un minuto aquí = un dia mas relajado y menos cosas olvidadas.",
+      8: "Consejo rápido: Escribe Idea para guardar notas sin recordatorios.",
+    },
+  },
 
   common: {
     appName: "REMI",
@@ -164,9 +158,8 @@ mentalDump: {
   },
 
   index: {
-  clearMind: "Mente despejada",
-},
-
+    clearMind: "Mente despejada",
+  },
 
   nav: {
     today: "Hoy",
@@ -176,32 +169,31 @@ mentalDump: {
   },
 
   bottomNav: {
-  today: "Hoy",
-  inbox: "Bandeja",
-  status: "status",
-  holdToTalk: "Mantén pulsado",
-  listening: "Escuchando…",
-  dictationNotSupported: "Dictado no compatible",
-     tasks: "Tareas",
+    today: "Hoy",
+    inbox: "Bandeja",
+    status: "status",
+    holdToTalk: "Mantén pulsado",
+    listening: "Escuchando…",
+    dictationNotSupported: "Dictado no compatible",
+    tasks: "Tareas",
     ideas: "Ideas",
-},
+  },
 
-installPrompt: {
-  iosTitle: "Instala Remi en tu iPhone - GRATIS",
-  iosStep1BeforeShare: "1. Pulsa el botón",
-  iosShareLabel: "Compartir",
-  iosStep1AfterShare: ".",
-  iosStep2BeforeAction: "2. Elige",
-  iosAddToHome: "Añadir a pantalla de inicio",
-  iosStep2AfterAction: "y confirma.",
-  defaultTitle: "Instala Remi",
-  defaultDescription: "Añade Remi a tu lista de aplicaciones — ¡GRATIS!",
-  buttonInstall: "Instalar",
-  close: "Cerrar",
-},
+  installPrompt: {
+    iosTitle: "Instala Remi en tu iPhone - GRATIS",
+    iosStep1BeforeShare: "1. Pulsa el botón",
+    iosShareLabel: "Compartir",
+    iosStep1AfterShare: ".",
+    iosStep2BeforeAction: "2. Elige",
+    iosAddToHome: "Añadir a pantalla de inicio",
+    iosStep2AfterAction: "y confirma.",
+    defaultTitle: "Instala Remi",
+    defaultDescription: "Añade Remi a tu lista de aplicaciones — ¡GRATIS!",
+    buttonInstall: "Instalar",
+    close: "Cerrar",
+  },
 
-
-status: {
+  status: {
     back: "Volver",
     headerTitle: "Estado de Remi",
     headerSubtitle: "Hemos ayudado a tu mente a estar un poco más ligera hoy.",
@@ -215,11 +207,9 @@ status: {
       "Cada cosa que guardas en Remi es una cosa menos que carga tu mente.",
 
     todaySectionTitle: "Lo que hemos conseguido",
-    todaySectionSubtitle:
-      "Resumen de cómo estamos cuidando tu mente.",
+    todaySectionSubtitle: "Resumen de cómo estamos cuidando tu mente.",
     todayTasksLabel: "Tareas de hoy",
-    todayTasksDescription:
-      "Hoy hemos organizado {{todayTotal}} tareas.",
+    todayTasksDescription: "Hoy hemos organizado {{todayTotal}} tareas.",
 
     streakSectionTitle: "Nuestra racha",
     streakValue: "{{streakDays}} días",
@@ -260,41 +250,46 @@ status: {
       "Cada cosa que guardas en Remi es una cosa menos que carga tu mente.",
   },
 
+  capture: {
+    // ✅ Keys necesarias para cubrir MODAL_I18N
+    // Nota: ya existía placeholder con otro texto; aquí lo dejamos como está y añadimos modalPlaceholder
+    // si tu modal usa "capture.placeholder" y necesitas el texto exacto, cambia placeholder directamente.
+    modalPlaceholder: "Vacía tu mente aquí…",
 
-capture: {
-// dentro de capture: { ... }
-chips: {
-  backHint: "Volver a atajos",
-     title: "Atajos inteligentes",
-    title2: "Fecha / hábito",
-    title3: "Hora",
-    title4: "Recordatorio",
-    back: "Atajos",
-    
-},
-chip: {
-  // ROOT: palabra que se inserta en el textarea
-  buyWord: "Comprar",
-  callWord: "Llamar",
-  payWord: "Pagar",
-  birthdayWord: "Cumpleaños",
-  apptWord: "Cita",
-  ideaWord: "Idea:",
-     buy: "Comprar",
+    chips: {
+      backHint: "Volver a atajos",
+      title: "Atajos inteligentes",
+      title2: "Fecha / Repetición",
+      title3: "Hora",
+      title4: "Recordatorio",
+      back: "Atajos",
+    },
+
+    chip: {
+      // ROOT: palabra que se inserta en el textarea
+      buyWord: "Comprar",
+      callWord: "Llamar",
+      payWord: "Pagar",
+      birthdayWord: "Cumpleaños",
+      apptWord: "Cita",
+      ideaWord: "Idea:",
+
+      buy: "Comprar",
       call: "Llamar",
       pay: "Pagar",
       birthday: "Cumpleaños",
       appt: "Cita",
       idea: "Idea",
-  
 
-  // SCHEDULE
-  schedule: {
-    el: "el",
-    cada: "cada",
-    antesDel: "antes del",
-    hoy: "hoy",
-    manana: "mañana",
+      // SCHEDULE
+      schedule: {
+        el: "el",
+        cada: "cada",
+        antesDel: "antes del",
+        hoy: "hoy",
+        manana: "mañana",
+
+        // extras que ya tenías
         on: "el",
         every: "cada",
         before: "antes",
@@ -305,49 +300,49 @@ chip: {
         vor: "antes",
         heute: "hoy",
         morgen: "mañana",
-  },
+      },
 
-  // TIME
-  time: {
-    prefix: "a las",
-    t0900: "09:00",
-    t1800: "18:00",
-  },
+      // TIME
+      time: {
+        prefix: "a las",
+        t0900: "09:00",
+        t1800: "18:00",
+      },
 
-  // REMINDER 
-  reminder: {
-     dailyLabel: "Cada día",
+      // REMINDER
+      reminder: {
+        dailyLabel: "Cada día",
         dailyInsert: "recordar cada día",
-          standardLabel: "Standard",
-      dayBeforeLabel: "día de antes",
-      noneLabel: "Sin recordatorios",
+        standardLabel: "Standard",
+        dayBeforeLabel: "día de antes",
+        noneLabel: "Sin recordatorios",
 
-      standardInsert: "recordar",
-      dayBeforeInsert: "recordar el día de antes",
-      noneInsert: "sin recordatorios",
+        standardInsert: "recordar",
+        dayBeforeInsert: "recordar el día de antes",
+        noneInsert: "sin recordatorios",
+      },
+    },
 
-  },
-},
+    tips: {
+      0: "Consejo: Di o escribe “idea” para crear notas sin recordatorio",
+      1: "Consejo: Puedes pegar texto de otras aplicaciones",
+      2: "Consejo: No te preocupes por el formato, escribe como hablas",
+      3: "Consejo: Mantén pulsado el micrófono para dictar",
+    },
 
+    paste: {
+      title: "¿Pegar lo último copiado?",
+      sub: "Toca PEGAR para insertarlo aquí.",
+      button: "PEGAR",
+      pasting: "Pegando…",
+      toastUnavailable:
+        "Pegar no está disponible aquí. Mantén pulsado y pega manualmente.",
+      toastEmpty: "El portapapeles está vacío (o no puedo leerlo).",
+      toastDenied:
+        "No puedo leer el portapapeles. Mantén pulsado y pega manualmente.",
+    },
 
-   tips: {
-    0: "Consejo: Di o escribe “idea” para crear notas sin recordatorio",
-    1: "Consejo: Puedes pegar texto de otras aplicaciones",
-    2: "Consejo: No te preocupes por el formato, escribe como hablas",
-    3: "Consejo: Mantén pulsado el micrófono para dictar",
-  },
-  
-paste: {
-    title: "¿Pegar lo último copiado?",
-    sub: "Toca PEGAR para insertarlo aquí.",
-    button: "PEGAR",
-    pasting: "Pegando…",
-    toastUnavailable: "Pegar no está disponible aquí. Mantén pulsado y pega manualmente.",
-    toastEmpty: "El portapapeles está vacío (o no puedo leerlo).",
-    toastDenied: "No puedo leer el portapapeles. Mantén pulsado y pega manualmente.",
-  },
-
- toast: {
+    toast: {
       micDenied: "Permiso de micrófono denegado.",
       noSpeech: "No detecté voz. Prueba de nuevo.",
       dictationError: "Error de dictado.",
@@ -356,154 +351,180 @@ paste: {
       clipboardEmpty: "No hay texto en el portapapeles.",
       pasteError: "No pude acceder al portapapeles. Mantén pulsado y pega.",
       writeSomething: "Escribe algo primero.",
+
+      // ✅ NUEVA (del MODAL_I18N)
+      pickDateFirst: "Elige una fecha primero.",
     },
 
+    textareaPlaceholderIOS:
+      "iPhone/iPad: usa el micrófono del teclado para dictar.\n" +
+      "Si no aparece: Ajustes > General > Teclado > Activar dictado.\n" +
+      "Si pone “no disponible”: Ajustes > Privacidad y seguridad > Micrófono (activa tu navegador).",
 
-
-  textareaPlaceholderIOS:
-    "iPhone/iPad: usa el micrófono del teclado para dictar.\n" +
-    "Si no aparece: Ajustes > General > Teclado > Activar dictado.\n" +
-    "Si pone “no disponible”: Ajustes > Privacidad y seguridad > Micrófono (activa tu navegador).",
-
-  repeatOn: "Activado",
-  repeatOff: "Desactivado",
-  remindersDisabledByHabit:"Los hábitos crean recordatorios propios usando la fecha y hora seleccionadas.",
-  timeHour: "Hora",
-  timeMinute: "Minutos",
-  dateTimeLabel: "Fecha y hora",
+    repeatOn: "Activado",
+    repeatOff: "Desactivado",
+    remindersDisabledByHabit:
+      "Las Repeticiones crean recordatorios propios usando la fecha y hora seleccionadas.",
+    timeHour: "Hora",
+    timeMinute: "Minutos",
+    dateTimeLabel: "Fecha y hora",
     dateTimeNoneShort: "Sin fecha ni hora",
     placeholder: "Toca para escribir",
 
-
-  title: "Vacía tu mente",
-  subtitle: "Habla, escribe o pega texto. Remi se encarga.",
-  examplesTitle: "Ejemplos:",
-  exampleVoice: "🎤 “Llamar a mamá el domingo”",
-  exampleVoiceIOS: "🎤 “Usa el microfono del teclado para dictar”",
-  examplePaste: "📋 “Todos los martes a las 18 quedamos”",
-  exampleIdea: "💡 Idea: viaje a Italia en primavera",
-  holdToTalk: "Mantén pulsado para hablar",
-  listening: "Escuchando…",
+    title: "Vacía tu mente",
+    subtitle: "Habla, escribe o pega texto. Remi se encarga.",
+    examplesTitle: "Ejemplos:",
+    exampleVoice: "🎤 “Llamar a mamá el domingo”",
+    exampleVoiceIOS: "🎤 “Usa el microfono del teclado para dictar”",
+    examplePaste: "📋 “Todos los martes a las 18 quedamos”",
+    exampleIdea: "💡 Idea: viaje a Italia en primavera",
+    holdToTalk: "Mantén pulsado para hablar",
+    listening: "Escuchando…",
     iosKeyboardMicHint: "En iPhone: usa el micrófono del teclado para hablar.",
- speakHold: "Mantén pulsado para hablar",
+    speakHold: "Mantén pulsado para hablar",
 
-  textareaPlaceholder: "Ejemplos:",
+    textareaPlaceholder: "Ejemplos:",
 
-  ideaButton: "Idea",
-  taskButton: "Tarea",
+    ideaButton: "Idea",
+    taskButton: "Tarea",
 
-  dueLabel: "Fecha límite",
-  dueToday: "Hoy",
-  dueTomorrow: "Mañana",
-  dueWeek: "1 semana",
-  dueNone: "Sin fecha",
-  dueHint: "Puedes ajustar la fecha y hora manualmente.",
-  duePlaceholder: "Elegir fecha y hora",
+    dueLabel: "Fecha límite",
+    dueToday: "Hoy",
+    dueTomorrow: "Mañana",
+    dueWeek: "1 semana",
+    dueNone: "Sin fecha",
+    dueHint: "Puedes ajustar la fecha y hora manualmente.",
+    duePlaceholder: "Elegir fecha y hora",
 
-  remindersLabel: "Recordatorios",
-  remindersNone: "Sin recordatorios",
-  remindersOnDue: "Solo el día límite",
-  remindersDayBeforeAndDue: "Día antes y día límite",
-  remindersDailyUntilDue: "Cada día hasta la fecha límite",
-  reminderWeekBeforeAndDue: "Una semana antes hasta el día",
+    remindersLabel: "Recordatorios",
+    remindersNone: "Sin recordatorios",
+    remindersOnDue: "Solo el día límite",
+    remindersDayBeforeAndDue: "Día antes y día límite",
+    remindersDailyUntilDue: "Cada día hasta la fecha límite",
+    reminderWeekBeforeAndDue: "Una semana antes hasta el día",
 
-  back: "Atrás",
-  saveTask: "Guardar tarea",
+    back: "Atrás",
+    saveTask: "Guardar tarea",
 
-  toastTaskSaved: "Tarea guardada correctamente",
-  toastTaskError: "Error al crear la tarea",
-  toastIdeaSaved: "Idea guardada correctamente",
-  toastIdeaError: "Error al crear la idea",
-},
-
-tasks: {
-  weekdayLabels: "L|M|X|J|V|S|D",
-
-  editLabel: "Editar",
-  editTitle: "Editar tarea",
-  editSubtitle: "Cambia el texto, la fecha y hora, los recordatorios y la repetición.",
-
-  fieldTitle: "Tarea",
-  fieldTitlePlaceholder: "Escribe tu tarea...",
-
-  optionsTitle: "Opciones",
-
-  dueDateLabel: "Fecha y hora",
-  clearDueDate: "Quitar",
-
-  reminderLabel: "Recordatorios",
-  reminder: {
-    none: "Sin recordatorios",
-    onDue: "Solo el día límite",
-    dayBeforeAndDue: "Día antes y día límite",
-    dailyUntilDue: "Cada día hasta la fecha límite",
-    weekBeforeAndDue: "Cada día (1 Semana antes)",
-
+    toastTaskSaved: "Tarea guardada correctamente",
+    toastTaskError: "Error al crear la tarea",
+    toastIdeaSaved: "Idea guardada correctamente",
+    toastIdeaError: "Error al crear la idea",
   },
 
+  // ✅ NUEVO: bloque "pill" (para cubrir MODAL_I18N)
+  pill: {
+    type: {
+      label: "Tipo",
+      task: "Tarea",
+      idea: "Idea",
+    },
 
+    more: "Detalles",
+    less: "Ocultar",
+    detected: "Detectado:",
+    date: "Fecha",
+    time: "Hora",
+    reminder: "Recordatorio",
+    habit: "Repetición",
 
-  save: "Guardar",
-  footerHint: "Puedes editar esto cuando quieras.",
-  updateError: "Error al actualizar la tarea",
-},
+    on: "On",
+    off: "Off",
 
+    remDaily: "Diaria",
+    remDayBefore: "1 día antes",
+    remWeekBefore: "1 semana antes",
+
+    habitDaily: "Diaria",
+    habitWeekly: "Semanal",
+    habitMonthly: "Mensual",
+    habitYearly: "Anual",
+  },
+
+  tasks: {
+    weekdayLabels: "L|M|X|J|V|S|D",
+
+    editLabel: "Editar",
+    editTitle: "Editar tarea",
+    editSubtitle: "Cambia el texto, la fecha y hora, los recordatorios y la repetición.",
+
+    fieldTitle: "Tarea",
+    fieldTitlePlaceholder: "Escribe tu tarea...",
+
+    optionsTitle: "Opciones",
+
+    dueDateLabel: "Fecha y hora",
+    clearDueDate: "Quitar",
+
+    reminderLabel: "Recordatorios",
+    reminder: {
+      none: "Sin recordatorios",
+      onDue: "Solo el día límite",
+      dayBeforeAndDue: "Día antes y día límite",
+      dailyUntilDue: "Cada día hasta la fecha límite",
+      weekBeforeAndDue: "Cada día (1 Semana antes)",
+    },
+
+    save: "Guardar",
+    footerHint: "Puedes editar esto cuando quieras.",
+    updateError: "Error al actualizar la tarea",
+  },
 
   auth: {
     titleLogin: "Inicia sesión en REMI",
     titleRegister: "Crea tu cuenta en REMI",
-    subtitleAuth2:"From MIND FULL to MINDFUL" ,
+    subtitleAuth2: "From MIND FULL to MINDFUL",
     email: "Correo electrónico",
     password: "Contraseña",
     login: "Entrar",
     register: "Registrarse",
     logout: "Cerrar sesión",
-     loginTitle: "¡Bienvenido de vuelta!",
-  registerTitle: "¡Comienza tu viaje!",
-  loginSubtitle: "Continúa mejorando cada día con REMI",
-  registerSubtitle: "Crea tu cuenta y comienza a lograr tus objetivos",
-  emailLabel: "Email",
-  emailPlaceholder: "tu@email.com",
-  passwordLabel: "Contraseña",
-  passwordPlaceholder: "••••••••",
-  submitLogin: "Iniciar sesión",
-  submitRegister: "Crear cuenta",
-  toggleToRegister: "¿No tienes cuenta? Regístrate",
-  toggleToLogin: "¿Ya tienes cuenta? Inicia sesión",
 
-  errorInvalidCredentials:
-    "Credenciales incorrectas. Verifica tu email y contraseña.",
-  errorUserAlreadyRegistered:
-    "Este email ya está registrado. Intenta iniciar sesión.",
-  errorGeneric: "Ha ocurrido un error. Intenta de nuevo.",
-  signUpSuccess: "¡Cuenta creada! Ahora empieza a liberar tu mente.",
+    loginTitle: "¡Bienvenido de vuelta!",
+    registerTitle: "¡Comienza tu viaje!",
+    loginSubtitle: "Continúa mejorando cada día con REMI",
+    registerSubtitle: "Crea tu cuenta y comienza a lograr tus objetivos",
+    emailLabel: "Email",
+    emailPlaceholder: "tu@email.com",
+    passwordLabel: "Contraseña",
+    passwordPlaceholder: "••••••••",
+    submitLogin: "Iniciar sesión",
+    submitRegister: "Crear cuenta",
+    toggleToRegister: "¿No tienes cuenta? Regístrate",
+    toggleToLogin: "¿Ya tienes cuenta? Inicia sesión",
+
+    errorInvalidCredentials:
+      "Credenciales incorrectas. Verifica tu email y contraseña.",
+    errorUserAlreadyRegistered:
+      "Este email ya está registrado. Intenta iniciar sesión.",
+    errorGeneric: "Ha ocurrido un error. Intenta de nuevo.",
+    signUpSuccess: "¡Cuenta creada! Ahora empieza a liberar tu mente.",
   },
 
-  // es.ts
-
   today: {
-
     shareRemindersModal: {
       title: "Compartir recordatorios con otras personas",
-      body: "Envía una tarea o idea por enlace para que otra persona la añada a su Remi en 1 toque.",
+      body:
+        "Envía una tarea o idea por enlace para que otra persona la añada a su Remi en 1 toque.",
       stepsTitle: "Cómo funciona (rápido)",
       step1: "En una tarea/idea toca el icono de Compartir.",
       step2: "Envía el enlace por WhatsApp, Mail, etc.",
       step3: "La persona que lo recibe toca “Añadir a Remi”.",
       examplesTitle: "Ejemplos que van genial",
-      examplesBody: "• “Compra pan mañana” → se lo envío a mi pareja\n• “Médico el martes a las 14:00” → se lo envío a mi madre\n• “Traer cargador” → se lo envío al compañero",
+      examplesBody:
+        "• “Compra pan mañana” → se lo envío a mi pareja\n• “Médico el martes a las 14:00” → se lo envío a mi madre\n• “Traer cargador” → se lo envío al compañero",
       footer: "Esto ayuda a otras personas a recordar cosas importantes para ellos y para tí.",
       ok: "Entendido",
-      hideForever: "No volver a mostrar"
+      hideForever: "No volver a mostrar",
     },
-    
 
     dueLabel: "Fecha Límite",
+
     // Header / general
     greeting: "Hola, {{name}}",
     tasksToday: "Tienes {{count}} tareas",
     prioritize: "Prioriza lo importante",
-     done: "Hecho",
+    done: "Hecho",
     delete: "Eliminar",
     actionEditTitle: "Editar",
 
@@ -550,41 +571,48 @@ tasks: {
     pushEnabledToast: "Notificaciones activadas",
     pushErrorToast: "No se pudo activar push",
 
-  multideviceHelp: {
+    multideviceHelp: {
       title: "Multidispositivo: no olvides nada, estés donde estés",
-      p1: "Remi está pensado para que puedas soltar cosas en 5 segundos, desde cualquier dispositivo.",
+      p1:
+        "Remi está pensado para que puedas soltar cosas en 5 segundos, desde cualquier dispositivo.",
       stepsTitle: "Cómo usarlo (rápido)",
-      step1: "Captura en cualquier lugar: móvil, iPad/tablet o PC. Escribe, habla o pega texto.",
-      step2: "Todo se sincroniza: lo que guardas en un dispositivo aparece en los demás.",
-      step3: "Notificaciones por dispositivo: activa avisos solo en los que quieras (ej: móvil ON, PC OFF).",
+      step1:
+        "Captura en cualquier lugar: móvil, iPad/tablet o PC. Escribe, habla o pega texto.",
+      step2:
+        "Todo se sincroniza: lo que guardas en un dispositivo aparece en los demás.",
+      step3:
+        "Notificaciones por dispositivo: activa avisos solo en los que quieras (ej: móvil ON, PC OFF).",
       examplesTitle: "Ejemplos que funcionan",
       examplesBody:
         "• Móvil ON → recordatorios cuando estás fuera\n• PC OFF → cero interrupciones trabajando\n• iPad ON → revisión tranquila al final del día",
-      footer: "Tú sueltas la carga mental en el momento. Remi se encarga de recordártelo cuando y donde sea necesario.",
+      footer:
+        "Tú sueltas la carga mental en el momento. Remi se encarga de recordártelo cuando y donde sea necesario.",
       ok: "Entendido",
       hideForever: "No volver mostrar",
     },
 
     // Tips (deck)
     tip: {
-
       shareReminders: {
-    title: "Recordatorios en equipo",
-    body: "Comparte tareas o ideas.\n Los demás las añaden a su Remi en 1 toque.",
-    cta: "Ver cómo"
-  },
+        title: "Recordatorios en equipo",
+        body: "Comparte tareas o ideas.\n Los demás las añaden a su Remi en 1 toque.",
+        cta: "Ver cómo",
+      },
 
- multidevice: {
+      multidevice: {
         title: "Remi contigo en móvil, iPad/tablet y PC",
-        body: "Vacía tu cabeza donde estés. Todo se sincroniza y tú eliges en qué dispositivo quieres notificaciones.",
+        body:
+          "Vacía tu cabeza donde estés. Todo se sincroniza y tú eliges en qué dispositivo quieres notificaciones.",
         cta: "Cómo funciona",
       },
+
       smartShortcuts: {
         title: "Atajos inteligentes (ahorran 10s)",
         body: "Agrega palabras con 1 toque. \nEj: Idea / Comprar / a las 18:00.",
         cta: "Probar ahora",
         prefill: "Comprar: leche, pan, huevos",
       },
+
       install: {
         title: "Instala Remi como app",
         body: "Acceso rápido, notificaciones y todas las ventajas de una app.",
@@ -593,13 +621,15 @@ tasks: {
 
       push: {
         title: "Que Remi te avise por ti",
-        body: "Activa notificaciones y suelta la carga mental. Remi te toca el hombro cuando toca.",
+        body:
+          "Activa notificaciones y suelta la carga mental. Remi te toca el hombro cuando toca.",
         cta: "Activar",
       },
 
       iosDict: {
         title: "Activa el micrófono del teclado",
-        body: "Si no ves el micro en el teclado, actívalo en Ajustes y dicta más rápido.",
+        body:
+          "Si no ves el micro en el teclado, actívalo en Ajustes y dicta más rápido.",
         cta: "Ver cómo",
       },
 
@@ -630,14 +660,16 @@ tasks: {
 
       shareToRemi: {
         title: "Guarda cosas con “Compartir”",
-        body: "Desde WhatsApp/Correo/Notas: Compartir → Remi. \nSe abre listo para ordenar.",
+        body:
+          "Desde WhatsApp/Correo/Notas: Compartir → Remi. \nSe abre listo para ordenar.",
         cta: "Probar",
         toast: "Tip: en otra app pulsa “Compartir” → “Remi” para mandarlo directo 🙂",
       },
 
       natural: {
         title: "Escribe como hablas",
-        body: "Ej: “Pagar la luz mañana a las 6 de la tarde”. Remi se encarga y tú descansas.",
+        body:
+          "Ej: “Pagar la luz mañana a las 6 de la tarde”. Remi se encarga y tú descansas.",
         cta: "Probar ejemplo",
         prefill: "Pagar la luz mañana 18:00",
       },
@@ -687,7 +719,6 @@ tasks: {
       hideForever: "No volver mostrar",
     },
 
-    // Shortcuts modal
     shortcutsModal: {
       title: "Ver ejemplos",
       body: "Toca un ejemplo para abrir Remi con ese texto.",
@@ -700,7 +731,6 @@ tasks: {
       close: "Cerrar",
     },
 
-    // iOS dictation help modal
     iosDict: {
       helpTitle: "Activa Dictado en iPhone",
       helpBody:
@@ -714,8 +744,6 @@ tasks: {
     },
   },
 
-
-
   inbox: {
     title: "Bandeja de entrada",
     tasksTab: "Tareas",
@@ -723,34 +751,32 @@ tasks: {
     allTab: "Todo",
     statusDone: "Hecha",
     statusActive: "Activa",
-    statusArchived: "Archivada",    
-  subtitle: "Todo lo que has vaciado de tu cabeza aparece aquí.",
-  itemsCount: "{{count}} ítems",
-  loading: "Cargando bandeja…",
-  emptyTitle: "Bandeja vacía",
-  emptySubtitle:
-    "Añade nuevas tareas o ideas desde la pantalla de Hoy.",
+    statusArchived: "Archivada",
+    subtitle: "Todo lo que has vaciado de tu cabeza aparece aquí.",
+    itemsCount: "{{count}} ítems",
+    loading: "Cargando bandeja…",
+    emptyTitle: "Bandeja vacía",
+    emptySubtitle: "Añade nuevas tareas o ideas desde la pantalla de Hoy.",
 
-  itemTaskPrefix: "Tarea · ",
-  itemIdeaPrefix: "Idea · ",
-  errorLoading: "Error cargando tu bandeja",
-  errorUpdating: "Error actualizando tu bandeja",
-  sectionToday: "Hoy",
-  sectionTomorrow: "Mañana",
-  sectionNoDate: "Sin fecha",
+    itemTaskPrefix: "Tarea · ",
+    itemIdeaPrefix: "Idea · ",
+    errorLoading: "Error cargando tu bandeja",
+    errorUpdating: "Error actualizando tu bandeja",
+    sectionToday: "Hoy",
+    sectionTomorrow: "Mañana",
+    sectionNoDate: "Sin fecha",
   },
 
   ideas: {
     title: "Ideas",
-    emptyState: "Apunta aquí tus ideas para despejar la mente.",    
-  subtitle: "Todas las ideas que no quieres perder están guardadas aquí.",
-  loading: "Cargando ideas…",
-  emptyTitle: "Sin ideas todavía",
-  emptySubtitle:
-    "Usa el botón + en la pantalla de Hoy para guardar tus ideas.",
-  savedAt: "Guardada el {{date}}",
-  errorLoading: "Error cargando tus ideas",
-  updateError: "No se ha podido actualizar la idea.",
+    emptyState: "Apunta aquí tus ideas para despejar la mente.",
+    subtitle: "Todas las ideas que no quieres perder están guardadas aquí.",
+    loading: "Cargando ideas…",
+    emptyTitle: "Sin ideas todavía",
+    emptySubtitle: "Usa el botón + en la pantalla de Hoy para guardar tus ideas.",
+    savedAt: "Guardada el {{date}}",
+    errorLoading: "Error cargando tus ideas",
+    updateError: "No se ha podido actualizar la idea.",
     convertError: "No se ha podido convertir la idea en tarea.",
 
     editLabel: "Editar idea",
@@ -796,75 +822,76 @@ tasks: {
     toastError: "No se pudo guardar el perfil.",
 
     devicePushTitle: "Notificaciones en este dispositivo",
-  devicePushUnsupportedHint:
-    "Este navegador no admite notificaciones push. Prueba con Safari en iPhone o Chrome/Edge en Android/PC.",
-     devicePushChecking: "Comprobando…",
-  devicePushUnsupportedLine: "Este dispositivo/navegador no soporta push.",
-  devicePushDeniedLine: "Permiso denegado en este dispositivo (Ajustes del navegador).",
-  devicePushNeedsPermissionLine: "Aún no has concedido permiso en este dispositivo.",
-  devicePushNeedsRegisterLine: "Permiso OK, pero falta activar aquí.",
-  devicePushActiveLine: "Activo en este dispositivo ✅",
-   devicePushToggleAria: "Activar o pausar notificaciones en este dispositivo",
-  pushDeviceEnabled: "Notificaciones activadas en este dispositivo",
+    devicePushUnsupportedHint:
+      "Este navegador no admite notificaciones push. Prueba con Safari en iPhone o Chrome/Edge en Android/PC.",
+    devicePushChecking: "Comprobando…",
+    devicePushUnsupportedLine: "Este dispositivo/navegador no soporta push.",
+    devicePushDeniedLine:
+      "Permiso denegado en este dispositivo (Ajustes del navegador).",
+    devicePushNeedsPermissionLine:
+      "Aún no has concedido permiso en este dispositivo.",
+    devicePushNeedsRegisterLine: "Permiso OK, pero falta activar aquí.",
+    devicePushActiveLine: "Activo en este dispositivo ✅",
+    devicePushToggleAria:
+      "Activar o pausar notificaciones en este dispositivo",
+    pushDeviceEnabled: "Notificaciones activadas en este dispositivo",
 
-  back: "Perfil",
-  memberSince: "Miembro desde {{date}}",
+    back: "Perfil",
+    memberSince: "Miembro desde {{date}}",
 
-  sectionUserTitle: "Información de usuario",
-  sectionUserDescription: "Edita tus datos básicos y cómo se muestra REMI.",
+    sectionUserTitle: "Información de usuario",
+    sectionUserDescription: "Edita tus datos básicos y cómo se muestra REMI.",
 
-  usernameLabel: "Nombre de usuario",
-  usernamePlaceholder: "Tu nombre en REMI",
+    usernameLabel: "Nombre de usuario",
+    usernamePlaceholder: "Tu nombre en REMI",
 
-  emailLabel: "Email",
-  emailPlaceholder: "tu@email.com",
+    emailLabel: "Email",
+    emailPlaceholder: "tu@email.com",
 
-  passwordLabel: "Nueva contraseña",
-  passwordPlaceholder: "Déjalo vacío si no quieres cambiarla",
+    passwordLabel: "Nueva contraseña",
+    passwordPlaceholder: "Déjalo vacío si no quieres cambiarla",
 
-  languageLabel: "Idioma",
-  languageSpanish: "🇪🇸 Español",
-  languageEnglish: "🇬🇧 Inglés",
-  languageGerman: "🇩🇪 Alemán",
+    languageLabel: "Idioma",
+    languageSpanish: "🇪🇸 Español",
+    languageEnglish: "🇬🇧 Inglés",
+    languageGerman: "🇩🇪 Alemán",
 
-  notificationsLabel: "Notificaciones",
-  notificationsDescription: "Recordatorios para tareas importantes.",
+    notificationsLabel: "Notificaciones",
+    notificationsDescription: "Recordatorios para tareas importantes.",
 
-  saving: "Guardando...",
-  saveChanges: "Guardar cambios",
+    saving: "Guardando...",
+    saveChanges: "Guardar cambios",
 
-  sectionAccountTitle: "Acciones de la cuenta",
-  sectionAccountDescription:
-    "Comparte REMI o cierra sesión en este dispositivo.",
+    sectionAccountTitle: "Acciones de la cuenta",
+    sectionAccountDescription:
+      "Comparte REMI o cierra sesión en este dispositivo.",
 
-  shareButton: "Compartir app",
-  logoutButton: "Cerrar sesión",
+    shareButton: "Compartir app",
+    logoutButton: "Cerrar sesión",
 
-  shareText: "I’m using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\nI definitely recommend trying it, it really helps. Here’s the link. 🙂",
-  shareCopied: "Enlace de REMI copiado al portapapeles",
+    shareText:
+      "I’m using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\nI definitely recommend trying it, it really helps. Here’s the link. 🙂",
+    shareCopied: "Enlace de REMI copiado al portapapeles",
 
-  defaultUserName: "Usuario",
+    defaultUserName: "Usuario",
 
-  avatarTooBig: "La imagen debe pesar menos de 5 MB.",
-  avatarUploadError: "No se pudo subir la imagen. Intenta de nuevo.",
-  passwordTooShort:
-    "La nueva contraseña debe tener al menos 6 caracteres.",
-  authUpdateError: "No se pudo actualizar email/contraseña.",
-  updateSuccess: "Perfil actualizado correctamente.",
-  updateError: "No se pudieron guardar los cambios.",
-  logoutError: "No se pudo cerrar sesión. Intenta de nuevo.",
+    avatarTooBig: "La imagen debe pesar menos de 5 MB.",
+    avatarUploadError: "No se pudo subir la imagen. Intenta de nuevo.",
+    passwordTooShort: "La nueva contraseña debe tener al menos 6 caracteres.",
+    authUpdateError: "No se pudo actualizar email/contraseña.",
+    updateSuccess: "Perfil actualizado correctamente.",
+    updateError: "No se pudieron guardar los cambios.",
+    logoutError: "No se pudo cerrar sesión. Intenta de nuevo.",
   },
 
   notifications: {
     dailyReminderTitle: "Tu mente está llena",
-    dailyReminderBody:
-      "Revisa tus tareas de hoy en REMI y descarga tu cabeza.",
+    dailyReminderBody: "Revisa tus tareas de hoy en REMI y descarga tu cabeza.",
     dueTodayTitle: "Tienes tareas para hoy",
     dueTodayBody: "Abre REMI para ver lo que tienes pendiente.",
   },
 
-
-landing: {
+  landing: {
     hero: {
       badge: "Tu memoria externa",
       shareButtonLabel: "Comparte Remi",
@@ -907,7 +934,6 @@ landing: {
           title: "Carga mental bajo control",
           description:
             "Saca de la cabeza todo lo que te ronda: tareas grandes o pequeñas, recados, ideas, cosas que no quieres olvidar. Remi las guarda y te las devuelve justo cuando las necesitas.",
-             
         },
 
         quickCapture: {
@@ -929,21 +955,20 @@ landing: {
       example2Freq: "A lo largo del año",
       example3: "Tareas del día organizadas",
       example3Freq: "Cada mañana",
-       badge: "Tu memoria externa",
-            headline: "Hoy vamos genial",
-            subheadline:
-              "Hoy hemos despejado bastante tu mente: tienes 5 tareas organizadas y 3 de ellas ya están hechas.",
-            clearMindLabel: "Mente despejada",
-            clearMindHelper:
-              "Cada cosa que guardas en Remi es una cosa menos que carga tu mente.",
-        
+      badge: "Tu memoria externa",
+      headline: "Hoy vamos genial",
+      subheadline:
+        "Hoy hemos despejado bastante tu mente: tienes 5 tareas organizadas y 3 de ellas ya están hechas.",
+      clearMindLabel: "Mente despejada",
+      clearMindHelper:
+        "Cada cosa que guardas en Remi es una cosa menos que carga tu mente.",
 
       title: {
         part1: "Tu mente es para crear,",
         highlighted: "Remi es para recordar",
       },
       description:
-"Usamos la mente como lista de tareas, agenda, gestión del hogar y memoria de cosas pendientes. Eso genera estrés y sensación de carga mental constante. Remi te ayuda a vaciar esa carga de forma fácil y rápida en un sitio externo, claro y fiable para que puedas dedicar tu atención a lo que de verdad importa.",
+        "Usamos la mente como lista de tareas, agenda, gestión del hogar y memoria de cosas pendientes. Eso genera estrés y sensación de carga mental constante. Remi te ayuda a vaciar esa carga de forma fácil y rápida en un sitio externo, claro y fiable para que puedas dedicar tu atención a lo que de verdad importa.",
       step1Title: "Sácalo todo de tu cabeza",
       step1Description:
         "Cada vez que algo te venga a la mente —una tarea, una idea, un recado— lo apuntas en Remi. Sin pensarlo mucho, solo escríbelo y sigue con lo que estabas haciendo.",
@@ -1004,15 +1029,15 @@ landing: {
 
       copyright: "© Remi 2025. Todos los derechos reservados.",
     },
-    
-extra: {
+
+    extra: {
       hero: {
         kicker: "Dile a Remi lo que no quieres olvidar.",
         description:
           "Escribe una frase. Remi interpreta el texto y crea el recordatorio: fecha y hora, repetición si es un hábito, y el modo de recordatorio cuando toca.",
         bullets: {
           a: "Solo escribe: cero formato, cero fricción",
-          b: "Remi interpreta: fechas, horas, hábitos y repetición",
+          b: "Remi interpreta: fechas, horas, recordatorios y repetición",
           c: "Recordatorios listos para que no dependa de tu memoria",
           d: "En todos tus dispositivos: ordenador, móvil, iPad y tablet",
         },
@@ -1024,8 +1049,7 @@ extra: {
         title: "Tu cerebro no es una lista de tareas.",
         text:
           "Ideas, recados, pendientes… cuando lo llevas todo en la cabeza, pagas con estrés y olvidos.",
-        micro:
-          "Remi es tu descarga mental: lo escribes una vez y sigues con tu día.",
+        micro: "Remi es tu descarga mental: lo escribes una vez y sigues con tu día.",
       },
 
       how: {
@@ -1097,7 +1121,8 @@ extra: {
         mini1: "Ligera y rápida",
         mini2: "Siempre actualizada",
         mini3: "Hecha para capturar rápido",
-        ctaHint: "Pulsa “Instalar ahora” y sigue los pasos según tu dispositivo.",
+        ctaHint:
+          "Pulsa “Instalar ahora” y sigue los pasos según tu dispositivo.",
         device: {
           desktop: "Ordenador",
           phone: "Móvil",
@@ -1111,9 +1136,9 @@ extra: {
 
       social: {
         title: "Construida con feedback real",
-        subtitle: "Remi se mejora continuamente con pruebas y comentarios de usuarios.",
+        subtitle:
+          "Remi se mejora continuamente con pruebas y comentarios de usuarios.",
         note: "",
-        // Estos textos vienen hardcodeados en tu Landing.tsx actual
         testimonials: [
           {
             quote:
@@ -1167,11 +1192,5 @@ extra: {
         closeAria: "Cerrar",
       },
     },
-  
-  
-
   },
-
-  
-
 } as const;
