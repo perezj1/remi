@@ -24,6 +24,9 @@ const AUTO_OPEN_COOLDOWN_MS = 1500;
 // ✅ Ajusta aquí si tu “index” real es "/index" en lugar de "/"
 const INDEX_PATHNAME = "/";
 
+// ✅ token para forzar 2 URLs distintas en el historial
+const MODAL_HISTORY_KEY = "_mh"; // 0 base, 1 modal
+
 function isShareEntry(search: string): boolean {
   try {
     const params = new URLSearchParams(search);
@@ -82,6 +85,40 @@ function clearModalParam(search: string): string {
   }
 }
 
+function setHistoryToken(search: string, token: "0" | "1"): string {
+  try {
+    const p = new URLSearchParams(search);
+    p.set(MODAL_HISTORY_KEY, token);
+    const s = p.toString();
+    return s ? `?${s}` : "";
+  } catch {
+    return `?${MODAL_HISTORY_KEY}=${token}`;
+  }
+}
+
+function clearHistoryToken(search: string): string {
+  try {
+    const p = new URLSearchParams(search);
+    p.delete(MODAL_HISTORY_KEY);
+    const s = p.toString();
+    return s ? `?${s}` : "";
+  } catch {
+    return "";
+  }
+}
+
+function isStandalonePwa(): boolean {
+  try {
+    // iOS (navigator.standalone) + estándar (display-mode)
+    const anyNav = navigator as any;
+    const iosStandalone = !!anyNav?.standalone;
+    const displayStandalone = window.matchMedia?.("(display-mode: standalone)")?.matches;
+    return !!(iosStandalone || displayStandalone);
+  } catch {
+    return false;
+  }
+}
+
 export default function RemiCaptureHost() {
   const { user } = useAuth();
   const { setModalOpen } = useModalUi();
@@ -96,11 +133,11 @@ export default function RemiCaptureHost() {
 
   // ✅ modal de revisión (MentalDumpModal)
   const [mentalDumpOpen, setMentalDumpOpen] = useState(false);
-  const [mentalDumpInitialText, setMentalDumpInitialText] =
-    useState<string>("");
+  const [mentalDumpInitialText, setMentalDumpInitialText] = useState<string>("");
   const [mentalDumpInitialNonce, setMentalDumpInitialNonce] = useState(0);
 
   const skipNextAutoOpenRef = useRef(false);
+  const autoOpenScheduledRef = useRef(false);
 
   // ✅ 1 solo indicador global para UI (BottomNav etc.)
   useEffect(() => {
@@ -121,12 +158,12 @@ export default function RemiCaptureHost() {
   }, [modalInUrl]);
 
   /**
-   * ✅ Apertura robusta:
-   * - En apertura automática (cold start), forzamos 2 entradas reales de history en frames distintos:
-   *   1) index (replace)
-   *   2) index (push)
-   *   3) index + modal (push)
-   * Esto evita que en iOS/PWA "Atrás" cierre la app en el primer arranque.
+   * ✅ Apertura robusta (PWA cold start):
+   * - base:  INDEX + _mh=0 (sin modal)  (replace)
+   * - modal: INDEX + _mh=1 + modal=...  (push)
+   *
+   * El truco es que las URLs sean distintas (_mh=0 vs _mh=1)
+   * y que el push del modal ocurra un tick después (setTimeout).
    */
   const openCapture = useCallback(
     (prefill?: string, source: "auto" | "user" = "user") => {
@@ -136,44 +173,19 @@ export default function RemiCaptureHost() {
       setMentalDumpOpen(false);
       setMindDumpOpen(true);
 
-      const baseSearch = clearModalParam(location.search);
-      const modalSearch = setModalParam(baseSearch, "mind");
+      // Siempre sobre index
+      const cleaned = clearHistoryToken(clearModalParam(location.search));
+      const baseSearch = setHistoryToken(cleaned, "0");
+      const modalSearch = setModalParam(setHistoryToken(cleaned, "1"), "mind");
 
-      if (source === "auto") {
-        // 1) dejar la entrada actual como index base
-        navigate(
-          { pathname: INDEX_PATHNAME, search: baseSearch },
-          { replace: true }
-        );
+      // 1) dejar base en la entrada actual
+      navigate({ pathname: INDEX_PATHNAME, search: baseSearch }, { replace: true });
 
-        // 2) siguiente frame: push de base
-        requestAnimationFrame(() => {
-          navigate(
-            { pathname: INDEX_PATHNAME, search: baseSearch },
-            { replace: false }
-          );
-
-          // 3) siguiente frame: push del modal
-          requestAnimationFrame(() => {
-            navigate(
-              { pathname: INDEX_PATHNAME, search: modalSearch },
-              { replace: false }
-            );
-          });
-        });
-
-        return;
-      }
-
-      // User initiated (ya funciona bien)
-      navigate(
-        { pathname: INDEX_PATHNAME, search: baseSearch },
-        { replace: true }
-      );
-      navigate(
-        { pathname: INDEX_PATHNAME, search: modalSearch },
-        { replace: false }
-      );
+      // 2) push del modal
+      const delay = source === "auto" && isStandalonePwa() ? 60 : 0;
+      window.setTimeout(() => {
+        navigate({ pathname: INDEX_PATHNAME, search: modalSearch }, { replace: false });
+      }, delay);
     },
     [location.search, navigate]
   );
@@ -187,8 +199,8 @@ export default function RemiCaptureHost() {
       setMindDumpOpen(false);
       setMentalDumpOpen(true);
 
-      const baseSearch = clearModalParam(location.search);
-      const modalSearch = setModalParam(baseSearch, "mental");
+      const cleaned = clearHistoryToken(clearModalParam(location.search));
+      const modalSearch = setModalParam(setHistoryToken(cleaned, "1"), "mental");
 
       navigate({ pathname: INDEX_PATHNAME, search: modalSearch }, { replace: true });
     },
@@ -205,7 +217,7 @@ export default function RemiCaptureHost() {
     // si ya hay modal en la URL, no auto-abrir
     if (getModalParam(location.search)) return;
 
-    // si venimos de share, lo gestiona el efecto de SHARE_DRAFT (evitamos abrir vacío)
+    // si venimos de share, lo gestiona el efecto de SHARE_DRAFT
     if (isShareEntry(location.search)) return;
 
     // si el flujo de share pidió saltarse un auto-open, respetarlo
@@ -244,7 +256,6 @@ export default function RemiCaptureHost() {
       // ignore
     }
 
-    // ✅ abrir vacío SIEMPRE (auto)
     openCapture("", "auto");
   }, [location.search, openCapture, user]);
 
@@ -252,6 +263,10 @@ export default function RemiCaptureHost() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!user) return;
+
+    // Evitar doble disparo en PWA: cold start puede lanzar varios eventos (pageshow + visibility)
+    if (autoOpenScheduledRef.current) return;
+    autoOpenScheduledRef.current = true;
 
     try {
       const nav = performance
@@ -262,7 +277,11 @@ export default function RemiCaptureHost() {
       // ignore
     }
 
-    openMindDumpAuto();
+    // Pequeño delay para que BrowserRouter esté totalmente listo en PWA instalada
+    window.setTimeout(() => {
+      openMindDumpAuto();
+    }, isStandalonePwa() ? 80 : 0);
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
@@ -367,10 +386,7 @@ export default function RemiCaptureHost() {
     window.addEventListener("remi-open-mental-dump", onOpenMentalDump);
 
     return () => {
-      window.removeEventListener(
-        "remi-open-capture",
-        onOpenCapture as EventListener
-      );
+      window.removeEventListener("remi-open-capture", onOpenCapture as EventListener);
       window.removeEventListener("remi-open-mental-dump", onOpenMentalDump);
     };
   }, [openCapture]);
@@ -407,14 +423,13 @@ export default function RemiCaptureHost() {
     [emitItemsChanged, user]
   );
 
-  // ✅ Cierre: siempre cerrar y dejar INDEX sin modal
+  // ✅ Cierre: siempre cerrar y dejar INDEX limpio (sin modal, sin _mh)
   const closeAllAndGoIndex = useCallback(() => {
     setMindDumpOpen(false);
     setMentalDumpOpen(false);
 
-    const baseSearch = clearModalParam(window.location.search || location.search);
-
-    navigate({ pathname: INDEX_PATHNAME, search: baseSearch }, { replace: true });
+    const cleaned = clearHistoryToken(clearModalParam(window.location.search || location.search));
+    navigate({ pathname: INDEX_PATHNAME, search: cleaned }, { replace: true });
   }, [location.search, navigate]);
 
   return (
