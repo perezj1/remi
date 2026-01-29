@@ -23,6 +23,9 @@ const NAV_DICTATION_KEY = "remi_nav_dictation_pending_v1";
 const AUTO_OPEN_LAST_TS_KEY = "remi_auto_open_last_ts_v1";
 const AUTO_OPEN_COOLDOWN_MS = 1500;
 
+// ✅ Ajusta aquí si tu “index” real es "/index" en lugar de "/"
+const INDEX_PATHNAME = "/";
+
 function isShareEntry(search: string): boolean {
   try {
     const params = new URLSearchParams(search);
@@ -129,7 +132,11 @@ export default function RemiCaptureHost() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modalInUrl]);
 
-  // ✅ API global: abrir capture desde cualquier parte (push history entry)
+  /**
+   * ✅ Clave: abrir SIEMPRE sobre INDEX_PATHNAME,
+   * y asegurarnos de que haya una entrada base (index sin modal)
+   * debajo del modal para que "Atrás" no cierre la app.
+   */
   const openCapture = useCallback(
     (prefill?: string) => {
       setMindDumpInitialText(prefill ?? "");
@@ -138,15 +145,22 @@ export default function RemiCaptureHost() {
       setMentalDumpOpen(false);
       setMindDumpOpen(true);
 
+      const baseSearch = clearModalParam(location.search);
+      const modalSearch = setModalParam(baseSearch, "mind");
+
+      // 1) aseguramos que la ruta base sea index (sin modal) en esta misma entrada
       navigate(
-        {
-          pathname: location.pathname,
-          search: setModalParam(location.search, "mind"),
-        },
+        { pathname: INDEX_PATHNAME, search: baseSearch },
+        { replace: true }
+      );
+
+      // 2) push del modal encima => "Atrás" vuelve a index dentro de la app
+      navigate(
+        { pathname: INDEX_PATHNAME, search: modalSearch },
         { replace: false }
       );
     },
-    [location.pathname, location.search, navigate]
+    [location.search, navigate]
   );
 
   // ✅ cambiar Mind -> Mental (replace para que "Atrás" cierre modal, no vuelva a mind)
@@ -158,15 +172,16 @@ export default function RemiCaptureHost() {
       setMindDumpOpen(false);
       setMentalDumpOpen(true);
 
+      const baseSearch = clearModalParam(location.search);
+      const modalSearch = setModalParam(baseSearch, "mental");
+
+      // reemplaza el estado actual (mind) por mental
       navigate(
-        {
-          pathname: location.pathname,
-          search: setModalParam(location.search, "mental"),
-        },
+        { pathname: INDEX_PATHNAME, search: modalSearch },
         { replace: true }
       );
     },
-    [location.pathname, location.search, navigate]
+    [location.search, navigate]
   );
 
   const shouldAutoPreview = mentalDumpInitialText.trim().length > 0;
@@ -218,7 +233,7 @@ export default function RemiCaptureHost() {
       // ignore
     }
 
-    // ✅ abrir vacío SIEMPRE (da igual ruta/pestaña)
+    // ✅ abrir vacío SIEMPRE
     openCapture("");
   }, [location.search, openCapture, user]);
 
@@ -261,7 +276,6 @@ export default function RemiCaptureHost() {
   }, [openMindDumpAuto, user]);
 
   // ✅ Leer draft compartido (desde /share-target) SIN obligar a ir a "/"
-  // ⚠️ Importante: al limpiar `shared=1` usa window.location.search para NO borrar `modal=...`
   useEffect(() => {
     if (!user || typeof window === "undefined") return;
 
@@ -274,7 +288,7 @@ export default function RemiCaptureHost() {
         skipNextAutoOpenRef.current = true;
         const latestSearch = window.location.search || location.search;
         navigate(
-          { pathname: location.pathname, search: removeSharedParam(latestSearch) },
+          { pathname: INDEX_PATHNAME, search: removeSharedParam(latestSearch) },
           { replace: true }
         );
       }
@@ -292,7 +306,7 @@ export default function RemiCaptureHost() {
           skipNextAutoOpenRef.current = true;
           const latestSearch = window.location.search || location.search;
           navigate(
-            { pathname: location.pathname, search: removeSharedParam(latestSearch) },
+            { pathname: INDEX_PATHNAME, search: removeSharedParam(latestSearch) },
             { replace: true }
           );
         }
@@ -305,7 +319,7 @@ export default function RemiCaptureHost() {
         skipNextAutoOpenRef.current = true;
         const latestSearch = window.location.search || location.search;
         navigate(
-          { pathname: location.pathname, search: removeSharedParam(latestSearch) },
+          { pathname: INDEX_PATHNAME, search: removeSharedParam(latestSearch) },
           { replace: true }
         );
       }
@@ -320,18 +334,12 @@ export default function RemiCaptureHost() {
         skipNextAutoOpenRef.current = true;
         const latestSearch = window.location.search || location.search;
         navigate(
-          { pathname: location.pathname, search: removeSharedParam(latestSearch) },
+          { pathname: INDEX_PATHNAME, search: removeSharedParam(latestSearch) },
           { replace: true }
         );
       }
     }
-  }, [
-    user?.id,
-    location.pathname,
-    location.search,
-    navigate,
-    openCapture,
-  ]);
+  }, [user?.id, location.search, navigate, openCapture]);
 
   // ✅ Eventos globales
   useEffect(() => {
@@ -388,20 +396,24 @@ export default function RemiCaptureHost() {
     [emitItemsChanged, user]
   );
 
+  // ✅ Cierre centralizado: siempre cerrar y dejar INDEX sin modal
+  const closeAllAndGoIndex = useCallback(() => {
+    setMindDumpOpen(false);
+    setMentalDumpOpen(false);
+
+    const baseSearch = clearModalParam(window.location.search || location.search);
+
+    navigate(
+      { pathname: INDEX_PATHNAME, search: baseSearch },
+      { replace: true }
+    );
+  }, [location.search, navigate]);
+
   return (
     <>
       <MindDumpModal
         open={mindDumpOpen}
-        onClose={() => {
-          setMindDumpOpen(false);
-          navigate(
-            {
-              pathname: location.pathname,
-              search: clearModalParam(window.location.search || location.search),
-            },
-            { replace: true }
-          );
-        }}
+        onClose={closeAllAndGoIndex}
         onOpenReview={openReviewFromMindDump}
         initialText={mindDumpInitialText}
         onCreateTask={handleCreateTask}
@@ -411,16 +423,7 @@ export default function RemiCaptureHost() {
 
       <MentalDumpModal
         open={mentalDumpOpen}
-        onClose={() => {
-          setMentalDumpOpen(false);
-          navigate(
-            {
-              pathname: location.pathname,
-              search: clearModalParam(window.location.search || location.search),
-            },
-            { replace: true }
-          );
-        }}
+        onClose={closeAllAndGoIndex}
         onCreateTask={handleCreateTask}
         onCreateIdea={handleCreateIdea}
         initialText={mentalDumpInitialText}
