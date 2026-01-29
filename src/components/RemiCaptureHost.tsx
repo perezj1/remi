@@ -43,6 +43,44 @@ function removeSharedParam(search: string): string {
   }
 }
 
+/** ---------------------------
+ * ✅ Modal in URL (single modal)
+ * -------------------------- */
+type ModalKind = "mind" | "mental";
+
+function getModalParam(search: string): ModalKind | null {
+  try {
+    const p = new URLSearchParams(search);
+    const v = p.get("modal");
+    if (v === "mind" || v === "mental") return v;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function setModalParam(search: string, modal: ModalKind): string {
+  try {
+    const p = new URLSearchParams(search);
+    p.set("modal", modal);
+    const s = p.toString();
+    return s ? `?${s}` : "";
+  } catch {
+    return `?modal=${modal}`;
+  }
+}
+
+function clearModalParam(search: string): string {
+  try {
+    const p = new URLSearchParams(search);
+    p.delete("modal");
+    const s = p.toString();
+    return s ? `?${s}` : "";
+  } catch {
+    return "";
+  }
+}
+
 export default function RemiCaptureHost() {
   const { user } = useAuth();
   const { t } = useI18n();
@@ -57,7 +95,7 @@ export default function RemiCaptureHost() {
       if (!v || v === key) return fallback;
       return v;
     },
-    [t],
+    [t]
   );
 
   // ✅ modal inicial (MindDumpModal)
@@ -73,39 +111,73 @@ export default function RemiCaptureHost() {
 
   const skipNextAutoOpenRef = useRef(false);
 
-  // ✅ esconder BottomNav cuando cualquiera de los 2 modales está abierto
+  // ✅ 1 solo indicador global para UI (BottomNav etc.)
   useEffect(() => {
-    if (!mindDumpOpen) return;
-    setModalOpen(true);
+    setModalOpen(mindDumpOpen || mentalDumpOpen);
     return () => setModalOpen(false);
-  }, [mindDumpOpen, setModalOpen]);
+  }, [mindDumpOpen, mentalDumpOpen, setModalOpen]);
+
+  // ✅ Sync URL -> state (para back/forward)
+  const modalInUrl = getModalParam(location.search);
 
   useEffect(() => {
-    if (!mentalDumpOpen) return;
-    setModalOpen(true);
-    return () => setModalOpen(false);
-  }, [mentalDumpOpen, setModalOpen]);
+    const wantMind = modalInUrl === "mind";
+    const wantMental = modalInUrl === "mental";
 
-  const openReviewFromMindDump = useCallback((text: string) => {
-    setMentalDumpInitialText(text);
-    setMentalDumpInitialNonce((n) => n + 1);
-    setMentalDumpOpen(true);
-    setMindDumpOpen(false);
-  }, []);
+    if (mindDumpOpen !== wantMind) setMindDumpOpen(wantMind);
+    if (mentalDumpOpen !== wantMental) setMentalDumpOpen(wantMental);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modalInUrl]);
+
+  // ✅ API global: abrir capture desde cualquier parte (push history entry)
+  const openCapture = useCallback(
+    (prefill?: string) => {
+      setMindDumpInitialText(prefill ?? "");
+      setMindDumpInitialNonce((n) => n + 1);
+
+      setMentalDumpOpen(false);
+      setMindDumpOpen(true);
+
+      navigate(
+        {
+          pathname: location.pathname,
+          search: setModalParam(location.search, "mind"),
+        },
+        { replace: false }
+      );
+    },
+    [location.pathname, location.search, navigate]
+  );
+
+  // ✅ cambiar Mind -> Mental (replace para que "Atrás" cierre modal, no vuelva a mind)
+  const openReviewFromMindDump = useCallback(
+    (text: string) => {
+      setMentalDumpInitialText(text);
+      setMentalDumpInitialNonce((n) => n + 1);
+
+      setMindDumpOpen(false);
+      setMentalDumpOpen(true);
+
+      navigate(
+        {
+          pathname: location.pathname,
+          search: setModalParam(location.search, "mental"),
+        },
+        { replace: true }
+      );
+    },
+    [location.pathname, location.search, navigate]
+  );
 
   const shouldAutoPreview = mentalDumpInitialText.trim().length > 0;
-
-  // ✅ API global: abrir capture desde cualquier parte
-  const openCapture = useCallback((prefill?: string) => {
-    setMindDumpInitialText(prefill ?? "");
-    setMindDumpInitialNonce((n) => n + 1);
-    setMindDumpOpen(true);
-  }, []);
 
   // ✅ Auto-open “central” (cold start + resume)
   const openMindDumpAuto = useCallback(() => {
     if (typeof window === "undefined") return;
     if (!user) return;
+
+    // si ya hay modal en la URL, no auto-abrir
+    if (getModalParam(location.search)) return;
 
     // si venimos de share, lo gestiona el efecto de SHARE_DRAFT (evitamos abrir vacío)
     if (isShareEntry(location.search)) return;
@@ -119,9 +191,7 @@ export default function RemiCaptureHost() {
     // cooldown anti doble disparo
     try {
       const now = Date.now();
-      const last = Number(
-        sessionStorage.getItem(AUTO_OPEN_LAST_TS_KEY) || "0",
-      );
+      const last = Number(sessionStorage.getItem(AUTO_OPEN_LAST_TS_KEY) || "0");
       if (now - last < AUTO_OPEN_COOLDOWN_MS) return;
       sessionStorage.setItem(AUTO_OPEN_LAST_TS_KEY, String(now));
     } catch {
@@ -163,7 +233,7 @@ export default function RemiCaptureHost() {
         ?.at(0) as PerformanceNavigationTiming | undefined;
       if (nav?.type === "reload") return;
     } catch {
-      // si no hay soporte, seguimos
+      // ignore
     }
 
     openMindDumpAuto();
@@ -191,18 +261,21 @@ export default function RemiCaptureHost() {
   }, [openMindDumpAuto, user]);
 
   // ✅ Leer draft compartido (desde /share-target) SIN obligar a ir a "/"
+  // ⚠️ Importante: al limpiar `shared=1` usa window.location.search para NO borrar `modal=...`
   useEffect(() => {
     if (!user || typeof window === "undefined") return;
 
-    const hasSharedFlag = isShareEntry(location.search);
+    const currentSearch = window.location.search || location.search;
+    const hasSharedFlag = isShareEntry(currentSearch);
 
     const raw = sessionStorage.getItem(SHARE_DRAFT_KEY);
     if (!raw) {
       if (hasSharedFlag) {
         skipNextAutoOpenRef.current = true;
+        const latestSearch = window.location.search || location.search;
         navigate(
-          { pathname: location.pathname, search: removeSharedParam(location.search) },
-          { replace: true },
+          { pathname: location.pathname, search: removeSharedParam(latestSearch) },
+          { replace: true }
         );
       }
       return;
@@ -217,9 +290,10 @@ export default function RemiCaptureHost() {
       if (!text) {
         if (hasSharedFlag) {
           skipNextAutoOpenRef.current = true;
+          const latestSearch = window.location.search || location.search;
           navigate(
-            { pathname: location.pathname, search: removeSharedParam(location.search) },
-            { replace: true },
+            { pathname: location.pathname, search: removeSharedParam(latestSearch) },
+            { replace: true }
           );
         }
         return;
@@ -229,9 +303,10 @@ export default function RemiCaptureHost() {
 
       if (hasSharedFlag) {
         skipNextAutoOpenRef.current = true;
+        const latestSearch = window.location.search || location.search;
         navigate(
-          { pathname: location.pathname, search: removeSharedParam(location.search) },
-          { replace: true },
+          { pathname: location.pathname, search: removeSharedParam(latestSearch) },
+          { replace: true }
         );
       }
     } catch (e) {
@@ -243,13 +318,20 @@ export default function RemiCaptureHost() {
       }
       if (hasSharedFlag) {
         skipNextAutoOpenRef.current = true;
+        const latestSearch = window.location.search || location.search;
         navigate(
-          { pathname: location.pathname, search: removeSharedParam(location.search) },
-          { replace: true },
+          { pathname: location.pathname, search: removeSharedParam(latestSearch) },
+          { replace: true }
         );
       }
     }
-  }, [user?.id, location.pathname, location.search, navigate, openCapture]);
+  }, [
+    user?.id,
+    location.pathname,
+    location.search,
+    navigate,
+    openCapture,
+  ]);
 
   // ✅ Eventos globales
   useEffect(() => {
@@ -268,7 +350,7 @@ export default function RemiCaptureHost() {
     return () => {
       window.removeEventListener(
         "remi-open-capture",
-        onOpenCapture as EventListener,
+        onOpenCapture as EventListener
       );
       window.removeEventListener("remi-open-mental-dump", onOpenMentalDump);
     };
@@ -288,13 +370,13 @@ export default function RemiCaptureHost() {
       title: string,
       dueDate: string | null,
       reminderMode: ReminderMode,
-      repeatType: RepeatType,
+      repeatType: RepeatType
     ) => {
       if (!user) return;
       await createTask(user.id, title, dueDate, reminderMode, repeatType);
       emitItemsChanged();
     },
-    [emitItemsChanged, user],
+    [emitItemsChanged, user]
   );
 
   const handleCreateIdea = useCallback(
@@ -303,24 +385,42 @@ export default function RemiCaptureHost() {
       await createIdea(user.id, title);
       emitItemsChanged();
     },
-    [emitItemsChanged, user],
+    [emitItemsChanged, user]
   );
 
   return (
     <>
       <MindDumpModal
         open={mindDumpOpen}
-        onClose={() => setMindDumpOpen(false)}
+        onClose={() => {
+          setMindDumpOpen(false);
+          navigate(
+            {
+              pathname: location.pathname,
+              search: clearModalParam(window.location.search || location.search),
+            },
+            { replace: true }
+          );
+        }}
         onOpenReview={openReviewFromMindDump}
         initialText={mindDumpInitialText}
-        onCreateTask={handleCreateTask}    
-        onCreateIdea={handleCreateIdea}   
+        onCreateTask={handleCreateTask}
+        onCreateIdea={handleCreateIdea}
         initialTextNonce={mindDumpInitialNonce}
       />
 
       <MentalDumpModal
         open={mentalDumpOpen}
-        onClose={() => setMentalDumpOpen(false)}
+        onClose={() => {
+          setMentalDumpOpen(false);
+          navigate(
+            {
+              pathname: location.pathname,
+              search: clearModalParam(window.location.search || location.search),
+            },
+            { replace: true }
+          );
+        }}
         onCreateTask={handleCreateTask}
         onCreateIdea={handleCreateIdea}
         initialText={mentalDumpInitialText}

@@ -1,3 +1,4 @@
+// src/contexts/ModalUiContext.tsx
 import React, {
   createContext,
   useContext,
