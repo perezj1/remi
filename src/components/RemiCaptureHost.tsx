@@ -1,10 +1,8 @@
 // src/components/RemiCaptureHost.tsx
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { toast } from "sonner";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { useI18n } from "@/contexts/I18nContext";
 import { useModalUi } from "@/contexts/ModalUiContext";
 
 import MindDumpModal from "@/components/MindDumpModal";
@@ -86,20 +84,10 @@ function clearModalParam(search: string): string {
 
 export default function RemiCaptureHost() {
   const { user } = useAuth();
-  const { t } = useI18n();
   const { setModalOpen } = useModalUi();
 
   const location = useLocation();
   const navigate = useNavigate();
-
-  const safeT = useCallback(
-    (key: string, fallback: string, vars?: Record<string, any>) => {
-      const v = t(key as any, vars as any);
-      if (!v || v === key) return fallback;
-      return v;
-    },
-    [t]
-  );
 
   // ✅ modal inicial (MindDumpModal)
   const [mindDumpOpen, setMindDumpOpen] = useState(false);
@@ -133,12 +121,15 @@ export default function RemiCaptureHost() {
   }, [modalInUrl]);
 
   /**
-   * ✅ Clave: abrir SIEMPRE sobre INDEX_PATHNAME,
-   * y asegurarnos de que haya una entrada base (index sin modal)
-   * debajo del modal para que "Atrás" no cierre la app.
+   * ✅ Apertura robusta:
+   * - En apertura automática (cold start), forzamos 2 entradas reales de history en frames distintos:
+   *   1) index (replace)
+   *   2) index (push)
+   *   3) index + modal (push)
+   * Esto evita que en iOS/PWA "Atrás" cierre la app en el primer arranque.
    */
   const openCapture = useCallback(
-    (prefill?: string) => {
+    (prefill?: string, source: "auto" | "user" = "user") => {
       setMindDumpInitialText(prefill ?? "");
       setMindDumpInitialNonce((n) => n + 1);
 
@@ -148,13 +139,37 @@ export default function RemiCaptureHost() {
       const baseSearch = clearModalParam(location.search);
       const modalSearch = setModalParam(baseSearch, "mind");
 
-      // 1) aseguramos que la ruta base sea index (sin modal) en esta misma entrada
+      if (source === "auto") {
+        // 1) dejar la entrada actual como index base
+        navigate(
+          { pathname: INDEX_PATHNAME, search: baseSearch },
+          { replace: true }
+        );
+
+        // 2) siguiente frame: push de base
+        requestAnimationFrame(() => {
+          navigate(
+            { pathname: INDEX_PATHNAME, search: baseSearch },
+            { replace: false }
+          );
+
+          // 3) siguiente frame: push del modal
+          requestAnimationFrame(() => {
+            navigate(
+              { pathname: INDEX_PATHNAME, search: modalSearch },
+              { replace: false }
+            );
+          });
+        });
+
+        return;
+      }
+
+      // User initiated (ya funciona bien)
       navigate(
         { pathname: INDEX_PATHNAME, search: baseSearch },
         { replace: true }
       );
-
-      // 2) push del modal encima => "Atrás" vuelve a index dentro de la app
       navigate(
         { pathname: INDEX_PATHNAME, search: modalSearch },
         { replace: false }
@@ -175,11 +190,7 @@ export default function RemiCaptureHost() {
       const baseSearch = clearModalParam(location.search);
       const modalSearch = setModalParam(baseSearch, "mental");
 
-      // reemplaza el estado actual (mind) por mental
-      navigate(
-        { pathname: INDEX_PATHNAME, search: modalSearch },
-        { replace: true }
-      );
+      navigate({ pathname: INDEX_PATHNAME, search: modalSearch }, { replace: true });
     },
     [location.search, navigate]
   );
@@ -226,15 +237,15 @@ export default function RemiCaptureHost() {
       const pending = sessionStorage.getItem(NAV_DICTATION_KEY);
       if (pending && pending.trim().length > 0) {
         sessionStorage.removeItem(NAV_DICTATION_KEY);
-        openCapture(pending.trim());
+        openCapture(pending.trim(), "auto");
         return;
       }
     } catch {
       // ignore
     }
 
-    // ✅ abrir vacío SIEMPRE
-    openCapture("");
+    // ✅ abrir vacío SIEMPRE (auto)
+    openCapture("", "auto");
   }, [location.search, openCapture, user]);
 
   // ✅ Auto-open en cold start (pero NO en refresh)
@@ -275,7 +286,7 @@ export default function RemiCaptureHost() {
     };
   }, [openMindDumpAuto, user]);
 
-  // ✅ Leer draft compartido (desde /share-target) SIN obligar a ir a "/"
+  // ✅ Leer draft compartido (desde /share-target)
   useEffect(() => {
     if (!user || typeof window === "undefined") return;
 
@@ -313,7 +324,7 @@ export default function RemiCaptureHost() {
         return;
       }
 
-      openCapture(text);
+      openCapture(text, "auto");
 
       if (hasSharedFlag) {
         skipNextAutoOpenRef.current = true;
@@ -341,16 +352,16 @@ export default function RemiCaptureHost() {
     }
   }, [user?.id, location.search, navigate, openCapture]);
 
-  // ✅ Eventos globales
+  // ✅ Eventos globales (user initiated)
   useEffect(() => {
     const onOpenCapture = (ev: Event) => {
       const ce = ev as CustomEvent<any>;
       const incomingText =
         typeof ce?.detail?.initialText === "string" ? ce.detail.initialText : "";
-      openCapture(incomingText?.trim?.() ?? "");
+      openCapture(incomingText?.trim?.() ?? "", "user");
     };
 
-    const onOpenMentalDump = () => openCapture("");
+    const onOpenMentalDump = () => openCapture("", "user");
 
     window.addEventListener("remi-open-capture", onOpenCapture as EventListener);
     window.addEventListener("remi-open-mental-dump", onOpenMentalDump);
@@ -396,17 +407,14 @@ export default function RemiCaptureHost() {
     [emitItemsChanged, user]
   );
 
-  // ✅ Cierre centralizado: siempre cerrar y dejar INDEX sin modal
+  // ✅ Cierre: siempre cerrar y dejar INDEX sin modal
   const closeAllAndGoIndex = useCallback(() => {
     setMindDumpOpen(false);
     setMentalDumpOpen(false);
 
     const baseSearch = clearModalParam(window.location.search || location.search);
 
-    navigate(
-      { pathname: INDEX_PATHNAME, search: baseSearch },
-      { replace: true }
-    );
+    navigate({ pathname: INDEX_PATHNAME, search: baseSearch }, { replace: true });
   }, [location.search, navigate]);
 
   return (
