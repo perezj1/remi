@@ -969,6 +969,29 @@ export default function MindDumpModal({
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
+const dateInputRef = useRef<HTMLInputElement | null>(null);
+const timeInputRef = useRef<HTMLInputElement | null>(null);
+
+const openNativePicker = (ref: React.RefObject<HTMLInputElement>) => {
+  const el = ref.current;
+  if (!el) return;
+
+  // Chrome/Edge (y algunos móviles) soportan showPicker()
+  try {
+    (el as any).showPicker?.();
+    return;
+  } catch {
+    // fallback
+  }
+
+  try {
+    el.focus();
+    el.click();
+  } catch {
+    // ignore
+  }
+};
+
   const [kbdOffset, setKbdOffset] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
 
@@ -2139,48 +2162,69 @@ export default function MindDumpModal({
         {/* ✅ NUEVO: 2x2 pills (Fecha / Hora / Recordatorio / Repetición) */}
         <div className="grid grid-cols-2 gap-2">
           {/* Fecha */}
-          <div className="relative">
-            <SettingPill
-              disabled={itemKind !== "task"}
-              icon={<Calendar className="h-4 w-4" style={{ color: REMI_PURPLE }} />}
-              text={dateLabel}
-              right={<CaretSquare />}
-            />
-            <input
-              type="date"
-              value={pickedDate}
-              disabled={itemKind !== "task"}
-              onChange={(e) => {
-                setDateTouched(true);
-                setTypeTouched(true);
-                setPickedDate(e.target.value);
-              }}
-              className="absolute inset-0 opacity-0"
-              style={{ cursor: itemKind !== "task" ? "not-allowed" : "pointer" }}
-            />
-          </div>
+<div className="relative">
+  <SettingPill
+    disabled={itemKind !== "task"}
+    icon={<Calendar className="h-4 w-4" style={{ color: REMI_PURPLE }} />}
+    text={dateLabel}
+    right={<CaretSquare />}
+    onClick={() => {
+      if (itemKind !== "task") return;
+      openNativePicker(dateInputRef);
+    }}
+  />
+
+  <input
+    ref={dateInputRef}
+    type="date"
+    value={pickedDate}
+    disabled={itemKind !== "task"}
+    onChange={(e) => {
+      setDateTouched(true);
+      setTypeTouched(true);
+      setPickedDate(e.target.value);
+    }}
+    className="absolute inset-0 opacity-0"
+    style={{
+      cursor: itemKind !== "task" ? "not-allowed" : "pointer",
+      // opcional, para que el click lo gestione siempre el pill:
+      pointerEvents: "none",
+    }}
+  />
+</div>
+
 
           {/* Hora */}
-          <div className="relative">
-            <SettingPill
-              disabled={itemKind !== "task"}
-              icon={<Clock className="h-4 w-4" style={{ color: REMI_PURPLE }} />}
-              text={timeLabel}
-              right={<CaretSquare />}
-            />
-            <input
-              type="time"
-              value={pickedTime}
-              disabled={itemKind !== "task"}
-              onChange={(e) => {
-                setTimeTouched(true);
-                setTypeTouched(true);
-                setPickedTime(e.target.value);
-              }}
-              className="absolute inset-0 opacity-0"
-              style={{ cursor: itemKind !== "task" ? "not-allowed" : "pointer" }}
-            />
-          </div>
+<div className="relative">
+  <SettingPill
+    disabled={itemKind !== "task"}
+    icon={<Clock className="h-4 w-4" style={{ color: REMI_PURPLE }} />}
+    text={timeLabel}
+    right={<CaretSquare />}
+    onClick={() => {
+      if (itemKind !== "task") return;
+      openNativePicker(timeInputRef);
+    }}
+  />
+
+  <input
+    ref={timeInputRef}
+    type="time"
+    value={pickedTime}
+    disabled={itemKind !== "task"}
+    onChange={(e) => {
+      setTimeTouched(true);
+      setTypeTouched(true);
+      setPickedTime(e.target.value);
+    }}
+    className="absolute inset-0 opacity-0"
+    style={{
+      cursor: itemKind !== "task" ? "not-allowed" : "pointer",
+      pointerEvents: "none",
+    }}
+  />
+</div>
+
 
           {/* Recordatorio */}
           <div className="relative">
