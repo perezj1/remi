@@ -7,9 +7,12 @@ export interface ParsedResult {
   cleanTitle: string;
   dueDateISO: string | null;
   repeatHint: "daily" | "weekly" | "monthly" | "yearly" | null;
-  reminderHint?: "DAY_BEFORE_AND_DUE" | "DAILY_UNTIL_DUE" | "WEEK_BEFORE_AND_DUE" | null;
+  reminderHint?:
+    | "DAY_BEFORE_AND_DUE"
+    | "DAILY_UNTIL_DUE"
+    | "WEEK_BEFORE_AND_DUE"
+    | null;
 }
-
 
 const ALL_LOCALES: RemiLocale[] = ["es", "de", "en"];
 
@@ -42,7 +45,7 @@ type Candidate = {
 
 function scoreChronoResult(r: any): number {
   if (!r || !r.start) return -1;
-  const len = (r.text?.length ?? 0);
+  const len = r.text?.length ?? 0;
   const idx = typeof r.index === "number" ? r.index : 9999;
   return len * 10 - idx;
 }
@@ -59,24 +62,33 @@ function escapeRegExp(str: string) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+/**
+ * Reemplaza palabras completas usando límites unicode (letras/números).
+ * Evita \b porque no es unicode-safe con tildes/umlauts (é, ü, ß, etc.).
+ */
 function replaceWholeWords(s: string, map: Record<string, string>) {
   const keys = Object.keys(map).sort((a, b) => b.length - a.length);
   if (!keys.length) return s;
 
-  const pattern = new RegExp(`\\b(${keys.map(escapeRegExp).join("|")})\\b`, "gi");
+  const alternation = keys.map(escapeRegExp).join("|");
+  const pattern = new RegExp(
+    `(^|[^\\p{L}\\p{N}_])(${alternation})(?=$|[^\\p{L}\\p{N}_])`,
+    "giu"
+  );
 
-  return s.replace(pattern, (m) => {
-    const keyLower = m.toLowerCase();
+  return s.replace(pattern, (full, prefix, word) => {
+    const keyLower = String(word).toLowerCase();
     const direct = map[keyLower];
-    if (direct != null) return direct;
+    if (direct != null) return `${prefix}${direct}`;
 
     // fallback: quitar acentos para mapas “mixtos”
-    const keyNoAccents = keyLower.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const keyNoAccents = keyLower
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
     const noAccents = map[keyNoAccents];
-    return noAccents != null ? noAccents : m;
+    return noAccents != null ? `${prefix}${noAccents}` : full;
   });
 }
-
 
 /* =========================================================
    1) NORMALIZACIÓN “DICTADO”: palabras -> dígitos (ES/EN/DE)
@@ -434,14 +446,11 @@ function normalizeSpokenEn(raw: string): string {
 
   // Years: "two thousand twenty five" => 2025
   s = s.replace(/\btwo\s+thousand\b/gi, "TWOTHOUSAND");
-  s = s.replace(
-    /\bTWOTHOUSAND\s+([a-z-]+(?:\s+[a-z-]+)?)\b/gi,
-    (m, tail) => {
-      const n = enWordsToNumber_0_99(tail);
-      if (n == null) return m;
-      return String(2000 + n);
-    }
-  );
+  s = s.replace(/\bTWOTHOUSAND\s+([a-z-]+(?:\s+[a-z-]+)?)\b/gi, (m, tail) => {
+    const n = enWordsToNumber_0_99(tail);
+    if (n == null) return m;
+    return String(2000 + n);
+  });
   s = s.replace(/\bTWOTHOUSAND\b/g, "2000");
 
   // 0..59: "twenty-five"
@@ -774,7 +783,9 @@ function detectReminderHint(
   // ---- Español ----
   if (locale === "es") {
     if (
-      /\b(una\s+semana\s+antes|1\s+semana\s+antes|siete\s+dias\s+antes|7\s*dias\s+antes|semana\s+antes)\b/.test(text)
+      /\b(una\s+semana\s+antes|1\s+semana\s+antes|siete\s+dias\s+antes|7\s*dias\s+antes|semana\s+antes)\b/.test(
+        text
+      )
     ) {
       return "WEEK_BEFORE_AND_DUE";
     }
@@ -797,7 +808,7 @@ function detectReminderHint(
   }
 
   if (locale === "en") {
-     if (/\b(week\s+before|one\s+week\s+before|1\s+week\s+before)\b/.test(text)) {
+    if (/\b(week\s+before|one\s+week\s+before|1\s+week\s+before)\b/.test(text)) {
       return "WEEK_BEFORE_AND_DUE";
     }
 
@@ -814,7 +825,7 @@ function detectReminderHint(
   }
 
   if (locale === "de") {
-     if (
+    if (
       /\b(eine\s+woche\s+vorher|eine\s+woche\s+davor|eine\s+woche\s+vor|1\s+woche\s+vorher|1\s+woche\s+davor)\b/.test(
         text
       )
@@ -832,7 +843,6 @@ function detectReminderHint(
     if (/\b(jeden tag bis|taglich bis|täglich bis|taeglich bis)\b/.test(text)) {
       return "DAILY_UNTIL_DUE";
     }
-    
   }
 
   return null;
@@ -886,7 +896,7 @@ function normalizeRelativeWeeksAny(raw: string): string {
     (_m, n, _el, wd) => `${wd} en ${n} semanas`
   );
 
-  // "(el) martes dentro de 2 semanas" -> "martes en 2 semanas"
+  // "(el) martes dentro de dentro de 2 semanas" -> "martes en 2 semanas"
   s = s.replace(
     new RegExp(
       `\\b(el\\s+)?(${WEEKDAYS_ES})\\s+dentro\\s+de\\s+(\\d+)\\s+semanas?\\b`,
@@ -1015,7 +1025,10 @@ function normalizeRelativeWeeksAny(raw: string): string {
 
   // "am Dienstag in 2 Wochen"
   s = s.replace(
-    new RegExp(`\\b(am\\s+)?(${WEEKDAYS_DE})\\s+in\\s+(\\d+)\\s+wochen?\\b`, "gi"),
+    new RegExp(
+      `\\b(am\\s+)?(${WEEKDAYS_DE})\\s+in\\s+(\\d+)\\s+wochen?\\b`,
+      "gi"
+    ),
     (_m, _am, wd, n) => `${wd} in ${n} Wochen`
   );
 
@@ -1156,7 +1169,13 @@ function parseTimeOverrideAny(text: string): TimeOverride | null {
       const part = normalize(m[3]);
       if (h >= 1 && h <= 12 && min >= 0 && min <= 59) {
         const mer: Meridiem =
-          part === "vormittag" ? "AM" : part === "nachmittag" ? "PM" : part === "abend" ? "PM" : "AM";
+          part === "vormittag"
+            ? "AM"
+            : part === "nachmittag"
+              ? "PM"
+              : part === "abend"
+                ? "PM"
+                : "AM";
         return {
           hour: to24hFrom12h(h, mer),
           minute: min,
@@ -1214,10 +1233,9 @@ function parseTimeOverrideAny(text: string): TimeOverride | null {
           };
         }
 
-        // Aquí viene la parte clave para ti:
         // "martes a las 4" => interpretamos por defecto como PM (16:00)
         // (y si el usuario quiere AM, lo dice con "mañana", "am", "morgens", etc.)
-         if (h >= 1 && h <= 11) {
+        if (h >= 1 && h <= 11) {
           return {
             hour: h + 12, // ✅ PM por defecto (4 -> 16)
             minute: min,
@@ -1247,7 +1265,7 @@ function parseTimeOverrideAny(text: string): TimeOverride | null {
       const min = m[2] ? parseInt(m[2], 10) : 0;
       if (h >= 0 && h < 24 && min >= 0 && min <= 59) {
         // Si es 1..11 con "uhr" suele ser 24h/ambig, pero mantenemos la misma regla por defecto (PM)
-                if (h >= 1 && h <= 11) {
+        if (h >= 1 && h <= 11) {
           return {
             hour: h + 12, // ✅ PM por defecto (4 -> 16)
             minute: min,
@@ -1291,7 +1309,9 @@ export function parseDateTimeFromText(
   }
 
   // ✅ Normalización antes de chrono
-  const normalizedText = normalizeRelativeWeeksAny(normalizeSpokenNumbersAny(text));
+  const normalizedText = normalizeRelativeWeeksAny(
+    normalizeSpokenNumbersAny(text)
+  );
 
   // 1) Intentamos en el orden: locale actual primero, luego el resto
   const tryOrder = unique<RemiLocale>([locale, ...ALL_LOCALES]);
@@ -1347,7 +1367,9 @@ export function parseDateTimeFromText(
 
     // Si chrono NO tenía el día explícito y la hora cae en el pasado, empuja a mañana
     const chronoHasExplicitDay =
-      typeof best?.start?.isCertain === "function" ? best.start.isCertain("day") : true;
+      typeof best?.start?.isCertain === "function"
+        ? best.start.isCertain("day")
+        : true;
 
     if (!chronoHasExplicitDay && date.getTime() < reference.getTime()) {
       date.setDate(date.getDate() + 1);

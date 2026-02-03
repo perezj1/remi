@@ -449,9 +449,7 @@ function parseDateToISO(signal: string | null, uiLang: UiLang): string | null {
     return toISODate(d);
   }
   if (
-    /\b(this\s+weekend|este\s+finde|este\s+fin\s+de\s+semana|dieses\s+wochenende)\b/i.test(
-      s
-    )
+    /\b(this\s+weekend|este\s+finde|este\s+fin\s+de\s+semana|dieses\s+wochenende)\b/i.test(s)
   ) {
     return toISODate(nextWeekdayFromToday(6));
   }
@@ -723,7 +721,6 @@ function titleFromMindDump(raw: string): string {
   return lines.join("\n");
 }
 
-
 // ✅ PillButton (más pequeña)
 type PillVariant = "purple" | "amber";
 
@@ -949,7 +946,7 @@ export default function MindDumpModal({
   /* ✅ Idioma:
      - Se toma del idioma global (I18nContext). Ese idioma:
        - Por defecto: navegador (I18nProvider)
-       - Si usuario cambia en Profile: se refleja aquí automáticamente
+       - Si usuario cambia idioma en Profile: se refleja aquí automáticamente
      - Fallback robusto: navigator.language
   */
   const appI18n = useI18n() as any;
@@ -969,28 +966,28 @@ export default function MindDumpModal({
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-const dateInputRef = useRef<HTMLInputElement | null>(null);
-const timeInputRef = useRef<HTMLInputElement | null>(null);
+  const dateInputRef = useRef<HTMLInputElement | null>(null);
+  const timeInputRef = useRef<HTMLInputElement | null>(null);
 
-const openNativePicker = (ref: React.RefObject<HTMLInputElement>) => {
-  const el = ref.current;
-  if (!el) return;
+  const openNativePicker = (ref: React.RefObject<HTMLInputElement>) => {
+    const el = ref.current;
+    if (!el) return;
 
-  // Chrome/Edge (y algunos móviles) soportan showPicker()
-  try {
-    (el as any).showPicker?.();
-    return;
-  } catch {
-    // fallback
-  }
+    // Chrome/Edge (y algunos móviles) soportan showPicker()
+    try {
+      (el as any).showPicker?.();
+      return;
+    } catch {
+      // fallback
+    }
 
-  try {
-    el.focus();
-    el.click();
-  } catch {
-    // ignore
-  }
-};
+    try {
+      el.focus();
+      el.click();
+    } catch {
+      // ignore
+    }
+  };
 
   const [kbdOffset, setKbdOffset] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
@@ -1452,46 +1449,45 @@ const openNativePicker = (ref: React.RefObject<HTMLInputElement>) => {
   }, [uiLang]);
 
   const rootChips = useMemo(() => {
-  // ⛔️ Idea desactivada: no mostrar en “Atajos inteligentes”
-  // const ideaChip = {
-  //   id: "idea" as const,
-  //   label: t("capture.chip.idea", "Idea"),
-  //   word: t("capture.chip.ideaWord", "Idea:"),
-  // };
+    // ⛔️ Idea desactivada: no mostrar en “Atajos inteligentes”
+    // const ideaChip = {
+    //   id: "idea" as const,
+    //   label: t("capture.chip.idea", "Idea"),
+    //   word: t("capture.chip.ideaWord", "Idea:"),
+    // };
 
-  const others = [
-    {
-      id: "buy" as const,
-      label: t("capture.chip.buy", "Comprar"),
-      word: t("capture.chip.buyWord", "Comprar"),
-    },
-    {
-      id: "call" as const,
-      label: t("capture.chip.call", "Llamar"),
-      word: t("capture.chip.callWord", "Llamar"),
-    },
-    {
-      id: "pay" as const,
-      label: t("capture.chip.pay", "Pagar"),
-      word: t("capture.chip.payWord", "Pagar"),
-    },
-    {
-      id: "birthday" as const,
-      label: t("capture.chip.birthday", "Cumpleaños"),
-      word: t("capture.chip.birthdayWord", "Cumpleaños"),
-    },
-    {
-      id: "appointment" as const,
-      label: t("capture.chip.appt", "Cita"),
-      word: t("capture.chip.apptWord", "Cita"),
-    },
-  ] as const;
+    const others = [
+      {
+        id: "buy" as const,
+        label: t("capture.chip.buy", "Comprar"),
+        word: t("capture.chip.buyWord", "Comprar"),
+      },
+      {
+        id: "call" as const,
+        label: t("capture.chip.call", "Llamar"),
+        word: t("capture.chip.callWord", "Llamar"),
+      },
+      {
+        id: "pay" as const,
+        label: t("capture.chip.pay", "Pagar"),
+        word: t("capture.chip.payWord", "Pagar"),
+      },
+      {
+        id: "birthday" as const,
+        label: t("capture.chip.birthday", "Cumpleaños"),
+        word: t("capture.chip.birthdayWord", "Cumpleaños"),
+      },
+      {
+        id: "appointment" as const,
+        label: t("capture.chip.appt", "Cita"),
+        word: t("capture.chip.apptWord", "Cita"),
+      },
+    ] as const;
 
-  // ✅ solo los atajos restantes
-  return others;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [uiLang]);
-
+    // ✅ solo los atajos restantes
+    return others;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uiLang]);
 
   const scheduleChips = useMemo(() => {
     if (uiLang === "en") {
@@ -1693,10 +1689,18 @@ const openNativePicker = (ref: React.RefObject<HTMLInputElement>) => {
     return getCurrentLineInfo(text, caret).line ?? "";
   }, [text, caretTick]);
 
-  const detectedDate = detectDateSignal(currentLine);
-  const detectedTime = detectTimeSignal(currentLine);
-  const detectedReminder = detectReminderSignal(currentLine);
-  const detectedHabit = detectHabitSignal(currentLine);
+  // ✅ NUEVO: texto completo para detección global (sin bullets visuales)
+  const allTextForSignals = useMemo(() => {
+    return stripVisualBullets(String(text ?? ""));
+  }, [text]);
+
+  // ✅ CAMBIO CLAVE:
+  // - Primero intenta detectar en la línea actual (comportamiento previo)
+  // - Si no hay nada, busca en TODO el texto (para que no dependa del caret/pointer)
+  const detectedDate = detectDateSignal(currentLine) ?? detectDateSignal(allTextForSignals);
+  const detectedTime = detectTimeSignal(currentLine) ?? detectTimeSignal(allTextForSignals);
+  const detectedReminder = detectReminderSignal(currentLine) ?? detectReminderSignal(allTextForSignals);
+  const detectedHabit = detectHabitSignal(currentLine) ?? detectHabitSignal(allTextForSignals);
 
   useEffect(() => {
     if (itemKind !== "task") return;
@@ -1842,7 +1846,7 @@ const openNativePicker = (ref: React.RefObject<HTMLInputElement>) => {
 
       <div className="absolute inset-0" style={{ background: "#ffffff" }} />
 
-<div className="absolute inset-0 flex flex-col">
+      <div className="absolute inset-0 flex flex-col">
         {/* Header */}
         <div
           className="sticky top-0 z-10"
@@ -1955,13 +1959,12 @@ const openNativePicker = (ref: React.RefObject<HTMLInputElement>) => {
               }}
             >
               {chipStage === "ROOT" && (
-  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-    {rootChips.map((c) => (
-      <Chip key={c.id} label={c.label} onClick={() => handleRootChip(c.id)} />
-    ))}
-  </div>
-)}
-
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  {rootChips.map((c) => (
+                    <Chip key={c.id} label={c.label} onClick={() => handleRootChip(c.id)} />
+                  ))}
+                </div>
+              )}
 
               {chipStage === "SCHEDULE" &&
                 scheduleChips.map((c) => (
@@ -1984,540 +1987,535 @@ const openNativePicker = (ref: React.RefObject<HTMLInputElement>) => {
         </div>
 
         {/* Body (ocupa el espacio restante entre header y barra inferior) */}
-<div className="flex-1 overflow-hidden px-5 pt-5 pb-4">
-  <div
-  className="w-full h-full rounded-2xl overflow-hidden"
-  style={{
-    background: "#fff",
-    border: "1px solid rgba(15,23,42,0.15)",
-    boxShadow: "0 10px 30px rgba(15,23,42,0.06)",
-  }}
->
-  <textarea
-    ref={textareaRef}
-    value={text}
-    onChange={(e) => {
-      setText(e.target.value);
-      requestAnimationFrame(updateCaret);
-    }}
-    onKeyUp={() => updateCaret()}
-    onClick={() => updateCaret()}
-    onSelect={() => updateCaret()}
-    onFocus={() => {
-      setIsFocused(true);
-      requestAnimationFrame(updateCaret);
-    }}
-    onBlur={() => setIsFocused(false)}
-    onPaste={(e) => {
-      const pasted = e.clipboardData?.getData("text") ?? "";
-      const normalized = normalizeIncomingText(pasted);
-      if (!normalized) return;
-
-      e.preventDefault();
-
-      const el = e.currentTarget as HTMLTextAreaElement | null;
-      const startRaw = el?.selectionStart;
-      const endRaw = el?.selectionEnd;
-
-      setText((prev) => {
-        const current = String(prev ?? "");
-        const start =
-          typeof startRaw === "number" ? Math.min(startRaw, current.length) : current.length;
-        const end =
-          typeof endRaw === "number" ? Math.min(endRaw, current.length) : start;
-
-        const next = current.slice(0, start) + normalized + current.slice(end);
-
-        requestAnimationFrame(() => {
-          const node = textareaRef.current;
-          if (!node) return;
-          try {
-            const pos = Math.min(start + normalized.length, node.value.length);
-            node.selectionStart = node.selectionEnd = pos;
-            caretRef.current = pos;
-            setCaretTick((n) => n + 1);
-          } catch {}
-        });
-
-        return next;
-      });
-    }}
-    placeholder={t("capture.placeholder", "Toca para escribir")}
-    className="w-full h-full resize-none bg-transparent outline-none text-[18px] leading-7"
-    style={{
-      color: REMI_TEXT,
-      padding: 16,
-    }}
-    inputMode="text"
-  />
-</div>
-
-</div>
-
-{/* Barra inferior (ya NO es fixed: ocupa espacio real y no pisa el textarea) */}
-<div
-  className="shrink-0"
-  style={{
-    paddingBottom: "max(env(safe-area-inset-bottom), 14px)",
-  }}
->
-
-  <div
-    className="mx-auto"
-    style={{
-      width: "calc(100% - 32px)",
-      maxWidth: 420,
-      pointerEvents: "auto",
-      position: "relative",
-    }}
-  >
-    {/* ⛔️ PÍLDORA DE IDIOMA (comentada para que no aparezca)
-        - El idioma ahora viene del I18nContext (browser por defecto + Profile override)
-        - Si quieres reactivarla en el futuro:
-          1) descomenta ChevronDown arriba
-          2) añade estados langOpen, setLangOpen y el effect de cierre
-    */}
-    {/* ... (bloque comentado de idioma intacto) ... */}
-
-    {ios && (
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: "calc(100% + 1px)",
-          textAlign: "center",
-          fontSize: 12,
-          lineHeight: "16px",
-          color: REMI_SUB,
-          padding: "0 12px",
-          pointerEvents: "none",
-        }}
-      >
-        {t("capture.iosKeyboardMicHint", "En iPhone: usa el micrófono del teclado para dictar.")}
-      </div>
-    )}
-
-    {/* pill */}
-    <div
-      style={{
-        background: "rgba(255,255,255,0.92)",
-        border: "1px solid rgba(15,23,42,0.08)",
-        borderRadius: 24,
-        padding: "10px 12px",
-        boxShadow: "0 18px 50px rgba(15,23,42,0.16)",
-        backdropFilter: "blur(12px)",
-      }}
-    >
-      {/* ✅ panel SIEMPRE visible y compacto */}
-      <div className="mt-1 space-y-2">
-        {/* ✅ Tipo (task/idea) */}
-        <div className="rounded-2xl border border-slate-100 bg-slate-50 p-2">
-          <div className="flex items-center justify-between gap-2">
-            <div className="text-[11px] font-extrabold text-slate-700">
-              {t("pill.type.label", "Tipo")}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <PillButton
-                active={itemKind === "task"}
-                size="sm"
-                onClick={() => {
-                  setTypeTouched(true);
-                  setItemKind("task");
-                }}
-                icon={<List className="h-3.5 w-3.5" />}
-              >
-                {t("pill.type.task", "Tarea")}
-              </PillButton>
-
-              <PillButton
-                active={itemKind === "idea"}
-                variant="amber"
-                size="sm"
-                onClick={() => {
-                  setTypeTouched(true);
-                  setItemKind("idea");
-
-                  setPickedDate("");
-                  setPickedTime("");
-                  setReminderMode("NONE");
-                  setHabitRepeat("none");
-                  setDateTouched(false);
-                  setTimeTouched(false);
-                  setReminderTouched(false);
-                  setHabitTouched(false);
-
-                  setReminderMenuOpen(false);
-                  setRepeatMenuOpen(false);
-                }}
-                icon={<Lightbulb className="h-3.5 w-3.5" />}
-              >
-                {t("pill.type.idea", "Idea")}
-              </PillButton>
-            </div>
-          </div>
-        </div>
-
-        {/* ✅ NUEVO: 2x2 pills (Fecha / Hora / Recordatorio / Repetición) */}
-        <div className="grid grid-cols-2 gap-2">
-          {/* Fecha */}
-<div className="relative">
-  <SettingPill
-    disabled={itemKind !== "task"}
-    icon={<Calendar className="h-4 w-4" style={{ color: REMI_PURPLE }} />}
-    text={dateLabel}
-    right={<CaretSquare />}
-    onClick={() => {
-      if (itemKind !== "task") return;
-      openNativePicker(dateInputRef);
-    }}
-  />
-
-  <input
-    ref={dateInputRef}
-    type="date"
-    value={pickedDate}
-    disabled={itemKind !== "task"}
-    onChange={(e) => {
-      setDateTouched(true);
-      setTypeTouched(true);
-      setPickedDate(e.target.value);
-    }}
-    className="absolute inset-0 opacity-0"
-    style={{
-      cursor: itemKind !== "task" ? "not-allowed" : "pointer",
-      // opcional, para que el click lo gestione siempre el pill:
-      pointerEvents: "none",
-    }}
-  />
-</div>
-
-
-          {/* Hora */}
-<div className="relative">
-  <SettingPill
-    disabled={itemKind !== "task"}
-    icon={<Clock className="h-4 w-4" style={{ color: REMI_PURPLE }} />}
-    text={timeLabel}
-    right={<CaretSquare />}
-    onClick={() => {
-      if (itemKind !== "task") return;
-      openNativePicker(timeInputRef);
-    }}
-  />
-
-  <input
-    ref={timeInputRef}
-    type="time"
-    value={pickedTime}
-    disabled={itemKind !== "task"}
-    onChange={(e) => {
-      setTimeTouched(true);
-      setTypeTouched(true);
-      setPickedTime(e.target.value);
-    }}
-    className="absolute inset-0 opacity-0"
-    style={{
-      cursor: itemKind !== "task" ? "not-allowed" : "pointer",
-      pointerEvents: "none",
-    }}
-  />
-</div>
-
-
-          {/* Recordatorio */}
-          <div className="relative">
-            <SettingPill
-              disabled={itemKind !== "task"}
-              icon={<Bell className="h-4 w-4" style={{ color: REMI_PURPLE }} />}
-              text={reminderLabel}
-              right={<CaretSquare />}
-              onClick={() => {
-                if (itemKind !== "task") return;
-                setRepeatMenuOpen(false);
-                setReminderMenuOpen((v) => !v);
-              }}
-            />
-
-            <MenuPanel open={reminderMenuOpen} anchorRef={reminderMenuRef}>
-              <MenuItem
-                active={reminderMode === "NONE"}
-                onClick={() => {
-                  setReminderTouched(true);
-                  setTypeTouched(true);
-                  setReminderMode("NONE");
-                  setReminderMenuOpen(false);
-                }}
-              >
-                {t("pill.reminder.none", "Sin recordatorio")}
-              </MenuItem>
-
-              <MenuItem
-                active={reminderMode === "DAILY_UNTIL_DUE"}
-                disabled={!hasSomeDate}
-                onClick={() => {
-                  if (!hasSomeDate) {
-                    toast.message(t("capture.toast.pickDateFirst", "Elige una fecha primero."));
-                    return;
-                  }
-                  setReminderTouched(true);
-                  setTypeTouched(true);
-                  setReminderMode("DAILY_UNTIL_DUE");
-                  setReminderMenuOpen(false);
-                }}
-              >
-                {t("pill.remDaily", "Diaria")}
-              </MenuItem>
-
-              <MenuItem
-                active={reminderMode === "DAY_BEFORE_AND_DUE"}
-                disabled={!hasSomeDate}
-                onClick={() => {
-                  if (!hasSomeDate) {
-                    toast.message(t("capture.toast.pickDateFirst", "Elige una fecha primero."));
-                    return;
-                  }
-                  setReminderTouched(true);
-                  setTypeTouched(true);
-                  setReminderMode("DAY_BEFORE_AND_DUE");
-                  setReminderMenuOpen(false);
-                }}
-              >
-                {t("pill.remDayBefore", "1 día antes")}
-              </MenuItem>
-
-              <MenuItem
-                active={reminderMode === "WEEK_BEFORE_AND_DUE"}
-                disabled={!hasSomeDate}
-                onClick={() => {
-                  if (!hasSomeDate) {
-                    toast.message(t("capture.toast.pickDateFirst", "Elige una fecha primero."));
-                    return;
-                  }
-                  setReminderTouched(true);
-                  setTypeTouched(true);
-                  setReminderMode("WEEK_BEFORE_AND_DUE");
-                  setReminderMenuOpen(false);
-                }}
-              >
-                {t("pill.remWeekBefore", "1 semana antes")}
-              </MenuItem>
-            </MenuPanel>
-          </div>
-
-          {/* Repetición */}
-          <div className="relative">
-            <SettingPill
-              disabled={itemKind !== "task"}
-              icon={<Repeat className="h-4 w-4" style={{ color: REMI_PURPLE }} />}
-              text={repeatLabel}
-              right={<CaretSquare />}
-              onClick={() => {
-                if (itemKind !== "task") return;
-                setReminderMenuOpen(false);
-                setRepeatMenuOpen((v) => !v);
-              }}
-            />
-
-            <MenuPanel open={repeatMenuOpen} anchorRef={repeatMenuRef}>
-              <MenuItem
-                active={habitRepeat === "none"}
-                onClick={() => {
-                  setHabitTouched(true);
-                  setTypeTouched(true);
-                  setHabitRepeat("none");
-                  setRepeatMenuOpen(false);
-                }}
-              >
-                {t("pill.repeat.none", "Sin repetición")}
-              </MenuItem>
-
-              <MenuItem
-                active={habitRepeat === "daily"}
-                onClick={() => {
-                  setHabitTouched(true);
-                  setTypeTouched(true);
-                  setHabitRepeat("daily");
-                  setRepeatMenuOpen(false);
-                }}
-              >
-                {t("pill.habitDaily", "Diaria")}
-              </MenuItem>
-
-              <MenuItem
-                active={habitRepeat === "weekly"}
-                onClick={() => {
-                  setHabitTouched(true);
-                  setTypeTouched(true);
-                  setHabitRepeat("weekly");
-                  setRepeatMenuOpen(false);
-                }}
-              >
-                {t("pill.habitWeekly", "Semanal")}
-              </MenuItem>
-
-              <MenuItem
-                active={habitRepeat === "monthly"}
-                onClick={() => {
-                  setHabitTouched(true);
-                  setTypeTouched(true);
-                  setHabitRepeat("monthly");
-                  setRepeatMenuOpen(false);
-                }}
-              >
-                {t("pill.habitMonthly", "Mensual")}
-              </MenuItem>
-
-              <MenuItem
-                active={habitRepeat === "yearly"}
-                onClick={() => {
-                  setHabitTouched(true);
-                  setTypeTouched(true);
-                  setHabitRepeat("yearly");
-                  setRepeatMenuOpen(false);
-                }}
-              >
-                {t("pill.habitYearly", "Anual")}
-              </MenuItem>
-            </MenuPanel>
-          </div>
-        </div>
-      </div>
-
-      {/* ✅ Botones debajo */}
-      <div
-        className="mt-3"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr 1fr",
-          alignItems: "center",
-        }}
-      >
-        {/* Pegar */}
-        <div className="flex flex-col items-center justify-center gap-1.5">
-          <button
-            data-no-focus
-            type="button"
-            onClick={handlePaste}
-            onContextMenu={(e) => e.preventDefault()}
+        <div className="flex-1 overflow-hidden px-5 pt-5 pb-4">
+          <div
+            className="w-full h-full rounded-2xl overflow-hidden"
             style={{
-              width: 52,
-              height: 52,
-              borderRadius: 999,
-              border: `1px solid ${REMI_PURPLE_BORDER}`,
-              background: REMI_PURPLE_BG,
-              color: REMI_PURPLE,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              userSelect: "none",
-              WebkitTouchCallout: "none",
-              WebkitUserSelect: "none",
-              cursor: "pointer",
+              background: "#fff",
+              border: "1px solid rgba(15,23,42,0.15)",
+              boxShadow: "0 10px 30px rgba(15,23,42,0.06)",
             }}
           >
-            <ClipboardPaste className="h-5 w-5" />
-          </button>
-          <div style={{ fontSize: 11, fontWeight: 800, color: REMI_PURPLE }}>
-            {t("common.paste", "Pegar")}
+            <textarea
+              ref={textareaRef}
+              value={text}
+              onChange={(e) => {
+                setText(e.target.value);
+                requestAnimationFrame(updateCaret);
+              }}
+              onKeyUp={() => updateCaret()}
+              onClick={() => updateCaret()}
+              onSelect={() => updateCaret()}
+              onFocus={() => {
+                setIsFocused(true);
+                requestAnimationFrame(updateCaret);
+              }}
+              onBlur={() => setIsFocused(false)}
+              onPaste={(e) => {
+                const pasted = e.clipboardData?.getData("text") ?? "";
+                const normalized = normalizeIncomingText(pasted);
+                if (!normalized) return;
+
+                e.preventDefault();
+
+                const el = e.currentTarget as HTMLTextAreaElement | null;
+                const startRaw = el?.selectionStart;
+                const endRaw = el?.selectionEnd;
+
+                setText((prev) => {
+                  const current = String(prev ?? "");
+                  const start =
+                    typeof startRaw === "number" ? Math.min(startRaw, current.length) : current.length;
+                  const end =
+                    typeof endRaw === "number" ? Math.min(endRaw, current.length) : start;
+
+                  const next = current.slice(0, start) + normalized + current.slice(end);
+
+                  requestAnimationFrame(() => {
+                    const node = textareaRef.current;
+                    if (!node) return;
+                    try {
+                      const pos = Math.min(start + normalized.length, node.value.length);
+                      node.selectionStart = node.selectionEnd = pos;
+                      caretRef.current = pos;
+                      setCaretTick((n) => n + 1);
+                    } catch {}
+                  });
+
+                  return next;
+                });
+              }}
+              placeholder={t("capture.placeholder", "Toca para escribir")}
+              className="w-full h-full resize-none bg-transparent outline-none text-[18px] leading-7"
+              style={{
+                color: REMI_TEXT,
+                padding: 16,
+              }}
+              inputMode="text"
+            />
           </div>
         </div>
 
-        {/* Hablar */}
-        <div className="flex flex-col items-center justify-center gap-1.5">
-          {showTalkButton ? (
-            <>
-              <button
-                data-no-focus
-                type="button"
-                onPointerDown={handleTalkDown}
-                onPointerUp={handleTalkUp}
-                onPointerCancel={handleTalkUp}
-                onPointerLeave={handleTalkUp}
-                onContextMenu={(e) => e.preventDefault()}
+        {/* Barra inferior (ya NO es fixed: ocupa espacio real y no pisa el textarea) */}
+        <div
+          className="shrink-0"
+          style={{
+            paddingBottom: "max(env(safe-area-inset-bottom), 14px)",
+          }}
+        >
+          <div
+            className="mx-auto"
+            style={{
+              width: "calc(100% - 32px)",
+              maxWidth: 420,
+              pointerEvents: "auto",
+              position: "relative",
+            }}
+          >
+            {/* ⛔️ PÍLDORA DE IDIOMA (comentada para que no aparezca)
+                - El idioma ahora viene del I18nContext (browser por defecto + Profile override)
+                - Si quieres reactivarla en el futuro:
+                  1) descomenta ChevronDown arriba
+                  2) añade estados langOpen, setLangOpen y el effect de cierre
+            */}
+            {/* ... (bloque comentado de idioma intacto) ... */}
+
+            {ios && (
+              <div
                 style={{
-                  width: 52,
-                  height: 52,
-                  borderRadius: 999,
-                  border: `1px solid ${REMI_PURPLE_BORDER}`,
-                  background: listening ? "rgba(125,89,201,0.18)" : REMI_PURPLE_BG,
-                  color: REMI_PURPLE,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  userSelect: "none",
-                  WebkitTouchCallout: "none",
-                  WebkitUserSelect: "none",
-                  touchAction: "none",
-                  cursor: "pointer",
-                  position: "relative",
-                  overflow: "hidden",
-                }}
-                aria-pressed={listening}
-                title={t("capture.speakHold", "Mantén pulsado para hablar")}
-                aria-label={t("capture.speakHold", "Mantén pulsado para hablar")}
-              >
-                {showTalkActiveRing && <span className="remi-ring" />}
-                {showTalkRipple && <span key={rippleTick} className="remi-ripple" />}
-
-                <span style={{ position: "relative", zIndex: 2, display: "flex" }}>
-                  <Mic className="h-5 w-5" />
-                </span>
-              </button>
-
-              <div style={{ fontSize: 11, fontWeight: 800, color: REMI_PURPLE }}>
-                {t("common.speak", "Hablar")}
-              </div>
-            </>
-          ) : (
-            <div />
-          )}
-        </div>
-
-        {/* Guardar (solo si NO hay teclado) */}
-        <div className="flex flex-col items-center justify-center gap-1.5">
-          {showInlineSave ? (
-            <>
-              <button
-                data-no-focus
-                type="button"
-                onClick={handleSave}
-                onContextMenu={(e) => e.preventDefault()}
-                style={{
-                  width: 52,
-                  height: 52,
-                  borderRadius: 999,
-                  border: "1px solid rgba(125,89,201,0.35)",
-                  background: REMI_PURPLE,
-                  color: "white",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  boxShadow: "0 14px 30px rgba(35,18,90,0.28)",
-                  cursor: "pointer",
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  bottom: "calc(100% + 1px)",
+                  textAlign: "center",
+                  fontSize: 12,
+                  lineHeight: "16px",
+                  color: REMI_SUB,
+                  padding: "0 12px",
+                  pointerEvents: "none",
                 }}
               >
-                <Check className="h-5 w-5" />
-              </button>
-              <div style={{ fontSize: 11, fontWeight: 900, color: REMI_PURPLE }}>
-                {t("common.save", "Guardar")}
+                {t("capture.iosKeyboardMicHint", "En iPhone: usa el micrófono del teclado para dictar.")}
               </div>
-            </>
-          ) : (
-            <div />
-          )}
+            )}
+
+            {/* pill */}
+            <div
+              style={{
+                background: "rgba(255,255,255,0.92)",
+                border: "1px solid rgba(15,23,42,0.08)",
+                borderRadius: 24,
+                padding: "10px 12px",
+                boxShadow: "0 18px 50px rgba(15,23,42,0.16)",
+                backdropFilter: "blur(12px)",
+              }}
+            >
+              {/* ✅ panel SIEMPRE visible y compacto */}
+              <div className="mt-1 space-y-2">
+                {/* ✅ Tipo (task/idea) */}
+                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-[11px] font-extrabold text-slate-700">
+                      {t("pill.type.label", "Tipo")}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <PillButton
+                        active={itemKind === "task"}
+                        size="sm"
+                        onClick={() => {
+                          setTypeTouched(true);
+                          setItemKind("task");
+                        }}
+                        icon={<List className="h-3.5 w-3.5" />}
+                      >
+                        {t("pill.type.task", "Tarea")}
+                      </PillButton>
+
+                      <PillButton
+                        active={itemKind === "idea"}
+                        variant="amber"
+                        size="sm"
+                        onClick={() => {
+                          setTypeTouched(true);
+                          setItemKind("idea");
+
+                          setPickedDate("");
+                          setPickedTime("");
+                          setReminderMode("NONE");
+                          setHabitRepeat("none");
+                          setDateTouched(false);
+                          setTimeTouched(false);
+                          setReminderTouched(false);
+                          setHabitTouched(false);
+
+                          setReminderMenuOpen(false);
+                          setRepeatMenuOpen(false);
+                        }}
+                        icon={<Lightbulb className="h-3.5 w-3.5" />}
+                      >
+                        {t("pill.type.idea", "Idea")}
+                      </PillButton>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ✅ NUEVO: 2x2 pills (Fecha / Hora / Recordatorio / Repetición) */}
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Fecha */}
+                  <div className="relative">
+                    <SettingPill
+                      disabled={itemKind !== "task"}
+                      icon={<Calendar className="h-4 w-4" style={{ color: REMI_PURPLE }} />}
+                      text={dateLabel}
+                      right={<CaretSquare />}
+                      onClick={() => {
+                        if (itemKind !== "task") return;
+                        openNativePicker(dateInputRef);
+                      }}
+                    />
+
+                    <input
+                      ref={dateInputRef}
+                      type="date"
+                      value={pickedDate}
+                      disabled={itemKind !== "task"}
+                      onChange={(e) => {
+                        setDateTouched(true);
+                        setTypeTouched(true);
+                        setPickedDate(e.target.value);
+                      }}
+                      className="absolute inset-0 opacity-0"
+                      style={{
+                        cursor: itemKind !== "task" ? "not-allowed" : "pointer",
+                        // opcional, para que el click lo gestione siempre el pill:
+                        pointerEvents: "none",
+                      }}
+                    />
+                  </div>
+
+                  {/* Hora */}
+                  <div className="relative">
+                    <SettingPill
+                      disabled={itemKind !== "task"}
+                      icon={<Clock className="h-4 w-4" style={{ color: REMI_PURPLE }} />}
+                      text={timeLabel}
+                      right={<CaretSquare />}
+                      onClick={() => {
+                        if (itemKind !== "task") return;
+                        openNativePicker(timeInputRef);
+                      }}
+                    />
+
+                    <input
+                      ref={timeInputRef}
+                      type="time"
+                      value={pickedTime}
+                      disabled={itemKind !== "task"}
+                      onChange={(e) => {
+                        setTimeTouched(true);
+                        setTypeTouched(true);
+                        setPickedTime(e.target.value);
+                      }}
+                      className="absolute inset-0 opacity-0"
+                      style={{
+                        cursor: itemKind !== "task" ? "not-allowed" : "pointer",
+                        pointerEvents: "none",
+                      }}
+                    />
+                  </div>
+
+                  {/* Recordatorio */}
+                  <div className="relative">
+                    <SettingPill
+                      disabled={itemKind !== "task"}
+                      icon={<Bell className="h-4 w-4" style={{ color: REMI_PURPLE }} />}
+                      text={reminderLabel}
+                      right={<CaretSquare />}
+                      onClick={() => {
+                        if (itemKind !== "task") return;
+                        setRepeatMenuOpen(false);
+                        setReminderMenuOpen((v) => !v);
+                      }}
+                    />
+
+                    <MenuPanel open={reminderMenuOpen} anchorRef={reminderMenuRef}>
+                      <MenuItem
+                        active={reminderMode === "NONE"}
+                        onClick={() => {
+                          setReminderTouched(true);
+                          setTypeTouched(true);
+                          setReminderMode("NONE");
+                          setReminderMenuOpen(false);
+                        }}
+                      >
+                        {t("pill.reminder.none", "Sin recordatorio")}
+                      </MenuItem>
+
+                      <MenuItem
+                        active={reminderMode === "DAILY_UNTIL_DUE"}
+                        disabled={!hasSomeDate}
+                        onClick={() => {
+                          if (!hasSomeDate) {
+                            toast.message(t("capture.toast.pickDateFirst", "Elige una fecha primero."));
+                            return;
+                          }
+                          setReminderTouched(true);
+                          setTypeTouched(true);
+                          setReminderMode("DAILY_UNTIL_DUE");
+                          setReminderMenuOpen(false);
+                        }}
+                      >
+                        {t("pill.remDaily", "Diaria")}
+                      </MenuItem>
+
+                      <MenuItem
+                        active={reminderMode === "DAY_BEFORE_AND_DUE"}
+                        disabled={!hasSomeDate}
+                        onClick={() => {
+                          if (!hasSomeDate) {
+                            toast.message(t("capture.toast.pickDateFirst", "Elige una fecha primero."));
+                            return;
+                          }
+                          setReminderTouched(true);
+                          setTypeTouched(true);
+                          setReminderMode("DAY_BEFORE_AND_DUE");
+                          setReminderMenuOpen(false);
+                        }}
+                      >
+                        {t("pill.remDayBefore", "1 día antes")}
+                      </MenuItem>
+
+                      <MenuItem
+                        active={reminderMode === "WEEK_BEFORE_AND_DUE"}
+                        disabled={!hasSomeDate}
+                        onClick={() => {
+                          if (!hasSomeDate) {
+                            toast.message(t("capture.toast.pickDateFirst", "Elige una fecha primero."));
+                            return;
+                          }
+                          setReminderTouched(true);
+                          setTypeTouched(true);
+                          setReminderMode("WEEK_BEFORE_AND_DUE");
+                          setReminderMenuOpen(false);
+                        }}
+                      >
+                        {t("pill.remWeekBefore", "1 semana antes")}
+                      </MenuItem>
+                    </MenuPanel>
+                  </div>
+
+                  {/* Repetición */}
+                  <div className="relative">
+                    <SettingPill
+                      disabled={itemKind !== "task"}
+                      icon={<Repeat className="h-4 w-4" style={{ color: REMI_PURPLE }} />}
+                      text={repeatLabel}
+                      right={<CaretSquare />}
+                      onClick={() => {
+                        if (itemKind !== "task") return;
+                        setReminderMenuOpen(false);
+                        setRepeatMenuOpen((v) => !v);
+                      }}
+                    />
+
+                    <MenuPanel open={repeatMenuOpen} anchorRef={repeatMenuRef}>
+                      <MenuItem
+                        active={habitRepeat === "none"}
+                        onClick={() => {
+                          setHabitTouched(true);
+                          setTypeTouched(true);
+                          setHabitRepeat("none");
+                          setRepeatMenuOpen(false);
+                        }}
+                      >
+                        {t("pill.repeat.none", "Sin repetición")}
+                      </MenuItem>
+
+                      <MenuItem
+                        active={habitRepeat === "daily"}
+                        onClick={() => {
+                          setHabitTouched(true);
+                          setTypeTouched(true);
+                          setHabitRepeat("daily");
+                          setRepeatMenuOpen(false);
+                        }}
+                      >
+                        {t("pill.habitDaily", "Diaria")}
+                      </MenuItem>
+
+                      <MenuItem
+                        active={habitRepeat === "weekly"}
+                        onClick={() => {
+                          setHabitTouched(true);
+                          setTypeTouched(true);
+                          setHabitRepeat("weekly");
+                          setRepeatMenuOpen(false);
+                        }}
+                      >
+                        {t("pill.habitWeekly", "Semanal")}
+                      </MenuItem>
+
+                      <MenuItem
+                        active={habitRepeat === "monthly"}
+                        onClick={() => {
+                          setHabitTouched(true);
+                          setTypeTouched(true);
+                          setHabitRepeat("monthly");
+                          setRepeatMenuOpen(false);
+                        }}
+                      >
+                        {t("pill.habitMonthly", "Mensual")}
+                      </MenuItem>
+
+                      <MenuItem
+                        active={habitRepeat === "yearly"}
+                        onClick={() => {
+                          setHabitTouched(true);
+                          setTypeTouched(true);
+                          setHabitRepeat("yearly");
+                          setRepeatMenuOpen(false);
+                        }}
+                      >
+                        {t("pill.habitYearly", "Anual")}
+                      </MenuItem>
+                    </MenuPanel>
+                  </div>
+                </div>
+              </div>
+
+              {/* ✅ Botones debajo */}
+              <div
+                className="mt-3"
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr 1fr",
+                  alignItems: "center",
+                }}
+              >
+                {/* Pegar */}
+                <div className="flex flex-col items-center justify-center gap-1.5">
+                  <button
+                    data-no-focus
+                    type="button"
+                    onClick={handlePaste}
+                    onContextMenu={(e) => e.preventDefault()}
+                    style={{
+                      width: 52,
+                      height: 52,
+                      borderRadius: 999,
+                      border: `1px solid ${REMI_PURPLE_BORDER}`,
+                      background: REMI_PURPLE_BG,
+                      color: REMI_PURPLE,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      userSelect: "none",
+                      WebkitTouchCallout: "none",
+                      WebkitUserSelect: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <ClipboardPaste className="h-5 w-5" />
+                  </button>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: REMI_PURPLE }}>
+                    {t("common.paste", "Pegar")}
+                  </div>
+                </div>
+
+                {/* Hablar */}
+                <div className="flex flex-col items-center justify-center gap-1.5">
+                  {showTalkButton ? (
+                    <>
+                      <button
+                        data-no-focus
+                        type="button"
+                        onPointerDown={handleTalkDown}
+                        onPointerUp={handleTalkUp}
+                        onPointerCancel={handleTalkUp}
+                        onPointerLeave={handleTalkUp}
+                        onContextMenu={(e) => e.preventDefault()}
+                        style={{
+                          width: 52,
+                          height: 52,
+                          borderRadius: 999,
+                          border: `1px solid ${REMI_PURPLE_BORDER}`,
+                          background: listening ? "rgba(125,89,201,0.18)" : REMI_PURPLE_BG,
+                          color: REMI_PURPLE,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          userSelect: "none",
+                          WebkitTouchCallout: "none",
+                          WebkitUserSelect: "none",
+                          touchAction: "none",
+                          cursor: "pointer",
+                          position: "relative",
+                          overflow: "hidden",
+                        }}
+                        aria-pressed={listening}
+                        title={t("capture.speakHold", "Mantén pulsado para hablar")}
+                        aria-label={t("capture.speakHold", "Mantén pulsado para hablar")}
+                      >
+                        {showTalkActiveRing && <span className="remi-ring" />}
+                        {showTalkRipple && <span key={rippleTick} className="remi-ripple" />}
+
+                        <span style={{ position: "relative", zIndex: 2, display: "flex" }}>
+                          <Mic className="h-5 w-5" />
+                        </span>
+                      </button>
+
+                      <div style={{ fontSize: 11, fontWeight: 800, color: REMI_PURPLE }}>
+                        {t("common.speak", "Hablar")}
+                      </div>
+                    </>
+                  ) : (
+                    <div />
+                  )}
+                </div>
+
+                {/* Guardar (solo si NO hay teclado) */}
+                <div className="flex flex-col items-center justify-center gap-1.5">
+                  {showInlineSave ? (
+                    <>
+                      <button
+                        data-no-focus
+                        type="button"
+                        onClick={handleSave}
+                        onContextMenu={(e) => e.preventDefault()}
+                        style={{
+                          width: 52,
+                          height: 52,
+                          borderRadius: 999,
+                          border: "1px solid rgba(125,89,201,0.35)",
+                          background: REMI_PURPLE,
+                          color: "white",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          boxShadow: "0 14px 30px rgba(35,18,90,0.28)",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <Check className="h-5 w-5" />
+                      </button>
+                      <div style={{ fontSize: 11, fontWeight: 900, color: REMI_PURPLE }}>
+                        {t("common.save", "Guardar")}
+                      </div>
+                    </>
+                  ) : (
+                    <div />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ height: 6 }} />
+          </div>
         </div>
-      </div>
-    </div>
-
-    <div style={{ height: 6 }} />
-  </div>
-</div>
-
 
         {/* FAB Guardar encima del teclado */}
-{false && isFocused && kbdOffset > 80 && (
+        {false && isFocused && kbdOffset > 80 && (
           <button
             data-no-focus
             type="button"
