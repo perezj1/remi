@@ -392,7 +392,7 @@ export default function StatusPage() {
             </p>
           </div>
 
-          {/* BotÃ³n: mismo estilo (pill, morado) */}
+          {/* Boton: mismo estilo (pill, morado) */}
           <button
             type="button"
             onClick={() => {

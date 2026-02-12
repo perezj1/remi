@@ -308,6 +308,12 @@ function detectHabitSignal(text: string): string | null {
     )?.[0] ?? null;
   if (weekly) return weekly;
 
+  const weeklyByWeekday =
+    s.match(
+      /\b((todos?\s+los|todas?\s+las|cada)\s+(lunes|martes|miercoles|jueves|viernes|sabado|domingo)|every\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)|on\s+(mondays|tuesdays|wednesdays|thursdays|fridays|saturdays|sundays)|jeden\s+(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)|am\s+(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag))\b/i
+    )?.[0] ?? null;
+  if (weeklyByWeekday) return weeklyByWeekday;
+
   const monthly =
     s.match(
       /\b(cada\s+mes|mensual(mente)?|monthly|every\s+month|monatlich|jeden\s+monat)\b/i
@@ -665,6 +671,12 @@ function mapHabitSignalToRepeat(signal: string | null): RepeatType | null {
     s.includes("wochentlich") ||
     s.includes("jede woche") ||
     s.includes("semanal")
+  )
+    return "weekly";
+  if (
+    /\b((todos?\s+los|todas?\s+las|cada)\s+(lunes|martes|miercoles|jueves|viernes|sabado|domingo)|every\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)|on\s+(mondays|tuesdays|wednesdays|thursdays|fridays|saturdays|sundays)|jeden\s+(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)|am\s+(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag))\b/i.test(
+      s
+    )
   )
     return "weekly";
   if (
@@ -1851,13 +1863,43 @@ export default function MindDumpModal({
         <div
           className="sticky top-0 z-10"
           style={{
-            background: REMI_PURPLE,
-            color: "#fff",
+            background: "linear-gradient(135deg, #9a86ff 0%, #7d59c9 48%, #665ed1 100%)",
+            color: "#ffffff",
             borderBottomLeftRadius: 24,
             borderBottomRightRadius: 24,
-            boxShadow: "0 10px 30px rgba(0,0,0,0.10)",
+            border: "1px solid rgba(255,255,255,0.18)",
+            boxShadow: "0 10px 24px rgba(93,69,179,0.22)",
+            backdropFilter: "blur(8px)",
           }}
         >
+          <div
+            aria-hidden
+            style={{
+              position: "absolute",
+              width: 180,
+              height: 180,
+              borderRadius: "999px",
+              background: "rgba(255,255,255,0.14)",
+              top: -90,
+              left: -60,
+              filter: "blur(1px)",
+              pointerEvents: "none",
+            }}
+          />
+          <div
+            aria-hidden
+            style={{
+              position: "absolute",
+              width: 220,
+              height: 220,
+              borderRadius: "999px",
+              background: "rgba(255,255,255,0.10)",
+              top: -110,
+              right: -70,
+              filter: "blur(1px)",
+              pointerEvents: "none",
+            }}
+          />
           <div
             className="pb-4 flex items-start justify-between"
             style={{
@@ -1867,11 +1909,11 @@ export default function MindDumpModal({
             }}
           >
             <div className="min-w-0 pr-3">
-              <div className="text-[16px] font-semibold leading-tight" style={{ color: "#ffffff" }}>
+              <div className="text-[22px] font-extrabold leading-tight" style={{ color: "#ffffff" }}>
                 {t("capture.title", "Vacía tu mente")}
               </div>
 
-              <div className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.88)" }}>
+              <div className="text-[16px] mt-0.5 font-semibold" style={{ color: "rgba(255,255,255,0.85)" }}>
                 {t("capture.subtitle", "Habla, escribe o pega texto. Remi se encarga.")}
               </div>
 
@@ -1891,12 +1933,12 @@ export default function MindDumpModal({
               aria-label={t("common.close", "Cerrar")}
               className="h-10 w-10 rounded-full flex items-center justify-center"
               style={{
-                background: "rgba(255,255,255,0.85)",
-                border: "1px solid rgba(15,23,42,0.10)",
+                background: "rgba(255,255,255,0.18)",
+                border: "1px solid rgba(255,255,255,0.35)",
                 cursor: "pointer",
               }}
             >
-              <X className="h-5 w-5" style={{ color: "rgba(15,23,42,0.65)" }} />
+              <X className="h-5 w-5" style={{ color: "rgba(255,255,255,0.95)" }} />
             </button>
           </div>
 
