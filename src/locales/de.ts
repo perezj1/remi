@@ -151,6 +151,7 @@ export const de = {
 
   index: {
     clearMind: "Klarer Kopf",
+    reminders: "Erinnerungen",
   },
 
   nav: {
@@ -163,7 +164,8 @@ export const de = {
   bottomNav: {
     today: "Heute",
     inbox: "Posteingang",
-    status: "status",
+    status: "Status",
+    add: "Neu",
     holdToTalk: "Gedrückt halten",
     listening: "Höre zu…",
     dictationNotSupported: "Diktat nicht unterstützt",
@@ -199,10 +201,11 @@ export const de = {
     mindClearDescription:
       "Alles, was du in Remi speicherst, ist eine Sache weniger, die dein Kopf tragen muss.",
 
-    todaySectionTitle: "Was wir geschafft haben",
+    todaySectionTitle: "Was du geschafft hast",
     todaySectionSubtitle: "Zusammenfassung, wie wir deinen Kopf entlasten.",
-    todayTasksLabel: "Aufgaben von heute",
-    todayTasksDescription: "Heute haben wir {{todayTotal}} Aufgaben organisiert.",
+    todayTasksLabel: "Heute erledigt",
+    todayTasksDescription:
+      "{{todayDone}}/{{todayTotal}} heute fällige Aufgaben erledigt.",
 
     streakSectionTitle: "Unsere Serie",
     streakValue: "{{streakDays}} Tage",
@@ -487,6 +490,8 @@ export const de = {
   },
 
   today: {
+    tipsTitle: "Tipps",
+
     shareRemindersModal: {
       title: "Erinnerungen mit anderen teilen",
       body:
@@ -507,6 +512,8 @@ export const de = {
     dueLabel: "Fällig",
 
     greeting: "Hallo, {{name}}",
+    greetingHeader: "Hallo {{name}}!",
+    greetingSubheader: "Lass uns deinen Kopf frei machen",
     tasksToday: "Du hast {{count}} Aufgaben",
     prioritize: "Priorisiere das Wichtige",
     done: "Erledigt",
@@ -521,11 +528,12 @@ export const de = {
 
     loadingTasks: "Wird geladen…",
     noUrgentTitle: "Alles im Griff",
-    noUrgentSubtitle: "Gerade ist nichts Dringendes",
+    noUrgentSubtitle: "Tippe auf +, um deinen Kopf zu entlasten.",
 
     dueNoDate: "Ohne Datum",
 
     actionPostpone1dTitle: "Verschieben: +1 Tag zum Fälligkeitsdatum",
+    actionRescheduleTitle: "Datum wahlen",
     actionDoneTitle: "Als erledigt markieren",
     postponeDayToast: "Verschoben",
 
@@ -1178,3 +1186,4 @@ export const de = {
     },
   },
 } as const;
+

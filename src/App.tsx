@@ -158,12 +158,14 @@ function AppRoutes() {
   const isShareUrl = pathname.includes("/share") || search.includes("share");
 
   // Ocultar bottom nav en rutas públicas/“técnicas”
-  const hideBottomNavRoute = pathname.startsWith("/landing") || pathname.startsWith("/share-target");
+  const hideBottomNavRoute =
+    pathname.startsWith("/landing") || pathname.startsWith("/share-target");
 
   const isAuthRoute = pathname.startsWith("/auth");
 
   // ✅ NUEVO: Ocultar también si es share URL (para evitar overlays en share)
-  const hideBottomNav = hideBottomNavRoute || isAnyModalOpen || isShareUrl;
+  const hideBottomNav =
+    hideBottomNavRoute || isAnyModalOpen || isShareUrl;
 
   // ✅ Montar el host SOLO cuando:
   // - hay usuario logueado
@@ -176,7 +178,7 @@ function AppRoutes() {
 
 // ✅ Para share: usa el mismo fondo suave (evita “blanco infinito”)
 const shellBgClass =
-  isShareUrl ? "bg-[#F6F7FB]" : isPublicShell ? "bg-white" : "bg-[#F6F7FB]";
+  isShareUrl ? "bg-[#F6F7FB]" : isPublicShell ? "bg-white" : "bg-white";
 
   // ✅ Reserva inferior global para que el contenido nunca quede debajo de la BottomNav
   const NAV_RESERVE_PX = 110;

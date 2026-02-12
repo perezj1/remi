@@ -309,7 +309,7 @@ export default function BottomNav() {
       aria-hidden={hideNav ? true : undefined}
     >
       <div
-        className="flex items-center gap-4 rounded-full bg-white px-4 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
+        className="flex items-center gap-4 rounded-full bg-white px-4 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.18)] lg:gap-6 lg:px-6 lg:py-3 xl:gap-7 xl:px-7 xl:py-3.5"
         style={noSelectStyle}
         onContextMenu={prevent}
       >
@@ -330,7 +330,7 @@ export default function BottomNav() {
         {/* ✅ Botón central */}
         <div style={{ position: "relative", ...noSelectStyle }}>
           <button
-            className="flex h-14 w-14 items-center justify-center rounded-full border-1 border-white bg-[#7d59c9] text-white shadow-[0_8px_20px_rgba(143,49,243,0.2)] -translate-y-0"
+            className="flex h-14 w-14 items-center justify-center rounded-full border-1 border-white bg-[#7d59c9] text-white shadow-[0_8px_20px_rgba(143,49,243,0.2)] -translate-y-0 lg:h-16 lg:w-16 xl:h-20 xl:w-20"
             type="button"
             onClick={(e) => {
               if (e.cancelable) e.preventDefault();
@@ -341,8 +341,8 @@ export default function BottomNav() {
             onMouseDown={prevent}
             draggable={false}
             onDragStart={prevent}
-            aria-label="Añadir"
-            title="Añadir"
+            aria-label={t("bottomNav.add")}
+            title={t("bottomNav.add")}
             style={{
               ...noSelectStyle,
               touchAction: "manipulation",
@@ -350,7 +350,7 @@ export default function BottomNav() {
               transition: "transform 120ms ease, opacity 120ms ease",
             }}
           >
-            <Plus className="w-7 h-7" />
+            <Plus className="h-7 w-7 lg:h-8 lg:w-8 xl:h-10 xl:w-10" />
           </button>
 
           {/* ✅ Dejado como recordatorio visual del icono Mic (no usado ahora)
@@ -415,7 +415,7 @@ function NavItem({ to, label, active, icon: Icon }: NavItemProps) {
   return (
     <button
       type="button"
-      className="flex h-12 w-12 items-center justify-center rounded-full transition"
+      className="flex h-12 w-12 items-center justify-center rounded-full transition lg:h-14 lg:w-14 xl:h-16 xl:w-16"
       onClick={() => navigate(to)}
       onContextMenu={prevent}
       onPointerDown={prevent}
@@ -430,9 +430,10 @@ function NavItem({ to, label, active, icon: Icon }: NavItemProps) {
       }}
     >
       <Icon
-        className={`w-6 h-6 ${active ? "text-[#7d59c9]" : "text-neutral-800"}`}
+        className={`h-6 w-6 lg:h-7 lg:w-7 xl:h-8 xl:w-8 ${active ? "text-[#7d59c9]" : "text-neutral-800"}`}
       />
       <span className="sr-only">{label}</span>
     </button>
   );
 }
+

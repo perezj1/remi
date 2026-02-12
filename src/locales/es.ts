@@ -159,6 +159,7 @@ export const es = {
 
   index: {
     clearMind: "Mente despejada",
+    reminders: "Recordatorios",
   },
 
   nav: {
@@ -171,7 +172,8 @@ export const es = {
   bottomNav: {
     today: "Hoy",
     inbox: "Bandeja",
-    status: "status",
+    status: "Estado",
+    add: "Nuevo",
     holdToTalk: "Mantén pulsado",
     listening: "Escuchando…",
     dictationNotSupported: "Dictado no compatible",
@@ -206,10 +208,11 @@ export const es = {
     mindClearDescription:
       "Cada cosa que guardas en Remi es una cosa menos que carga tu mente.",
 
-    todaySectionTitle: "Lo que hemos conseguido",
+    todaySectionTitle: "Lo que has conseguido",
     todaySectionSubtitle: "Resumen de cómo estamos cuidando tu mente.",
-    todayTasksLabel: "Tareas de hoy",
-    todayTasksDescription: "Hoy hemos organizado {{todayTotal}} tareas.",
+    todayTasksLabel: "Completadas hoy",
+    todayTasksDescription:
+      "{{todayDone}}/{{todayTotal}} tareas con fecha de hoy completadas.",
 
     streakSectionTitle: "Nuestra racha",
     streakValue: "{{streakDays}} días",
@@ -502,6 +505,8 @@ export const es = {
   },
 
   today: {
+    tipsTitle: "Consejos",
+
     shareRemindersModal: {
       title: "Compartir recordatorios con otras personas",
       body:
@@ -522,6 +527,8 @@ export const es = {
 
     // Header / general
     greeting: "Hola, {{name}}",
+    greetingHeader: "Hola {{name}}!",
+    greetingSubheader: "Vamos a despejar tu mente",
     tasksToday: "Tienes {{count}} tareas",
     prioritize: "Prioriza lo importante",
     done: "Hecho",
@@ -538,13 +545,14 @@ export const es = {
     // States
     loadingTasks: "Cargando…",
     noUrgentTitle: "Todo bajo control",
-    noUrgentSubtitle: "No hay nada urgente ahora mismo",
+    noUrgentSubtitle: "Pulsa + para empezar a despejar tu mente",
 
     // Dates / labels
     dueNoDate: "Sin fecha",
 
     // Actions
     actionPostpone1dTitle: "Aplazar: añade 1 día a la fecha límite",
+    actionRescheduleTitle: "Elegir fecha",
     actionDoneTitle: "Marcar como completada",
     postponeDayToast: "Aplazado",
 
@@ -1194,3 +1202,4 @@ export const es = {
     },
   },
 } as const;
+

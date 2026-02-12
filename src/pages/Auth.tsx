@@ -14,13 +14,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Mail, Lock, Eye, EyeOff } from "lucide-react"; // ✅
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // ✅
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signUp, signIn, user } = useAuth();
   const { t } = useI18n();
@@ -28,7 +28,7 @@ const Auth = () => {
 
   useEffect(() => {
     if (user) {
-      navigate("/"); // REMI empieza en "/"
+      navigate("/");
     }
   }, [user, navigate]);
 
@@ -63,24 +63,28 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
-      {/* Franja morada superior con el icono de Remi */}
-      <div className="relative flex flex-col items-center justify-center bg-[#7d59c9] text-white rounded-b-[40px] pt-8 pb-8 px-6 overflow-hidden">
-        {/* Icono Remi flotando (sin círculo blanco) */}
-        <div className="flex flex-col items-center mb-3">
-          <img src="/icons/icon-192.png" alt="Remi" className="h-20 w-20" />
-          <div className="h-2 w-12 rounded-full bg-black/35 opacity-50 blur-[2px]" />
+    <div
+      className="min-h-screen flex flex-col"
+      style={{
+        background: "linear-gradient(180deg, #f8f7fb 0%, #ffffff 42%, #ffffff 100%)",
+      }}
+    >
+      <div className="px-4 pt-6 pb-3">
+        <div className="mx-auto w-full max-w-md rounded-3xl border border-violet-100 bg-white/95 px-5 py-5 shadow-[0_12px_28px_rgba(125,89,201,0.10)]">
+          <div className="flex items-center gap-3">
+            <div className="h-11 w-11 rounded-full border border-violet-200 bg-violet-50 flex items-center justify-center shadow-[0_6px_16px_rgba(125,89,201,0.12)]">
+              <img src="/icons/icon-192.png" alt="Remi" className="h-7 w-7" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[22px] leading-tight font-extrabold text-slate-900">Remi</p>
+              <p className="text-[13px] text-slate-500 leading-snug">{t("auth.subtitleAuth2")}</p>
+            </div>
+          </div>
         </div>
-
-        <span className="text-2xl font-bold tracking-tight">Remi</span>
-        <span className="mt-2 text-sm text-white/90 text-center max-w-xs">
-          {t("auth.subtitleAuth2")}
-        </span>
       </div>
 
-      {/* Card colocada debajo de la franja morada, sin solaparse */}
-      <div className="flex-1 flex items-start justify-center px-4">
-        <Card className="w-full max-w-md mt-5 rounded-3xl shadow-xl border-0">
+      <div className="flex-1 flex items-start justify-center px-4 pb-6">
+        <Card className="w-full max-w-md mt-2 rounded-3xl border border-violet-100 bg-white/95 shadow-[0_14px_30px_rgba(125,89,201,0.10)]">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-slate-900">
               {isLogin ? t("auth.loginTitle") : t("auth.registerTitle")}
@@ -105,7 +109,7 @@ const Auth = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="pl-10 h-11"
+                    className="pl-10 h-11 rounded-2xl border-slate-200 bg-white"
                   />
                 </div>
               </div>
@@ -119,20 +123,20 @@ const Auth = () => {
 
                   <Input
                     id="password"
-                    type={showPassword ? "text" : "password"} // ✅
+                    type={showPassword ? "text" : "password"}
                     placeholder={t("auth.passwordPlaceholder")}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={6}
-                    className="pl-10 pr-10 h-11" // ✅ deja espacio al ojo
+                    className="pl-10 pr-10 h-11 rounded-2xl border-slate-200 bg-white"
                   />
 
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
                     className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-muted-foreground hover:bg-slate-100"
-                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                    aria-label={showPassword ? "Ocultar password" : "Mostrar password"}
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4" />
@@ -145,22 +149,22 @@ const Auth = () => {
 
               <Button
                 type="submit"
-                className="remi-btn-primary w-full h-11 rounded-full bg-[#7d59c9] hover:bg-[#7a28d0] border-0 text-white"
-                style={{ boxShadow: "0 4px 10px rgba(15, 23, 42, 0.25)" }}
+                className="remi-btn-primary w-full h-11 rounded-full bg-violet-600 hover:bg-violet-700 border-0 text-white"
+                style={{ boxShadow: "0 8px 20px rgba(124, 58, 237, 0.22)" }}
                 disabled={loading}
               >
                 {loading
                   ? t("common.loading")
                   : isLogin
-                  ? t("auth.submitLogin")
-                  : t("auth.submitRegister")}
+                    ? t("auth.submitLogin")
+                    : t("auth.submitRegister")}
               </Button>
 
               <div className="pt-1 text-center text-sm">
                 <button
                   type="button"
                   onClick={() => setIsLogin(!isLogin)}
-                  className="font-medium text-[#7d59c9] hover:text-[#7a28d0]"
+                  className="font-medium text-violet-700 hover:text-violet-800"
                 >
                   {isLogin ? t("auth.toggleToRegister") : t("auth.toggleToLogin")}
                 </button>

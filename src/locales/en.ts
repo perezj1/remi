@@ -149,6 +149,7 @@ export const en = {
 
   index: {
     clearMind: "Clear mind",
+    reminders: "Reminders",
   },
 
   nav: {
@@ -161,7 +162,8 @@ export const en = {
   bottomNav: {
     today: "Today",
     inbox: "Inbox",
-    status: "status",
+    status: "Status",
+    add: "New",
     holdToTalk: "Press and hold",
     listening: "Listening…",
     dictationNotSupported: "Dictation not supported",
@@ -196,10 +198,11 @@ export const en = {
     mindClearDescription:
       "Every thing you save in Remi is one less thing your mind has to carry.",
 
-    todaySectionTitle: "What we achieved",
+    todaySectionTitle: "What you achieved",
     todaySectionSubtitle: "A quick summary of how we’re taking care of your mind.",
-    todayTasksLabel: "Today’s tasks",
-    todayTasksDescription: "Today we organized {{todayTotal}} tasks.",
+    todayTasksLabel: "Completed today",
+    todayTasksDescription:
+      "{{todayDone}}/{{todayTotal}} tasks due today completed.",
 
     streakSectionTitle: "Our streak",
     streakValue: "{{streakDays}} days",
@@ -487,6 +490,8 @@ export const en = {
   },
 
   today: {
+    tipsTitle: "Tips",
+
     shareRemindersModal: {
       title: "Share reminders with other people",
       body:
@@ -508,6 +513,8 @@ export const en = {
 
     // Header / general
     greeting: "Hi, {{name}}",
+    greetingHeader: "Hello {{name}}!",
+    greetingSubheader: "Let's clear your mind",
     tasksToday: "You have {{count}} tasks",
     prioritize: "Prioritize what matters",
     done: "Done",
@@ -524,12 +531,13 @@ export const en = {
     // States
     loadingTasks: "Loading…",
     noUrgentTitle: "All under control",
-    noUrgentSubtitle: "Nothing urgent right now",
+    noUrgentSubtitle: "Tap + to start clearing your mind.",
 
     // Dates / labels
     dueNoDate: "No date",
 
     // Actions
+    actionRescheduleTitle: "Pick date",
     actionPostpone1dTitle: "Postpone: add 1 day to the due date",
     actionDoneTitle: "Mark as completed",
     postponeDayToast: "Postponed",
@@ -1182,3 +1190,4 @@ export const en = {
     },
   },
 } as const;
+

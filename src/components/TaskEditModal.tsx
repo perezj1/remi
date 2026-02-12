@@ -250,9 +250,6 @@ export default function TaskEditModal({
         setRepeatEnabled(true);
         setRepeatType(repeatHint as RepeatType);
         setReminderMode("NONE");
-      } else {
-        setRepeatEnabled(false);
-        setRepeatType("none");
       }
     }
   }, [title, lang, manualDateOverride, manualRepeatOverride, applyDateTime]);

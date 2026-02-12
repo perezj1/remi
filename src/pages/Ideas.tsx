@@ -233,40 +233,95 @@ export default function IdeasPage() {
   const filterLabel = t("inbox.ideasTab");
 
   return (
-    <div className="remi-page min-h-dvh bg-[#F6F7FB] text-slate-900 flex flex-col">
-      <header
-        className="bg-[#7d59c9] text-white px-4 pb-8 rounded-b-3xl shadow-md"
-        style={{ paddingTop: "calc(2rem + env(safe-area-inset-top))" }}
+    <div
+      className="remi-page text-slate-900"
+      style={{
+        minHeight: "100dvh",
+        background: "linear-gradient(180deg, #f8f7fb 0%, #ffffff 42%, #ffffff 100%)",
+        paddingBottom: "calc(96px + env(safe-area-inset-bottom))",
+      }}
+    >
+      <div
+        className="relative overflow-hidden"
+        style={{
+          paddingTop: "calc(14px + env(safe-area-inset-top))",
+          paddingBottom: 14,
+          paddingLeft: "calc(16px + env(safe-area-inset-left))",
+          paddingRight: "calc(16px + env(safe-area-inset-right))",
+          minHeight: 124,
+          background:
+            "linear-gradient(135deg, #9a86ff 0%, #7d59c9 48%, #665ed1 100%)",
+          borderBottomLeftRadius: 22,
+          borderBottomRightRadius: 22,
+          boxShadow: "0 10px 24px rgba(93,69,179,0.22)",
+        }}
       >
-        <h1 className="text-lg font-semibold">{t("inbox.title")}</h1>
-        <p className="text-xs text-white/80">{t("inbox.subtitle")}</p>
-      </header>
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            width: 180,
+            height: 180,
+            borderRadius: "999px",
+            background: "rgba(255,255,255,0.14)",
+            top: -90,
+            left: -60,
+            filter: "blur(1px)",
+          }}
+        />
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            width: 220,
+            height: 220,
+            borderRadius: "999px",
+            background: "rgba(255,255,255,0.10)",
+            top: -110,
+            right: -70,
+            filter: "blur(1px)",
+          }}
+        />
+        <div className="mx-auto mt-1 w-full" style={{ maxWidth: "min(96vw, 1440px)" }}>
+          <h1 className="leading-tight font-extrabold text-white" style={{ fontSize: "clamp(28px, 2vw, 42px)" }}>
+            {t("inbox.title")}
+          </h1>
+          <p className="mt-0.5 font-semibold text-white/85" style={{ fontSize: "clamp(18px, 1.3vw, 28px)" }}>
+            {t("inbox.subtitle")}
+          </p>
+        </div>
+      </div>
 
       <main
-        className="flex-1 px-4 pt-2 bg-[#F6F7FB] remi-scroll"
-        style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom))" }}
+        className="remi-scroll"
+        style={{
+          padding: "0 16px",
+          marginTop: 14,
+          marginBottom: 10,
+          marginLeft: "auto",
+          marginRight: "auto",
+          maxWidth: "min(96vw, 1440px)",
+        }}
       >
         <div className="mb-2 flex items-center justify-between">
-          <div className="remi-tabs">
-            <div className="remi-tab remi-tab--active cursor-default select-none">
-              {filterLabel}
-            </div>
+          <div className="rounded-full border border-violet-200 bg-white px-4 py-1.5 font-semibold text-violet-700" style={{ fontSize: "clamp(13px, 0.9vw, 18px)" }}>
+            {filterLabel}
           </div>
-          <span className="text-[11px] text-[#b2b6d1]">
+          <span className="text-slate-500" style={{ fontSize: "clamp(12px, 0.82vw, 16px)" }}>
             {t("inbox.itemsCount", { count: filtered.length })}
           </span>
         </div>
 
         <div className="space-y-3">
           {loading && (
-            <div className="rounded-2xl bg-white/70 border border-slate-100 px-4 py-3 text-[13px] text-slate-500">
+            <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-[13px] text-slate-500">
               {t("inbox.loading")}
             </div>
           )}
 
           {!loading && filtered.length === 0 && (
-            <div className="rounded-2xl bg-white border border-slate-100 shadow-[0_14px_34px_rgba(15,23,42,0.06)] px-4 py-4 flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-[rgba(251,191,36,0.18)] text-[#F59E0B] flex items-center justify-center shrink-0">
+            <div className="rounded-3xl border border-slate-200 bg-slate-50 shadow-[0_10px_22px_rgba(15,23,42,0.06)] px-4 py-4 flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
                 <Lightbulb size={18} />
               </div>
               <div className="min-w-0">
@@ -301,10 +356,10 @@ export default function IdeasPage() {
                         isCollapsed ? "-rotate-90" : "rotate-0"
                       }`}
                     />
-                    <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+                    <p className="font-semibold uppercase tracking-widest text-slate-600" style={{ fontSize: "clamp(12px, 0.82vw, 16px)" }}>
                       {group.label}
                     </p>
-                    <div className="flex-1 h-px bg-slate-300/70" />
+                    <div className="flex-1 h-px bg-slate-200" />
                   </button>
 
                   {!isCollapsed && (
@@ -328,7 +383,7 @@ export default function IdeasPage() {
 
                         // Botón derecho: Completado / Eliminar (si está DONE) — pill + pequeño
                         const rightBtnBase =
-                          "flex-1 h-9 rounded-full border inline-flex items-center justify-center gap-2 text-[12px] font-semibold";
+                          "flex-1 h-9 rounded-full border inline-flex items-center justify-center gap-2 text-[12px] font-semibold md:h-10 md:text-[13px] lg:h-11 lg:text-[15px]";
                         const rightBtnClass = isDone
                           ? `${rightBtnBase} bg-red-50 border-red-200 hover:bg-red-100 text-red-600`
                           : `${rightBtnBase} bg-emerald-50 border-emerald-200 hover:bg-emerald-100 text-emerald-700`;
@@ -336,12 +391,12 @@ export default function IdeasPage() {
                         return (
                           <div
                             key={item.id}
-                            className="rounded-2xl bg-white border border-slate-100 shadow-[0_14px_34px_rgba(15,23,42,0.06)] px-4 py-3"
+                            className="rounded-3xl bg-white border border-slate-200 shadow-[0_10px_22px_rgba(15,23,42,0.06)] px-4 py-3 md:px-5 md:py-4 lg:px-6 lg:py-5"
                           >
                             {/* Header row */}
                             <div className="flex items-start gap-3">
                               {/* icono + indicador share */}
-                              <div className="w-10 h-10 rounded-full bg-[rgba(251,191,36,0.18)] text-[#F59E0B] flex items-center justify-center shrink-0 relative">
+                              <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 relative">
                                 <Lightbulb size={18} />
 
                                 {shouldShowSentIndicator(item) && (
@@ -358,8 +413,9 @@ export default function IdeasPage() {
                               <div className="flex-1 min-w-0">
                                 {/* ✅ IMPORTANTE: pre-wrap para respetar saltos de línea */}
                                 <p
-                                  className="text-[14px] font-semibold text-slate-900 leading-snug"
+                                  className="font-semibold text-slate-900 leading-snug"
                                   style={{
+                                    fontSize: "clamp(16px, 1.1vw, 26px)",
                                     whiteSpace: "pre-wrap",
                                     wordBreak: "break-word",
                                     overflowWrap: "anywhere",
@@ -371,8 +427,9 @@ export default function IdeasPage() {
                                 {/* ✅ opcional: mostrar body respetando saltos de línea (si existe) */}
                                 {ideaBody && String(ideaBody).trim().length > 0 && (
                                   <p
-                                    className="mt-1 text-[12px] text-slate-600"
+                                    className="mt-1 text-slate-600"
                                     style={{
+                                      fontSize: "clamp(13px, 0.86vw, 17px)",
                                       whiteSpace: "pre-wrap",
                                       wordBreak: "break-word",
                                       overflowWrap: "anywhere",
@@ -384,7 +441,7 @@ export default function IdeasPage() {
                                   </p>
                                 )}
 
-                                <div className="mt-2 flex items-center gap-1 text-[12px] text-slate-500">
+                                <div className="mt-2 flex items-center gap-1 text-slate-500" style={{ fontSize: "clamp(13px, 0.85vw, 17px)" }}>
                                   <Calendar size={14} className="text-slate-400" />
                                   <span className="truncate">{dueText}</span>
                                 </div>
@@ -415,7 +472,7 @@ export default function IdeasPage() {
                                   e.stopPropagation();
                                   void handleShare(item);
                                 }}
-                                className="flex-1 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center gap-2 text-[12px] font-semibold text-slate-700"
+                                className="flex-1 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center gap-2 text-[12px] font-semibold text-slate-700 md:h-10 md:text-[13px] lg:h-11 lg:text-[15px]"
                                 aria-label={t("shareInvite.share")}
                                 title={t("shareInvite.share")}
                               >

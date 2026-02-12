@@ -114,6 +114,10 @@ function computeHabitNotificationTime(
   return base.toISOString();
 }
 
+function normalizeItemTitleKey(title: string | null | undefined): string {
+  return (title ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
 export async function fetchActiveTasks(userId: string): Promise<BrainItem[]> {
   const todayStart = getTodayStart();
   const todayIso = todayStart.toISOString();
@@ -605,28 +609,57 @@ export async function fetchRemiStatusSummary(userId: string): Promise<RemiStatus
   const todayTasks = (todayTasksRaw ?? []) as Pick<BrainItem, "id" | "status">[];
 
   const todayTotal = todayTasks.length;
-  const todayDone = todayTasks.filter((t) => t.status === "DONE").length;
-
-  const { count: totalTasksStored, error: totalTasksError } = await supabase
+  const { data: completedTodayRaw, error: completedTodayError } = await supabase
     .from("brain_items")
-    .select("*", { count: "exact", head: true })
+    .select("id")
     .eq("user_id", userId)
     .eq("type", "task")
-    .neq("status", "ARCHIVED");
+    .eq("status", "DONE")
+    .gte("updated_at", todayStart.toISOString())
+    .lte("updated_at", todayEnd.toISOString());
 
-  if (totalTasksError) throw totalTasksError;
+  if (completedTodayError) throw completedTodayError;
 
-  const { count: totalIdeasStored, error: totalIdeasError } = await supabase
+  const todayDone = (completedTodayRaw ?? []).length;
+
+  const { data: activeTasksRaw, error: activeTasksError } = await supabase
     .from("brain_items")
-    .select("*", { count: "exact", head: true })
+    .select("title")
+    .eq("user_id", userId)
+    .eq("status", "ACTIVE")
+    .eq("type", "task")
+    .or(`due_date.is.null,due_date.gte.${todayStart.toISOString()}`);
+
+  if (activeTasksError) throw activeTasksError;
+
+  const { data: activeIdeasRaw, error: activeIdeasError } = await supabase
+    .from("brain_items")
+    .select("title")
     .eq("user_id", userId)
     .eq("type", "idea")
     .neq("status", "ARCHIVED");
 
-  if (totalIdeasError) throw totalIdeasError;
+  if (activeIdeasError) throw activeIdeasError;
 
-  const totalTasks = totalTasksStored ?? 0;
-  const totalIdeas = totalIdeasStored ?? 0;
+  const taskKeys = new Set<string>();
+  const ideaKeys = new Set<string>();
+  const activeTasks = (activeTasksRaw ?? []) as Array<{ title: string | null }>;
+  const activeIdeas = (activeIdeasRaw ?? []) as Array<{ title: string | null }>;
+
+  for (const item of activeTasks) {
+    const key = normalizeItemTitleKey(item.title);
+    if (!key) continue;
+    taskKeys.add(key);
+  }
+
+  for (const item of activeIdeas) {
+    const key = normalizeItemTitleKey(item.title);
+    if (!key) continue;
+    ideaKeys.add(key);
+  }
+
+  const totalTasks = taskKeys.size;
+  const totalIdeas = ideaKeys.size;
   const totalItemsStored = totalTasks + totalIdeas;
 
   const startDateKey = formatLocalDateKey(streakWindowStart);
