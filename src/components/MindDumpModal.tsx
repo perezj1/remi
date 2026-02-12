@@ -93,6 +93,9 @@ function foldForMatch(input: string): string {
     .trim();
 }
 
+const WEEKDAY_REPEAT_PATTERN =
+  /\b((cada\s+|todos?\s+(los?\s+)?)(lunes|martes|miercoles|jueves|viernes|sabado|domingo)|(recu(?:erda|orda)melo\s+todos?\s+(los?\s+)?(lunes|martes|miercoles|jueves|viernes|sabado|domingo))|(every\s+|all\s+)(monday|tuesday|wednesday|thursday|friday|saturday|sunday)s?|(jeden\s+|jede\s+|immer\s+)(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)(s)?)\b/i;
+
 /* ───────────────────────────────
    ✅ i18n: lee desde tus archivos /src/locales
    - soporta objetos anidados (key "a.b.c") o planos (key "a.b.c")
@@ -307,6 +310,9 @@ function detectHabitSignal(text: string): string | null {
       /\b(cada\s+semana|semanal(mente)?|weekly|every\s+week|wochentlich|jede\s+woche)\b/i
     )?.[0] ?? null;
   if (weekly) return weekly;
+
+  const weeklyByWeekday = s.match(WEEKDAY_REPEAT_PATTERN)?.[0] ?? null;
+  if (weeklyByWeekday) return weeklyByWeekday;
 
   const monthly =
     s.match(
@@ -666,6 +672,8 @@ function mapHabitSignalToRepeat(signal: string | null): RepeatType | null {
     s.includes("jede woche") ||
     s.includes("semanal")
   )
+    return "weekly";
+  if (WEEKDAY_REPEAT_PATTERN.test(s))
     return "weekly";
   if (
     s.includes("cada mes") ||
