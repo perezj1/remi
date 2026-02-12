@@ -28,6 +28,7 @@ import {
   prefetchShareInvite,
   shareTextOrCopy,
 } from "@/lib/shareInvitesApi";
+import { useSnapTipDeck } from "@/hooks/useSnapTipDeck";
 
 import {
   List,
@@ -133,6 +134,9 @@ const MODAL_OVERLAY_STYLE: CSSProperties = {
   paddingTop: "max(8px, env(safe-area-inset-top))",
   paddingBottom: "max(8px, env(safe-area-inset-bottom))",
 };
+const REMINDER_DECK_CARD_WIDTH = "clamp(280px, 54vw, 640px)";
+const REMINDER_DECK_SIDE_PADDING = "calc(50% - clamp(140px, 27vw, 320px))";
+const REMINDER_DECK_OVERLAP = 14;
 
 export default function TodayPage() {
   const navigate = useNavigate();
@@ -1089,30 +1093,23 @@ const anyModalOpen =
   const calendarScrollRef = useRef<HTMLDivElement | null>(null);
   const selectedCalendarItemRef = useRef<HTMLButtonElement | null>(null);
   const tipsScrollRef = useRef<HTMLDivElement | null>(null);
+  const reminderDeckRef = useRef<HTMLDivElement | null>(null);
   const [tipsScrollMetrics, setTipsScrollMetrics] = useState({
     progress: 0,
     visibleRatio: 1,
   });
-  const touchStartXRef = useRef<number | null>(null);
-  const mouseStartXRef = useRef<number | null>(null);
-  const [dragOffsetX, setDragOffsetX] = useState(0);
-  const [isDeckDragging, setIsDeckDragging] = useState(false);
-  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const selectedDayTasks = useMemo(
     () => dateGroups.find((group) => group.key === selectedDateKey)?.items ?? [],
     [dateGroups, selectedDateKey],
   );
-  const sliderCards = useMemo(
-    () =>
-      selectedDayTasks
-        .map((task, index) => ({
-          task,
-          index,
-          rel: index - activeSlideIndex,
-        }))
-        .filter((card) => Math.abs(card.rel) <= 2),
-    [selectedDayTasks, activeSlideIndex],
-  );
+  const {
+    activeIndex: activeSlideIndex,
+    scrollToIndex: scrollToReminderSlide,
+    bind: reminderDeckBind,
+  } = useSnapTipDeck(reminderDeckRef, selectedDayTasks.length, {
+    maxStep: 1,
+    settleMs: 120,
+  });
   const sliderThemes = useMemo(() => {
     const themes = [
       {
@@ -1158,57 +1155,6 @@ const anyModalOpen =
     }
     return out;
   }, [selectedDayTasks]);
-  useEffect(() => {
-    setActiveSlideIndex(0);
-    setDragOffsetX(0);
-    setIsDeckDragging(false);
-    touchStartXRef.current = null;
-    mouseStartXRef.current = null;
-  }, [selectedDateKey, selectedDayTasks.length]);
-  const moveDeck = useCallback(
-    (direction: "next" | "prev") => {
-      if (selectedDayTasks.length <= 1) return;
-      setActiveSlideIndex((prev) => {
-        if (direction === "next") return Math.min(prev + 1, selectedDayTasks.length - 1);
-        return Math.max(prev - 1, 0);
-      });
-    },
-    [selectedDayTasks.length],
-  );
-  const beginDeckDrag = useCallback((clientX: number, kind: "touch" | "mouse") => {
-    if (selectedDayTasks.length <= 1) return;
-    if (kind === "touch") touchStartXRef.current = clientX;
-    else mouseStartXRef.current = clientX;
-    setIsDeckDragging(true);
-  }, [selectedDayTasks.length]);
-  const updateDeckDrag = useCallback((clientX: number, kind: "touch" | "mouse") => {
-    const start = kind === "touch" ? touchStartXRef.current : mouseStartXRef.current;
-    if (start == null) return;
-    let delta = clientX - start;
-    const atFirst = activeSlideIndex === 0;
-    const atLast = activeSlideIndex === selectedDayTasks.length - 1;
-    if ((atFirst && delta > 0) || (atLast && delta < 0)) {
-      delta *= 0.35;
-    }
-    const clamped = Math.max(-140, Math.min(140, delta));
-    setDragOffsetX(clamped);
-  }, [activeSlideIndex, selectedDayTasks.length]);
-  const endDeckDrag = useCallback((clientX: number | null, kind: "touch" | "mouse") => {
-    const start = kind === "touch" ? touchStartXRef.current : mouseStartXRef.current;
-    if (kind === "touch") touchStartXRef.current = null;
-    else mouseStartXRef.current = null;
-    if (start == null) {
-      setIsDeckDragging(false);
-      setDragOffsetX(0);
-      return;
-    }
-    const effective = clientX == null ? dragOffsetX : clientX - start;
-    const commitThreshold = 52;
-    if (effective <= -commitThreshold) moveDeck("next");
-    if (effective >= commitThreshold) moveDeck("prev");
-    setIsDeckDragging(false);
-    setDragOffsetX(0);
-  }, [dragOffsetX, moveDeck]);
   const openNativeDatePicker = useCallback(() => {
     const input = datePickerRef.current;
     if (!input) return;
@@ -1559,116 +1505,46 @@ const anyModalOpen =
         </p>
 
         {selectedDayTasks.length > 0 ? (
-          <div className="mt-4 relative overflow-hidden" style={{ height: "clamp(320px, 28vw, 520px)" }}>
+          <div className="mt-4 relative">
             <div
-              className="absolute inset-0"
-              style={{ touchAction: "pan-y" }}
-              onTouchStart={(e) => {
-                const x = e.changedTouches[0]?.clientX ?? null;
-                if (x == null) return;
-                beginDeckDrag(x, "touch");
-              }}
-              onTouchMove={(e) => {
-                const x = e.changedTouches[0]?.clientX ?? null;
-                if (x == null) return;
-                updateDeckDrag(x, "touch");
-              }}
-              onTouchEnd={(e) => {
-                const x = e.changedTouches[0]?.clientX ?? null;
-                endDeckDrag(x, "touch");
-              }}
-              onMouseDown={(e) => {
-                beginDeckDrag(e.clientX, "mouse");
-              }}
-              onMouseMove={(e) => {
-                updateDeckDrag(e.clientX, "mouse");
-              }}
-              onMouseUp={(e) => {
-                endDeckDrag(e.clientX, "mouse");
-              }}
-              onMouseLeave={() => {
-                if (isDeckDragging) endDeckDrag(null, "mouse");
+              ref={reminderDeckRef}
+              {...reminderDeckBind}
+              className="remi-scroll flex overflow-x-auto pb-4"
+              style={{
+                scrollSnapType: "x mandatory",
+                scrollBehavior: "smooth",
+                overscrollBehaviorX: "contain",
+                paddingLeft: REMINDER_DECK_SIDE_PADDING,
+                paddingRight: REMINDER_DECK_SIDE_PADDING,
+                gap: 0,
+                minHeight: "clamp(320px, 28vw, 520px)",
               }}
             >
-              {[...sliderCards]
-                .sort((a, b) => Math.abs(b.rel) - Math.abs(a.rel))
-                .map((card) => {
-                  const abs = Math.abs(card.rel);
-                  const rawProgress = Math.max(-1, Math.min(1, dragOffsetX / 120));
-                  const dragToNext = rawProgress < 0 ? Math.abs(rawProgress) : 0;
-                  const dragToPrev = rawProgress > 0 ? Math.abs(rawProgress) : 0;
-                  const enteringRel = dragToNext > 0 ? 1 : dragToPrev > 0 ? -1 : 0;
-                  const enteringProgress = dragToNext > 0 ? dragToNext : dragToPrev;
-
-                  let scale = card.rel === 0 ? 1 : abs === 1 ? 0.93 : 0.87;
-                  const top = card.rel === 0 ? 18 : abs === 1 ? 24 : 30;
-                  const baseX =
-                    card.rel === 0
-                      ? 0
-                      : card.rel === -1
-                        ? -96
-                        : card.rel === 1
-                          ? 96
-                          : card.rel === -2
-                            ? -154
-                            : 154;
-
-                  let x = baseX;
-                  if (card.rel === 0) {
-                    x = baseX + dragOffsetX;
-                    if (dragToNext > 0) scale = 1 - dragToNext * 0.05;
-                    if (dragToPrev > 0) scale = 1 - dragToPrev * 0.05;
-                  } else if (card.rel === 1 && dragToNext > 0) {
-                    x = baseX - 96 * dragToNext;
-                    scale = 0.93 + dragToNext * 0.07;
-                  } else if (card.rel === -1 && dragToPrev > 0) {
-                    x = baseX + 96 * dragToPrev;
-                    scale = 0.93 + dragToPrev * 0.07;
-                  }
-
-                  let z = card.rel === 0 ? 30 : abs === 1 ? 20 : 10;
-                  if (enteringRel !== 0 && enteringProgress > 0) {
-                    if (card.rel === 0) z = enteringProgress > 0.48 ? 24 : 30;
-                    if (card.rel === enteringRel) z = enteringProgress > 0.48 ? 34 : 22;
-                  }
-
-                  let opacity = card.rel === 0 ? 1 : abs === 1 ? 0.92 : 0.78;
-                  if (enteringRel !== 0 && enteringProgress > 0) {
-                    if (card.rel === 0) opacity = 1 - enteringProgress * 0.18;
-                    if (card.rel === enteringRel) opacity = 0.86 + enteringProgress * 0.14;
-                  }
-
-                  let blurPx = card.rel === 0 ? 0 : abs === 1 ? 1.5 : 2.2;
-                  if (enteringRel !== 0 && enteringProgress > 0) {
-                    if (card.rel === enteringRel) blurPx = Math.max(0, 1.5 - enteringProgress * 1.5);
-                    if (card.rel === 0) blurPx = Math.min(1.2, enteringProgress * 1.2);
-                  }
-                  const theme = sliderThemes[card.index];
-                  const isActive = card.rel === 0;
+              {selectedDayTasks.map((task, index) => {
+                  const theme = sliderThemes[index];
+                  const isActive = index === activeSlideIndex;
 
                   return (
                     <div
-                      key={card.task.id}
-                      className="absolute left-1/2 rounded-[26px] border px-3.5 py-3 flex flex-col"
+                      key={task.id}
+                      className="shrink-0 rounded-[26px] border px-3.5 py-3 flex flex-col"
                       style={{
-                        width: "min(60vw, 720px)",
+                        scrollSnapAlign: "center",
+                        scrollSnapStop: "always",
+                        width: REMINDER_DECK_CARD_WIDTH,
+                        flex: `0 0 ${REMINDER_DECK_CARD_WIDTH}`,
                         minWidth: "300px",
                         maxWidth: "720px",
                         height: "clamp(250px, 20.5vw, 430px)",
-                        top,
-                        zIndex: z,
-                        opacity,
+                        marginLeft: index === 0 ? 0 : REMINDER_DECK_OVERLAP,
+                        zIndex: isActive ? 30 : 10 + index,
                         background: theme.bg,
                         borderColor: theme.border,
                         boxShadow: theme.shadow,
-                        transform: `translateX(calc(-50% + ${x}px)) scale(${scale})`,
-                        transition:
-                          isDeckDragging
-                            ? "none"
-                            : "transform 440ms cubic-bezier(0.2, 0.9, 0.25, 1), opacity 320ms ease, filter 320ms ease",
-                        pointerEvents: isActive ? "auto" : "none",
-                        filter: `blur(${blurPx.toFixed(2)}px)`,
-                        willChange: "transform, opacity, filter",
+                        transform: isActive ? "translateY(-2px)" : "translateY(0)",
+                        transition: "transform 0.18s ease, filter 0.18s ease, opacity 0.18s ease",
+                        opacity: isActive ? 1 : 0.9,
+                        filter: isActive ? "none" : "blur(0.5px)",
                       }}
                     >
                       <div className="remi-scroll min-h-0 flex-1 overflow-y-auto pr-1">
@@ -1681,19 +1557,19 @@ const anyModalOpen =
                             whiteSpace: "pre-wrap",
                           }}
                         >
-                          {card.task.title}
+                          {task.title}
                         </p>
                       </div>
                       <div className="mt-2 pt-2 border-t border-slate-700/10 flex items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5 text-slate-700" style={{ fontSize: "clamp(12px, 0.9vw, 18px)" }}>
                           <CalendarDays size={14} className="text-slate-700" />
-                          <span>{formatDueLabel(card.task.due_date as string | null)}</span>
+                          <span>{formatDueLabel(task.due_date as string | null)}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <button
                             type="button"
-                            onPointerDown={() => prefetchShareInvite(card.task.id)}
-                            onClick={() => handleShareTask(card.task)}
+                            onPointerDown={() => prefetchShareInvite(task.id)}
+                            onClick={() => handleShareTask(task)}
                             title={safeT("shareInvite.share", "Compartir")}
                             aria-label={safeT("shareInvite.share", "Compartir")}
                             className="w-8 h-8 rounded-full border border-violet-200 bg-white/90 text-violet-700 inline-flex items-center justify-center"
@@ -1702,7 +1578,7 @@ const anyModalOpen =
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleDone(card.task)}
+                            onClick={() => handleDone(task)}
                             title={safeT("today.actionDoneTitle", "Marcar como completada")}
                             aria-label={safeT(
                               "today.actionDoneTitle",
@@ -1717,20 +1593,28 @@ const anyModalOpen =
                     </div>
                   );
                 })}
-              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+            </div>
+              <div className="mt-1 flex items-center justify-center gap-1.5">
                 {selectedDayTasks.map((task, index) => (
-                  <span
+                  <button
                     key={`slide-dot-${task.id}`}
-                    className={
-                      index === activeSlideIndex
-                        ? "h-2.5 w-2.5 rounded-full bg-violet-600"
-                        : "h-2 w-2 rounded-full bg-slate-300"
-                    }
+                    type="button"
+                    onClick={() => scrollToReminderSlide(index)}
+                    aria-label={`Go to reminder ${index + 1}`}
+                    className="rounded-full border-0"
+                    style={{
+                      width: index === activeSlideIndex ? 18 : 8,
+                      height: 8,
+                      background:
+                        index === activeSlideIndex
+                          ? "rgba(125,89,201,0.95)"
+                          : "rgba(148,163,184,0.55)",
+                      transition: "width 0.18s ease, background 0.18s ease",
+                    }}
                   />
                 ))}
               </div>
             </div>
-          </div>
         ) : (
           <EmptyStateCard
             title={safeT("today.noUrgentTitle", "Todo bajo control")}
