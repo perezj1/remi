@@ -1,5 +1,5 @@
-// src/pages/Ideas.tsx
-import { useEffect, useMemo, useState, useCallback } from "react";
+﻿// src/pages/Ideas.tsx
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   BrainItem,
@@ -66,12 +66,6 @@ export default function IdeasPage() {
     {},
   );
 
-  // ✅ indicador: solo lo que tú has compartido (no lo recibido)
-  const shouldShowSentIndicator = useCallback((item: BrainItem) => {
-    const sharedCount = (item as any)?.shared_count ?? 0;
-    const receivedFromShare = !!(item as any)?.received_from_share;
-    return !receivedFromShare && Number(sharedCount) > 0;
-  }, []);
 
   // siempre arriba al entrar / recargar
   useEffect(() => {
@@ -80,7 +74,7 @@ export default function IdeasPage() {
     }
   }, []);
 
-  // cargar todos los ítems de bandeja y luego filtrar ideas
+  // cargar todos los Ã­tems de bandeja y luego filtrar ideas
   useEffect(() => {
     if (!user) return;
     setLoading(true);
@@ -98,12 +92,12 @@ export default function IdeasPage() {
     })();
   }, [user, t]);
 
-  // ✅ Memo para que no cambie por referencia en cada render
+  // âœ… Memo para que no cambie por referencia en cada render
   const filtered = useMemo(() => {
     return items.filter((item) => item.type === "idea");
   }, [items]);
 
-  // ✅ Agrupar por fecha igual que Tasks (si tienen due_date)
+  // âœ… Agrupar por fecha igual que Tasks (si tienen due_date)
   const dateGroups: DateGroup[] = useMemo(() => {
     if (filtered.length === 0) return [];
 
@@ -219,8 +213,8 @@ export default function IdeasPage() {
       if (!item?.id) return;
       const res = await createShareInviteCached(item.id);
 
-      // IMPORTANTE: si el shareTextOrCopy internamente "normaliza" saltos de línea,
-      // aquí ya no lo tocamos. La UI de Ideas (debajo) sí mostrará saltos de línea.
+      // IMPORTANTE: si el shareTextOrCopy internamente "normaliza" saltos de lÃ­nea,
+      // aquÃ­ ya no lo tocamos. La UI de Ideas (debajo) sÃ­ mostrarÃ¡ saltos de lÃ­nea.
       await shareTextOrCopy(res.shareMessage);
 
       alert(t("shareInvite.sharedOk"));
@@ -372,7 +366,7 @@ export default function IdeasPage() {
                             new Date(item.due_date as string).toLocaleString()
                           : t("today.dueNoDate");
 
-                        // ✅ si existe body/content en el BrainItem, lo mostraremos respetando saltos de línea
+                        // âœ… si existe body/content en el BrainItem, lo mostraremos respetando saltos de lÃ­nea
                         const ideaBody =
                           (item as any)?.body ??
                           (item as any)?.content ??
@@ -380,8 +374,12 @@ export default function IdeasPage() {
                           "";
 
                         const titleText = String(item.title ?? "");
+                        const sharedCount = (item as any)?.shared_count ?? 0;
+                        const receivedFromShare = !!(item as any)?.received_from_share;
+                        const shouldShowSentIndicator =
+                          !receivedFromShare && Number(sharedCount) > 0;
 
-                        // Botón derecho: Completado / Eliminar (si está DONE) — pill + pequeño
+                        // BotÃ³n derecho: Completado / Eliminar (si estÃ¡ DONE) â€” pill + pequeÃ±o
                         const rightBtnBase =
                           "flex-1 h-9 rounded-full border inline-flex items-center justify-center gap-2 text-[12px] font-semibold md:h-10 md:text-[13px] lg:h-11 lg:text-[15px]";
                         const rightBtnClass = isDone
@@ -391,27 +389,31 @@ export default function IdeasPage() {
                         return (
                           <div
                             key={item.id}
-                            className="rounded-3xl bg-white border border-slate-200 shadow-[0_10px_22px_rgba(15,23,42,0.06)] px-4 py-3 md:px-5 md:py-4 lg:px-6 lg:py-5"
+                            className="relative overflow-hidden rounded-3xl bg-white border border-slate-200 shadow-[0_10px_22px_rgba(15,23,42,0.06)] px-4 py-3 md:px-5 md:py-4 lg:px-6 lg:py-5"
                           >
-                            {/* Header row */}
-                            <div className="flex items-start gap-3">
-                              {/* icono + indicador share */}
-                              <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 relative">
-                                <Lightbulb size={18} />
+                            <span
+                              aria-hidden
+                              className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-amber-500"
+                            />
 
-                                {shouldShowSentIndicator(item) && (
+                            {/* Header row */}
+                            <div className="flex items-start gap-3 pl-2">
+                              <div className="mt-0.5 shrink-0">
+                                {shouldShowSentIndicator ? (
                                   <span
-                                    className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm"
+                                    className="flex h-5 w-5 items-center justify-center rounded-full border border-[#dcd7eb] bg-white"
                                     aria-label={t("shareInvite.sentIndicator")}
                                     title={t("shareInvite.sentIndicator")}
                                   >
-                                    <Share2 size={10} className="text-slate-500" />
+                                    <Share2 size={10} className="text-[#8c86a3]" />
                                   </span>
+                                ) : (
+                                  <span className="block h-5 w-5" aria-hidden />
                                 )}
                               </div>
 
                               <div className="flex-1 min-w-0">
-                                {/* ✅ IMPORTANTE: pre-wrap para respetar saltos de línea */}
+                                {/* âœ… IMPORTANTE: pre-wrap para respetar saltos de lÃ­nea */}
                                 <p
                                   className="font-semibold text-slate-900 leading-snug"
                                   style={{
@@ -424,7 +426,7 @@ export default function IdeasPage() {
                                   {titleText}
                                 </p>
 
-                                {/* ✅ opcional: mostrar body respetando saltos de línea (si existe) */}
+                                {/* âœ… opcional: mostrar body respetando saltos de lÃ­nea (si existe) */}
                                 {ideaBody && String(ideaBody).trim().length > 0 && (
                                   <p
                                     className="mt-1 text-slate-600"

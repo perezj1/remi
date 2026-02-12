@@ -1,4 +1,4 @@
-// src/pages/Tasks.tsx
+﻿// src/pages/Tasks.tsx
 import { useEffect, useMemo, useState, useCallback } from "react";
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -412,21 +412,26 @@ export default function TasksPage() {
                         return (
                           <div
                             key={item.id}
-                            className="rounded-3xl bg-white border border-slate-200 shadow-[0_10px_22px_rgba(15,23,42,0.06)] px-4 py-3 md:px-5 md:py-4 lg:px-6 lg:py-5"
+                            className="relative overflow-hidden rounded-3xl bg-white border border-slate-200 shadow-[0_10px_22px_rgba(15,23,42,0.06)] px-4 py-3 md:px-5 md:py-4 lg:px-6 lg:py-5"
                           >
+                            <span
+                              aria-hidden
+                              className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-[#7d59c9]"
+                            />
+
                             {/* Header row */}
-                            <div className="flex items-start gap-3">
-                              {/* icono + indicador */}
-                              <div className="w-10 h-10 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center shrink-0 relative">
-                                <List size={18} />
-                                {shouldShowSentIndicator(item) && (
+                            <div className="flex items-start gap-3 pl-2">
+                              <div className="mt-0.5 shrink-0">
+                                {shouldShowSentIndicator(item) ? (
                                   <span
-                                    className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm"
+                                    className="flex h-5 w-5 items-center justify-center rounded-full border border-[#dcd7eb] bg-white"
                                     aria-label={t("shareInvite.sentIndicator")}
                                     title={t("shareInvite.sentIndicator")}
                                   >
-                                    <Share2 size={10} className="text-slate-500" />
+                                    <Share2 size={10} className="text-[#8c86a3]" />
                                   </span>
+                                ) : (
+                                  <span className="block h-5 w-5" aria-hidden />
                                 )}
                               </div>
 

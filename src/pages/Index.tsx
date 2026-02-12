@@ -127,7 +127,7 @@ const ACTION_BTN_CLASS =
 const DONE_BTN_CLASS =
   "w-9 h-9 rounded-full border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 inline-flex items-center justify-center";
 const RIGHT_RAIL_WIDTH_PX = 0;
-const NOTE_PAGE_BG = "#ffffff";
+const NOTE_PAGE_BG = "linear-gradient(180deg, #f8f7fb 0%, #ffffff 42%, #ffffff 100%)";
 const MODAL_OVERLAY_STYLE: CSSProperties = {
   paddingLeft: "calc(8px + env(safe-area-inset-left))",
   paddingRight: `calc(${RIGHT_RAIL_WIDTH_PX + 8}px + env(safe-area-inset-right))`,
@@ -1088,10 +1088,6 @@ const anyModalOpen =
     const now = new Date();
     return toDateKeyLocal(new Date(now.getFullYear(), now.getMonth(), now.getDate()));
   }, []);
-  const [selectedDateKey, setSelectedDateKey] = useState<string>(todayDateKey);
-  const datePickerRef = useRef<HTMLInputElement | null>(null);
-  const calendarScrollRef = useRef<HTMLDivElement | null>(null);
-  const selectedCalendarItemRef = useRef<HTMLButtonElement | null>(null);
   const tipsScrollRef = useRef<HTMLDivElement | null>(null);
   const reminderDeckRef = useRef<HTMLDivElement | null>(null);
   const [tipsScrollMetrics, setTipsScrollMetrics] = useState({
@@ -1099,9 +1095,31 @@ const anyModalOpen =
     visibleRatio: 1,
   });
   const selectedDayTasks = useMemo(
-    () => dateGroups.find((group) => group.key === selectedDateKey)?.items ?? [],
-    [dateGroups, selectedDateKey],
+    () => dateGroups.find((group) => group.key === todayDateKey)?.items ?? [],
+    [dateGroups, todayDateKey],
   );
+  const nextWeekGroups = useMemo(() => {
+    const now = new Date();
+    const todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekEndMid = new Date(
+      todayMid.getFullYear(),
+      todayMid.getMonth(),
+      todayMid.getDate() + 7,
+    );
+
+    const out: Array<{ key: string; label: string; items: BrainItem[] }> = [];
+    for (const group of dateGroups) {
+      if (!group.dateMs) continue;
+      const time = group.dateMs;
+      if (time <= todayMid.getTime() || time > weekEndMid.getTime()) continue;
+      out.push({
+        key: group.key,
+        label: group.label,
+        items: group.items,
+      });
+    }
+    return out;
+  }, [dateGroups]);
   const {
     activeIndex: activeSlideIndex,
     scrollToIndex: scrollToReminderSlide,
@@ -1155,18 +1173,6 @@ const anyModalOpen =
     }
     return out;
   }, [selectedDayTasks]);
-  const openNativeDatePicker = useCallback(() => {
-    const input = datePickerRef.current;
-    if (!input) return;
-    const pickerInput = input as HTMLInputElement & {
-      showPicker?: () => void;
-    };
-    if (typeof pickerInput.showPicker === "function") {
-      pickerInput.showPicker();
-      return;
-    }
-    input.click();
-  }, []);
   const searchVisibleTasksCount = useMemo(() => {
     if (filter === "NO_DATE") return visibleNoDateTasks.length;
     return visibleDateGroups.reduce((acc, group) => acc + group.items.length, 0);
@@ -1176,33 +1182,6 @@ const anyModalOpen =
   );
   const hasSearchNoDateTasks =
     filter === "NO_DATE" && visibleNoDateTasks.length > 0;
-  const intlLocale = useMemo(() => {
-    if (lang === "de") return "de-DE";
-    if (lang === "en") return "en-US";
-    return "es-ES";
-  }, [lang]);
-  const selectedDateTitle = useMemo(
-    () =>
-      new Intl.DateTimeFormat(intlLocale, { month: "short", day: "numeric" }).format(
-        new Date(`${selectedDateKey}T12:00:00`),
-      ),
-    [intlLocale, selectedDateKey],
-  );
-  const calendarStrip = useMemo(() => {
-    const base = new Date(`${selectedDateKey}T12:00:00`);
-    return Array.from({ length: 21 }, (_, idx) => {
-      const day = new Date(base);
-      day.setDate(base.getDate() + idx - 10);
-      const key = toDateKeyLocal(day);
-      return {
-        id: key,
-        key,
-        label: new Intl.DateTimeFormat(intlLocale, { weekday: "short" }).format(day),
-        dayNumber: day.getDate(),
-        isSelected: key === selectedDateKey,
-      };
-    });
-  }, [intlLocale, selectedDateKey]);
   const updateTipsScrollMetrics = useCallback(() => {
     const el = tipsScrollRef.current;
     if (!el) return;
@@ -1225,23 +1204,6 @@ const anyModalOpen =
 
   const tipsThumbWidthPct = Math.max(tipsScrollMetrics.visibleRatio * 100, 20);
   const tipsThumbLeftPct = tipsScrollMetrics.progress * (100 - tipsThumbWidthPct);
-  useEffect(() => {
-    const container = calendarScrollRef.current;
-    const selectedItem = selectedCalendarItemRef.current;
-    if (!container || !selectedItem) return;
-
-    const itemCenter =
-      selectedItem.offsetLeft + selectedItem.offsetWidth / 2;
-    const targetLeft = Math.max(
-      0,
-      itemCenter - container.clientWidth / 2,
-    );
-
-    container.scrollTo({
-      left: targetLeft,
-      behavior: "smooth",
-    });
-  }, [selectedDateKey, calendarStrip.length]);
   return (
     <div
       className="remi-page"
@@ -1266,7 +1228,7 @@ const anyModalOpen =
         }}
       >
       <div
-        className="relative overflow-hidden"
+        className="relative overflow-visible"
         style={{
           paddingTop: "calc(10px + env(safe-area-inset-top))",
           paddingBottom: 10,
@@ -1315,23 +1277,22 @@ const anyModalOpen =
               {safeT("today.greetingSubheader", "Let's get this done today!")}
             </p>
             <div className="mt-2">
-              <p className="mb-1 font-semibold text-white/80" style={{ fontSize: "clamp(13px, 0.95vw, 20px)" }}>
-                {safeT("index.clearMind", "Mente despejada")}
-              </p>
-              <div className="flex items-center gap-2">
-                <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/30">
-                  <div
-                    className="h-full rounded-full transition-all duration-500 ease-out"
-                    style={{
-                      width: `${mindClearPercent}%`,
-                      background:
-                        "linear-gradient(to right, #59a5c9, #5989c9, #596dc9, #6b63c9, #7d59c9, #9959c9, #b559c9, #bf59b7, #c959a5)",
-                    }}
-                  />
-                </div>
-                <p className="font-extrabold text-white" style={{ fontSize: "clamp(16px, 1.05vw, 22px)" }}>
+              <div className="mb-1.5 flex items-center justify-between">
+                <p className="font-semibold text-white/90" style={{ fontSize: "clamp(13px, 0.95vw, 20px)" }}>
+                  {safeT("index.clearMind", "Mente despejada")}
+                </p>
+                <p className="font-extrabold text-white/95" style={{ fontSize: "clamp(13px, 0.95vw, 20px)" }}>
                   {mindClearPercent}%
                 </p>
+              </div>
+              <div className="h-2.5 w-full overflow-hidden rounded-full bg-[#a48de0]/65">
+                <div
+                  className="h-full rounded-full transition-all duration-500 ease-out"
+                  style={{
+                    width: `${mindClearPercent}%`,
+                    background: "linear-gradient(90deg, #f0dda0 0%, #e8c76a 100%)",
+                  }}
+                />
               </div>
             </div>
           </div>
@@ -1436,72 +1397,12 @@ const anyModalOpen =
             )}
           </div>
         </div>
-
-        <div className="mt-6 rounded-3xl border border-violet-100 bg-white p-4 shadow-[0_10px_26px_rgba(125,89,201,0.10)]" style={{ padding: "clamp(16px, 1.1vw, 30px)" }}>
-          <div className="flex items-center justify-between">
-            <p className="leading-none font-extrabold text-slate-900" style={{ fontSize: "clamp(30px, 2vw, 46px)" }}>
-              {selectedDateTitle}
-            </p>
-            <div className="flex items-center">
-              <button
-                type="button"
-                onClick={openNativeDatePicker}
-                className="w-6 h-6 rounded-full border border-violet-200 bg-violet-50 text-violet-600 inline-flex items-center justify-center"
-                title={safeT("today.actionRescheduleTitle", "Elegir fecha")}
-                aria-label={safeT("today.actionRescheduleTitle", "Elegir fecha")}
-              >
-                <CalendarDays size={13} />
-              </button>
-            </div>
-            <input
-              ref={datePickerRef}
-              type="date"
-              value={selectedDateKey}
-              onChange={(e) => {
-                if (!e.target.value) return;
-                setSelectedDateKey(e.target.value);
-              }}
-              className="sr-only"
-              aria-hidden
-              tabIndex={-1}
-            />
-          </div>
-          <div ref={calendarScrollRef} className="mt-3 overflow-x-auto remi-scroll snap-x snap-mandatory">
-            <div className="flex items-center gap-2 min-w-max pr-1">
-              {calendarStrip.map((day) => (
-                <button
-                  key={day.id}
-                  type="button"
-                  ref={day.isSelected ? selectedCalendarItemRef : null}
-                  className={
-                    day.isSelected
-                      ? "snap-start shrink-0 rounded-[16px] border border-violet-500 bg-violet-200 text-violet-950 shadow-[0_4px_10px_rgba(76,29,149,0.14)] flex flex-col items-center justify-center"
-                      : "snap-start shrink-0 rounded-[16px] bg-[#f8f7fd] text-slate-700 border border-violet-100 flex flex-col items-center justify-center"
-                  }
-                  style={{
-                    width: "clamp(44px, 3vw, 72px)",
-                    height: "clamp(72px, 4.8vw, 118px)",
-                    borderRadius: "clamp(14px, 1vw, 22px)",
-                  }}
-                  onClick={() => setSelectedDateKey(day.key)}
-                >
-                  <p className="leading-none font-medium" style={{ fontSize: "clamp(17px, 1.3vw, 27px)" }}>
-                    {day.dayNumber}
-                  </p>
-                  <p className={day.isSelected ? "mt-0.5 font-normal uppercase text-violet-800" : "mt-0.5 font-normal uppercase text-slate-500"} style={{ fontSize: "clamp(7px, 0.55vw, 12px)" }}>
-                    {day.label}
-                  </p>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
         </div>
       </div>
 
       <div className="mx-auto mt-7 mb-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
-        <p className="leading-none font-extrabold text-slate-900 px-1" style={{ fontSize: "clamp(34px, 2.1vw, 48px)" }}>
-          {safeT("index.reminders", "Recordatorios")}
+        <p className="leading-none font-extrabold text-slate-900 px-1" style={{ fontSize: "clamp(18px, 1.1vw, 24px)" }}>
+          Hoy
         </p>
 
         {selectedDayTasks.length > 0 ? (
@@ -1625,10 +1526,116 @@ const anyModalOpen =
           />
         )}
 
+        <div className="mt-7">
+          <div className="px-1">
+            <p className="font-extrabold text-slate-900" style={{ fontSize: "clamp(15px, 0.9vw, 20px)" }}>
+              Proxima semana
+            </p>
+          </div>
+
+          {nextWeekGroups.length > 0 ? (
+            <div className="mt-2.5 rounded-3xl border border-slate-200 bg-white/70 p-1.5">
+              <div className="max-h-[460px] overflow-y-auto remi-scroll pr-1">
+                <div className="space-y-2">
+                  {nextWeekGroups.map((group) => (
+                    <div key={group.key} className="pt-2">
+                      <div className="w-full flex items-center gap-2 mb-2 text-left">
+                        <ChevronDown size={16} className="text-slate-500" />
+                        <p className="font-semibold uppercase tracking-widest text-slate-600" style={{ fontSize: "clamp(12px, 0.82vw, 16px)" }}>
+                          {group.label}
+                        </p>
+                        <div className="flex-1 h-px bg-slate-200" />
+                      </div>
+
+                      <div className="space-y-2">
+                        {group.items.map((task) => (
+                          <div
+                            key={`${task.id}-${group.key}`}
+                            className="relative overflow-hidden rounded-3xl bg-white border border-slate-200 shadow-[0_10px_22px_rgba(15,23,42,0.06)] px-4 py-3 md:px-5 md:py-4 lg:px-6 lg:py-5"
+                          >
+                            <span
+                              aria-hidden
+                              className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-[#7d59c9]"
+                            />
+
+                            <div className="flex items-start gap-3 pl-2">
+                              <div className="mt-0.5 shrink-0">
+                                {shouldShowSentIndicator(task) ? (
+                                  <span
+                                    className="flex h-5 w-5 items-center justify-center rounded-full border border-[#dcd7eb] bg-white"
+                                    aria-label={safeT("shareInvite.sentIndicator", "Compartido por ti")}
+                                    title={safeT("shareInvite.sentIndicator", "Compartido por ti")}
+                                  >
+                                    <Share2 size={10} className="text-[#8c86a3]" />
+                                  </span>
+                                ) : (
+                                  <span className="block h-5 w-5" aria-hidden />
+                                )}
+                              </div>
+
+                              <div className="flex-1 min-w-0">
+                                <p
+                                  className="font-semibold text-[#2f2750] leading-snug"
+                                  style={{
+                                    fontSize: "clamp(16px, 1.1vw, 26px)",
+                                    whiteSpace: "pre-wrap",
+                                    wordBreak: "break-word",
+                                    overflowWrap: "anywhere",
+                                  }}
+                                >
+                                  {task.title}
+                                </p>
+                                <div
+                                  className="mt-1.5 flex items-center gap-1.5 text-[#8b8798]"
+                                  style={{ fontSize: "clamp(13px, 0.85vw, 17px)" }}
+                                >
+                                  <CalendarDays size={14} className="text-[#a09baf]" />
+                                  <span className="truncate">{group.label}</span>
+                                </div>
+                              </div>
+
+                              <div className="shrink-0 flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onPointerDown={() => prefetchShareInvite(task.id)}
+                                  onClick={() => handleShareTask(task)}
+                                  className="w-9 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center"
+                                  aria-label={safeT("shareInvite.share", "Compartir")}
+                                  title={safeT("shareInvite.share", "Compartir")}
+                                >
+                                  <Share2 size={15} color="#94A3B8" />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleDone(task)}
+                                  className="w-9 h-9 rounded-full border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 inline-flex items-center justify-center"
+                                  aria-label={safeT("today.done", "Hecho")}
+                                  title={safeT("today.done", "Hecho")}
+                                >
+                                  <Check size={15} color="#10B981" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-3 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-[13px] text-slate-500">
+              No hay tareas para la proxima semana.
+            </div>
+          )}
+        </div>
+
         {tipCards.length > 0 && (
           <div className="mt-7">
             <div className="px-1">
-              <p className="font-extrabold text-slate-900" style={{ fontSize: "clamp(30px, 1.9vw, 44px)" }}>
+              <p className="font-extrabold text-slate-900" style={{ fontSize: "clamp(16px, 1vw, 22px)" }}>
                 {safeT("today.tipsTitle", "Consejos")}
               </p>
             </div>
@@ -1644,18 +1651,18 @@ const anyModalOpen =
                   onClick={tip.onClick}
                   className="shrink-0 rounded-2xl border border-slate-200 bg-white shadow-[0_6px_16px_rgba(15,23,42,0.06)] hover:bg-slate-50"
                   style={{
-                    width: "clamp(120px, 9.4vw, 210px)",
-                    padding: "clamp(10px, 0.8vw, 18px)",
+                    width: "clamp(100px, 7.8vw, 168px)",
+                    padding: "clamp(8px, 0.6vw, 14px)",
                   }}
                   title={tip.title}
                   aria-label={tip.title}
                 >
-                  <div className="mx-auto rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center" style={{ width: "clamp(46px, 3.2vw, 74px)", height: "clamp(46px, 3.2vw, 74px)" }}>
-                    <span className="leading-none" style={{ fontSize: "clamp(24px, 1.6vw, 36px)" }}>
+                  <div className="mx-auto rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center" style={{ width: "clamp(40px, 2.6vw, 58px)", height: "clamp(40px, 2.6vw, 58px)" }}>
+                    <span className="leading-none" style={{ fontSize: "clamp(20px, 1.2vw, 28px)" }}>
                       {TIP_EMOJI_BY_ID[tip.id] ?? "✨"}
                     </span>
                   </div>
-                  <p className="mt-2 leading-tight font-medium text-slate-800 line-clamp-2" style={{ fontSize: "clamp(14px, 0.95vw, 21px)" }}>
+                  <p className="mt-2 leading-tight font-medium text-slate-800 line-clamp-2" style={{ fontSize: "clamp(12px, 0.82vw, 16px)" }}>
                     {tip.title}
                   </p>
                 </button>
