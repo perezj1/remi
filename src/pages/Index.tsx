@@ -103,9 +103,10 @@ type TipCardItem = {
   onClick?: () => void;
 };
 const TIP_EMOJI_BY_ID: Record<string, string> = {
+  install: "📲",
   push: "🔔",
   "ios-dictation": "🎙️",
-  "multi-device": "📱",
+  "multi-device": "💻",
   "share-reminders": "🔗",
   shortcuts: "⚡",
   "day-close": "🌙",
@@ -132,7 +133,7 @@ const DONE_BTN_CLASS =
   "w-9 h-9 rounded-full border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 inline-flex items-center justify-center";
 const RIGHT_RAIL_WIDTH_PX = 0;
 const NOTE_PAGE_BG =
-  "linear-gradient(180deg, #f8f7fb 0%, #ffffff 42%, #ffffff 100%)";
+  "linear-gradient(180deg, #f1eff7 0%, #fafafe 42%, #fafafe 100%)";
 const MODAL_OVERLAY_STYLE: CSSProperties = {
   paddingLeft: "calc(8px + env(safe-area-inset-left))",
   paddingRight: `calc(${RIGHT_RAIL_WIDTH_PX + 8}px + env(safe-area-inset-right))`,
@@ -204,6 +205,7 @@ export default function TodayPage() {
   const [showMultiDeviceHelp, setShowMultiDeviceHelp] = useState(false);
 
   const [showShareRemindersHelp, setShowShareRemindersHelp] = useState(false);
+  const [mindDumpResetNonce, setMindDumpResetNonce] = useState(0);
 
   const [nowTick, setNowTick] = useState(0);
 
@@ -896,7 +898,7 @@ const anyModalOpen =
         id: MULTI_DEVICE_TIP_KEY,
         title: safeT(
           "today.tip.multidevice.title",
-          "Remi contigo en móvil, iPad y PC",
+          "Remi siempre contigo",
         ),
         body: safeT(
           "today.tip.multidevice.body",
@@ -1274,9 +1276,10 @@ const anyModalOpen =
         }}
       >
       <div
-        className="relative overflow-hidden"
+        className="relative overflow-visible"
         style={{
-          paddingTop: "calc(10px + env(safe-area-inset-top))",
+          zIndex: anyModalOpen ? 20 : 60,
+          paddingTop: "calc(14px + env(safe-area-inset-top))",
           paddingBottom: 10,
           paddingLeft: "calc(16px + env(safe-area-inset-left))",
           paddingRight: "calc(16px + env(safe-area-inset-right))",
@@ -1368,7 +1371,7 @@ const anyModalOpen =
                   padding: "8px 10px",
                   minWidth: 170,
                   maxWidth: "min(280px, calc(100vw - 24px))",
-                  zIndex: 1000,
+                  zIndex: 5000,
                 }}
               >
                 <div
@@ -1428,11 +1431,12 @@ const anyModalOpen =
           <MindDumpModal
             open={true}
             embedded
-            onClose={() => {}}
+            onClose={() => setMindDumpResetNonce((n) => n + 1)}
             onCreateTask={handleCreateTaskFromMindDump}
             onCreateIdea={async (title) => {
               await handleCreateIdeaFromMindDump(title);
             }}
+            initialTextNonce={mindDumpResetNonce}
           />
         </div>
       </div>
@@ -1467,7 +1471,7 @@ const anyModalOpen =
                     {TIP_EMOJI_BY_ID[tip.id] ?? "✨"}
                   </span>
                 </div>
-                <p className="mt-2 leading-tight font-medium text-slate-800 line-clamp-2" style={{ fontSize: "clamp(12px, 0.82vw, 16px)" }}>
+                <p className="mt-2 leading-snug font-medium text-slate-800 line-clamp-2" style={{ fontSize: "clamp(11px, 0.72vw, 14px)" }}>
                   {tip.title}
                 </p>
               </button>

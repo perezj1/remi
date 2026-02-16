@@ -305,14 +305,14 @@ export default function StatusPage() {
       className="remi-page text-slate-900"
       style={{
         minHeight: "100dvh",
-        background: "linear-gradient(180deg, #f8f7fb 0%, #ffffff 42%, #ffffff 100%)",
+        background: "linear-gradient(180deg, #f1eff7 0%, #fafafe 42%, #fafafe 100%)",
         paddingBottom: "calc(96px + env(safe-area-inset-bottom))",
       }}
     >
       <div
         className="relative overflow-hidden"
         style={{
-          paddingTop: "calc(10px + env(safe-area-inset-top))",
+          paddingTop: "calc(14px + env(safe-area-inset-top))",
           paddingBottom: 10,
           paddingLeft: "calc(16px + env(safe-area-inset-left))",
           paddingRight: "calc(16px + env(safe-area-inset-right))",

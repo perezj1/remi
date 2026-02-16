@@ -176,9 +176,16 @@ function AppRoutes() {
   // ✅ “Shell” global: altura correcta en móvil + fondo consistente
   const isPublicShell = hideBottomNavRoute || isAuthRoute || !user;
 
-// ✅ Para share: usa el mismo fondo suave (evita “blanco infinito”)
-const shellBgClass =
-  isShareUrl ? "bg-[#F6F7FB]" : isPublicShell ? "bg-white" : "bg-white";
+  // ✅ Para share: usa el mismo fondo suave (evita “blanco infinito”)
+  // ✅ Para Index: igualamos el shell al fondo de la página para que cubra hasta abajo.
+  const isIndexRoute = pathname === "/";
+  const shellBgClass = isShareUrl
+    ? "bg-[#F6F7FB]"
+    : isIndexRoute
+      ? "bg-[#fafafe]"
+      : isPublicShell
+        ? "bg-white"
+        : "bg-white";
 
   // ✅ Reserva inferior global para que el contenido nunca quede debajo de la BottomNav
   const NAV_RESERVE_PX = 110;

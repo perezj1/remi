@@ -369,7 +369,7 @@ export const en = {
     exampleIdea: "💡 Idea: trip to Italy in spring",
     holdToTalk: "Press and hold to speak",
     listening: "Listening…",
-    iosKeyboardMicHint: "On iPhone: use the keyboard microphone to speak.",
+    iosKeyboardMicHint: "Usa el micrófono del teclado para hablar.",
     speakHold: "Press and hold to speak",
 
     textareaPlaceholder: "Examples:",
@@ -415,6 +415,8 @@ export const en = {
     time: "Time",
     reminder: "Reminder",
     habit: "Repeat",
+    reminderNone: "No reminder",
+    repeatNone: "No repeat",
 
     on: "On",
     off: "Off",

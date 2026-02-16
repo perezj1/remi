@@ -383,7 +383,7 @@ export const es = {
     exampleIdea: "💡 Idea: viaje a Italia en primavera",
     holdToTalk: "Mantén pulsado para hablar",
     listening: "Escuchando…",
-    iosKeyboardMicHint: "En iPhone: usa el micrófono del teclado para hablar.",
+    iosKeyboardMicHint: "Usa el micrófono del teclado para hablar.",
     speakHold: "Mantén pulsado para hablar",
 
     textareaPlaceholder: "Ejemplos:",
@@ -430,6 +430,8 @@ export const es = {
     time: "Hora",
     reminder: "Recordatorio",
     habit: "Repetición",
+    reminderNone: "Sin recordatorio",
+    repeatNone: "Sin repetición",
 
     on: "On",
     off: "Off",
@@ -609,7 +611,7 @@ export const es = {
       },
 
       multidevice: {
-        title: "Remi contigo en móvil, iPad/tablet y PC",
+        title: "Remi siempre contigo",
         body:
           "Vacía tu cabeza donde estés. Todo se sincroniza y tú eliges en qué dispositivo quieres notificaciones.",
         cta: "Cómo funciona",

@@ -2073,22 +2073,22 @@ export default function MindDumpModal({
   })();
 
   const reminderLabel = (() => {
-    if (itemKind !== "task") return t("pill.reminder.none", "Sin recordatorio");
-    if (!hasSomeDate || reminderMode === "NONE") return t("pill.reminder.none", "Sin recordatorio");
+    if (itemKind !== "task") return t("pill.reminderNone", "Sin recordatorio");
+    if (!hasSomeDate || reminderMode === "NONE") return t("pill.reminderNone", "Sin recordatorio");
     if (reminderMode === "DAILY_UNTIL_DUE") return t("pill.remDaily", "Diaria");
     if (reminderMode === "DAY_BEFORE_AND_DUE") return t("pill.remDayBefore", "1 día antes");
     if (reminderMode === "WEEK_BEFORE_AND_DUE") return t("pill.remWeekBefore", "1 semana antes");
-    return t("pill.reminder.none", "Sin recordatorio");
+    return t("pill.reminderNone", "Sin recordatorio");
   })();
 
   const repeatLabel = (() => {
-    if (itemKind !== "task") return t("pill.repeat.none", "Sin repetición");
-    if (habitRepeat === "none") return t("pill.repeat.none", "Sin repetición");
+    if (itemKind !== "task") return t("pill.repeatNone", "Sin repetición");
+    if (habitRepeat === "none") return t("pill.repeatNone", "Sin repetición");
     if (habitRepeat === "daily") return t("pill.habitDaily", "Diaria");
     if (habitRepeat === "weekly") return t("pill.habitWeekly", "Semanal");
     if (habitRepeat === "monthly") return t("pill.habitMonthly", "Mensual");
     if (habitRepeat === "yearly") return t("pill.habitYearly", "Anual");
-    return t("pill.repeat.none", "Sin repetición");
+    return t("pill.repeatNone", "Sin repetición");
   })();
 
   return (
@@ -2202,11 +2202,11 @@ export default function MindDumpModal({
             }}
           >
             <div className="min-w-0 pr-3">
-              <div className="text-[22px] font-extrabold leading-tight" style={{ color: "#ffffff" }}>
+              <div className="text-[20px] font-extrabold leading-tight" style={{ color: "#ffffff" }}>
                 {t("capture.title", "Vacía tu mente")}
               </div>
 
-              <div className="text-[16px] mt-0.5 font-semibold" style={{ color: "rgba(255,255,255,0.85)" }}>
+              <div className="text-[14px] mt-0.5 font-semibold" style={{ color: "rgba(255,255,255,0.85)" }}>
                 {t("capture.subtitle", "Habla, escribe o pega texto. Remi se encarga.")}
               </div>
 
@@ -2575,7 +2575,7 @@ export default function MindDumpModal({
               marginBottom: showSettingsPanel ? 6 : 0,
             }}
           >
-            {t("capture.iosKeyboardMicHint", "En iPhone: usa el micrófono del teclado para dictar.")}
+            {t("capture.iosKeyboardMicHint", "Usa el micrófono del teclado para hablar.")}
           </div>
         )}
 
@@ -2765,7 +2765,7 @@ export default function MindDumpModal({
                           setReminderMenuOpen(false);
                         }}
                       >
-                        {t("pill.reminder.none", "Sin recordatorio")}
+                        {t("pill.reminderNone", "Sin recordatorio")}
                       </MenuItem>
 
                       <MenuItem
@@ -2845,7 +2845,7 @@ export default function MindDumpModal({
                           setRepeatMenuOpen(false);
                         }}
                       >
-                        {t("pill.repeat.none", "Sin repetición")}
+                        {t("pill.repeatNone", "Sin repetición")}
                       </MenuItem>
 
                       <MenuItem
@@ -2917,13 +2917,13 @@ export default function MindDumpModal({
                     type="button"
                     onClick={handlePaste}
                     onContextMenu={(e) => e.preventDefault()}
-                    style={{
-                      width: 52,
-                      height: 52,
-                      borderRadius: 999,
-                      border: `1px solid ${REMI_PURPLE_BORDER}`,
-                      background: REMI_PURPLE_BG,
-                      color: REMI_PURPLE,
+                        style={{
+                          width: 52,
+                          height: 52,
+                          borderRadius: 999,
+                          border: "1px solid #c7b5f6",
+                          background: "#f3f4f6",
+                          color: REMI_PURPLE,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -2956,8 +2956,8 @@ export default function MindDumpModal({
                           width: 52,
                           height: 52,
                           borderRadius: 999,
-                          border: `1px solid ${REMI_PURPLE_BORDER}`,
-                          background: listening ? "rgba(125,89,201,0.18)" : REMI_PURPLE_BG,
+                          border: "1px solid #c7b5f6",
+                          background: listening ? "#e9e5f3" : "#f3f4f6",
                           color: REMI_PURPLE,
                           display: "flex",
                           alignItems: "center",
@@ -3086,7 +3086,7 @@ function Chip({
         padding: "0 12px",
         borderRadius: 999,
         border: embedded ? "1px solid #c7b5f6" : "1px solid rgba(255,255,255,0.30)",
-        background: embedded ? "#f3f4f6" : "rgba(255,255,255,0.16)",
+        background: embedded ? "#ffffff" : "rgba(255,255,255,0.16)",
         color: embedded ? "#7d59c9" : "rgba(255,255,255,0.95)",
         fontSize: 11,
         fontWeight: 500,
