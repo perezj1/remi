@@ -398,6 +398,7 @@ export default function TasksPage() {
                           ? formatDue(item.due_date as string, uiLocale) ??
                             new Date(item.due_date as string).toLocaleString(uiLocale)
                           : t("today.dueNoDate");
+                        const mainText = String(item.title ?? "");
 
                         // ✅ Botones más pequeños
                         const btnBase =
@@ -412,26 +413,20 @@ export default function TasksPage() {
                         return (
                           <div
                             key={item.id}
-                            className="relative overflow-hidden rounded-3xl bg-white border border-slate-200 shadow-[0_10px_22px_rgba(15,23,42,0.06)] px-4 py-3 md:px-5 md:py-4 lg:px-6 lg:py-5"
+                            className="rounded-3xl bg-white border border-[#7d59c9] shadow-[0_6px_14px_rgba(15,23,42,0.05)] px-4 py-3 md:px-5 md:py-4 lg:px-6 lg:py-5"
                           >
-                            <span
-                              aria-hidden
-                              className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-[#7d59c9]"
-                            />
-
                             {/* Header row */}
-                            <div className="flex items-start gap-3 pl-2">
-                              <div className="mt-0.5 shrink-0">
-                                {shouldShowSentIndicator(item) ? (
+                            <div className="flex items-start gap-3">
+                              <div className="w-10 h-10 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center shrink-0 relative">
+                                <List size={18} />
+                                {shouldShowSentIndicator(item) && (
                                   <span
-                                    className="flex h-5 w-5 items-center justify-center rounded-full border border-[#dcd7eb] bg-white"
+                                    className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm"
                                     aria-label={t("shareInvite.sentIndicator")}
                                     title={t("shareInvite.sentIndicator")}
                                   >
-                                    <Share2 size={10} className="text-[#8c86a3]" />
+                                    <Share2 size={10} className="text-slate-500" />
                                   </span>
-                                ) : (
-                                  <span className="block h-5 w-5" aria-hidden />
                                 )}
                               </div>
 
@@ -440,16 +435,25 @@ export default function TasksPage() {
                                   className="font-semibold text-slate-900 leading-snug"
                                   style={{
                                     fontSize: "clamp(16px, 1.1vw, 26px)",
-                                    // ✅ clave: respetar saltos de línea en title
+                                  }}
+                                >
+                                  Recordatorio
+                                </p>
+                                <p
+                                  className="mt-1 text-slate-700"
+                                  style={{
+                                    fontSize: "clamp(13px, 0.86vw, 17px)",
                                     whiteSpace: "pre-wrap",
                                     wordBreak: "break-word",
                                     overflowWrap: "anywhere",
+                                    maxHeight: 96,
+                                    overflow: "hidden",
                                   }}
                                 >
-                                  {item.title}
+                                  {mainText}
                                 </p>
 
-                                <div className="mt-1 flex items-center gap-1 text-slate-500" style={{ fontSize: "clamp(13px, 0.85vw, 17px)" }}>
+                                <div className="mt-2 flex items-center gap-1 text-slate-500" style={{ fontSize: "clamp(13px, 0.85vw, 17px)" }}>
                                   <Calendar size={14} className="text-slate-400" />
                                   <span className="truncate">{dueText}</span>
                                 </div>

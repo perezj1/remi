@@ -490,6 +490,7 @@ export const de = {
   },
 
   today: {
+    captureSectionTitle: "Leere deinen Kopf",
     tipsTitle: "Tipps",
 
     shareRemindersModal: {
@@ -753,6 +754,7 @@ export const de = {
     errorUpdating: "Fehler beim Aktualisieren deines Posteingangs",
     sectionToday: "Heute",
     sectionTomorrow: "Morgen",
+    sectionWeek: "Woche",
     sectionNoDate: "Ohne Datum",
   },
 

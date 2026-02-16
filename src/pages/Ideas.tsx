@@ -364,7 +364,7 @@ export default function IdeasPage() {
                         const dueText = item.due_date
                           ? formatDue(item.due_date as string) ??
                             new Date(item.due_date as string).toLocaleString()
-                          : t("today.dueNoDate");
+                          : "";
 
                         // âœ… si existe body/content en el BrainItem, lo mostraremos respetando saltos de lÃ­nea
                         const ideaBody =
@@ -374,6 +374,8 @@ export default function IdeasPage() {
                           "";
 
                         const titleText = String(item.title ?? "");
+                        const bodyText = String(ideaBody ?? "").trim();
+                        const mainText = bodyText.length > 0 ? bodyText : titleText;
                         const sharedCount = (item as any)?.shared_count ?? 0;
                         const receivedFromShare = !!(item as any)?.received_from_share;
                         const shouldShowSentIndicator =
@@ -389,26 +391,20 @@ export default function IdeasPage() {
                         return (
                           <div
                             key={item.id}
-                            className="relative overflow-hidden rounded-3xl bg-white border border-slate-200 shadow-[0_10px_22px_rgba(15,23,42,0.06)] px-4 py-3 md:px-5 md:py-4 lg:px-6 lg:py-5"
+                            className="rounded-3xl bg-white border border-[#e7db58] shadow-[0_6px_14px_rgba(15,23,42,0.05)] px-4 py-3 md:px-5 md:py-4 lg:px-6 lg:py-5"
                           >
-                            <span
-                              aria-hidden
-                              className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-amber-500"
-                            />
-
                             {/* Header row */}
-                            <div className="flex items-start gap-3 pl-2">
-                              <div className="mt-0.5 shrink-0">
-                                {shouldShowSentIndicator ? (
+                            <div className="flex items-start gap-3">
+                              <div className="w-10 h-10 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center shrink-0 relative">
+                                <Lightbulb size={18} />
+                                {shouldShowSentIndicator && (
                                   <span
-                                    className="flex h-5 w-5 items-center justify-center rounded-full border border-[#dcd7eb] bg-white"
+                                    className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm"
                                     aria-label={t("shareInvite.sentIndicator")}
                                     title={t("shareInvite.sentIndicator")}
                                   >
-                                    <Share2 size={10} className="text-[#8c86a3]" />
+                                    <Share2 size={10} className="text-slate-500" />
                                   </span>
-                                ) : (
-                                  <span className="block h-5 w-5" aria-hidden />
                                 )}
                               </div>
 
@@ -418,35 +414,30 @@ export default function IdeasPage() {
                                   className="font-semibold text-slate-900 leading-snug"
                                   style={{
                                     fontSize: "clamp(16px, 1.1vw, 26px)",
+                                  }}
+                                >
+                                  Idea
+                                </p>
+                                <p
+                                  className="mt-1 text-slate-700"
+                                  style={{
+                                    fontSize: "clamp(13px, 0.86vw, 17px)",
                                     whiteSpace: "pre-wrap",
                                     wordBreak: "break-word",
                                     overflowWrap: "anywhere",
+                                    maxHeight: 96,
+                                    overflow: "hidden",
                                   }}
                                 >
-                                  {titleText}
+                                  {mainText}
                                 </p>
 
-                                {/* âœ… opcional: mostrar body respetando saltos de lÃ­nea (si existe) */}
-                                {ideaBody && String(ideaBody).trim().length > 0 && (
-                                  <p
-                                    className="mt-1 text-slate-600"
-                                    style={{
-                                      fontSize: "clamp(13px, 0.86vw, 17px)",
-                                      whiteSpace: "pre-wrap",
-                                      wordBreak: "break-word",
-                                      overflowWrap: "anywhere",
-                                      maxHeight: 96, // limita visualmente sin destruir \n
-                                      overflow: "hidden",
-                                    }}
-                                  >
-                                    {String(ideaBody)}
-                                  </p>
+                                {item.due_date && (
+                                  <div className="mt-2 flex items-center gap-1 text-slate-500" style={{ fontSize: "clamp(13px, 0.85vw, 17px)" }}>
+                                    <Calendar size={14} className="text-slate-400" />
+                                    <span className="truncate">{dueText}</span>
+                                  </div>
                                 )}
-
-                                <div className="mt-2 flex items-center gap-1 text-slate-500" style={{ fontSize: "clamp(13px, 0.85vw, 17px)" }}>
-                                  <Calendar size={14} className="text-slate-400" />
-                                  <span className="truncate">{dueText}</span>
-                                </div>
                               </div>
 
                               {/* Edit icon top-right */}

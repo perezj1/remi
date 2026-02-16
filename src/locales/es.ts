@@ -505,6 +505,7 @@ export const es = {
   },
 
   today: {
+    captureSectionTitle: "Vacia tu mente",
     tipsTitle: "Consejos",
 
     shareRemindersModal: {
@@ -772,6 +773,7 @@ export const es = {
     errorUpdating: "Error actualizando tu bandeja",
     sectionToday: "Hoy",
     sectionTomorrow: "Mañana",
+    sectionWeek: "Semana",
     sectionNoDate: "Sin fecha",
   },
 

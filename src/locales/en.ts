@@ -490,6 +490,7 @@ export const en = {
   },
 
   today: {
+    captureSectionTitle: "Clear your mind",
     tipsTitle: "Tips",
 
     shareRemindersModal: {
@@ -759,6 +760,7 @@ export const en = {
     errorUpdating: "Error updating your inbox",
     sectionToday: "Today",
     sectionTomorrow: "Tomorrow",
+    sectionWeek: "Week",
     sectionNoDate: "No date",
   },
 

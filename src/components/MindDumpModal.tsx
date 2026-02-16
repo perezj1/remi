@@ -14,6 +14,7 @@ import {
   ClipboardPaste,
   Mic,
   Check,
+  SlidersHorizontal,
   Sparkles,
   Calendar,
   Clock,
@@ -147,6 +148,7 @@ type ItemKind = "task" | "idea";
 type Props = {
   open: boolean;
   onClose: () => void;
+  embedded?: boolean;
 
   // compat si todavía lo usas en otro flujo
   onOpenReview?: (text: string) => void;
@@ -351,6 +353,229 @@ function detectReminderSignal(text: string): string | null {
   if (daily) return daily;
 
   return null;
+}
+
+type HighlightKind = "date" | "time" | "reminder" | "habit";
+type HighlightToken = {
+  start: number;
+  end: number;
+  kind: HighlightKind;
+};
+
+const HIGHLIGHT_PRIORITY: Record<HighlightKind, number> = {
+  reminder: 4,
+  time: 3,
+  date: 2,
+  habit: 1,
+};
+
+const HIGHLIGHT_PATTERNS: Array<{ kind: HighlightKind; regex: RegExp }> = [
+  {
+    kind: "reminder",
+    regex:
+      /\b(d[ií]a\s+de\s+antes|d[ií]a\s+antes|un\s+d[ií]a\s+antes|1\s*d[ií]a\s+antes|day\s+before|the\s+day\s+before|einen\s+tag\s+vorher|am\s+vortag|una\s+semana\s+antes|1\s+semana\s+antes|week\s+before|one\s+week\s+before|eine\s+woche\s+vorher|eine\s+woche\s+davor|todos\s+los\s+d[ií]as\s+hasta|cada\s+d[ií]a\s+hasta|every\s+day\s+until|daily\s+until|jeden\s+tag\s+bis)\b/gi,
+  },
+  {
+    kind: "time",
+    regex: /\b(\d{1,2}:\d{2}|\d{1,2}\s*h|(?:a\s+las|at|um)\s+\d{1,2}(?::\d{2})?|\d{1,2}(?::\d{2})?\s*(?:am|pm))\b/gi,
+  },
+  {
+    kind: "date",
+    regex:
+      /\b(hoy|mañana|manana|pasado\s+mañana|pasado\s+manana|este\s+finde|este\s+fin\s+de\s+semana|today|tomorrow|this\s+weekend|heute|morgen|dieses\s+wochenende|lunes|martes|mi[eé]rcoles|jueves|viernes|s[áa]bado|domingo|monday|tuesday|wednesday|thursday|friday|saturday|sunday|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag|\d{1,2}\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)|\d{1,2}[\/.\-]\d{1,2}(?:[\/.\-]\d{2,4})?|\d{4}[\/.\-]\d{1,2}[\/.\-]\d{1,2})\b/gi,
+  },
+  {
+    kind: "habit",
+    regex:
+      /\b(cada\s+d[ií]a|todos\s+los\s+d[ií]as|a\s+diario|daily|every\s+day|t[aä]glich|jeden\s+tag|cada\s+semana|semanal(?:mente)?|weekly|every\s+week|w[öo]chentlich|jede\s+woche|cada\s+mes|mensual(?:mente)?|monthly|every\s+month|monatlich|jeden\s+monat|cada\s+año|cada\s+ano|anual(?:mente)?|yearly|every\s+year|j[aä]hrlich|jedes\s+jahr)\b/gi,
+  },
+];
+
+function collectHighlightTokens(text: string): HighlightToken[] {
+  if (!text) return [];
+
+  const raw: HighlightToken[] = [];
+  for (const { kind, regex } of HIGHLIGHT_PATTERNS) {
+    regex.lastIndex = 0;
+    let match: RegExpExecArray | null = null;
+    while ((match = regex.exec(text)) !== null) {
+      const value = match[0] ?? "";
+      if (!value) {
+        regex.lastIndex += 1;
+        continue;
+      }
+      raw.push({
+        start: match.index,
+        end: match.index + value.length,
+        kind,
+      });
+    }
+  }
+
+  raw.sort((a, b) => {
+    if (a.start !== b.start) return a.start - b.start;
+    const pr = HIGHLIGHT_PRIORITY[b.kind] - HIGHLIGHT_PRIORITY[a.kind];
+    if (pr !== 0) return pr;
+    return b.end - b.start - (a.end - a.start);
+  });
+
+  const selected: HighlightToken[] = [];
+  for (const token of raw) {
+    const overlaps = selected.some(
+      (taken) => token.start < taken.end && token.end > taken.start
+    );
+    if (!overlaps) selected.push(token);
+  }
+
+  return selected.sort((a, b) => a.start - b.start);
+}
+
+function foldWithMap(input: string): { folded: string; map: number[] } {
+  let folded = "";
+  const map: number[] = [];
+
+  for (let i = 0; i < input.length; i += 1) {
+    const ch = input[i];
+    const normalized = ch
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+    for (let j = 0; j < normalized.length; j += 1) {
+      folded += normalized[j];
+      map.push(i);
+    }
+  }
+  return { folded, map };
+}
+
+function collectSignalTokens(
+  text: string,
+  signals: Array<{ kind: HighlightKind; value: string | null }>
+): HighlightToken[] {
+  if (!text) return [];
+  const { folded, map } = foldWithMap(text);
+  const out: HighlightToken[] = [];
+
+  for (const signal of signals) {
+    if (!signal.value) continue;
+    const needle = foldForMatch(signal.value);
+    if (!needle) continue;
+
+    let idx = folded.indexOf(needle);
+    while (idx !== -1) {
+      const start = map[idx];
+      const endFoldIdx = idx + needle.length - 1;
+      const endOriginal = map[endFoldIdx];
+      if (typeof start === "number" && typeof endOriginal === "number") {
+        out.push({
+          start,
+          end: endOriginal + 1,
+          kind: signal.kind,
+        });
+      }
+      idx = folded.indexOf(needle, idx + needle.length);
+    }
+  }
+  return out;
+}
+
+function escapeHtml(input: string): string {
+  return input
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function buildHighlightedHtml(text: string, tokens: HighlightToken[]): string {
+  if (!text) return "";
+  if (!tokens.length) return escapeHtml(text).replace(/\n/g, "<br>");
+
+  const hlStyle =
+    "background:#efe9ff;color:#7d59c9;border:1px solid #c7b5f6;border-radius:999px;padding:0 6px;font-weight:400;box-decoration-break:clone;-webkit-box-decoration-break:clone;";
+
+  let out = "";
+  let cursor = 0;
+  for (const token of tokens) {
+    if (token.start > cursor) {
+      out += escapeHtml(text.slice(cursor, token.start));
+    }
+    const piece = escapeHtml(text.slice(token.start, token.end));
+    out += `<span style="${hlStyle}">${piece}</span>`;
+    cursor = token.end;
+  }
+  if (cursor < text.length) out += escapeHtml(text.slice(cursor));
+  return out.replace(/\n/g, "<br>");
+}
+
+function getSelectionOffsetsInElement(root: HTMLElement): { start: number; end: number } | null {
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return null;
+  const range = sel.getRangeAt(0);
+  if (!root.contains(range.startContainer) || !root.contains(range.endContainer)) return null;
+
+  const preStart = range.cloneRange();
+  preStart.selectNodeContents(root);
+  preStart.setEnd(range.startContainer, range.startOffset);
+  const start = preStart.toString().length;
+
+  const preEnd = range.cloneRange();
+  preEnd.selectNodeContents(root);
+  preEnd.setEnd(range.endContainer, range.endOffset);
+  const end = preEnd.toString().length;
+
+  return { start, end };
+}
+
+function setSelectionOffsetsInElement(root: HTMLElement, start: number, end = start) {
+  const safeStart = Math.max(0, start);
+  const safeEnd = Math.max(safeStart, end);
+
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let charCount = 0;
+  let startNode: Text | null = null;
+  let endNode: Text | null = null;
+  let startOffset = 0;
+  let endOffset = 0;
+
+  while (walker.nextNode()) {
+    const node = walker.currentNode as Text;
+    const len = node.data.length;
+    const nextCount = charCount + len;
+
+    if (!startNode && safeStart <= nextCount) {
+      startNode = node;
+      startOffset = Math.max(0, safeStart - charCount);
+    }
+    if (!endNode && safeEnd <= nextCount) {
+      endNode = node;
+      endOffset = Math.max(0, safeEnd - charCount);
+      break;
+    }
+    charCount = nextCount;
+  }
+
+  if (!startNode) {
+    const last = root.lastChild;
+    if (last && last.nodeType === Node.TEXT_NODE) {
+      startNode = last as Text;
+      startOffset = (last as Text).data.length;
+    }
+  }
+  if (!endNode) {
+    endNode = startNode;
+    endOffset = startOffset;
+  }
+  if (!startNode || !endNode) return;
+
+  const sel = window.getSelection();
+  if (!sel) return;
+  const range = document.createRange();
+  range.setStart(startNode, startOffset);
+  range.setEnd(endNode, endOffset);
+  sel.removeAllRanges();
+  sel.addRange(range);
 }
 
 /* ───────────────────────────────
@@ -947,6 +1172,7 @@ function CaretSquare() {
 export default function MindDumpModal({
   open,
   onClose,
+  embedded = false,
   onOpenReview,
   onCreateTask,
   onCreateIdea,
@@ -976,7 +1202,7 @@ export default function MindDumpModal({
   const [text, setText] = useState(normalizeIncomingText(initialText ?? ""));
   const [interim, setInterim] = useState("");
 
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const textareaRef = useRef<HTMLDivElement | null>(null);
 
   const dateInputRef = useRef<HTMLInputElement | null>(null);
   const timeInputRef = useRef<HTMLInputElement | null>(null);
@@ -1031,9 +1257,11 @@ export default function MindDumpModal({
   const [repeatMenuOpen, setRepeatMenuOpen] = useState(false);
   const reminderMenuRef = useRef<HTMLDivElement>(null);
   const repeatMenuRef = useRef<HTMLDivElement>(null);
+  const [settingsPanelOpen, setSettingsPanelOpen] = useState(false);
 
   const ios = useMemo(() => isIOS(), []);
   const android = useMemo(() => isAndroid(), []);
+  const showSettingsPanel = embedded ? settingsPanelOpen : true;
 
   const withGap = (s: string) => `${String(s ?? "").trim()}${GAP}`;
 
@@ -1088,10 +1316,10 @@ export default function MindDumpModal({
 
   const { setModalOpen } = useModalUi();
   useEffect(() => {
-    if (!open) return;
+    if (!open || embedded) return;
     setModalOpen(true);
     return () => setModalOpen(false);
-  }, [open, setModalOpen]);
+  }, [open, embedded, setModalOpen]);
 
   const lastErrorRef = useRef<string | null>(null);
   useEffect(() => {
@@ -1252,7 +1480,8 @@ export default function MindDumpModal({
     const node = textareaRef.current;
     if (!node) return;
     try {
-      caretRef.current = node.selectionStart ?? node.value.length;
+      const offs = getSelectionOffsetsInElement(node);
+      caretRef.current = offs?.start ?? node.innerText.length;
       setCaretTick((n) => n + 1);
     } catch {
       // ignore
@@ -1365,8 +1594,9 @@ export default function MindDumpModal({
       return;
     }
 
-    const start = node.selectionStart ?? node.value.length;
-    const end = node.selectionEnd ?? node.value.length;
+    const offs = getSelectionOffsetsInElement(node);
+    const start = offs?.start ?? node.innerText.length;
+    const end = offs?.end ?? node.innerText.length;
 
     setText((prev) => {
       const current = String(prev ?? "");
@@ -1378,8 +1608,8 @@ export default function MindDumpModal({
         const el = textareaRef.current;
         if (!el) return;
         try {
-          const pos = Math.min(safeStart + s.length, el.value.length);
-          el.selectionStart = el.selectionEnd = pos;
+          const pos = Math.min(safeStart + s.length, el.innerText.length);
+          setSelectionOffsetsInElement(el, pos, pos);
           caretRef.current = pos;
           setCaretTick((n) => n + 1);
           el.focus();
@@ -1713,6 +1943,49 @@ export default function MindDumpModal({
   const detectedTime = detectTimeSignal(currentLine) ?? detectTimeSignal(allTextForSignals);
   const detectedReminder = detectReminderSignal(currentLine) ?? detectReminderSignal(allTextForSignals);
   const detectedHabit = detectHabitSignal(currentLine) ?? detectHabitSignal(allTextForSignals);
+  const highlightTokens = useMemo(() => {
+    const base = collectHighlightTokens(text);
+    const fromSignals = collectSignalTokens(text, [
+      { kind: "date", value: detectedDate },
+      { kind: "time", value: detectedTime },
+      { kind: "reminder", value: detectedReminder },
+      { kind: "habit", value: detectedHabit },
+    ]);
+    const merged = [...base, ...fromSignals];
+    if (merged.length === 0) return merged;
+
+    merged.sort((a, b) => {
+      if (a.start !== b.start) return a.start - b.start;
+      const pr = HIGHLIGHT_PRIORITY[b.kind] - HIGHLIGHT_PRIORITY[a.kind];
+      if (pr !== 0) return pr;
+      return b.end - b.start - (a.end - a.start);
+    });
+
+    const selected: HighlightToken[] = [];
+    for (const token of merged) {
+      const overlaps = selected.some(
+        (taken) => token.start < taken.end && token.end > taken.start
+      );
+      if (!overlaps) selected.push(token);
+    }
+    return selected.sort((a, b) => a.start - b.start);
+  }, [text, detectedDate, detectedTime, detectedReminder, detectedHabit]);
+  const highlightedHtml = useMemo(() => buildHighlightedHtml(text, highlightTokens), [text, highlightTokens]);
+
+  useEffect(() => {
+    const node = textareaRef.current;
+    if (!node) return;
+
+    const currentText = node.innerText.replace(/\r/g, "");
+    const selection = getSelectionOffsetsInElement(node);
+    const desiredStart = selection?.start ?? Math.min(caretRef.current, text.length);
+    const desiredEnd = selection?.end ?? desiredStart;
+
+    if (currentText !== text || node.innerHTML !== highlightedHtml) {
+      node.innerHTML = highlightedHtml;
+      setSelectionOffsetsInElement(node, desiredStart, desiredEnd);
+    }
+  }, [text, highlightedHtml]);
 
   useEffect(() => {
     if (itemKind !== "task") return;
@@ -1819,7 +2092,10 @@ export default function MindDumpModal({
   })();
 
   return (
-    <div className="fixed inset-0 z-[1000]" onContextMenu={(e) => e.preventDefault()}>
+    <div
+      className={embedded ? "relative w-full" : "fixed inset-0 z-[1000]"}
+      onContextMenu={(e) => e.preventDefault()}
+    >
       <style>{`
         @keyframes remiRipple {
           from { transform: scale(0); opacity: .35; }
@@ -1854,25 +2130,42 @@ export default function MindDumpModal({
           display: none;
           width: 0; height: 0;
         }
+        .remi-editor:empty:before {
+          content: attr(data-placeholder);
+          color: rgba(15,23,42,0.35);
+        }
       `}</style>
 
-      <div className="absolute inset-0" style={{ background: "#ffffff" }} />
+      {!embedded && <div className="absolute inset-0" style={{ background: "#ffffff" }} />}
 
-      <div className="absolute inset-0 flex flex-col">
+      <div
+        className={embedded ? "relative flex flex-col w-full" : "absolute inset-0 flex flex-col"}
+        style={
+          embedded
+            ? {
+                background: "transparent",
+                borderRadius: 0,
+                overflow: "visible",
+                border: "none",
+                boxShadow: "none",
+              }
+            : undefined
+        }
+      >
         {/* Header */}
         <div
           className="sticky top-0 z-10"
           style={{
-            background: "linear-gradient(135deg, #9a86ff 0%, #7d59c9 48%, #665ed1 100%)",
-            color: "#ffffff",
-            borderBottomLeftRadius: 24,
-            borderBottomRightRadius: 24,
-            border: "1px solid rgba(255,255,255,0.18)",
-            boxShadow: "0 10px 24px rgba(93,69,179,0.22)",
-            backdropFilter: "blur(8px)",
+            background: embedded ? "transparent" : "linear-gradient(135deg, #9a86ff 0%, #7d59c9 48%, #665ed1 100%)",
+            color: embedded ? "#0f172a" : "#ffffff",
+            borderBottomLeftRadius: embedded ? 0 : 24,
+            borderBottomRightRadius: embedded ? 0 : 24,
+            border: embedded ? "none" : "1px solid rgba(255,255,255,0.18)",
+            boxShadow: embedded ? "none" : "0 10px 24px rgba(93,69,179,0.22)",
+            backdropFilter: embedded ? "none" : "blur(8px)",
           }}
         >
-          <div
+          {!embedded && <div
             aria-hidden
             style={{
               position: "absolute",
@@ -1885,8 +2178,8 @@ export default function MindDumpModal({
               filter: "blur(1px)",
               pointerEvents: "none",
             }}
-          />
-          <div
+          />}
+          {!embedded && <div
             aria-hidden
             style={{
               position: "absolute",
@@ -1899,8 +2192,8 @@ export default function MindDumpModal({
               filter: "blur(1px)",
               pointerEvents: "none",
             }}
-          />
-          <div
+          />}
+          {!embedded && <div
             className="pb-4 flex items-start justify-between"
             style={{
               paddingTop: "calc(16px + env(safe-area-inset-top))",
@@ -1927,27 +2220,30 @@ export default function MindDumpModal({
               )}
             </div>
 
-            <button
-              data-no-focus
-              onClick={handleClose}
-              aria-label={t("common.close", "Cerrar")}
-              className="h-10 w-10 rounded-full flex items-center justify-center"
-              style={{
-                background: "rgba(255,255,255,0.18)",
-                border: "1px solid rgba(255,255,255,0.35)",
-                cursor: "pointer",
-              }}
-            >
-              <X className="h-5 w-5" style={{ color: "rgba(255,255,255,0.95)" }} />
-            </button>
-          </div>
+            {!embedded && (
+              <button
+                data-no-focus
+                onClick={handleClose}
+                aria-label={t("common.close", "Cerrar")}
+                className="h-10 w-10 rounded-full flex items-center justify-center"
+                style={{
+                  background: "rgba(255,255,255,0.18)",
+                  border: "1px solid rgba(255,255,255,0.35)",
+                  cursor: "pointer",
+                }}
+              >
+                <X className="h-5 w-5" style={{ color: "rgba(255,255,255,0.95)" }} />
+              </button>
+            )} 
+          </div>}
 
           {/* ✅ Smart chips bar (AUTO) */}
           <div
             style={{
+              paddingTop: embedded ? 12 : 0,
               paddingBottom: 14,
-              paddingLeft: "calc(20px + env(safe-area-inset-left))",
-              paddingRight: "calc(20px + env(safe-area-inset-right))",
+              paddingLeft: embedded ? 0 : "calc(20px + env(safe-area-inset-left))",
+              paddingRight: embedded ? 0 : "calc(20px + env(safe-area-inset-right))",
             }}
           >
             <div
@@ -1958,7 +2254,7 @@ export default function MindDumpModal({
                 gap: 10,
               }}
             >
-              <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.92)" }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: embedded ? "rgba(15,23,42,0.72)" : "rgba(255,255,255,0.92)" }}>
                 {chipTitle}
               </div>
 
@@ -1971,11 +2267,11 @@ export default function MindDumpModal({
                       height: 26,
                       padding: "0 10px",
                       borderRadius: 999,
-                      border: "1px solid rgba(255,255,255,0.28)",
-                      background: "rgba(255,255,255,0.10)",
-                      color: "rgba(255,255,255,0.95)",
+                      border: embedded ? "1px solid #c7b5f6" : "1px solid rgba(255,255,255,0.28)",
+                      background: embedded ? "#f3f4f6" : "rgba(255,255,255,0.10)",
+                      color: embedded ? "#111827" : "rgba(255,255,255,0.95)",
                       fontSize: 11,
-                      fontWeight: 900,
+                      fontWeight: 500,
                       cursor: "pointer",
                     }}
                     title={t("capture.chips.backHint", "Volver a atajos")}
@@ -2003,56 +2299,113 @@ export default function MindDumpModal({
               {chipStage === "ROOT" && (
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   {rootChips.map((c) => (
-                    <Chip key={c.id} label={c.label} onClick={() => handleRootChip(c.id)} />
+                    <Chip key={c.id} label={c.label} embedded={embedded} onClick={() => handleRootChip(c.id)} />
                   ))}
                 </div>
               )}
 
               {chipStage === "SCHEDULE" &&
                 scheduleChips.map((c) => (
-                  <Chip key={c.id} label={c.label} onClick={() => handleScheduleChip(c.insert)} />
+                  <Chip key={c.id} label={c.label} embedded={embedded} onClick={() => handleScheduleChip(c.insert)} />
                 ))}
 
               {chipStage === "TIME" &&
                 timeChips.map((c) => (
-                  <Chip key={c.id} label={c.label} onClick={() => handleTimeChip(c.insert)} />
+                  <Chip key={c.id} label={c.label} embedded={embedded} onClick={() => handleTimeChip(c.insert)} />
                 ))}
 
               {chipStage === "REMINDER" &&
                 reminderChips.map((c) => (
-                  <Chip key={c.id} label={c.label} onClick={() => handleReminderChip(c.insert)} />
+                  <Chip key={c.id} label={c.label} embedded={embedded} onClick={() => handleReminderChip(c.insert)} />
                 ))}
 
-              <Chip label="↵" onClick={() => insertAtCursor("\n")} />
+              <Chip label="↵" embedded={embedded} onClick={() => insertAtCursor("\n")} />
             </div>
           </div>
         </div>
 
         {/* Body (ocupa el espacio restante entre header y barra inferior) */}
-        <div className="flex-1 overflow-hidden px-5 pt-5 pb-4">
+        <div
+          className={
+            embedded
+              ? "relative overflow-hidden px-2 pt-0 pb-0"
+              : "relative flex-1 overflow-hidden px-5 pt-5 pb-4"
+          }
+        >
           <div
-            className="w-full h-full rounded-2xl overflow-hidden"
+            className="relative w-full h-full rounded-2xl overflow-hidden"
+            onPointerDown={(e) => {
+              const target = e.target as HTMLElement | null;
+              if (!target) return;
+
+              // Do not steal interactions from actionable controls.
+              if (
+                target.closest(
+                  "button,[data-no-focus],input,select,textarea,[role='button']",
+                )
+              ) {
+                return;
+              }
+
+              const node = textareaRef.current;
+              if (!node) return;
+
+              // If the tap is outside the contentEditable node but inside the textarea shell,
+              // focus editor and place caret at end.
+              if (!node.contains(target)) {
+                node.focus();
+                try {
+                  const pos = node.innerText.length;
+                  setSelectionOffsetsInElement(node, pos, pos);
+                  caretRef.current = pos;
+                  setCaretTick((n) => n + 1);
+                } catch {}
+                return;
+              }
+
+              // Ensure the editor gets focus on any touch/click inside it.
+              if (document.activeElement !== node) {
+                node.focus();
+              }
+            }}
             style={{
               background: "#fff",
               border: "1px solid rgba(15,23,42,0.15)",
-              boxShadow: "0 10px 30px rgba(15,23,42,0.06)",
+              boxShadow: embedded ? "none" : "0 10px 30px rgba(15,23,42,0.06)",
+              minHeight: embedded ? (showSettingsPanel ? 240 : 320) : undefined,
+              transition: "min-height 240ms ease",
             }}
           >
-            <textarea
+            <div
               ref={textareaRef}
-              value={text}
-              onChange={(e) => {
-                setText(e.target.value);
+              contentEditable
+              suppressContentEditableWarning
+              role="textbox"
+              aria-multiline="true"
+              onInput={(e) => {
+                const node = e.currentTarget as HTMLDivElement;
+                setText(node.innerText.replace(/\r/g, ""));
                 requestAnimationFrame(updateCaret);
               }}
               onKeyUp={() => updateCaret()}
               onClick={() => updateCaret()}
-              onSelect={() => updateCaret()}
+              onMouseUp={() => updateCaret()}
               onFocus={() => {
                 setIsFocused(true);
                 requestAnimationFrame(updateCaret);
               }}
-              onBlur={() => setIsFocused(false)}
+              onBlur={() => {
+                setIsFocused(false);
+                const node = textareaRef.current;
+                if (!node) return;
+                const plain = node.innerText.replace(/\r/g, "").trim();
+                if (!plain) {
+                  node.innerHTML = "";
+                  setText("");
+                  caretRef.current = 0;
+                  setCaretTick((n) => n + 1);
+                }
+              }}
               onPaste={(e) => {
                 const pasted = e.clipboardData?.getData("text") ?? "";
                 const normalized = normalizeIncomingText(pasted);
@@ -2060,9 +2413,10 @@ export default function MindDumpModal({
 
                 e.preventDefault();
 
-                const el = e.currentTarget as HTMLTextAreaElement | null;
-                const startRaw = el?.selectionStart;
-                const endRaw = el?.selectionEnd;
+                const el = e.currentTarget as HTMLDivElement | null;
+                const offs = el ? getSelectionOffsetsInElement(el) : null;
+                const startRaw = offs?.start;
+                const endRaw = offs?.end;
 
                 setText((prev) => {
                   const current = String(prev ?? "");
@@ -2077,8 +2431,8 @@ export default function MindDumpModal({
                     const node = textareaRef.current;
                     if (!node) return;
                     try {
-                      const pos = Math.min(start + normalized.length, node.value.length);
-                      node.selectionStart = node.selectionEnd = pos;
+                      const pos = Math.min(start + normalized.length, node.innerText.length);
+                      setSelectionOffsetsInElement(node, pos, pos);
                       caretRef.current = pos;
                       setCaretTick((n) => n + 1);
                     } catch {}
@@ -2087,29 +2441,159 @@ export default function MindDumpModal({
                   return next;
                 });
               }}
-              placeholder={t("capture.placeholder", "Toca para escribir")}
-              className="w-full h-full resize-none bg-transparent outline-none text-[18px] leading-7"
+              className="remi-editor w-full h-full overflow-auto bg-transparent outline-none text-[18px] leading-7"
               style={{
+                position: "relative",
+                zIndex: 2,
                 color: REMI_TEXT,
+                caretColor: REMI_TEXT,
                 padding: 16,
+                paddingBottom: embedded ? 88 : 16,
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+                overflowWrap: "anywhere",
               }}
-              inputMode="text"
+              data-placeholder={t("capture.placeholder", "Toca para escribir")}
             />
+
+            {embedded && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: 14,
+                  right: 14,
+                  bottom: 12,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  pointerEvents: "none",
+                  zIndex: showSettingsPanel ? 2 : 6,
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setSettingsPanelOpen((v) => !v)}
+                  aria-label={t("common.settings", "Ajustes")}
+                  title={t("common.settings", "Ajustes")}
+                  aria-pressed={settingsPanelOpen}
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 999,
+                    border: "1px solid #c7b5f6",
+                    background: "#f3f4f6",
+                    color: "#7d59c9",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    pointerEvents: "auto",
+                  }}
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                </button>
+
+                {showTalkButton ? (
+                  <button
+                    data-no-focus
+                    type="button"
+                    onPointerDown={handleTalkDown}
+                    onPointerUp={handleTalkUp}
+                    onPointerCancel={handleTalkUp}
+                    onPointerLeave={handleTalkUp}
+                    onContextMenu={(e) => e.preventDefault()}
+                    style={{
+                      width: 46,
+                      height: 46,
+                      borderRadius: 999,
+                      border: "1px solid #c7b5f6",
+                      background: listening ? "#e9e5f3" : "#f3f4f6",
+                      color: REMI_PURPLE,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      userSelect: "none",
+                      WebkitTouchCallout: "none",
+                      WebkitUserSelect: "none",
+                      touchAction: "none",
+                      cursor: "pointer",
+                      position: "relative",
+                      overflow: "hidden",
+                      pointerEvents: "auto",
+                    }}
+                    aria-pressed={listening}
+                    title={t("capture.speakHold", "Mantén pulsado para hablar")}
+                    aria-label={t("capture.speakHold", "Mantén pulsado para hablar")}
+                  >
+                    {showTalkActiveRing && <span className="remi-ring" />}
+                    {showTalkRipple && <span key={rippleTick} className="remi-ripple" />}
+                    <span style={{ position: "relative", zIndex: 2, display: "flex" }}>
+                      <Mic className="h-5 w-5" />
+                    </span>
+                  </button>
+                ) : (
+                  <div style={{ width: 46, height: 46 }} />
+                )}
+
+                <button
+                  data-no-focus
+                  type="button"
+                  onClick={handleSave}
+                  onContextMenu={(e) => e.preventDefault()}
+                  aria-label={t("common.save", "Guardar")}
+                  title={t("common.save", "Guardar")}
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 999,
+                    border: "1px solid rgba(125,89,201,0.35)",
+                    background: REMI_PURPLE,
+                    color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    pointerEvents: "auto",
+                  }}
+                >
+                  <Check className="h-4 w-4" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Barra inferior (ya NO es fixed: ocupa espacio real y no pisa el textarea) */}
-        <div
-          className="shrink-0"
-          style={{
-            paddingBottom: "max(env(safe-area-inset-bottom), 14px)",
-          }}
-        >
+        {embedded && ios && (
           <div
-            className="mx-auto"
             style={{
-              width: "calc(100% - 32px)",
-              maxWidth: 420,
+              textAlign: "center",
+              fontSize: 12,
+              lineHeight: "16px",
+              color: REMI_SUB,
+              padding: "0 12px",
+              marginTop: 6,
+              marginBottom: showSettingsPanel ? 6 : 0,
+            }}
+          >
+            {t("capture.iosKeyboardMicHint", "En iPhone: usa el micrófono del teclado para dictar.")}
+          </div>
+        )}
+
+        {/* Barra inferior (solo modal completo) */}
+        {(!embedded || showSettingsPanel) && (
+          <div
+            className="shrink-0"
+            style={{
+              paddingBottom: embedded ? 0 : "max(env(safe-area-inset-bottom), 14px)",
+              position: "relative",
+              zIndex: 20,
+            }}
+          >
+            <div
+              className="mx-auto"
+              style={{
+              width: embedded ? "calc(100% - 16px)" : "calc(100% - 32px)",
+              maxWidth: embedded ? undefined : 420,
               pointerEvents: "auto",
               position: "relative",
             }}
@@ -2122,38 +2606,28 @@ export default function MindDumpModal({
             */}
             {/* ... (bloque comentado de idioma intacto) ... */}
 
-            {ios && (
-              <div
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  right: 0,
-                  bottom: "calc(100% + 1px)",
-                  textAlign: "center",
-                  fontSize: 12,
-                  lineHeight: "16px",
-                  color: REMI_SUB,
-                  padding: "0 12px",
-                  pointerEvents: "none",
-                }}
-              >
-                {t("capture.iosKeyboardMicHint", "En iPhone: usa el micrófono del teclado para dictar.")}
-              </div>
-            )}
-
             {/* pill */}
             <div
               style={{
                 background: "rgba(255,255,255,0.92)",
-                border: "1px solid rgba(15,23,42,0.08)",
-                borderRadius: 24,
+                border: "1px solid rgba(15,23,42,0.15)",
+                borderRadius: 16,
                 padding: "10px 12px",
-                boxShadow: "0 18px 50px rgba(15,23,42,0.16)",
+                boxShadow: "none",
                 backdropFilter: "blur(12px)",
               }}
             >
-              {/* ✅ panel SIEMPRE visible y compacto */}
-              <div className="mt-1 space-y-2">
+              <div
+                className="mt-1 space-y-2"
+                style={{
+                  overflow: showSettingsPanel ? "visible" : "hidden",
+                  maxHeight: showSettingsPanel ? 520 : 0,
+                  opacity: showSettingsPanel ? 1 : 0,
+                  transform: showSettingsPanel ? "translateY(0)" : "translateY(-8px)",
+                  transition: "max-height 240ms ease, opacity 220ms ease, transform 220ms ease",
+                  pointerEvents: showSettingsPanel ? "auto" : "none",
+                }}
+              >
                 {/* ✅ Tipo (task/idea) */}
                 <div className="rounded-2xl border border-slate-100 bg-slate-50 p-2">
                   <div className="flex items-center justify-between gap-2">
@@ -2198,8 +2672,8 @@ export default function MindDumpModal({
                       >
                         {t("pill.type.idea", "Idea")}
                       </PillButton>
-                    </div>
-                  </div>
+            </div>
+          </div>
                 </div>
 
                 {/* ✅ NUEVO: 2x2 pills (Fecha / Hora / Recordatorio / Repetición) */}
@@ -2427,14 +2901,15 @@ export default function MindDumpModal({
               </div>
 
               {/* ✅ Botones debajo */}
-              <div
-                className="mt-3"
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr 1fr",
-                  alignItems: "center",
-                }}
-              >
+              {!embedded && (
+                <div
+                  className="mt-3"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr 1fr",
+                    alignItems: "center",
+                  }}
+                >
                 {/* Pegar */}
                 <div className="flex flex-col items-center justify-center gap-1.5">
                   <button
@@ -2549,12 +3024,14 @@ export default function MindDumpModal({
                     <div />
                   )}
                 </div>
-              </div>
+                </div>
+              )}
             </div>
 
             <div style={{ height: 6 }} />
           </div>
         </div>
+      )}
 
         {/* FAB Guardar encima del teclado */}
         {false && isFocused && kbdOffset > 80 && (
@@ -2590,7 +3067,15 @@ export default function MindDumpModal({
   );
 }
 
-function Chip({ label, onClick }: { label: string; onClick: () => void }) {
+function Chip({
+  label,
+  onClick,
+  embedded = false,
+}: {
+  label: string;
+  onClick: () => void;
+  embedded?: boolean;
+}) {
   return (
     <button
       type="button"
@@ -2600,11 +3085,11 @@ function Chip({ label, onClick }: { label: string; onClick: () => void }) {
         height: 30,
         padding: "0 12px",
         borderRadius: 999,
-        border: "1px solid rgba(255,255,255,0.30)",
-        background: "rgba(255,255,255,0.16)",
-        color: "rgba(255,255,255,0.95)",
+        border: embedded ? "1px solid #c7b5f6" : "1px solid rgba(255,255,255,0.30)",
+        background: embedded ? "#f3f4f6" : "rgba(255,255,255,0.16)",
+        color: embedded ? "#7d59c9" : "rgba(255,255,255,0.95)",
         fontSize: 11,
-        fontWeight: 900,
+        fontWeight: 500,
         cursor: "pointer",
         userSelect: "none",
         WebkitTouchCallout: "none",

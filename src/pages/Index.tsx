@@ -14,6 +14,9 @@ import { useI18n } from "@/contexts/I18nContext";
 import {
   BrainItem,
   ReminderMode,
+  RepeatType,
+  createTask,
+  createIdea,
   fetchActiveIdeas,
   fetchActiveTasks,
   setTaskStatus,
@@ -52,6 +55,7 @@ import {
 } from "lucide-react";
 
 import { useModalUi } from "@/contexts/ModalUiContext";
+import MindDumpModal from "@/components/MindDumpModal";
 
 const AVATAR_KEY = "remi_avatar";
 
@@ -127,7 +131,8 @@ const ACTION_BTN_CLASS =
 const DONE_BTN_CLASS =
   "w-9 h-9 rounded-full border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 inline-flex items-center justify-center";
 const RIGHT_RAIL_WIDTH_PX = 0;
-const NOTE_PAGE_BG = "linear-gradient(180deg, #f8f7fb 0%, #ffffff 42%, #ffffff 100%)";
+const NOTE_PAGE_BG =
+  "linear-gradient(180deg, #f8f7fb 0%, #ffffff 42%, #ffffff 100%)";
 const MODAL_OVERLAY_STYLE: CSSProperties = {
   paddingLeft: "calc(8px + env(safe-area-inset-left))",
   paddingRight: `calc(${RIGHT_RAIL_WIDTH_PX + 8}px + env(safe-area-inset-right))`,
@@ -142,6 +147,11 @@ export default function TodayPage() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const { t, lang } = useI18n();
+  const uiLocale = useMemo(() => {
+    if (lang === "de") return "de-DE";
+    if (lang === "en") return "en-US";
+    return "es-ES";
+  }, [lang]);
 
   const { setModalOpen } = useModalUi();
 
@@ -498,7 +508,7 @@ const anyModalOpen =
         else if (isSameDay(dMid, tomorrowMid))
           label = safeT("inbox.sectionTomorrow", "Mañana");
         else {
-          label = dMid.toLocaleDateString(undefined, {
+          label = dMid.toLocaleDateString(uiLocale, {
             weekday: "short",
             day: "numeric",
             month: "short",
@@ -588,7 +598,7 @@ const anyModalOpen =
 
     return { dateGroups: dateGroupsArr, noDateTasks: noDate };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tasks, safeT]);
+  }, [tasks, safeT, uiLocale]);
 
   const filteredDateGroups = useMemo(() => {
     if (filter === "NO_DATE") return [];
@@ -629,7 +639,7 @@ const anyModalOpen =
     [dueDateFormatter, safeT],
   );
 
-    const handleShareTask = async (task: BrainItem) => {
+  const handleShareTask = async (task: BrainItem) => {
   try {
     const res = await createShareInviteCached(task.id);
     await shareTextOrCopy(res.shareMessage);
@@ -644,6 +654,29 @@ const anyModalOpen =
     );
   }
 };
+
+  const handleCreateTaskFromMindDump = useCallback(
+    async (
+      title: string,
+      dueDateISO: string | null,
+      reminderMode: ReminderMode,
+      repeatType: RepeatType,
+    ) => {
+      if (!user) return;
+      await createTask(user.id, title, dueDateISO, reminderMode, repeatType);
+      await loadData();
+    },
+    [loadData, user],
+  );
+
+  const handleCreateIdeaFromMindDump = useCallback(
+    async (title: string) => {
+      if (!user) return;
+      await createIdea(user.id, title);
+      await loadData();
+    },
+    [loadData, user],
+  );
 
 
 
@@ -720,6 +753,23 @@ const anyModalOpen =
 
   const renderFilterButton = (mode: FilterMode, label: string) => {
     const active = filter === mode;
+    const isTodayActive = active && mode === "TODAY";
+    const isWeekActive = active && mode === "WEEK";
+    const isNoDateActive = active && mode === "NO_DATE";
+    const activeBg = isTodayActive
+      ? "rgba(201,89,109,0.18)"
+      : isWeekActive
+        ? "rgba(89,165,201,0.18)"
+        : isNoDateActive
+          ? "rgba(201,125,89,0.18)"
+          : "rgba(125,89,201,0.16)";
+    const activeColor = isTodayActive
+      ? "#c9596d"
+      : isWeekActive
+        ? "#59a5c9"
+        : isNoDateActive
+          ? "#c97d59"
+          : "#7d59c9";
 
     return (
       <button
@@ -731,14 +781,13 @@ const anyModalOpen =
           cursor: "pointer",
           border: "none",
           outline: "none",
-          padding: "10px 16px",
+          padding: "8px 16px",
           borderRadius: 999,
-          background: active ? "#7d59c9" : "transparent",
-          color: active ? "#ffffff" : "#64748b",
+          background: active ? activeBg : "transparent",
+          color: active ? activeColor : "#64748b",
           fontSize: 13,
           fontWeight: active ? 700 : 600,
           lineHeight: 1,
-          boxShadow: active ? "0 8px 16px rgba(125,89,201,0.26)" : "none",
           transition: "all 0.2s ease",
         }}
       >
@@ -1400,287 +1449,279 @@ const anyModalOpen =
         </div>
       </div>
 
-      <div className="mx-auto mt-7 mb-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
-        <p className="leading-none font-extrabold text-slate-900 px-1" style={{ fontSize: "clamp(18px, 1.1vw, 24px)" }}>
-          Hoy
+      <div className="mx-auto mt-6 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
+        <p className="leading-none font-extrabold text-slate-900" style={{ fontSize: "clamp(18px, 1.1vw, 24px)" }}>
+          {safeT("today.captureSectionTitle", "Vacia tu mente")}
         </p>
+        <div className="mt-3 px-1">
+          <MindDumpModal
+            open={true}
+            embedded
+            onClose={() => {}}
+            onCreateTask={handleCreateTaskFromMindDump}
+            onCreateIdea={async (title) => {
+              await handleCreateIdeaFromMindDump(title);
+            }}
+          />
+        </div>
+      </div>
 
-        {selectedDayTasks.length > 0 ? (
-          <div className="mt-4 relative">
+      {tipCards.length > 0 && (
+        <div className="mx-auto mt-7 mb-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
+          <div>
+            <p className="font-extrabold text-slate-900" style={{ fontSize: "clamp(16px, 1vw, 22px)" }}>
+              {safeT("today.tipsTitle", "Consejos")}
+            </p>
+          </div>
+          <div
+            ref={tipsScrollRef}
+            onScroll={updateTipsScrollMetrics}
+            className="mt-2 remi-scroll flex gap-2.5 overflow-x-auto pb-1 px-1"
+          >
+            {tipCards.map((tip) => (
+              <button
+                key={tip.id}
+                type="button"
+                onClick={tip.onClick}
+                className="shrink-0 rounded-2xl border border-slate-200 bg-white shadow-[0_6px_16px_rgba(15,23,42,0.06)] hover:bg-slate-50"
+                style={{
+                  width: "clamp(100px, 7.8vw, 168px)",
+                  padding: "clamp(8px, 0.6vw, 14px)",
+                }}
+                title={tip.title}
+                aria-label={tip.title}
+              >
+                <div className="mx-auto rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center" style={{ width: "clamp(40px, 2.6vw, 58px)", height: "clamp(40px, 2.6vw, 58px)" }}>
+                  <span className="leading-none" style={{ fontSize: "clamp(20px, 1.2vw, 28px)" }}>
+                    {TIP_EMOJI_BY_ID[tip.id] ?? "✨"}
+                  </span>
+                </div>
+                <p className="mt-2 leading-tight font-medium text-slate-800 line-clamp-2" style={{ fontSize: "clamp(12px, 0.82vw, 16px)" }}>
+                  {tip.title}
+                </p>
+              </button>
+            ))}
+          </div>
+          <div className="mt-2 px-1">
+            <div className="relative h-1.5 w-full rounded-full bg-slate-200/80 overflow-hidden">
+              <span
+                className="absolute top-0 h-full rounded-full bg-violet-400/90 transition-all duration-150"
+                style={{
+                  width: `${tipsThumbWidthPct}%`,
+                  left: `${tipsThumbLeftPct}%`,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="mx-auto mt-7 mb-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
+        <div className="mt-2">
+          <div>
+            <p className="font-extrabold text-slate-900" style={{ fontSize: "clamp(15px, 0.9vw, 20px)" }}>
+              Recordatorios
+            </p>
+          </div>
+
+          <div className="mt-2.5 px-1 flex justify-center">
             <div
-              ref={reminderDeckRef}
-              {...reminderDeckBind}
-              className="remi-scroll flex overflow-x-auto pb-4"
-              style={{
-                scrollSnapType: "x mandatory",
-                scrollBehavior: "smooth",
-                overscrollBehaviorX: "contain",
-                paddingLeft: REMINDER_DECK_SIDE_PADDING,
-                paddingRight: REMINDER_DECK_SIDE_PADDING,
-                gap: 0,
-                minHeight: "clamp(320px, 28vw, 520px)",
-              }}
+              className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white p-1.5"
+              style={{ minHeight: 46 }}
             >
-              {selectedDayTasks.map((task, index) => {
-                  const theme = sliderThemes[index];
-                  const isActive = index === activeSlideIndex;
+              {renderFilterButton("TODAY", safeT("inbox.sectionToday", "Hoy"))}
+              {renderFilterButton("WEEK", safeT("inbox.sectionWeek", "Semana"))}
+              {renderFilterButton("NO_DATE", safeT("inbox.sectionNoDate", "Sin fecha"))}
+            </div>
+          </div>
 
-                  return (
-                    <div
-                      key={task.id}
-                      className="shrink-0 rounded-[26px] border px-3.5 py-3 flex flex-col"
-                      style={{
-                        scrollSnapAlign: "center",
-                        scrollSnapStop: "always",
-                        width: REMINDER_DECK_CARD_WIDTH,
-                        flex: `0 0 ${REMINDER_DECK_CARD_WIDTH}`,
-                        minWidth: "300px",
-                        maxWidth: "720px",
-                        height: "clamp(250px, 20.5vw, 430px)",
-                        marginLeft: index === 0 ? 0 : REMINDER_DECK_OVERLAP,
-                        zIndex: isActive ? 30 : 10 + index,
-                        background: theme.bg,
-                        borderColor: theme.border,
-                        boxShadow: theme.shadow,
-                        transform: isActive ? "translateY(-2px)" : "translateY(0)",
-                        transition: "transform 0.18s ease, filter 0.18s ease, opacity 0.18s ease",
-                        opacity: isActive ? 1 : 0.9,
-                        filter: isActive ? "none" : "blur(0.5px)",
-                      }}
-                    >
-                      <div className="remi-scroll min-h-0 flex-1 overflow-y-auto pr-1">
-                        <p
-                          className="font-normal leading-snug text-slate-900"
-                          style={{
-                            fontSize: "clamp(20px, 1.45vw, 34px)",
-                            wordBreak: "break-word",
-                            overflowWrap: "anywhere",
-                            whiteSpace: "pre-wrap",
-                          }}
-                        >
-                          {task.title}
-                        </p>
-                      </div>
-                      <div className="mt-2 pt-2 border-t border-slate-700/10 flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5 text-slate-700" style={{ fontSize: "clamp(12px, 0.9vw, 18px)" }}>
-                          <CalendarDays size={14} className="text-slate-700" />
-                          <span>{formatDueLabel(task.due_date as string | null)}</span>
+          {searchVisibleTasksCount > 0 ? (
+            <div className="mt-2.5 rounded-3xl border border-transparent bg-transparent p-1.5">
+              <div className="max-h-[460px] overflow-y-auto remi-scroll pr-1">
+                {filter === "NO_DATE" ? (
+                  <div className="space-y-2 pt-2">
+                    {visibleNoDateTasks.map((task) => (
+                      <div
+                        key={`today-nodate-${task.id}`}
+                        className="rounded-3xl bg-white border border-[#7d59c9] shadow-[0_6px_14px_rgba(15,23,42,0.05)] px-4 py-3 md:px-5 md:py-4 lg:px-6 lg:py-5"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center shrink-0 relative">
+                            <List size={18} />
+                            {shouldShowSentIndicator(task) && (
+                              <span
+                                className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm"
+                                aria-label={safeT("shareInvite.sentIndicator", "Compartido por ti")}
+                                title={safeT("shareInvite.sentIndicator", "Compartido por ti")}
+                              >
+                                <Share2 size={10} className="text-slate-500" />
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <p
+                              className="font-semibold text-slate-900 leading-snug"
+                              style={{ fontSize: "clamp(16px, 1.1vw, 26px)" }}
+                            >
+                              Recordatorio
+                            </p>
+                            <p
+                              className="mt-1 text-slate-700"
+                              style={{
+                                fontSize: "clamp(13px, 0.86vw, 17px)",
+                                whiteSpace: "pre-wrap",
+                                wordBreak: "break-word",
+                                overflowWrap: "anywhere",
+                                maxHeight: 96,
+                                overflow: "hidden",
+                              }}
+                            >
+                              {task.title}
+                            </p>
+                            <div
+                              className="mt-2 flex items-center gap-1 text-slate-500"
+                              style={{ fontSize: "clamp(13px, 0.85vw, 17px)" }}
+                            >
+                              <CalendarDays size={14} className="text-slate-400" />
+                              <span className="truncate">
+                                {safeT("today.dueNoDate", "Sin fecha")}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1.5">
+
+                        <div className="mt-3 flex items-center gap-3">
                           <button
                             type="button"
                             onPointerDown={() => prefetchShareInvite(task.id)}
                             onClick={() => handleShareTask(task)}
-                            title={safeT("shareInvite.share", "Compartir")}
+                            className="flex-1 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center gap-2 text-[12px] font-semibold text-slate-700 md:h-10 md:text-[13px] lg:h-11 lg:text-[15px]"
                             aria-label={safeT("shareInvite.share", "Compartir")}
-                            className="w-8 h-8 rounded-full border border-violet-200 bg-white/90 text-violet-700 inline-flex items-center justify-center"
+                            title={safeT("shareInvite.share", "Compartir")}
                           >
-                            <Share2 size={14} />
+                            <Share2 size={15} color="#94A3B8" />
+                            <span>{safeT("shareInvite.share", "Compartir")}</span>
                           </button>
+
                           <button
                             type="button"
                             onClick={() => handleDone(task)}
-                            title={safeT("today.actionDoneTitle", "Marcar como completada")}
-                            aria-label={safeT(
-                              "today.actionDoneTitle",
-                              "Marcar como completada",
-                            )}
-                            className="w-8 h-8 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 inline-flex items-center justify-center"
+                            className="flex-1 h-9 rounded-full border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 inline-flex items-center justify-center gap-2 text-[12px] font-semibold text-emerald-700 md:h-10 md:text-[13px] lg:h-11 lg:text-[15px]"
+                            aria-label={safeT("today.done", "Hecho")}
+                            title={safeT("today.done", "Hecho")}
                           >
-                            <Check size={14} />
+                            <Check size={15} color="#10B981" />
+                            <span>{safeT("today.done", "Hecho")}</span>
                           </button>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-            </div>
-              <div className="mt-1 flex items-center justify-center gap-1.5">
-                {selectedDayTasks.map((task, index) => (
-                  <button
-                    key={`slide-dot-${task.id}`}
-                    type="button"
-                    onClick={() => scrollToReminderSlide(index)}
-                    aria-label={`Go to reminder ${index + 1}`}
-                    className="rounded-full border-0"
-                    style={{
-                      width: index === activeSlideIndex ? 18 : 8,
-                      height: 8,
-                      background:
-                        index === activeSlideIndex
-                          ? "rgba(125,89,201,0.95)"
-                          : "rgba(148,163,184,0.55)",
-                      transition: "width 0.18s ease, background 0.18s ease",
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-        ) : (
-          <EmptyStateCard
-            title={safeT("today.noUrgentTitle", "Todo bajo control")}
-            subtitle={safeT(
-              "today.noUrgentSubtitle",
-              "Pulsa + para empezar a despejar tu mente",
-            )}
-          />
-        )}
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {visibleDateGroups.map((group) => (
+                      <div key={`today-${group.key}`} className="pt-2">
+                        <div className="w-full flex items-center gap-2 mb-2 text-left">
+                          <ChevronDown size={16} className="text-slate-500" />
+                          <p className="font-semibold uppercase tracking-widest text-slate-600" style={{ fontSize: "clamp(12px, 0.82vw, 16px)" }}>
+                            {group.label}
+                          </p>
+                          <div className="flex-1 h-px bg-slate-200" />
+                        </div>
 
-        <div className="mt-7">
-          <div className="px-1">
-            <p className="font-extrabold text-slate-900" style={{ fontSize: "clamp(15px, 0.9vw, 20px)" }}>
-              Proxima semana
-            </p>
-          </div>
+                        <div className="space-y-2">
+                          {group.items.map((task) => (
+                            <div
+                              key={`today-${task.id}-${group.key}`}
+                              className="rounded-3xl bg-white border border-[#7d59c9] shadow-[0_6px_14px_rgba(15,23,42,0.05)] px-4 py-3 md:px-5 md:py-4 lg:px-6 lg:py-5"
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className="w-10 h-10 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center shrink-0 relative">
+                                  <List size={18} />
+                                  {shouldShowSentIndicator(task) && (
+                                    <span
+                                      className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm"
+                                      aria-label={safeT("shareInvite.sentIndicator", "Compartido por ti")}
+                                      title={safeT("shareInvite.sentIndicator", "Compartido por ti")}
+                                    >
+                                      <Share2 size={10} className="text-slate-500" />
+                                    </span>
+                                  )}
+                                </div>
 
-          {nextWeekGroups.length > 0 ? (
-            <div className="mt-2.5 rounded-3xl border border-slate-200 bg-white/70 p-1.5">
-              <div className="max-h-[460px] overflow-y-auto remi-scroll pr-1">
-                <div className="space-y-2">
-                  {nextWeekGroups.map((group) => (
-                    <div key={group.key} className="pt-2">
-                      <div className="w-full flex items-center gap-2 mb-2 text-left">
-                        <ChevronDown size={16} className="text-slate-500" />
-                        <p className="font-semibold uppercase tracking-widest text-slate-600" style={{ fontSize: "clamp(12px, 0.82vw, 16px)" }}>
-                          {group.label}
-                        </p>
-                        <div className="flex-1 h-px bg-slate-200" />
-                      </div>
-
-                      <div className="space-y-2">
-                        {group.items.map((task) => (
-                          <div
-                            key={`${task.id}-${group.key}`}
-                            className="relative overflow-hidden rounded-3xl bg-white border border-slate-200 shadow-[0_10px_22px_rgba(15,23,42,0.06)] px-4 py-3 md:px-5 md:py-4 lg:px-6 lg:py-5"
-                          >
-                            <span
-                              aria-hidden
-                              className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-[#7d59c9]"
-                            />
-
-                            <div className="flex items-start gap-3 pl-2">
-                              <div className="mt-0.5 shrink-0">
-                                {shouldShowSentIndicator(task) ? (
-                                  <span
-                                    className="flex h-5 w-5 items-center justify-center rounded-full border border-[#dcd7eb] bg-white"
-                                    aria-label={safeT("shareInvite.sentIndicator", "Compartido por ti")}
-                                    title={safeT("shareInvite.sentIndicator", "Compartido por ti")}
+                                <div className="flex-1 min-w-0">
+                                  <p
+                                    className="font-semibold text-slate-900 leading-snug"
+                                    style={{ fontSize: "clamp(16px, 1.1vw, 26px)" }}
                                   >
-                                    <Share2 size={10} className="text-[#8c86a3]" />
-                                  </span>
-                                ) : (
-                                  <span className="block h-5 w-5" aria-hidden />
-                                )}
-                              </div>
-
-                              <div className="flex-1 min-w-0">
-                                <p
-                                  className="font-semibold text-[#2f2750] leading-snug"
-                                  style={{
-                                    fontSize: "clamp(16px, 1.1vw, 26px)",
-                                    whiteSpace: "pre-wrap",
-                                    wordBreak: "break-word",
-                                    overflowWrap: "anywhere",
-                                  }}
-                                >
-                                  {task.title}
-                                </p>
-                                <div
-                                  className="mt-1.5 flex items-center gap-1.5 text-[#8b8798]"
-                                  style={{ fontSize: "clamp(13px, 0.85vw, 17px)" }}
-                                >
-                                  <CalendarDays size={14} className="text-[#a09baf]" />
-                                  <span className="truncate">{group.label}</span>
+                                    Recordatorio
+                                  </p>
+                                  <p
+                                    className="mt-1 text-slate-700"
+                                    style={{
+                                      fontSize: "clamp(13px, 0.86vw, 17px)",
+                                      whiteSpace: "pre-wrap",
+                                      wordBreak: "break-word",
+                                      overflowWrap: "anywhere",
+                                      maxHeight: 96,
+                                      overflow: "hidden",
+                                    }}
+                                  >
+                                    {task.title}
+                                  </p>
+                                  <div
+                                    className="mt-2 flex items-center gap-1 text-slate-500"
+                                    style={{ fontSize: "clamp(13px, 0.85vw, 17px)" }}
+                                  >
+                                    <CalendarDays size={14} className="text-slate-400" />
+                                    <span className="truncate">
+                                      {formatDueLabel(task.due_date as string | null)}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
 
-                              <div className="shrink-0 flex items-center gap-2">
+                              <div className="mt-3 flex items-center gap-3">
                                 <button
                                   type="button"
                                   onPointerDown={() => prefetchShareInvite(task.id)}
                                   onClick={() => handleShareTask(task)}
-                                  className="w-9 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center"
+                                  className="flex-1 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center gap-2 text-[12px] font-semibold text-slate-700 md:h-10 md:text-[13px] lg:h-11 lg:text-[15px]"
                                   aria-label={safeT("shareInvite.share", "Compartir")}
                                   title={safeT("shareInvite.share", "Compartir")}
                                 >
                                   <Share2 size={15} color="#94A3B8" />
+                                  <span>{safeT("shareInvite.share", "Compartir")}</span>
                                 </button>
 
                                 <button
                                   type="button"
                                   onClick={() => handleDone(task)}
-                                  className="w-9 h-9 rounded-full border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 inline-flex items-center justify-center"
+                                  className="flex-1 h-9 rounded-full border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 inline-flex items-center justify-center gap-2 text-[12px] font-semibold text-emerald-700 md:h-10 md:text-[13px] lg:h-11 lg:text-[15px]"
                                   aria-label={safeT("today.done", "Hecho")}
                                   title={safeT("today.done", "Hecho")}
                                 >
                                   <Check size={15} color="#10B981" />
+                                  <span>{safeT("today.done", "Hecho")}</span>
                                 </button>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           ) : (
             <div className="mt-3 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-[13px] text-slate-500">
-              No hay tareas para la proxima semana.
+              {safeT("today.noUrgentTitle", "Todo bajo control")}
             </div>
           )}
         </div>
 
-        {tipCards.length > 0 && (
-          <div className="mt-7">
-            <div className="px-1">
-              <p className="font-extrabold text-slate-900" style={{ fontSize: "clamp(16px, 1vw, 22px)" }}>
-                {safeT("today.tipsTitle", "Consejos")}
-              </p>
-            </div>
-            <div
-              ref={tipsScrollRef}
-              onScroll={updateTipsScrollMetrics}
-              className="mt-2 remi-scroll flex gap-2.5 overflow-x-auto pb-1 px-1"
-            >
-              {tipCards.map((tip) => (
-                <button
-                  key={tip.id}
-                  type="button"
-                  onClick={tip.onClick}
-                  className="shrink-0 rounded-2xl border border-slate-200 bg-white shadow-[0_6px_16px_rgba(15,23,42,0.06)] hover:bg-slate-50"
-                  style={{
-                    width: "clamp(100px, 7.8vw, 168px)",
-                    padding: "clamp(8px, 0.6vw, 14px)",
-                  }}
-                  title={tip.title}
-                  aria-label={tip.title}
-                >
-                  <div className="mx-auto rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center" style={{ width: "clamp(40px, 2.6vw, 58px)", height: "clamp(40px, 2.6vw, 58px)" }}>
-                    <span className="leading-none" style={{ fontSize: "clamp(20px, 1.2vw, 28px)" }}>
-                      {TIP_EMOJI_BY_ID[tip.id] ?? "✨"}
-                    </span>
-                  </div>
-                  <p className="mt-2 leading-tight font-medium text-slate-800 line-clamp-2" style={{ fontSize: "clamp(12px, 0.82vw, 16px)" }}>
-                    {tip.title}
-                  </p>
-                </button>
-              ))}
-            </div>
-            <div className="mt-2 px-1">
-              <div className="relative h-1.5 w-full rounded-full bg-slate-200/80 overflow-hidden">
-                <span
-                  className="absolute top-0 h-full rounded-full bg-violet-400/90 transition-all duration-150"
-                  style={{
-                    width: `${tipsThumbWidthPct}%`,
-                    left: `${tipsThumbLeftPct}%`,
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        )}
       </div>
       </div>
       {/* MODAL: shortcuts examples */}
