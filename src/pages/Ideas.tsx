@@ -238,49 +238,23 @@ export default function IdeasPage() {
       <div
         className="relative overflow-hidden"
         style={{
-          paddingTop: "calc(14px + env(safe-area-inset-top))",
-          paddingBottom: 14,
+          paddingTop: "calc(10px + env(safe-area-inset-top))",
+          paddingBottom: 10,
           paddingLeft: "calc(16px + env(safe-area-inset-left))",
           paddingRight: "calc(16px + env(safe-area-inset-right))",
-          minHeight: 124,
-          background:
-            "linear-gradient(135deg, #9a86ff 0%, #7d59c9 48%, #665ed1 100%)",
+          minHeight: 100,
+          background: "#ffffff",
           borderBottomLeftRadius: 22,
           borderBottomRightRadius: 22,
-          boxShadow: "0 10px 24px rgba(93,69,179,0.22)",
+          borderBottom: "1px solid #e2e8f0",
+          boxShadow: "0 2px 8px rgba(15,23,42,0.04)",
         }}
       >
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            width: 180,
-            height: 180,
-            borderRadius: "999px",
-            background: "rgba(255,255,255,0.14)",
-            top: -90,
-            left: -60,
-            filter: "blur(1px)",
-          }}
-        />
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            width: 220,
-            height: 220,
-            borderRadius: "999px",
-            background: "rgba(255,255,255,0.10)",
-            top: -110,
-            right: -70,
-            filter: "blur(1px)",
-          }}
-        />
-        <div className="mx-auto mt-1 w-full" style={{ maxWidth: "min(96vw, 1440px)" }}>
-          <h1 className="leading-tight font-extrabold text-white" style={{ fontSize: "clamp(28px, 2vw, 42px)" }}>
+        <div className="mx-auto mt-0.5 w-full" style={{ maxWidth: "min(96vw, 1440px)" }}>
+          <h1 className="leading-tight font-extrabold text-slate-900" style={{ fontSize: "clamp(19px, 1.3vw, 28px)" }}>
             {t("inbox.title")}
           </h1>
-          <p className="mt-0.5 font-semibold text-white/85" style={{ fontSize: "clamp(18px, 1.3vw, 28px)" }}>
+          <p className="mt-0.5 font-semibold text-slate-500" style={{ fontSize: "clamp(13px, 0.9vw, 18px)" }}>
             {t("inbox.subtitle")}
           </p>
         </div>

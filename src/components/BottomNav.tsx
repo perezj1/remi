@@ -28,6 +28,7 @@ const speechLangByUiLang: Record<UiLang, string> = {
 
 const CAPTURE_APPEND_EVENT = "remi-capture-append";
 const OPEN_CAPTURE_EVENT = "remi-open-capture";
+const OPEN_CAPTURE_SOURCE = "bottom-nav-plus";
 
 // ✅ evento global para indicar si el dictado está escuchando (por si vuelves a activarlo)
 export const DICTATION_STATE_EVENT = "remi-dictation-state";
@@ -240,7 +241,11 @@ export default function BottomNav() {
   // };
 
   const openCaptureModal = () => {
-    window.dispatchEvent(new CustomEvent(OPEN_CAPTURE_EVENT));
+    window.dispatchEvent(
+      new CustomEvent(OPEN_CAPTURE_EVENT, {
+        detail: { source: OPEN_CAPTURE_SOURCE },
+      }),
+    );
   };
 
   const openCaptureFromNav = () => {

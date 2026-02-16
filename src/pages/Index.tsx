@@ -678,9 +678,6 @@ const anyModalOpen =
     [loadData, user],
   );
 
-
-
-
   const handlePostpone = async (task: BrainItem, option: "DAY" | "WEEK") => {
     const base = task.due_date ? new Date(task.due_date) : new Date();
     if (option === "DAY") base.setDate(base.getDate() + 1);
@@ -1277,69 +1274,43 @@ const anyModalOpen =
         }}
       >
       <div
-        className="relative overflow-visible"
+        className="relative overflow-hidden"
         style={{
           paddingTop: "calc(10px + env(safe-area-inset-top))",
           paddingBottom: 10,
           paddingLeft: "calc(16px + env(safe-area-inset-left))",
           paddingRight: "calc(16px + env(safe-area-inset-right))",
-          background:
-            "linear-gradient(135deg, #9a86ff 0%, #7d59c9 48%, #665ed1 100%)",
+          background: "#ffffff",
           borderBottomLeftRadius: 22,
           borderBottomRightRadius: 22,
-          boxShadow: "0 10px 24px rgba(93,69,179,0.22)",
+          borderBottom: "1px solid #e2e8f0",
+          boxShadow: "0 2px 8px rgba(15,23,42,0.04)",
         }}
       >
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            width: 180,
-            height: 180,
-            borderRadius: "999px",
-            background: "rgba(255,255,255,0.14)",
-            top: -90,
-            left: -60,
-            filter: "blur(1px)",
-          }}
-        />
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            width: 220,
-            height: 220,
-            borderRadius: "999px",
-            background: "rgba(255,255,255,0.10)",
-            top: -110,
-            right: -70,
-            filter: "blur(1px)",
-          }}
-        />
-        <div className="mx-auto w-full" style={{ maxWidth: "min(96vw, 1440px)" }}>
+        <div className="mx-auto w-full relative z-[1]" style={{ maxWidth: "min(96vw, 1440px)" }}>
         <div className="mt-0.5 flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <p className="leading-tight font-extrabold text-white" style={{ fontSize: "clamp(28px, 2.2vw, 44px)" }}>
+            <p className="leading-tight font-extrabold text-slate-900" style={{ fontSize: "clamp(19px, 1.3vw, 28px)" }}>
               {safeT("today.greetingHeader", `Hello ${displayName}!`, { name: displayName })}
             </p>
-            <p className="mt-0.5 font-semibold text-white/85" style={{ fontSize: "clamp(18px, 1.45vw, 30px)" }}>
+            <p className="mt-0.5 font-semibold text-slate-500" style={{ fontSize: "clamp(13px, 0.9vw, 18px)" }}>
               {safeT("today.greetingSubheader", "Let's get this done today!")}
             </p>
             <div className="mt-2">
               <div className="mb-1.5 flex items-center justify-between">
-                <p className="font-semibold text-white/90" style={{ fontSize: "clamp(13px, 0.95vw, 20px)" }}>
+                <p className="font-semibold text-slate-600" style={{ fontSize: "clamp(13px, 0.9vw, 19px)" }}>
                   {safeT("index.clearMind", "Mente despejada")}
                 </p>
-                <p className="font-extrabold text-white/95" style={{ fontSize: "clamp(13px, 0.95vw, 20px)" }}>
+                <p className="font-extrabold text-slate-800" style={{ fontSize: "clamp(13px, 0.9vw, 19px)" }}>
                   {mindClearPercent}%
                 </p>
               </div>
-              <div className="h-2.5 w-full overflow-hidden rounded-full bg-[#a48de0]/65">
+              <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
                 <div
                   className="h-full rounded-full transition-all duration-500 ease-out"
                   style={{
                     width: `${mindClearPercent}%`,
-                    background: "linear-gradient(90deg, #f0dda0 0%, #e8c76a 100%)",
+                    background: "linear-gradient(90deg, #8b6ce0 0%, #7d59c9 100%)",
                   }}
                 />
               </div>

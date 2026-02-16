@@ -2372,7 +2372,7 @@ export default function MindDumpModal({
               background: "#fff",
               border: "1px solid rgba(15,23,42,0.15)",
               boxShadow: embedded ? "none" : "0 10px 30px rgba(15,23,42,0.06)",
-              minHeight: embedded ? (showSettingsPanel ? 240 : 320) : undefined,
+              minHeight: embedded ? (showSettingsPanel ? 200 : 260) : undefined,
               transition: "min-height 240ms ease",
             }}
           >
