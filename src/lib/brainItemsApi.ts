@@ -566,6 +566,15 @@ export type RemiStatusSummary = {
   daysSinceLastActivity: number | null;
 };
 
+export type RemiStatusInsights = {
+  weekDateLabels: string[];
+  capturedSeries: number[];
+  resolvedSeries: number[];
+  activeDueTasksCount: number;
+  overdueUnfinishedCount: number;
+  completedWithDueCount: number;
+};
+
 export async function fetchRemiStatusSummary(userId: string): Promise<RemiStatusSummary> {
   const now = new Date();
 
@@ -736,5 +745,134 @@ export async function fetchRemiStatusSummary(userId: string): Promise<RemiStatus
     totalItemsStored,
     streakDays,
     daysSinceLastActivity,
+  };
+}
+
+export async function fetchRemiStatusInsights(userId: string): Promise<RemiStatusInsights> {
+  const now = new Date();
+
+  const startOfDay = (d: Date) => {
+    const copy = new Date(d);
+    copy.setHours(0, 0, 0, 0);
+    return copy;
+  };
+
+  const endOfDay = (d: Date) => {
+    const copy = new Date(d);
+    copy.setHours(23, 59, 59, 999);
+    return copy;
+  };
+
+  const formatLocalDateKey = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const todayStart = startOfDay(now);
+  const todayEnd = endOfDay(now);
+  const lookbackStart = new Date(todayStart);
+  lookbackStart.setDate(lookbackStart.getDate() - 29);
+  const weekStart = new Date(todayStart);
+  weekStart.setDate(weekStart.getDate() - 6);
+
+  const weekDays: Date[] = Array.from({ length: 7 }).map((_, index) => {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + index);
+    return d;
+  });
+
+  const dayLabels = ["L", "M", "X", "J", "V", "S", "D"];
+  const weekDateLabels = weekDays.map((d) => dayLabels[(d.getDay() + 6) % 7] ?? "");
+  const weekDateKeys = weekDays.map(formatLocalDateKey);
+  const keyToIndex = new Map<string, number>();
+  weekDateKeys.forEach((key, idx) => keyToIndex.set(key, idx));
+
+  const { data: capturedRows, error: capturedError } = await supabase
+    .from("brain_items")
+    .select("created_at")
+    .eq("user_id", userId)
+    .neq("status", "ARCHIVED")
+    .gte("created_at", weekStart.toISOString())
+    .lte("created_at", todayEnd.toISOString());
+
+  if (capturedError) throw capturedError;
+
+  const { data: resolvedRows, error: resolvedError } = await supabase
+    .from("brain_items")
+    .select("updated_at")
+    .eq("user_id", userId)
+    .eq("type", "task")
+    .eq("status", "DONE")
+    .gte("updated_at", weekStart.toISOString())
+    .lte("updated_at", todayEnd.toISOString());
+
+  if (resolvedError) throw resolvedError;
+
+  const capturedSeries = new Array<number>(7).fill(0);
+  const resolvedSeries = new Array<number>(7).fill(0);
+
+  for (const row of (capturedRows ?? []) as Array<{ created_at: string }>) {
+    const idx = keyToIndex.get(formatLocalDateKey(new Date(row.created_at)));
+    if (idx != null) capturedSeries[idx] += 1;
+  }
+
+  for (const row of (resolvedRows ?? []) as Array<{ updated_at: string }>) {
+    const idx = keyToIndex.get(formatLocalDateKey(new Date(row.updated_at)));
+    if (idx != null) resolvedSeries[idx] += 1;
+  }
+
+  const { data: activeDueRows, error: activeDueError } = await supabase
+    .from("brain_items")
+    .select("due_date")
+    .eq("user_id", userId)
+    .eq("type", "task")
+    .eq("status", "ACTIVE")
+    .not("due_date", "is", null);
+
+  if (activeDueError) throw activeDueError;
+
+  let activeDueTasksCount = 0;
+  let overdueUnfinishedCount = 0;
+
+  for (const row of (activeDueRows ?? []) as Array<{ due_date: string | null }>) {
+    if (!row.due_date) continue;
+    const due = new Date(row.due_date);
+    if (Number.isNaN(due.getTime())) continue;
+    activeDueTasksCount += 1;
+    if (due.getTime() < now.getTime()) {
+      overdueUnfinishedCount += 1;
+    }
+  }
+
+  const { data: doneRows, error: doneError } = await supabase
+    .from("brain_items")
+    .select("due_date, updated_at")
+    .eq("user_id", userId)
+    .eq("type", "task")
+    .eq("status", "DONE")
+    .not("due_date", "is", null)
+    .gte("updated_at", lookbackStart.toISOString())
+    .lte("updated_at", todayEnd.toISOString());
+
+  if (doneError) throw doneError;
+
+  let doneWithDueCount = 0;
+
+  for (const row of (doneRows ?? []) as Array<{ due_date: string | null; updated_at: string }>) {
+    if (!row.due_date) continue;
+    const doneAt = new Date(row.updated_at);
+    if (Number.isNaN(doneAt.getTime())) continue;
+    doneWithDueCount += 1;
+  }
+
+  return {
+    weekDateLabels,
+    capturedSeries,
+    resolvedSeries,
+    activeDueTasksCount,
+    overdueUnfinishedCount,
+    completedWithDueCount: doneWithDueCount,
   };
 }

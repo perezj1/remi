@@ -11,7 +11,9 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import {
   fetchRemiStatusSummary,
+  fetchRemiStatusInsights,
   type RemiStatusSummary,
+  type RemiStatusInsights,
 } from "@/lib/brainItemsApi";
 import { useI18n } from "@/contexts/I18nContext";
 
@@ -239,6 +241,7 @@ export default function StatusPage() {
   const { t } = useI18n();
 
   const [summary, setSummary] = useState<RemiStatusSummary | null>(null);
+  const [insights, setInsights] = useState<RemiStatusInsights | null>(null);
   const [loading, setLoading] = useState(true);
 
   // siempre arriba al entrar
@@ -253,8 +256,12 @@ export default function StatusPage() {
 
     const load = async () => {
       try {
-        const summaryData = await fetchRemiStatusSummary(user.id);
+        const [summaryData, insightsData] = await Promise.all([
+          fetchRemiStatusSummary(user.id),
+          fetchRemiStatusInsights(user.id),
+        ]);
         setSummary(summaryData);
+        setInsights(insightsData);
       } catch (error) {
         console.error("Error fetching Remi status summary", error);
       } finally {
@@ -273,8 +280,14 @@ export default function StatusPage() {
   const totalTasksStored = summary?.totalTasksStored ?? 0;
   const totalIdeasStored = summary?.totalIdeasStored ?? 0;
   const totalItemsStored = summary?.totalItemsStored ?? totalTasksStored + totalIdeasStored;
+  const taskSharePercent = totalItemsStored > 0 ? Math.round((totalTasksStored / totalItemsStored) * 100) : 0;
+  const ideaSharePercent = totalItemsStored > 0 ? Math.round((totalIdeasStored / totalItemsStored) * 100) : 0;
   const streakDays = summary?.streakDays ?? 0;
   const daysSinceLastActivity = summary?.daysSinceLastActivity ?? null;
+  const weekDateLabels = insights?.weekDateLabels ?? ["L", "M", "X", "J", "V", "S", "D"];
+  const capturedSeries = insights?.capturedSeries ?? [0, 0, 0, 0, 0, 0, 0];
+  const resolvedSeries = insights?.resolvedSeries ?? [0, 0, 0, 0, 0, 0, 0];
+  const balanceMax = Math.max(1, ...capturedSeries, ...resolvedSeries);
 
   // Mind clear score rewards offloading/completing and decays with inactivity.
   const mindClearPercent = (() => {
@@ -475,6 +488,76 @@ export default function StatusPage() {
                     />
                   );
                 })}
+              </div>
+            </div>
+
+            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div className="rounded-[18px] border p-3.5" style={{ background: "#596dc912", borderColor: "#596dc955" }}>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.04em]" style={{ color: "#46579f" }}>
+                  Balance de carga mental
+                </p>
+                <p className="mt-1 text-slate-600" style={{ fontSize: "clamp(12px, 0.8vw, 15px)" }}>
+                  Capturado vs resuelto en los ultimos 7 dias
+                </p>
+                <div className="mt-2 rounded-xl bg-white/70 p-2.5">
+                  <div className="grid grid-cols-7 gap-1.5">
+                    {capturedSeries.map((captured, idx) => {
+                      const resolved = resolvedSeries[idx] ?? 0;
+                      const capturedHeight = Math.max(8, Math.round((captured / balanceMax) * 64));
+                      const resolvedHeight = Math.max(8, Math.round((resolved / balanceMax) * 64));
+                      return (
+                        <div key={`balance-day-${idx}`} className="flex flex-col items-center gap-1">
+                          <div className="h-16 w-full rounded-md bg-slate-100/80 px-1 pb-1 pt-1.5 flex items-end justify-center gap-0.5">
+                            <span
+                              className="w-1.5 rounded-sm"
+                              style={{ height: `${capturedHeight}px`, background: "#7d59c9" }}
+                              title={`Capturado: ${captured}`}
+                            />
+                            <span
+                              className="w-1.5 rounded-sm"
+                              style={{ height: `${resolvedHeight}px`, background: "#59c9b5" }}
+                              title={`Resuelto: ${resolved}`}
+                            />
+                          </div>
+                          <span className="text-[10px] font-semibold text-slate-500">{weekDateLabels[idx] ?? "-"}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-2 flex items-center gap-3 text-[11px] text-slate-600">
+                    <span className="inline-flex items-center gap-1">
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#7d59c9" }} />
+                      Capturado
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#59c9b5" }} />
+                      Resuelto
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-[18px] border p-3.5" style={{ background: "#b559c912", borderColor: "#b559c955" }}>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.04em]" style={{ color: "#7f3f8f" }}>
+                  Distribucion de memoria
+                </p>
+                <p className="mt-1 text-slate-600" style={{ fontSize: "clamp(12px, 0.8vw, 15px)" }}>
+                  Que tipo de carga estas delegando en Remi
+                </p>
+                <div className="mt-3 h-3.5 overflow-hidden rounded-full bg-white/70">
+                  <div className="h-full" style={{ width: `${taskSharePercent}%`, background: "#7d59c9", float: "left" }} />
+                  <div className="h-full" style={{ width: `${ideaSharePercent}%`, background: "#f4cf6a", float: "left" }} />
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-[12px]">
+                  <div className="rounded-xl border border-violet-200 bg-white/65 p-2">
+                    <p className="font-semibold text-violet-700">Tareas</p>
+                    <p className="mt-0.5 font-extrabold text-slate-900">{totalTasksStored} ({taskSharePercent}%)</p>
+                  </div>
+                  <div className="rounded-xl border bg-white/65 p-2" style={{ borderColor: "#f4dc9a" }}>
+                    <p className="font-semibold" style={{ color: "#b48617" }}>Ideas</p>
+                    <p className="mt-0.5 font-extrabold text-slate-900">{totalIdeasStored} ({ideaSharePercent}%)</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
