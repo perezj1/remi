@@ -177,11 +177,11 @@ function AppRoutes() {
   const isPublicShell = hideBottomNavRoute || isAuthRoute || !user;
 
   // ✅ Para share: usa el mismo fondo suave (evita “blanco infinito”)
-  // ✅ Para Index: igualamos el shell al fondo de la página para que cubra hasta abajo.
-  const isIndexRoute = pathname === "/";
+  // ✅ En rutas internas logueadas: fondo uniforme suave hasta abajo.
+  const isAppPrivateRoute = !!user && !isPublicShell && !isShareUrl;
   const shellBgClass = isShareUrl
     ? "bg-[#F6F7FB]"
-    : isIndexRoute
+    : isAppPrivateRoute
       ? "bg-[#fafafe]"
       : isPublicShell
         ? "bg-white"
