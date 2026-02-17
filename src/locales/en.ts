@@ -498,9 +498,9 @@ export const en = {
     shareRemindersModal: {
       title: "Share reminders with other people",
       body:
-        "Send a task or idea as a link so someone else can add it to their Remi in one tap.",
+        "Send a reminder or idea as a link so someone else can add it to their Remi in one tap.",
       stepsTitle: "How it works (quick)",
-      step1: "On a task/idea, tap the Share icon.",
+      step1: "On a reminder/idea, tap the Share icon.",
       step2: "Send the link via WhatsApp, email, etc.",
       step3: 'The recipient taps “Add to Remi”.',
       examplesTitle: "Examples that work great",
@@ -591,7 +591,7 @@ export const en = {
     tip: {
       shareReminders: {
         title: "Team reminders",
-        body: "Share tasks or ideas.\nOthers add them to their Remi in 1 tap.",
+        body: "share reminders or ideas.\nOthers add them to their Remi in 1 tap.",
         cta: "See how",
       },
 
@@ -1081,9 +1081,9 @@ export const en = {
 
       shareFeature: {
         badge: "New",
-        title: "Share tasks and ideas to reduce mental load",
+        title: "Share reminders and ideas to reduce mental load",
         text:
-          "Help other people free their mind: share a task or an idea as a link. They can add it and stop carrying “I can’t forget this…”.",
+          "Help other people free their mind: share a reminder or an idea as a link. They can add it and stop carrying “I can’t forget this…”.",
         points: [
           "Useful for family, partners, and teams",
           "Share reminders, errands, and ideas in seconds",
@@ -1151,7 +1151,7 @@ export const en = {
           },
           {
             quote:
-              "“Very easy to use and very useful—especially the option to share tasks or ideas.”",
+              "“Very easy to use and very useful—especially the option to share reminders or ideas.”",
             author: "Erika",
           },
         ],
@@ -1194,4 +1194,5 @@ export const en = {
     },
   },
 } as const;
+
 

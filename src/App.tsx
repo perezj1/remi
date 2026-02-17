@@ -25,6 +25,7 @@ import StatusPage from "@/pages/Status";
 import ScrollToTop from "@/components/ScrollToTop";
 import LandingPage from "@/pages/Landing";
 import ShareInvitePage from "@/pages/ShareInvitePage";
+import LegalPage from "@/pages/Legal";
 
 // ✅ Provider + hook para ocultar BottomNav cuando hay modales abiertos
 import { ModalUiProvider, useModalUi } from "@/contexts/ModalUiContext";
@@ -159,9 +160,13 @@ function AppRoutes() {
 
   // Ocultar bottom nav en rutas públicas/“técnicas”
   const hideBottomNavRoute =
-    pathname.startsWith("/landing") || pathname.startsWith("/share-target");
+    pathname.startsWith("/landing") ||
+    pathname.startsWith("/share-target") ||
+    pathname.startsWith("/legal");
 
   const isAuthRoute = pathname.startsWith("/auth");
+  const isLandingRoute = pathname.startsWith("/landing");
+  const isLegalRoute = pathname.startsWith("/legal");
 
   // ✅ NUEVO: Ocultar también si es share URL (para evitar overlays en share)
   const hideBottomNav =
@@ -279,6 +284,10 @@ function AppRoutes() {
         {/* Landing pública */}
         <Route path="/landing" element={<LandingPage />} />
 
+        {/* Legal pública */}
+        <Route path="/legal" element={<Navigate to="/legal/terms" replace />} />
+        <Route path="/legal/:doc" element={<LegalPage />} />
+
         {/* share page */}
         <Route path="/share/:token" element={<ShareInvitePage />} />
 
@@ -294,7 +303,7 @@ function AppRoutes() {
       {/* ✅ NUEVO: también ocultar en URLs de share */}
       {user && !hideBottomNav && <BottomNav />}
 
-      <InstallPrompt />
+      {!isLandingRoute && !isLegalRoute && <InstallPrompt />}
     </div>
   );
 }

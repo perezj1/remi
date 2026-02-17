@@ -395,7 +395,7 @@ export default function StatusPage() {
           </button>
         </section>
         <section className="mt-8">
-          <h3 className="leading-none font-extrabold text-slate-900 px-1" style={{ fontSize: "clamp(28px, 1.9vw, 44px)" }}>
+          <h3 className="leading-none font-extrabold text-slate-900 px-1" style={{ fontSize: "clamp(15px, 0.9vw, 20px)" }}>
             {t("status.todaySectionTitle")}
           </h3>
 
@@ -537,8 +537,8 @@ export default function StatusPage() {
                 </div>
               </div>
 
-              <div className="rounded-[18px] border p-3.5" style={{ background: "#b559c912", borderColor: "#b559c955" }}>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.04em]" style={{ color: "#7f3f8f" }}>
+              <div className="rounded-[18px] border p-3.5" style={{ background: "#f4cf6a1f", borderColor: "#f4dc9a" }}>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-slate-900">
                   Distribucion de memoria
                 </p>
                 <p className="mt-1 text-slate-600" style={{ fontSize: "clamp(12px, 0.8vw, 15px)" }}>

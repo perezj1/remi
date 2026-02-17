@@ -625,7 +625,7 @@
 @layer components {
   .landing-shell {
     @apply min-h-screen flex justify-center;
-    background-color: #f5f4ff;
+    background-color: #f1eff7;
     padding: 16px;
 
     /* ✅ FIX iOS adicional (no rompe Tailwind): */
@@ -690,5 +690,13 @@
     @apply rounded-3xl bg-white;
     border: 1px solid hsl(var(--border));
     box-shadow: var(--shadow-soft);
+  }
+
+  .legal-doc-content h2 {
+    @apply text-sm font-bold text-slate-900 mt-4;
+  }
+
+  .legal-doc-content p {
+    @apply mt-1 text-sm text-slate-700;
   }
 }

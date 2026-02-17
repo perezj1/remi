@@ -1313,7 +1313,8 @@ const anyModalOpen =
                   className="h-full rounded-full transition-all duration-500 ease-out"
                   style={{
                     width: `${mindClearPercent}%`,
-                    background: "linear-gradient(90deg, #8b6ce0 0%, #7d59c9 100%)",
+                    background:
+                      "linear-gradient(90deg, #59a5c9 0%, #5989c9 12.5%, #596dc9 25%, #6b63c9 37.5%, #7d59c9 50%, #9959c9 62.5%, #b559c9 75%, #bf59b7 87.5%, #c959a5 100%)",
                   }}
                 />
               </div>

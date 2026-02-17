@@ -31,7 +31,7 @@ import type { RemiLocale } from "@/locales";
 import { es } from "@/locales/es";
 import { en } from "@/locales/en";
 import { de } from "@/locales/de";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import {
   Dialog,
@@ -95,6 +95,32 @@ const LandingPage: React.FC = () => {
   const t = landingCopyByLang[lang];
   // ✅ ahora todo lo "extra" viene del archivo de idioma:
   const x = t.extra;
+  const legalLabels = {
+    es: {
+      terms: "Términos",
+      agb: "AGB",
+      privacy: "Privacidad",
+      cookies: "Cookies",
+      disclaimer: "Descargo",
+      impressum: "Impressum",
+    },
+    en: {
+      terms: "Terms",
+      agb: "AGB",
+      privacy: "Privacy",
+      cookies: "Cookies",
+      disclaimer: "Disclaimer",
+      impressum: "Impressum",
+    },
+    de: {
+      terms: "Nutzungsbedingungen",
+      agb: "AGB",
+      privacy: "Datenschutz",
+      cookies: "Cookies",
+      disclaimer: "Haftungsausschluss",
+      impressum: "Impressum",
+    },
+  }[lang];
 
   const handleShareRemi = async () => {
     const url = `${window.location.origin}/landing`;
@@ -221,7 +247,7 @@ const LandingPage: React.FC = () => {
 
                     {/* Icono tipo iOS Share */}
                     <svg
-                      className="inline-block w-5 h-5 align-middle text-[#007AFF]"
+                      className="inline-block w-5 h-5 align-middle text-[#7d59c9]"
                       viewBox="0 0 24 24"
                       aria-hidden="true"
                     >
@@ -295,7 +321,7 @@ const LandingPage: React.FC = () => {
             <div className="mx-auto w-full max-w-6xl grid lg:grid-cols-2 gap-12 items-center">
               <div className="space-y-7 animate-fade-in text-center lg:text-left">
                 <div className="flex justify-center lg:justify-start">
-                  <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f4f0ff] text-[11px] font-medium text-[#7d59c9]">
+                  <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f1eff7] text-[11px] font-medium text-[#7d59c9]">
                     <Sparkles className="w-3.5 h-3.5" />
                     {x.hero.kicker}
                   </span>
@@ -385,7 +411,7 @@ const LandingPage: React.FC = () => {
                   ].map((it, idx) => (
                     <span
                       key={idx}
-                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f4f0ff] text-[11px] font-medium text-[#7d59c9]"
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f1eff7] text-[11px] font-medium text-[#7d59c9]"
                     >
                       {it.icon}
                       {it.text}
@@ -398,7 +424,7 @@ const LandingPage: React.FC = () => {
               <div className="hidden lg:block">
                 <Card className="landing-card p-6 md:p-8 shadow-elegant">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-2xl bg-[#f4f0ff] flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-2xl bg-[#f1eff7] flex items-center justify-center">
                       <Wand2 className="w-5 h-5 text-[#7d59c9]" />
                     </div>
                     <div className="text-left">
@@ -411,7 +437,7 @@ const LandingPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="rounded-2xl bg-[#f7f4ff] border border-[#e8ddff] p-4 text-sm text-slate-900 leading-relaxed">
+                  <div className="rounded-2xl bg-[#f8f6fc] border border-[#ddd4ef] p-4 text-sm text-slate-900 leading-relaxed">
                     {x.interpret.examples.map((ex: string, idx: number) => (
                       <div key={idx} className="flex gap-2">
                         <span className="text-[#7d59c9] font-semibold">•</span>
@@ -476,7 +502,7 @@ const LandingPage: React.FC = () => {
 
             <div className="mx-auto w-full max-w-6xl grid md:grid-cols-3 gap-6">
               <Card className="landing-card p-6 md:p-8 animate-fade-in">
-                <div className="w-12 h-12 rounded-2xl bg-[#f4f0ff] flex items-center justify-center mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-[#f1eff7] flex items-center justify-center mb-4">
                   <Zap className="w-6 h-6 text-[#7d59c9]" />
                 </div>
                 <h3 className="text-xl font-semibold text-slate-900 mb-2">
@@ -488,7 +514,7 @@ const LandingPage: React.FC = () => {
               </Card>
 
               <Card className="landing-card p-6 md:p-8 animate-fade-in">
-                <div className="w-12 h-12 rounded-2xl bg-[#f4f0ff] flex items-center justify-center mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-[#f1eff7] flex items-center justify-center mb-4">
                   <Wand2 className="w-6 h-6 text-[#7d59c9]" />
                 </div>
                 <h3 className="text-xl font-semibold text-slate-900 mb-2">
@@ -500,7 +526,7 @@ const LandingPage: React.FC = () => {
               </Card>
 
               <Card className="landing-card p-6 md:p-8 animate-fade-in">
-                <div className="w-12 h-12 rounded-2xl bg-[#f4f0ff] flex items-center justify-center mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-[#f1eff7] flex items-center justify-center mb-4">
                   <Bell className="w-6 h-6 text-[#7d59c9]" />
                 </div>
                 <h3 className="text-xl font-semibold text-slate-900 mb-2">
@@ -523,7 +549,7 @@ const LandingPage: React.FC = () => {
                 <div className="flex flex-col items-start gap-3">
   {/* Fila 1: icono + NEU */}
   <div className="flex items-center gap-3">
-    <div className="w-12 h-12 rounded-2xl bg-[#f4f0ff] flex items-center justify-center">
+    <div className="w-12 h-12 rounded-2xl bg-[#f1eff7] flex items-center justify-center">
       <Share2 className="w-6 h-6 text-[#7d59c9]" />
     </div>
 
@@ -539,7 +565,7 @@ const LandingPage: React.FC = () => {
 
 
   {/* Pill debajo (sin cambiar formato) */}
-  <span className="text-[11px] font-medium text-[#7d59c9] bg-[#f4f0ff] px-2.5 py-1 rounded-full">
+  <span className="text-[11px] font-medium text-[#7d59c9] bg-[#f1eff7] px-2.5 py-1 rounded-full">
     {x.shareFeature.tag}
   </span>
 </div>
@@ -553,7 +579,7 @@ const LandingPage: React.FC = () => {
                 <div className="mt-5 grid gap-3">
                   {x.shareFeature.points.map((p: string, idx: number) => (
                     <div key={idx} className="flex items-start gap-3">
-                      <div className="w-6 h-6 rounded-full bg-[#f4f0ff] border border-[#e2d9ff] flex items-center justify-center mt-0.5">
+                      <div className="w-6 h-6 rounded-full bg-[#f1eff7] border border-[#d8cee9] flex items-center justify-center mt-0.5">
                         <Check className="w-3.5 h-3.5 text-[#7d59c9]" />
                       </div>
                       <span className="text-sm md:text-base text-slate-900 leading-snug">
@@ -566,7 +592,7 @@ const LandingPage: React.FC = () => {
 
               <Card className="landing-card p-6 md:p-8 shadow-elegant">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-[#f4f0ff] flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-2xl bg-[#f1eff7] flex items-center justify-center">
                     <Share2 className="w-5 h-5 text-[#7d59c9]" />
                   </div>
                   <div>
@@ -579,7 +605,7 @@ const LandingPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="mt-4 rounded-2xl bg-[#f7f4ff] border border-[#e8ddff] p-4 text-sm text-slate-900 leading-relaxed">
+                <div className="mt-4 rounded-2xl bg-[#f8f6fc] border border-[#ddd4ef] p-4 text-sm text-slate-900 leading-relaxed">
                   <div className="flex gap-2">
                     <span className="text-[#7d59c9] font-semibold">•</span>
                     <span>{x.shareFeature.example}</span>
@@ -651,7 +677,7 @@ const LandingPage: React.FC = () => {
                   {[x.install.bullet1, x.install.bullet2, x.install.bullet3].map(
                     (p: string, idx: number) => (
                       <div key={idx} className="flex items-start gap-3">
-                        <div className="w-6 h-6 rounded-full bg-[#f4f0ff] border border-[#e2d9ff] flex items-center justify-center mt-0.5">
+                        <div className="w-6 h-6 rounded-full bg-[#f1eff7] border border-[#d8cee9] flex items-center justify-center mt-0.5">
                           <Check className="w-3.5 h-3.5 text-[#7d59c9]" />
                         </div>
                         <span className="text-sm md:text-base text-slate-900 leading-snug">
@@ -684,19 +710,19 @@ const LandingPage: React.FC = () => {
                 <p className="text-xs text-muted-foreground">{x.install.ctaHint}</p>
 
                 <div className="flex flex-wrap justify-center lg:justify-start gap-2 pt-2">
-                  <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f4f0ff] text-[11px] font-medium text-[#7d59c9]">
+                  <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f1eff7] text-[11px] font-medium text-[#7d59c9]">
                     <Monitor className="w-3.5 h-3.5" />
                     {x.install.device.desktop}
                   </span>
-                  <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f4f0ff] text-[11px] font-medium text-[#7d59c9]">
+                  <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f1eff7] text-[11px] font-medium text-[#7d59c9]">
                     <Smartphone className="w-3.5 h-3.5" />
                     {x.install.device.phone}
                   </span>
-                  <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f4f0ff] text-[11px] font-medium text-[#7d59c9]">
+                  <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f1eff7] text-[11px] font-medium text-[#7d59c9]">
                     <Tablet className="w-3.5 h-3.5" />
                     iPad / {x.install.device.tablet}
                   </span>
-                  <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f4f0ff] text-[11px] font-medium text-[#7d59c9]">
+                  <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f1eff7] text-[11px] font-medium text-[#7d59c9]">
                     <Globe className="w-3.5 h-3.5" />
                     ES / EN / DE
                   </span>
@@ -707,7 +733,7 @@ const LandingPage: React.FC = () => {
               <Card className="landing-card p-6 md:p-8 shadow-elegant">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-[#f4f0ff] flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-2xl bg-[#f1eff7] flex items-center justify-center">
                       <Download className="w-6 h-6 text-[#7d59c9]" />
                     </div>
                     <div>
@@ -720,7 +746,7 @@ const LandingPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <span className="text-[11px] font-medium text-[#7d59c9] bg-[#f4f0ff] px-2.5 py-1 rounded-full">
+                  <span className="text-[11px] font-medium text-[#7d59c9] bg-[#f1eff7] px-2.5 py-1 rounded-full">
                     PWA
                   </span>
                 </div>
@@ -756,7 +782,7 @@ const LandingPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="mt-5 rounded-2xl bg-[#f7f4ff] border border-[#e8ddff] p-4">
+                <div className="mt-5 rounded-2xl bg-[#f8f6fc] border border-[#ddd4ef] p-4">
                   <p className="text-xs font-semibold text-[#7d59c9] mb-2">
                     {x.interpret.exampleLabel}
                   </p>
@@ -793,7 +819,7 @@ const LandingPage: React.FC = () => {
                   ) => (
                     <Card key={idx} className="landing-card p-6 md:p-7">
                       <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-[#f4f0ff] flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-2xl bg-[#f1eff7] flex items-center justify-center">
                           <Quote className="w-5 h-5 text-[#7d59c9]" />
                         </div>
                         <div>
@@ -833,7 +859,7 @@ const LandingPage: React.FC = () => {
                 <div className="space-y-6 animate-fade-in">
                   <Card className="landing-card p-6 md:p-8 shadow-elegant">
                     <div className="flex flex-col items-center text-center gap-3 md:gap-4">
-                      <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-[#f4f9ff] flex items-center justify-center shadow-sm">
+                      <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-[#f1eff7] flex items-center justify-center shadow-sm">
                         <span className="text-2xl md:text-3xl">😊</span>
                       </div>
 
@@ -844,24 +870,24 @@ const LandingPage: React.FC = () => {
                         <h3 className="text-xl md:text-2xl font-bold text-slate-900">
                           {t.mentalLoad.headline}
                         </h3>
-                        <p className="text-xs md:text-sm leading-relaxed text-[#6f6c80] max-w-xs mx-auto">
+                        <p className="text-xs md:text-sm leading-relaxed text-[#64748b] max-w-xs mx-auto">
                           {t.mentalLoad.subheadline}
                         </p>
                       </div>
                     </div>
 
-                    <div className="mt-6 rounded-2xl bg-[#f7f4ff] px-4 py-3 md:px-5 md:py-4">
-                      <div className="flex items-center justify-between text-[11px] md:text-xs font-medium text-[#3b3355] mb-2">
+                    <div className="mt-6 rounded-2xl bg-[#f8f6fc] px-4 py-3 md:px-5 md:py-4">
+                      <div className="flex items-center justify-between text-[11px] md:text-xs font-medium text-[#334155] mb-2">
                         <span>{t.mentalLoad.clearMindLabel}</span>
-                        <span>69%</span>
+                        <span>67%</span>
                       </div>
 
                       <Progress
-                        value={69}
-                        className="h-2 md:h-2.5 rounded-full bg-[#ebe4ff] [&>div]:bg-[linear-gradient(90deg,#c266ff,#f173ff)]"
+                        value={67}
+                        className="h-2 md:h-2.5 rounded-full bg-[#e4dbf3] [&>div]:bg-[linear-gradient(90deg,#59a5c9_0%,#5989c9_12.5%,#596dc9_25%,#6b63c9_37.5%,#7d59c9_50%,#9959c9_62.5%,#b559c9_75%,#bf59b7_87.5%,#c959a5_100%)]"
                       />
 
-                      <p className="mt-2 text-[11px] md:text-xs text-[#8a86a3] leading-relaxed">
+                      <p className="mt-2 text-[11px] md:text-xs text-[#7c86a2] leading-relaxed">
                         {t.mentalLoad.clearMindHelper}
                       </p>
                     </div>
@@ -890,7 +916,7 @@ const LandingPage: React.FC = () => {
 
                       return (
                         <div className="flex items-start gap-3" key={step}>
-                          <div className="flex-shrink-0 w-7 h-7 md:w-8 md:h-8 rounded-full bg-[#f0efff] flex items-center justify-center text-[#7d59c9] text-xs md:text-sm font-semibold">
+                          <div className="flex-shrink-0 w-7 h-7 md:w-8 md:h-8 rounded-full bg-[#ece8f5] flex items-center justify-center text-[#7d59c9] text-xs md:text-sm font-semibold">
                             {step}
                           </div>
 
@@ -917,8 +943,8 @@ const LandingPage: React.FC = () => {
         <section className="py-16 md:py-24 relative">
           <div className="px-6 flex justify-center">
             <div className="w-full max-w-sm">
-              <div className="rounded-[32px] border-2 border-[#7d59c9] bg-[#fdfbff] px-6 py-10 md:px-8 md:py-12 flex flex-col gap-8 text-center">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#f4f0ff] text-[11px] font-medium text-[#7d59c9] mx-auto">
+              <div className="rounded-[32px] border-2 border-[#7d59c9] bg-[#fafafe] px-6 py-10 md:px-8 md:py-12 flex flex-col gap-8 text-center">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#f1eff7] text-[11px] font-medium text-[#7d59c9] mx-auto">
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>{t.cta.badge}</span>
                 </div>
@@ -930,7 +956,7 @@ const LandingPage: React.FC = () => {
                   </span>
                 </h2>
 
-                <p className="text-sm leading-relaxed text-[#6f6c80] max-w-xs mx-auto">
+                <p className="text-sm leading-relaxed text-[#64748b] max-w-xs mx-auto">
                   {t.cta.description}
                 </p>
 
@@ -962,11 +988,11 @@ const LandingPage: React.FC = () => {
                   </Button>
                 </div>
 
-                <div className="mt-2 space-y-3 text-left text-xs text-[#6f6c80]">
+                <div className="mt-2 space-y-3 text-left text-xs text-[#64748b]">
                   {[t.cta.feature1, t.cta.feature2, t.cta.feature3].map(
                     (txt: string, idx: number) => (
                       <div className="flex items-center gap-2" key={idx}>
-                        <div className="w-5 h-5 rounded-full bg-[#f4f0ff] border border-[#e2d9ff] flex items-center justify-center">
+                        <div className="w-5 h-5 rounded-full bg-[#f1eff7] border border-[#d8cee9] flex items-center justify-center">
                           <Check className="w-3 h-3 text-[#7d59c9]" />
                         </div>
                         <span>{txt}</span>
@@ -1000,15 +1026,15 @@ const LandingPage: React.FC = () => {
                 </p>
 
                 <div className="flex flex-wrap gap-2 pt-2">
-                  <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f4f0ff] text-[11px] font-medium text-[#7d59c9]">
+                  <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f1eff7] text-[11px] font-medium text-[#7d59c9]">
                     <Globe className="w-3.5 h-3.5" />
                     ES / EN / DE
                   </span>
-                  <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f4f0ff] text-[11px] font-medium text-[#7d59c9]">
+                  <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f1eff7] text-[11px] font-medium text-[#7d59c9]">
                     <Monitor className="w-3.5 h-3.5" />
                     {t.footer.multiDeviceLabel ?? "Multi-device"}
                   </span>
-                  <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f4f0ff] text-[11px] font-medium text-[#7d59c9]">
+                  <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f1eff7] text-[11px] font-medium text-[#7d59c9]">
                     <Download className="w-3.5 h-3.5" />
                     PWA
                   </span>
@@ -1018,7 +1044,26 @@ const LandingPage: React.FC = () => {
 
             <div className="pt-6 md:pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4 text-xs md:text-sm text-muted-foreground">
               <p>{t.footer.copyright}</p>
-              <div className="flex gap-6">{/* redes */}</div>
+              <div className="flex flex-wrap items-center justify-center gap-3 text-[12px]">
+                <Link to="/legal/terms" className="text-[#7d59c9] hover:underline">
+                  {legalLabels.terms}
+                </Link>
+                <Link to="/legal/agb" className="text-[#7d59c9] hover:underline">
+                  {legalLabels.agb}
+                </Link>
+                <Link to="/legal/privacy" className="text-[#7d59c9] hover:underline">
+                  {legalLabels.privacy}
+                </Link>
+                <Link to="/legal/cookies" className="text-[#7d59c9] hover:underline">
+                  {legalLabels.cookies}
+                </Link>
+                <Link to="/legal/disclaimer" className="text-[#7d59c9] hover:underline">
+                  {legalLabels.disclaimer}
+                </Link>
+                <Link to="/legal/impressum" className="text-[#7d59c9] hover:underline">
+                  {legalLabels.impressum}
+                </Link>
+              </div>
             </div>
           </div>
         </footer>
@@ -1035,14 +1080,14 @@ const LandingPage: React.FC = () => {
             </DialogHeader>
 
             {installed ? (
-              <div className="mt-2 rounded-2xl bg-[#f7f4ff] border border-[#e8ddff] p-4 text-sm text-slate-900">
+              <div className="mt-2 rounded-2xl bg-[#f8f6fc] border border-[#ddd4ef] p-4 text-sm text-slate-900">
                 {x.modal.alreadyInstalled}
               </div>
             ) : (
               <>
                 {deferredPrompt ? (
                   <div className="mt-3 space-y-3">
-                    <div className="rounded-2xl bg-[#f7f4ff] border border-[#e8ddff] p-4 text-sm text-slate-900">
+                    <div className="rounded-2xl bg-[#f8f6fc] border border-[#ddd4ef] p-4 text-sm text-slate-900">
                       {x.modal.promptText}
                     </div>
 
@@ -1063,7 +1108,7 @@ const LandingPage: React.FC = () => {
                   </div>
                 ) : (
                   <div className="mt-3 space-y-4">
-                    <div className="rounded-2xl bg-[#f7f4ff] border border-[#e8ddff] p-4">
+                    <div className="rounded-2xl bg-[#f8f6fc] border border-[#ddd4ef] p-4">
                       <p className="text-sm font-semibold text-slate-900">
                         {isIOS() ? x.modal.sectionIOS : x.modal.sectionDesktop}
                       </p>
@@ -1120,3 +1165,4 @@ const LandingPage: React.FC = () => {
 };
 
 export default LandingPage;
+

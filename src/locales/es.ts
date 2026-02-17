@@ -244,7 +244,7 @@ export const es = {
     moodSubtitleHappy:
       "Hoy hemos despejado bastante tu mente: tienes {{todayTotal}} tareas organizadas y {{todayDone}} de ellas ya están hechas.",
     moodSubtitleCalm:
-      "Vamos avanzando sin prisa. Tenemos {{todayTotal}} tareas guardadas para hoy y Remi se encarga de acordarse por ti.",
+      "Vamos avanzando sin prisa. Tenemos {{todayTotal}} tareas que acaban hoy y Remi se encarga de acordarse por ti.",
     moodSubtitleWaiting:
       "Hoy tu mente está ligera pero podemos descargar alguna cosa más en Remi para que no tengas que recordarla tú.",
     moodSubtitleConcerned:
@@ -513,9 +513,9 @@ export const es = {
     shareRemindersModal: {
       title: "Compartir recordatorios con otras personas",
       body:
-        "Envía una tarea o idea por enlace para que otra persona la añada a su Remi en 1 toque.",
+        "Envía una recordatorio o idea por enlace para que otra persona la añada a su Remi en 1 toque.",
       stepsTitle: "Cómo funciona (rápido)",
-      step1: "En una tarea/idea toca el icono de Compartir.",
+      step1: "En un recordatorio/idea toca el icono de Compartir.",
       step2: "Envía el enlace por WhatsApp, Mail, etc.",
       step3: "La persona que lo recibe toca “Añadir a Remi”.",
       examplesTitle: "Ejemplos que van genial",
@@ -606,7 +606,7 @@ export const es = {
     tip: {
       shareReminders: {
         title: "Recordatorios en equipo",
-        body: "Comparte tareas o ideas.\n Los demás las añaden a su Remi en 1 toque.",
+        body: "Comparte recordatorios o ideas.\n Los dem�s los a�aden a su Remi en 1 toque.",
         cta: "Ver cómo",
       },
 
@@ -1163,7 +1163,7 @@ export const es = {
           },
           {
             quote:
-              "“Muy facil de usar y muy útil. sobre todo la opcion de compartir tasks o ideas.”",
+              "“Muy facil de usar y muy útil. sobre todo la opcion de compartir recordatorios o ideas.”",
             author: "Erika",
           },
         ],
@@ -1206,4 +1206,5 @@ export const es = {
     },
   },
 } as const;
+
 

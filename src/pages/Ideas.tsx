@@ -272,7 +272,7 @@ export default function IdeasPage() {
         }}
       >
         <div className="mb-2 flex items-center justify-between">
-          <div className="rounded-full border border-violet-200 bg-white px-4 py-1.5 font-semibold text-violet-700" style={{ fontSize: "clamp(13px, 0.9vw, 18px)" }}>
+          <div className="rounded-full border border-violet-200 bg-white px-4 py-1.5 font-semibold text-yellow-600" style={{ fontSize: "clamp(13px, 0.9vw, 18px)" }}>
             {filterLabel}
           </div>
           <span className="text-slate-500" style={{ fontSize: "clamp(12px, 0.82vw, 16px)" }}>

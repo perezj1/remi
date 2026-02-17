@@ -498,7 +498,7 @@ export const de = {
     shareRemindersModal: {
       title: "Erinnerungen mit anderen teilen",
       body:
-        "Sende eine Aufgabe oder Idee als Link, damit eine andere Person sie mit einem Tipp zu Remi hinzufügen kann.",
+        "Sende eine Erinnerung oder Idee als Link, damit eine andere Person sie mit einem Tipp zu Remi hinzufügen kann.",
       stepsTitle: "So funktioniert’s (kurz)",
       step1: "Tippe bei einer Aufgabe/Idee auf das Teilen-Icon.",
       step2: "Sende den Link per WhatsApp, Mail usw.",
@@ -582,7 +582,7 @@ export const de = {
     tip: {
       shareReminders: {
         title: "Erinnerungen im Team",
-        body: "Teile Aufgaben oder Ideen.\nAndere fügen sie mit einem Tipp zu Remi hinzu.",
+        body: "Teile Erinnerungen oder Ideen.\nAndere fügen sie mit einem Tipp zu Remi hinzu.",
         cta: "So geht’s",
       },
 
@@ -1076,9 +1076,9 @@ export const de = {
 
       shareFeature: {
         badge: "Neu",
-        title: "Teile Aufgaben & Ideen, um mentale Last zu reduzieren",
+        title: "Teile Erinnerungen & Ideen, um mentale Last zu reduzieren",
         text:
-          "Hilf anderen, den Kopf zu entlasten: Teile eine Aufgabe oder Idee als Link. So können sie sie hinzufügen und müssen nicht mehr denken „Das darf ich nicht vergessen…“.",
+          "Hilf anderen, den Kopf zu entlasten: Teile eine Erinnerung oder Idee als Link. So können sie sie hinzufügen und müssen nicht mehr denken „Das darf ich nicht vergessen…“.",
         points: [
           "Nützlich für Familie, Partner und Teams",
           "Teile Erinnerungen, Erledigungen und Ideen in Sekunden",
@@ -1147,7 +1147,7 @@ export const de = {
           },
           {
             quote:
-              "„Sehr einfach zu benutzen und sehr nützlich – vor allem die Option, Tasks oder Ideen zu teilen.“",
+              "„Sehr einfach zu benutzen und sehr nützlich – vor allem die Option, Erinnerungen oder Ideen zu teilen.“",
             author: "Erika",
           },
         ],
@@ -1190,4 +1190,5 @@ export const de = {
     },
   },
 } as const;
+
 
