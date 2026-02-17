@@ -15,7 +15,7 @@ export const en = {
   shareInvite: {
     share: "Share",
     sharedOk: "Done. Link copied/shared.",
-    sharedError: "Couldn’t share. Please try again.",
+    sharedError: "Couldn't share. Please try again.",
     message: "{{name}} wants you to remember: {{text}}",
 
     pageTitle: "Add to Remi",
@@ -28,15 +28,15 @@ export const en = {
     due: "Date",
     acceptCta: "Add to Remi",
     accepting: "Adding…",
-    acceptError: "Couldn’t add it. Please try again.",
+    acceptError: "Couldn't add it. Please try again.",
     alreadyAccepted: "This link has already been used.",
     expired: "This link has expired.",
     rejected: "This link was rejected.",
     openRemi: "Open Remi",
     missingToken: "Missing link token.",
-    loadError: "Couldn’t load the link.",
+    loadError: "Couldn't load the link.",
     loginHint:
-      "If you’re not signed in, we’ll ask you to log in or create an account so you can add it.",
+      "If you're not signed in, we'll ask you to log in or create an account so you can add it.",
     sentIndicator: "Shared task",
     messageLine1: "{{name}} wants you to remember:",
   },
@@ -54,16 +54,16 @@ export const en = {
 
     detectedReminder: {
       DAY_BEFORE_AND_DUE:
-        "Detected “{word}” → I set it to: day before + due day.",
+        "Detected \"{word}\" → I set it to: day before + due day.",
       DAILY_UNTIL_DUE:
-        "Detected “{word}” → I set it to: daily until the due date.",
+        "Detected \"{word}\" → I set it to: daily until the due date.",
       WEEK_BEFORE_AND_DUE:
-        "Detected “{word}” → I set it to: 1 week before + due day.",
+        "Detected \"{word}\" → I set it to: 1 week before + due day.",
     },
 
     why: {
-      verbTask: "Detected “{word}” → marked it as a task.",
-      prefixIdea: "Detected “{word}” → marked it as an idea.",
+      verbTask: "Detected \"{word}\" → marked it as a task.",
+      prefixIdea: "Detected \"{word}\" → marked it as an idea.",
       projectIdea: "Sounds like an idea/project → marked it as an idea.",
       defaultTask: "No clear clue → marked it as a task.",
       defaultIdea: "No clear clue → marked it as an idea.",
@@ -84,7 +84,7 @@ export const en = {
 
     title: "Intensive brain dump",
     description:
-      "Spend 2–3 minutes emptying your head. Write everything you don’t want to forget: tasks, ideas, pending stuff. No need to organize anything—Remi turns it into reminders for you.",
+      "Spend 2–3 minutes emptying your head. Write everything you don't want to forget: tasks, ideas, pending stuff. No need to organize anything—Remi turns it into reminders for you.",
 
     inputLabel: "Write short phrases, separated by line breaks or commas.",
     placeholder:
@@ -124,13 +124,13 @@ export const en = {
     hints: {
       0: "Just write. Remi organizes it and schedules everything for you, so it reminds you at the right time.",
       1: "Paste or send text from WhatsApp, an email, or a note. Remi turns it into a reminder.",
-      2: "Tasks, ideas, errands… everything fits. Remi organizes it and reminds you when it’s time.",
+      2: "Tasks, ideas, errands… everything fits. Remi organizes it and reminds you when it's time.",
       3: "No perfect format needed. Write the way you talk.",
       4: "Did someone tell you something important? Copy & paste. Remi saves it for you.",
-      5: "Write dates or times (e.g. “Tuesday 18:00”, “Jan 17 at 15:00…”). Remi detects them.",
-      6: 'Write “every day / every week, etc” if it’s a repeating habit.',
+      5: "Write dates or times (e.g. \"Tuesday 18:00\", \"Jan 17 at 15:00…\"). Remi detects them.",
+      6: "Write \"every day / every week, etc\" if it's a repeating habit.",
       7: "One minute here = a more relaxed day and fewer forgotten things.",
-      8: "Quick tip: Write “Idea” to save notes without reminders.",
+      8: "Quick tip: Write \"Idea\" to save notes without reminders.",
     },
   },
 
@@ -192,14 +192,14 @@ export const en = {
 
     helperLabel: "Your external memory",
     helperFallback:
-      "I’m here to store your tasks, ideas, and reminders so your mind doesn’t have to carry everything.",
+      "I'm here to store your tasks, ideas, and reminders so your mind doesn't have to carry everything.",
 
     mindClearLabel: "Clear mind",
     mindClearDescription:
       "Every thing you save in Remi is one less thing your mind has to carry.",
 
     todaySectionTitle: "What you achieved",
-    todaySectionSubtitle: "A quick summary of how we’re taking care of your mind.",
+    todaySectionSubtitle: "A quick summary of how we're taking care of your mind.",
     todayTasksLabel: "Completed today",
     todayTasksDescription:
       "{{todayDone}}/{{todayTotal}} tasks due today completed.",
@@ -207,7 +207,7 @@ export const en = {
     streakSectionTitle: "Our streak",
     streakValue: "{{streakDays}} days",
     streakDescription:
-      "It’s been {{streakDays}} days without your mind having to remember everything by itself.",
+      "It's been {{streakDays}} days without your mind having to remember everything by itself.",
 
     memoryDelegatedTitle: "Delegated memory",
     memoryDelegatedValue: "{{tasks}} tasks · {{ideas}} ideas",
@@ -226,22 +226,22 @@ export const en = {
 
     // Moods
     moodTitleCelebrate: "Amazing team!",
-    moodTitleHappy: "We’re doing great today",
+    moodTitleHappy: "We're doing great today",
     moodTitleCalm: "Everything under control",
-    moodTitleWaiting: "I’m ready",
+    moodTitleWaiting: "I'm ready",
     moodTitleConcerned: "One step at a time",
-    moodTitleDefault: "We’re in this together",
+    moodTitleDefault: "We're in this together",
 
     moodSubtitleCelebrate:
-      "These days we’re taking great care of your head. We cleared {{cleared}} tasks today and Remi has {{totalItems}} items saved in total between tasks and ideas.",
+      "These days we're taking great care of your head. We cleared {{cleared}} tasks today and Remi has {{totalItems}} items saved in total between tasks and ideas.",
     moodSubtitleHappy:
       "We cleared quite a bit from your mind today: you have {{todayTotal}} tasks organized and {{todayDone}} of them are already done.",
     moodSubtitleCalm:
       "Steady progress. We have {{todayTotal}} tasks saved for today and Remi remembers them for you.",
     moodSubtitleWaiting:
-      "Your mind is light today, but we can offload a bit more into Remi so you don’t have to remember it yourself.",
+      "Your mind is light today, but we can offload a bit more into Remi so you don't have to remember it yourself.",
     moodSubtitleConcerned:
-      "Looks like there’s still a day ahead. We can start with one small task and let your mind breathe a bit more.",
+      "Looks like there's still a day ahead. We can start with one small task and let your mind breathe a bit more.",
     moodSubtitleDefault:
       "Every thing you save in Remi is one less thing your mind has to carry.",
   },
@@ -317,9 +317,9 @@ export const en = {
     },
 
     tips: {
-      0: 'Tip: Say or write “idea” to create notes without a reminder',
+      0: 'Tip: Say or write "idea" to create notes without a reminder',
       1: "Tip: You can paste text from other apps",
-      2: "Tip: Don’t worry about formatting—write the way you talk",
+      2: "Tip: Don't worry about formatting—write the way you talk",
       3: "Tip: Press and hold the microphone to dictate",
     },
 
@@ -329,20 +329,20 @@ export const en = {
       button: "PASTE",
       pasting: "Pasting…",
       toastUnavailable:
-        "Paste isn’t available here. Press and hold and paste manually.",
-      toastEmpty: "Clipboard is empty (or I can’t read it).",
+        "Paste isn't available here. Press and hold and paste manually.",
+      toastEmpty: "Clipboard is empty (or I can't read it).",
       toastDenied:
-        "I can’t read the clipboard. Press and hold and paste manually.",
+        "I can't read the clipboard. Press and hold and paste manually.",
     },
 
     toast: {
       micDenied: "Microphone permission denied.",
-      noSpeech: "I didn’t detect any speech. Try again.",
+      noSpeech: "I didn't detect any speech. Try again.",
       dictationError: "Dictation error.",
-      dictationStartError: "Couldn’t start dictation.",
-      pasteUnavailable: "Can’t paste here (clipboard not available).",
-      clipboardEmpty: "There’s no text in the clipboard.",
-      pasteError: "Couldn’t access the clipboard. Press and hold to paste.",
+      dictationStartError: "Couldn't start dictation.",
+      pasteUnavailable: "Can't paste here (clipboard not available).",
+      clipboardEmpty: "There's no text in the clipboard.",
+      pasteError: "Couldn't access the clipboard. Press and hold to paste.",
       writeSomething: "Write something first.",
 
       pickDateFirst: "Pick a date first.",
@@ -350,8 +350,8 @@ export const en = {
 
     textareaPlaceholderIOS:
       "iPhone/iPad: use the keyboard microphone to dictate.\n" +
-      "If it doesn’t appear: Settings > General > Keyboard > Enable Dictation.\n" +
-      "If it says “not available”: Settings > Privacy & Security > Microphone (enable your browser).",
+      "If it doesn't appear: Settings > General > Keyboard > Enable Dictation.\n" +
+      "If it says \"not available\": Settings > Privacy & Security > Microphone (enable your browser).",
 
     repeatOn: "Enabled",
     repeatOff: "Disabled",
@@ -366,9 +366,9 @@ export const en = {
     title: "Clear your mind",
     subtitle: "Speak, type, or paste text. Remi takes care of it.",
     examplesTitle: "Examples:",
-    exampleVoice: '🎤 “Call mom on Sunday”',
-    exampleVoiceIOS: '🎤 “Use the keyboard mic to dictate”',
-    examplePaste: '📋 “Every Tuesday at 18:00 we meet”',
+    exampleVoice: '🎤 "Call mom on Sunday"',
+    exampleVoiceIOS: '🎤 "Use the keyboard mic to dictate"',
+    examplePaste: '📋 "Every Tuesday at 18:00 we meet"',
     exampleIdea: "💡 Idea: trip to Italy in spring",
     holdToTalk: "Press and hold to speak",
     listening: "Listening…",
@@ -483,7 +483,7 @@ export const en = {
     passwordPlaceholder: "••••••••",
     submitLogin: "Sign in",
     submitRegister: "Create account",
-    toggleToRegister: "Don’t have an account? Sign up",
+    toggleToRegister: "Don't have an account? Sign up",
     toggleToLogin: "Already have an account? Sign in",
 
     errorInvalidCredentials:
@@ -506,14 +506,14 @@ export const en = {
       stepsTitle: "How it works (quick)",
       step1: "On a reminder/idea, tap the Share icon.",
       step2: "Send the link via WhatsApp, email, etc.",
-      step3: 'The recipient taps “Add to Remi”.',
+      step3: 'The recipient taps "Add to Remi".',
       examplesTitle: "Examples that work great",
       examplesBody:
-        "• “Buy bread tomorrow” → I send it to my partner\n• “Doctor on Tuesday at 14:00” → I send it to my mom\n• “Bring charger” → I send it to my coworker",
+        "• \"Buy bread tomorrow\" → I send it to my partner\n• \"Doctor on Tuesday at 14:00\" → I send it to my mom\n• \"Bring charger\" → I send it to my coworker",
       footer:
         "This helps other people remember things that matter to them—and to you.",
       ok: "Got it",
-      hideForever: "Don’t show again",
+      hideForever: "Don't show again",
     },
 
     dueLabel: "Due date",
@@ -560,7 +560,7 @@ export const en = {
 
     // Share
     shareText:
-      "I use Remi to get tasks and ideas out of my head, and my mind feels much clearer and less stressed.\nI truly recommend it—it helps a lot. Here’s the link 🙂",
+      "I use Remi to get tasks and ideas out of my head, and my mind feels much clearer and less stressed.\nI truly recommend it—it helps a lot. Here's the link 🙂",
     shareCopied: "Link copied to clipboard",
 
     // Push modal + toasts
@@ -570,7 +570,7 @@ export const en = {
     pushEnabling: "Enabling…",
     pushLater: "Not now",
     pushEnabledToast: "Notifications enabled",
-    pushErrorToast: "Couldn’t enable push",
+    pushErrorToast: "Couldn't enable push",
 
     multideviceHelp: {
       title: "Multi-device: forget nothing, wherever you are",
@@ -585,11 +585,11 @@ export const en = {
         "Per-device notifications: enable alerts only where you want (e.g., phone ON, PC OFF).",
       examplesTitle: "Examples that work",
       examplesBody:
-        "• Phone ON → reminders while you’re out\n• PC OFF → zero interruptions while working\n• iPad ON → calm review at the end of the day",
+        "• Phone ON → reminders while you're out\n• PC OFF → zero interruptions while working\n• iPad ON → calm review at the end of the day",
       footer:
-        "You offload the mental load in the moment. Remi reminds you when and where it’s needed.",
+        "You offload the mental load in the moment. Remi reminds you when and where it's needed.",
       ok: "Got it",
-      hideForever: "Don’t show again",
+      hideForever: "Don't show again",
     },
 
     tip: {
@@ -622,33 +622,33 @@ export const en = {
       push: {
         title: "Let Remi remind you",
         body:
-          "Enable notifications and drop the mental load. Remi taps you on the shoulder when it’s time.",
+          "Enable notifications and drop the mental load. Remi taps you on the shoulder when it's time.",
         cta: "Enable",
       },
 
       iosDict: {
         title: "Enable the keyboard microphone",
         body:
-          "If you don’t see the mic on the keyboard, enable it in Settings and dictate faster.",
+          "If you don't see the mic on the keyboard, enable it in Settings and dictate faster.",
         cta: "See how",
       },
 
       noDate: {
         title_one: "You have {{count}} task without a date",
         title_other: "You have {{count}} tasks without a date",
-        body: "Shall we sort them? In 30s I’ll leave your list clean.",
+        body: "Shall we sort them? In 30s I'll leave your list clean.",
         cta: "View no-date",
       },
 
       shortcuts: {
         title: "Words that save time",
-        body: "An idea = start with ‘Idea’.\nA task = start with a verb.",
+        body: "An idea = start with 'Idea'.\nA task = start with a verb.",
         cta: "See examples",
       },
 
       dayClose: {
         title: "60-second wrap-up",
-        body: "What’s on your mind for tomorrow? Drop it and done.",
+        body: "What's on your mind for tomorrow? Drop it and done.",
         cta: "Offload",
       },
 
@@ -659,18 +659,18 @@ export const en = {
       },
 
       shareToRemi: {
-        title: 'Save things with “Share”',
+        title: 'Save things with "Share"',
         body:
           "From WhatsApp/Email/Notes: Share → Remi.\nOpens ready to organize.",
         cta: "Try",
         toast:
-          "Tip: in another app tap “Share” → “Remi” to send it directly 🙂",
+          "Tip: in another app tap \"Share\" → \"Remi\" to send it directly 🙂",
       },
 
       natural: {
         title: "Write the way you talk",
         body:
-          'E.g. “Pay the electric bill tomorrow at 6pm”. Remi handles it and you can relax.',
+          'E.g. "Pay the electric bill tomorrow at 6pm". Remi handles it and you can relax.',
         cta: "Try example",
         prefill: "Pay the electric bill tomorrow 18:00",
       },
@@ -684,41 +684,41 @@ export const en = {
 
       mental: {
         title: "Mini pause",
-        body: "Breathe in 4s, breathe out 6s. Your mind doesn’t need to do it all today.",
+        body: "Breathe in 4s, breathe out 6s. Your mind doesn't need to do it all today.",
         cta: "Clear mind",
       },
 
       birthday: {
         title: "Birthday coming up?",
-        body: "Write it in 5 seconds and Remi will remind you when it’s time.",
+        body: "Write it in 5 seconds and Remi will remind you when it's time.",
         cta: "Add",
-        prefill: "___’s birthday on ___",
+        prefill: "___'s birthday on ___",
       },
 
       cleanNoDate: {
         title: "✅ No tasks without a date",
-        body: "Perfect. Now it’s easy to prioritize.",
+        body: "Perfect. Now it's easy to prioritize.",
         cta: "View today",
       },
     },
 
     shareToRemiModal: {
       title: "Share to Remi",
-      body: "Save text from any app using “Share”.",
+      body: "Save text from any app using \"Share\".",
       iosTitle: "On iPhone (iOS)",
       iosStep1: "Open WhatsApp/Email/Notes.",
-      iosStep2: 'Tap “Share”.',
-      iosStep3: 'If you see “Remi”, tap it and it will open ready to organize.',
+      iosStep2: 'Tap "Share".',
+      iosStep3: 'If you see "Remi", tap it and it will open ready to organize.',
       iosStep4:
-        "If it doesn’t appear, use “Copy” and then paste in Remi (on iOS it can depend on the system/version).",
+        "If it doesn't appear, use \"Copy\" and then paste in Remi (on iOS it can depend on the system/version).",
       androidTitle: "On Android",
       androidStep1: "Open WhatsApp/Email/Notes.",
-      androidStep2: 'Select the text and/or tap “Share”.',
-      androidStep3: "Choose “Remi” and it will open with the text ready to organize.",
+      androidStep2: 'Select the text and/or tap "Share".',
+      androidStep3: "Choose \"Remi\" and it will open with the text ready to organize.",
       androidStep4:
-        "If it doesn’t appear, make sure Remi is installed as an app (PWA) and try again.",
+        "If it doesn't appear, make sure Remi is installed as an app (PWA) and try again.",
       ok: "Got it",
-      hideForever: "Don’t show again",
+      hideForever: "Don't show again",
     },
 
     shortcutsModal: {
@@ -736,13 +736,13 @@ export const en = {
     iosDict: {
       helpTitle: "Enable Dictation on iPhone",
       helpBody:
-        "On iOS it’s usually: Settings → General → Keyboard → Enable Dictation.",
+        "On iOS it's usually: Settings → General → Keyboard → Enable Dictation.",
       helpStepsTitle: "Quick steps",
       step1: "Open Settings",
       step2: "General → Keyboard",
-      step3: "Enable “Enable Dictation”",
+      step3: "Enable \"Enable Dictation\"",
       ok: "Got it",
-      hideForever: "Don’t show again",
+      hideForever: "Don't show again",
     },
   },
 
@@ -754,7 +754,7 @@ export const en = {
     statusDone: "Done",
     statusActive: "Active",
     statusArchived: "Archived",
-    subtitle: "Everything you’ve cleared from your head shows up here.",
+    subtitle: "Everything you've cleared from your head shows up here.",
     itemsCount: "{{count}} items",
     loading: "Loading inbox…",
     emptyTitle: "Inbox is empty",
@@ -773,14 +773,14 @@ export const en = {
   ideas: {
     title: "Ideas",
     emptyState: "Write down your ideas here to clear your mind.",
-    subtitle: "All the ideas you don’t want to lose are saved here.",
+    subtitle: "All the ideas you don't want to lose are saved here.",
     loading: "Loading ideas…",
     emptyTitle: "No ideas yet",
     emptySubtitle: "Use the + button on the Today screen to save your ideas.",
     savedAt: "Saved on {{date}}",
     errorLoading: "Error loading your ideas",
-    updateError: "Couldn’t update the idea.",
-    convertError: "Couldn’t convert the idea into a task.",
+    updateError: "Couldn't update the idea.",
+    convertError: "Couldn't convert the idea into a task.",
 
     editLabel: "Edit idea",
     editTitle: "Turn this idea into something actionable",
@@ -806,7 +806,7 @@ export const en = {
     confirmConvert: "Convert to task now",
 
     footerHint:
-      "Converting an idea into a task doesn’t duplicate it: the original idea becomes a task.",
+      "Converting an idea into a task doesn't duplicate it: the original idea becomes a task.",
   },
 
   profile: {
@@ -822,17 +822,17 @@ export const en = {
     shareProfile: "Share profile",
     logout: "Sign out",
     toastSaved: "Profile updated successfully.",
-    toastError: "Couldn’t save the profile.",
+    toastError: "Couldn't save the profile.",
 
     devicePushTitle: "Notifications on this device",
     devicePushUnsupportedHint:
-      "This browser doesn’t support push notifications. Try Safari on iPhone or Chrome/Edge on Android/PC.",
+      "This browser doesn't support push notifications. Try Safari on iPhone or Chrome/Edge on Android/PC.",
     devicePushChecking: "Checking…",
     devicePushUnsupportedLine: "This device/browser does not support push.",
     devicePushDeniedLine:
       "Permission denied on this device (browser settings).",
     devicePushNeedsPermissionLine:
-      "You haven’t granted permission on this device yet.",
+      "You haven't granted permission on this device yet.",
     devicePushNeedsRegisterLine: "Permission OK, but you still need to enable it here.",
     devicePushActiveLine: "Active on this device ✅",
     devicePushToggleAria:
@@ -852,7 +852,7 @@ export const en = {
     emailPlaceholder: "you@email.com",
 
     passwordLabel: "New password",
-    passwordPlaceholder: "Leave empty if you don’t want to change it",
+    passwordPlaceholder: "Leave empty if you don't want to change it",
 
     languageLabel: "Language",
     languageSpanish: "🇪🇸 Spanish",
@@ -873,25 +873,25 @@ export const en = {
     logoutButton: "Sign out",
 
     shareText:
-      "I’m using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\nI definitely recommend trying it, it really helps. Here’s the link. 🙂",
+      "I'm using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\nI definitely recommend trying it, it really helps. Here's the link. 🙂",
     shareCopied: "REMI link copied to clipboard",
 
     defaultUserName: "User",
 
     avatarTooBig: "The image must be under 5 MB.",
-    avatarUploadError: "Couldn’t upload the image. Please try again.",
+    avatarUploadError: "Couldn't upload the image. Please try again.",
     passwordTooShort: "The new password must be at least 6 characters.",
-    authUpdateError: "Couldn’t update email/password.",
+    authUpdateError: "Couldn't update email/password.",
     updateSuccess: "Profile updated successfully.",
-    updateError: "Couldn’t save changes.",
-    logoutError: "Couldn’t sign out. Please try again.",
+    updateError: "Couldn't save changes.",
+    logoutError: "Couldn't sign out. Please try again.",
   },
 
   notifications: {
     dailyReminderTitle: "Your mind is full",
     dailyReminderBody: "Check your tasks for today in REMI and clear your head.",
     dueTodayTitle: "You have tasks due today",
-    dueTodayBody: "Open REMI to see what’s pending.",
+    dueTodayBody: "Open REMI to see what's pending.",
   },
 
   landing: {
@@ -899,7 +899,7 @@ export const en = {
       badge: "Your external memory",
       shareButtonLabel: "Share Remi",
       shareText:
-        "I’m using Remi to organize everything I used to keep in my head, and I’ve greatly reduced stress and mental load. Here’s the link:",
+        "I'm using Remi to organize everything I used to keep in my head, and I've greatly reduced stress and mental load. Here's the link:",
       shareCopied: "Remi link copied to clipboard.",
       title: {
         part1: "Remember everything without",
@@ -936,7 +936,7 @@ export const en = {
         mentalLoad: {
           title: "Mental load under control",
           description:
-            "Get everything out of your head: big or small tasks, errands, ideas, things you don’t want to forget. Remi stores them and brings them back exactly when you need them.",
+            "Get everything out of your head: big or small tasks, errands, ideas, things you don't want to forget. Remi stores them and brings them back exactly when you need them.",
         },
 
         quickCapture: {
@@ -959,7 +959,7 @@ export const en = {
       example3: "Daily tasks organized",
       example3Freq: "Every morning",
       badge: "Your external memory",
-      headline: "We’re doing great today",
+      headline: "We're doing great today",
       subheadline:
         "Today we cleared quite a bit from your mind: you have 5 tasks organized and 3 of them are already done.",
       clearMindLabel: "Clear mind",
@@ -974,11 +974,11 @@ export const en = {
         "We use our mind as a to-do list, calendar, home management, and storage for pending things. That creates stress and constant mental load. Remi helps you offload that load easily and quickly into an external, clear, reliable place so you can focus on what truly matters.",
       step1Title: "Get it all out of your head",
       step1Description:
-        "Whenever something comes to mind—a task, an idea, an errand—you write it in Remi. Don’t overthink it: just write it and keep doing what you were doing.",
+        "Whenever something comes to mind—a task, an idea, an errand—you write it in Remi. Don't overthink it: just write it and keep doing what you were doing.",
 
       step2Title: "Let Remi organize it with you",
       step2Description:
-        "If it’s an idea, save it with one tap and later you can edit it or convert it into a task.\nIf it’s a task, pick a due date and how you want Remi to remind you—fast, without having to touch it again.",
+        "If it's an idea, save it with one tap and later you can edit it or convert it into a task.\nIf it's a task, pick a due date and how you want Remi to remind you—fast, without having to touch it again.",
 
       step3Title: "Get a clear head again",
       step3Description:
@@ -992,7 +992,7 @@ export const en = {
         highlighted: "light and calm mind",
       },
       description:
-        "You don’t need to change your whole life. Just get out of your head what you used to carry inside. Remi doesn’t force you to do anything at a specific time: Remi reminds you in time so you can decide when it’s best for you—without forgetting.",
+        "You don't need to change your whole life. Just get out of your head what you used to carry inside. Remi doesn't force you to do anything at a specific time: Remi reminds you in time so you can decide when it's best for you—without forgetting.",
 
       ctaPrimary: "Try Remi now",
       ctaSecondary: "Keep reading first",
@@ -1004,7 +1004,7 @@ export const en = {
 
     footer: {
       description:
-        "Remi is your trusted external memory for all those things you don’t want to forget—but also don’t want to carry in your head all day.",
+        "Remi is your trusted external memory for all those things you don't want to forget—but also don't want to carry in your head all day.",
 
       product: "Product",
       productLinks: {
@@ -1035,13 +1035,13 @@ export const en = {
 
     extra: {
       hero: {
-        kicker: "Tell Remi what you don’t want to forget.",
+        kicker: "Tell Remi what you don't want to forget.",
         description:
-          "Write a sentence. Remi interprets the text and creates the reminder: date and time, repeat if it’s a habit, and the reminder mode when it’s time.",
+          "Write a sentence. Remi interprets the text and creates the reminder: date and time, repeat if it's a habit, and the reminder mode when it's time.",
         bullets: {
           a: "Just write: zero formatting, zero friction",
           b: "Remi interprets: dates, times, reminders, and repeat",
-          c: "Reminders ready so it doesn’t depend on your memory",
+          c: "Reminders ready so it doesn't depend on your memory",
           d: "On all your devices: computer, phone, iPad, and tablet",
         },
       },
@@ -1058,36 +1058,36 @@ export const en = {
       how: {
         title: "How it works",
         subtitle: "You write. Remi understands. And it reminds you.",
-        step1Title: "1) Write what you don’t want to forget",
+        step1Title: "1) Write what you don't want to forget",
         step1Text:
           "A sentence, just as it comes out. No menus, no thinking about fields.",
         step2Title: "2) Remi interprets it",
         step2Text:
-          "It detects date and time, whether it’s a habit (repeat), and adjusts the reminder.",
-        step3Title: "3) It brings it back when it’s time",
+          "It detects date and time, whether it's a habit (repeat), and adjusts the reminder.",
+        step3Title: "3) It brings it back when it's time",
         step3Text:
-          "Remi puts it in front of you at the right moment so you don’t have to carry it.",
+          "Remi puts it in front of you at the right moment so you don't have to carry it.",
       },
 
       interpret: {
         title: "Text → automatic reminder",
         text:
-          "You don’t need to configure a thousand things. Remi understands natural language and turns it into a useful reminder.",
+          "You don't need to configure a thousand things. Remi understands natural language and turns it into a useful reminder.",
         chips: ["Date and time", "Habit / repeat", "Reminder mode"],
         exampleLabel: "Examples",
         examples: [
-          "“Tomorrow at 18:00: call the insurance”",
-          "“Every Monday: gym”",
-          "“On the 5th: pay rent”",
+          "\"Tomorrow at 18:00: call the insurance\"",
+          "\"Every Monday: gym\"",
+          "\"On the 5th: pay rent\"",
         ],
-        helperLine: "Write a sentence and you’re done",
+        helperLine: "Write a sentence and you're done",
       },
 
       shareFeature: {
         badge: "New",
         title: "Share reminders and ideas to reduce mental load",
         text:
-          "Help other people free their mind: share a reminder or an idea as a link. They can add it and stop carrying “I can’t forget this…”.",
+          "Help other people free their mind: share a reminder or an idea as a link. They can add it and stop carrying \"I can't forget this…\".",
         points: [
           "Useful for family, partners, and teams",
           "Share reminders, errands, and ideas in seconds",
@@ -1095,7 +1095,7 @@ export const en = {
         ],
         exampleLabel: "Example",
         example:
-          "“Add to Remi: ‘Tomorrow 18:00 call the insurance’ → you receive a link and add it in one tap.”",
+          "\"Add to Remi: 'Tomorrow 18:00 call the insurance' → you receive a link and add it in one tap.\"",
         helperLine: "Quick help, no explanation",
         ctaTry: "Try Remi",
         tag: "Share",
@@ -1126,7 +1126,7 @@ export const en = {
         mini2: "Always up to date",
         mini3: "Made for fast capture",
         ctaHint:
-          "Tap “Install now” and follow the steps for your device.",
+          "Tap \"Install now\" and follow the steps for your device.",
         device: {
           desktop: "Computer",
           phone: "Phone",
@@ -1146,16 +1146,16 @@ export const en = {
         testimonials: [
           {
             quote:
-              "“Thanks to my coworker for recommending Remi. Every day I use it, I feel less mental load and I forget fewer things.”",
+              "\"Thanks to my coworker for recommending Remi. Every day I use it, I feel less mental load and I forget fewer things.\"",
             author: "Sarah",
           },
           {
-            quote: "“It’s like having a personal memory assistant. I love it!”",
+            quote: "\"It's like having a personal memory assistant. I love it!\"",
             author: "Christian",
           },
           {
             quote:
-              "“Very easy to use and very useful—especially the option to share reminders or ideas.”",
+              "\"Very easy to use and very useful—especially the option to share reminders or ideas.\"",
             author: "Erika",
           },
         ],
@@ -1176,12 +1176,12 @@ export const en = {
           "Installation is required to receive notifications for your reminders.",
         iosSteps: [
           "Open the share menu (share icon in Safari).",
-          "Tap “Add to Home Screen”.",
-          "Confirm “Add”.",
+          "Tap \"Add to Home Screen\".",
+          "Confirm \"Add\".",
         ],
         desktopSteps: [
-          "In Chrome/Edge, look for the “Install” icon in the address bar or in the menu.",
-          "Tap “Install”.",
+          "In Chrome/Edge, look for the \"Install\" icon in the address bar or in the menu.",
+          "Tap \"Install\".",
         ],
         close: "Close",
         openInBrowser: "Open in browser",
@@ -1192,12 +1192,10 @@ export const en = {
       iosBanner: {
         title: "Install Remi on your iPhone — FREE",
         step1: "Tap the Share button",
-        step2: "Choose “Add to Home Screen” and confirm.",
+        step2: "Choose \"Add to Home Screen\" and confirm.",
         closeAria: "Close",
       },
     },
   },
 } as const;
-
-
 

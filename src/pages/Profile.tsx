@@ -585,11 +585,11 @@ export default function ProfilePage() {
           paddingBottom: 10,
           paddingLeft: "calc(16px + env(safe-area-inset-left))",
           paddingRight: "calc(16px + env(safe-area-inset-right))",
-          background:
-            "linear-gradient(135deg, #9a86ff 0%, #7d59c9 48%, #665ed1 100%)",
+          background: "#ffffff",
           borderBottomLeftRadius: 22,
           borderBottomRightRadius: 22,
-          boxShadow: "0 10px 24px rgba(93,69,179,0.22)",
+          border: "1px solid #ebe7f8",
+          boxShadow: "0 8px 22px rgba(125,89,201,0.10)",
         }}
       >
         <div
@@ -599,7 +599,7 @@ export default function ProfilePage() {
             width: 180,
             height: 180,
             borderRadius: "999px",
-            background: "rgba(255,255,255,0.14)",
+            background: "#7d59c91c",
             top: -90,
             left: -60,
             filter: "blur(1px)",
@@ -613,7 +613,7 @@ export default function ProfilePage() {
             width: 220,
             height: 220,
             borderRadius: "999px",
-            background: "rgba(255,255,255,0.10)",
+            background: "#59a5c920",
             top: -110,
             right: -70,
             filter: "blur(1px)",
@@ -627,7 +627,7 @@ export default function ProfilePage() {
               if (window.history.length > 1) navigate(-1);
               else navigate("/");
             }}
-            className="flex items-center gap-1 mb-2 text-[13px] text-white/90"
+            className="flex items-center gap-1 mb-2 text-[13px] text-slate-700"
             style={{
               background: "transparent",
               border: "none",
@@ -645,7 +645,7 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={handleAvatarClick}
-              className="w-[90px] h-[90px] rounded-full border-4 border-white bg-white shadow-[0_10px_24px_rgba(15,23,42,0.18)] flex items-center justify-center overflow-hidden"
+              className="w-[90px] h-[90px] rounded-full border-4 border-[#d8cdf8] bg-white shadow-[0_10px_24px_rgba(125,89,201,0.16)] flex items-center justify-center overflow-hidden"
             >
               {avatarUrl ? (
                 <img
@@ -661,7 +661,7 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={handleAvatarClick}
-              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-white shadow-md flex items-center justify-center"
+              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#f5f2ff] shadow-md flex items-center justify-center"
             >
               <Camera size={14} className="text-violet-500" />
             </button>
@@ -680,11 +680,11 @@ export default function ProfilePage() {
           )}
 
           <div className="text-center">
-            <div className="font-extrabold leading-tight text-white" style={{ fontSize: "clamp(28px, 2vw, 42px)" }}>
+            <div className="font-extrabold leading-tight text-slate-900" style={{ fontSize: "clamp(28px, 2vw, 42px)" }}>
               {displayName}
             </div>
             {memberSince && (
-              <div className="text-white/80 mt-0.5" style={{ fontSize: "clamp(13px, 0.9vw, 18px)" }}>
+              <div className="text-slate-500 mt-0.5" style={{ fontSize: "clamp(13px, 0.9vw, 18px)" }}>
                 {t("profile.memberSince", { date: memberSince })}
               </div>
             )}

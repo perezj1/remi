@@ -2160,26 +2160,27 @@ export default function MindDumpModal({
         <div
           className="sticky top-0 z-10"
           style={{
-            background: embedded ? "transparent" : "linear-gradient(135deg, #9a86ff 0%, #7d59c9 48%, #665ed1 100%)",
-            color: embedded ? "#0f172a" : "#ffffff",
+            background: embedded ? "transparent" : "#ffffff",
+            color: embedded ? "#0f172a" : "#0f172a",
             borderBottomLeftRadius: embedded ? 0 : 24,
             borderBottomRightRadius: embedded ? 0 : 24,
-            border: embedded ? "none" : "1px solid rgba(255,255,255,0.18)",
-            boxShadow: embedded ? "none" : "0 10px 24px rgba(93,69,179,0.22)",
-            backdropFilter: embedded ? "none" : "blur(8px)",
+            border: embedded ? "none" : "1px solid #ebe7f8",
+            boxShadow: embedded ? "none" : "0 8px 22px rgba(125,89,201,0.10)",
+            backdropFilter: "none",
           }}
         >
           {!embedded && <div
             aria-hidden
             style={{
               position: "absolute",
-              width: 180,
-              height: 180,
+              width: 160,
+              height: 160,
               borderRadius: "999px",
-              background: "rgba(255,255,255,0.14)",
-              top: -90,
-              left: -60,
+              background: "#7d59c91c",
+              top: -94,
+              left: -72,
               filter: "blur(1px)",
+              zIndex: 0,
               pointerEvents: "none",
             }}
           />}
@@ -2187,38 +2188,73 @@ export default function MindDumpModal({
             aria-hidden
             style={{
               position: "absolute",
-              width: 220,
-              height: 220,
+              width: 138,
+              height: 138,
               borderRadius: "999px",
-              background: "rgba(255,255,255,0.10)",
-              top: -110,
-              right: -70,
+              background: "#59a5c920",
+              top: -46,
+              right: -62,
               filter: "blur(1px)",
+              zIndex: 0,
               pointerEvents: "none",
             }}
           />}
+          {!embedded && (
+            <>
+              <div
+                aria-hidden
+                style={{
+                  position: "absolute",
+                  width: 9,
+                  height: 9,
+                  borderRadius: "999px",
+                  background: "#7d59c9",
+                  top: 24,
+                  right: "18%",
+                  zIndex: 0,
+                  pointerEvents: "none",
+                }}
+              />
+              <div
+                aria-hidden
+                style={{
+                  position: "absolute",
+                  width: 6,
+                  height: 6,
+                  borderRadius: "999px",
+                  background: "#59c9b5",
+                  top: 68,
+                  right: "8%",
+                  zIndex: 0,
+                  pointerEvents: "none",
+                }}
+              />
+            </>
+          )}
           {!embedded && <div
             className="pb-4 flex items-start justify-between"
             style={{
+              position: "relative",
+              zIndex: 1,
               paddingTop: "calc(16px + env(safe-area-inset-top))",
               paddingLeft: "calc(20px + env(safe-area-inset-left))",
               paddingRight: "calc(20px + env(safe-area-inset-right))",
             }}
           >
             <div className="min-w-0 pr-3">
-              <div className="text-[20px] font-extrabold leading-tight" style={{ color: "#ffffff" }}>
+              <div className="text-[20px] font-extrabold leading-tight" style={{ color: "#111827" }}>
                 {t("capture.title", "Vacía tu mente")}
               </div>
 
-              <div className="text-[14px] mt-0.5 font-semibold" style={{ color: "rgba(255,255,255,0.85)" }}>
+              <div className="text-[14px] mt-0.5 font-semibold" style={{ color: "#5f6c85" }}>
                 {t("capture.subtitle", "Habla, escribe o pega texto. Remi se encarga.")}
               </div>
 
               {showTalkButton && listening && (
-                <div className="text-[11px] mt-2" style={{ color: "rgba(255,255,255,0.92)" }}>
+                <div className="text-[11px] mt-2" style={{ color: "#475569" }}>
                   {t("capture.listening", "Escuchando…")}{" "}
                   {interim ? (
-                    <span style={{ color: "rgba(255,255,255,0.70)" }}>{interim}</span>
+                    <span style={{ color: "#64748b" }}>{interim}</span>
                   ) : null}
                 </div>
               )}
@@ -2231,12 +2267,12 @@ export default function MindDumpModal({
                 aria-label={t("common.close", "Cerrar")}
                 className="h-10 w-10 rounded-full flex items-center justify-center"
                 style={{
-                  background: "rgba(255,255,255,0.18)",
-                  border: "1px solid rgba(255,255,255,0.35)",
+                  background: "#f5f2ff",
+                  border: "1px solid #d8cdf8",
                   cursor: "pointer",
                 }}
               >
-                <X className="h-5 w-5" style={{ color: "rgba(255,255,255,0.95)" }} />
+                <X className="h-5 w-5" style={{ color: "#7d59c9" }} />
               </button>
             )} 
           </div>}
@@ -2244,6 +2280,8 @@ export default function MindDumpModal({
           {/* ✅ Smart chips bar (AUTO) */}
           <div
             style={{
+              position: "relative",
+              zIndex: 1,
               paddingTop: embedded ? 12 : 0,
               paddingBottom: 14,
               paddingLeft: embedded ? 0 : "calc(20px + env(safe-area-inset-left))",
@@ -2258,7 +2296,7 @@ export default function MindDumpModal({
                 gap: 10,
               }}
             >
-              <div style={{ fontSize: 11, fontWeight: 800, color: embedded ? "rgba(15,23,42,0.72)" : "rgba(255,255,255,0.92)" }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: embedded ? "rgba(15,23,42,0.72)" : "#5f6c85" }}>
                 {chipTitle}
               </div>
 
@@ -2271,9 +2309,9 @@ export default function MindDumpModal({
                       height: 26,
                       padding: "0 10px",
                       borderRadius: 999,
-                      border: embedded ? "1px solid #c7b5f6" : "1px solid rgba(255,255,255,0.28)",
-                      background: embedded ? "#f3f4f6" : "rgba(255,255,255,0.10)",
-                      color: embedded ? "#111827" : "rgba(255,255,255,0.95)",
+                      border: embedded ? "1px solid #c7b5f6" : "1px solid #d8cdf8",
+                      background: embedded ? "#f3f4f6" : "#ffffff",
+                      color: embedded ? "#111827" : "#7d59c9",
                       fontSize: 11,
                       fontWeight: 500,
                       cursor: "pointer",
@@ -3089,9 +3127,9 @@ function Chip({
         height: 30,
         padding: "0 12px",
         borderRadius: 999,
-        border: embedded ? "1px solid #c7b5f6" : "1px solid rgba(255,255,255,0.30)",
-        background: embedded ? "#ffffff" : "rgba(255,255,255,0.16)",
-        color: embedded ? "#7d59c9" : "rgba(255,255,255,0.95)",
+        border: embedded ? "1px solid #c7b5f6" : "1px solid #d8cdf8",
+        background: embedded ? "#ffffff" : "#ffffff",
+        color: embedded ? "#7d59c9" : "#7d59c9",
         fontSize: 11,
         fontWeight: 500,
         cursor: "pointer",
@@ -3115,7 +3153,7 @@ function ChipSeparator() {
         display: "inline-flex",
         alignItems: "center",
         padding: "0 6px",
-        color: "rgba(255,255,255,0.55)",
+        color: "#9aa4b8",
         fontSize: 12,
         fontWeight: 900,
         userSelect: "none",

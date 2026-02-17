@@ -55,16 +55,16 @@ export const de = {
 
     detectedReminder: {
       DAY_BEFORE_AND_DUE:
-        "„{word}“ erkannt → markiert als: am Vortag + am Fälligkeitstag.",
+        "\"{word}\" erkannt → markiert als: am Vortag + am Fälligkeitstag.",
       DAILY_UNTIL_DUE:
-        "„{word}“ erkannt → markiert als: täglich bis zum Fälligkeitsdatum.",
+        "\"{word}\" erkannt → markiert als: täglich bis zum Fälligkeitsdatum.",
       WEEK_BEFORE_AND_DUE:
-        "„{word}“ erkannt → markiert als: 1 Woche vorher + am Fälligkeitstag.",
+        "\"{word}\" erkannt → markiert als: 1 Woche vorher + am Fälligkeitstag.",
     },
 
     why: {
-      verbTask: "„{word}“ erkannt → als Aufgabe markiert.",
-      prefixIdea: "„{word}“ erkannt → als Idee markiert.",
+      verbTask: "\"{word}\" erkannt → als Aufgabe markiert.",
+      prefixIdea: "\"{word}\" erkannt → als Idee markiert.",
       projectIdea: "Klingt nach Idee/Projekt → als Idee markiert.",
       defaultTask: "Keinen klaren Hinweis gefunden → als Aufgabe markiert.",
       defaultIdea: "Keinen klaren Hinweis gefunden → als Idee markiert.",
@@ -129,10 +129,10 @@ export const de = {
       2: "Aufgaben, Ideen, Erledigungen… alles passt rein. Remi ordnet es und erinnert dich, wenn es soweit ist.",
       3: "Du brauchst kein perfektes Format. Schreib so, wie du sprichst.",
       4: "Hat dir jemand etwas Wichtiges gesagt? Kopieren & einfügen. Remi speichert es für dich.",
-      5: "Schreibe Daten oder Uhrzeiten (z. B. „Dienstag 18:00, 17. Januar um 15…“). Remi erkennt sie.",
-      6: "Schreibe „jeden Tag / jede Woche usw.“, wenn es eine wiederkehrende Gewohnheit ist.",
+      5: "Schreibe Daten oder Uhrzeiten (z. B. \"Dienstag 18:00, 17. Januar um 15…\"). Remi erkennt sie.",
+      6: "Schreibe \"jeden Tag / jede Woche usw.\", wenn es eine wiederkehrende Gewohnheit ist.",
       7: "Eine Minute hier = ein entspannterer Tag und weniger vergessene Dinge.",
-      8: "Kurzer Tipp: Schreib „Idee“, um Notizen ohne Erinnerungen zu speichern.",
+      8: "Kurzer Tipp: Schreib \"Idee\", um Notizen ohne Erinnerungen zu speichern.",
     },
   },
 
@@ -229,7 +229,7 @@ export const de = {
 
     // Moods
     moodTitleCelebrate: "Unglaubliches Team!",
-    moodTitleHappy: "Heute läuft’s richtig gut",
+    moodTitleHappy: "Heute läuft's richtig gut",
     moodTitleCalm: "Alles unter Kontrolle",
     moodTitleWaiting: "Ich bin bereit",
     moodTitleConcerned: "Schritt für Schritt",
@@ -315,7 +315,7 @@ export const de = {
     },
 
     tips: {
-      0: "Tipp: Sag oder schreib „Idee“, um Notizen ohne Erinnerung zu erstellen",
+      0: "Tipp: Sag oder schreib \"Idee\", um Notizen ohne Erinnerung zu erstellen",
       1: "Tipp: Du kannst Text aus anderen Apps einfügen",
       2: "Tipp: Format ist egal – schreib so, wie du sprichst",
       3: "Tipp: Halte das Mikrofon gedrückt, um zu diktieren",
@@ -350,7 +350,7 @@ export const de = {
     textareaPlaceholderIOS:
       "iPhone/iPad: Nutze das Mikrofon der Tastatur zum Diktieren.\n" +
       "Wenn es nicht erscheint: Einstellungen > Allgemein > Tastatur > Diktat aktivieren.\n" +
-      "Wenn „nicht verfügbar“: Einstellungen > Datenschutz & Sicherheit > Mikrofon (Browser aktivieren).",
+      "Wenn \"nicht verfügbar\": Einstellungen > Datenschutz & Sicherheit > Mikrofon (Browser aktivieren).",
 
     repeatOn: "Aktiviert",
     repeatOff: "Deaktiviert",
@@ -365,9 +365,9 @@ export const de = {
     title: "Kopf frei machen",
     subtitle: "Sprich, schreib oder füge Text ein. Remi kümmert sich.",
     examplesTitle: "Beispiele:",
-    exampleVoice: "🎤 „Mama am Sonntag anrufen“",
-    exampleVoiceIOS: "🎤 „Nutze das Tastatur-Mikro zum Diktieren“",
-    examplePaste: "📋 „Jeden Dienstag um 18 Uhr treffen“",
+    exampleVoice: "🎤 \"Mama am Sonntag anrufen\"",
+    exampleVoiceIOS: "🎤 \"Nutze das Tastatur-Mikro zum Diktieren\"",
+    examplePaste: "📋 \"Jeden Dienstag um 18 Uhr treffen\"",
     exampleIdea: "💡 Idee: Italienreise im Frühling",
     holdToTalk: "Gedrückt halten zum Sprechen",
     listening: "Höre zu…",
@@ -503,13 +503,13 @@ export const de = {
       title: "Erinnerungen mit anderen teilen",
       body:
         "Sende eine Erinnerung oder Idee als Link, damit eine andere Person sie mit einem Tipp zu Remi hinzufügen kann.",
-      stepsTitle: "So funktioniert’s (kurz)",
+      stepsTitle: "So funktioniert's (kurz)",
       step1: "Tippe bei einer Aufgabe/Idee auf das Teilen-Icon.",
       step2: "Sende den Link per WhatsApp, Mail usw.",
-      step3: "Die Person tippt auf „Zu Remi hinzufügen“.",
+      step3: "Die Person tippt auf \"Zu Remi hinzufügen\".",
       examplesTitle: "Beispiele, die super passen",
       examplesBody:
-        "• „Morgen Brot kaufen“ → an meinen Partner\n• „Arzt am Dienstag um 14:00“ → an meine Mutter\n• „Ladegerät mitbringen“ → an den Kollegen",
+        "• \"Morgen Brot kaufen\" → an meinen Partner\n• \"Arzt am Dienstag um 14:00\" → an meine Mutter\n• \"Ladegerät mitbringen\" → an den Kollegen",
       footer:
         "Das hilft anderen, wichtige Dinge für sie (und für dich) nicht zu vergessen.",
       ok: "Verstanden",
@@ -552,7 +552,7 @@ export const de = {
     menuInstallApp: "App installieren",
 
     shareText:
-      "Ich nutze Remi, um Aufgaben und Ideen aus dem Kopf zu bekommen – dadurch fühle ich mich viel klarer und weniger gestresst.\nIch kann’s dir echt empfehlen, es hilft sehr. Hier ist der Link 🙂",
+      "Ich nutze Remi, um Aufgaben und Ideen aus dem Kopf zu bekommen – dadurch fühle ich mich viel klarer und weniger gestresst.\nIch kann's dir echt empfehlen, es hilft sehr. Hier ist der Link 🙂",
     shareCopied: "Link in die Zwischenablage kopiert",
 
     pushTitle: "Benachrichtigungen aktivieren",
@@ -587,14 +587,14 @@ export const de = {
       shareReminders: {
         title: "Erinnerungen im Team",
         body: "Teile Erinnerungen oder Ideen.\nAndere fügen sie mit einem Tipp zu Remi hinzu.",
-        cta: "So geht’s",
+        cta: "So geht's",
       },
 
       multidevice: {
         title: "Remi auf Handy, iPad/Tablet und PC",
         body:
           "Mach deinen Kopf frei – egal wo du bist. Alles synchronisiert, und du entscheidest, auf welchem Gerät du Benachrichtigungen willst.",
-        cta: "So funktioniert’s",
+        cta: "So funktioniert's",
       },
 
       smartShortcuts: {
@@ -633,7 +633,7 @@ export const de = {
 
       shortcuts: {
         title: "Wörter, die Zeit sparen",
-        body: "Eine Idee = starte mit „Idee“.\nEine Aufgabe = starte mit einem Verb.",
+        body: "Eine Idee = starte mit \"Idee\".\nEine Aufgabe = starte mit einem Verb.",
         cta: "Beispiele ansehen",
       },
 
@@ -651,18 +651,18 @@ export const de = {
       },
 
       shareToRemi: {
-        title: "Speichere Dinge mit „Teilen“",
+        title: "Speichere Dinge mit \"Teilen\"",
         body:
           "Aus WhatsApp/Mail/Notizen: Teilen → Remi.\nÖffnet sich fertig zum Ordnen.",
         cta: "Ausprobieren",
         toast:
-          "Tipp: In einer anderen App auf „Teilen“ → „Remi“ tippen, um es direkt zu senden 🙂",
+          "Tipp: In einer anderen App auf \"Teilen\" → \"Remi\" tippen, um es direkt zu senden 🙂",
       },
 
       natural: {
         title: "Schreib so, wie du sprichst",
         body:
-          "Z. B. „Strom morgen um 18 Uhr bezahlen“. Remi kümmert sich – du entspannst.",
+          "Z. B. \"Strom morgen um 18 Uhr bezahlen\". Remi kümmert sich – du entspannst.",
         cta: "Beispiel testen",
         prefill: "Strom morgen 18:00 bezahlen",
       },
@@ -684,7 +684,7 @@ export const de = {
       birthday: {
         title: "Geburtstag bald?",
         body:
-          "Schreib’s in 5 Sekunden auf und Remi erinnert dich, wenn es soweit ist.",
+          "Schreib's in 5 Sekunden auf und Remi erinnert dich, wenn es soweit ist.",
         cta: "Hinzufügen",
         prefill: "Geburtstag von ___ am ___",
       },
@@ -698,17 +698,17 @@ export const de = {
 
     shareToRemiModal: {
       title: "Zu Remi teilen",
-      body: "Speichere Text aus jeder App über „Teilen“.",
+      body: "Speichere Text aus jeder App über \"Teilen\".",
       iosTitle: "Auf dem iPhone (iOS)",
       iosStep1: "Öffne WhatsApp/Mail/Notizen.",
-      iosStep2: "Tippe auf „Teilen“.",
-      iosStep3: "Wenn du „Remi“ siehst, tippe darauf – es öffnet sich zum Ordnen.",
+      iosStep2: "Tippe auf \"Teilen\".",
+      iosStep3: "Wenn du \"Remi\" siehst, tippe darauf – es öffnet sich zum Ordnen.",
       iosStep4:
-        "Wenn es nicht erscheint: nutze „Kopieren“ und füge es in Remi ein (auf iOS hängt das manchmal von System/Version ab).",
+        "Wenn es nicht erscheint: nutze \"Kopieren\" und füge es in Remi ein (auf iOS hängt das manchmal von System/Version ab).",
       androidTitle: "Auf Android",
       androidStep1: "Öffne WhatsApp/Mail/Notizen.",
-      androidStep2: "Markiere den Text und/oder tippe auf „Teilen“.",
-      androidStep3: "Wähle „Remi“ – es öffnet sich mit dem Text bereit zum Ordnen.",
+      androidStep2: "Markiere den Text und/oder tippe auf \"Teilen\".",
+      androidStep3: "Wähle \"Remi\" – es öffnet sich mit dem Text bereit zum Ordnen.",
       androidStep4:
         "Wenn es nicht erscheint: Stelle sicher, dass Remi als App (PWA) installiert ist, und versuche es erneut.",
       ok: "Verstanden",
@@ -734,7 +734,7 @@ export const de = {
       helpStepsTitle: "Schnelle Schritte",
       step1: "Einstellungen öffnen",
       step2: "Allgemein → Tastatur",
-      step3: "„Diktat aktivieren“ einschalten",
+      step3: "\"Diktat aktivieren\" einschalten",
       ok: "Verstanden",
       hideForever: "Nicht mehr anzeigen",
     },
@@ -867,7 +867,7 @@ export const de = {
     logoutButton: "Abmelden",
 
     shareText:
-      "I’m using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\nI definitely recommend trying it, it really helps. Here’s the link. 🙂",
+      "I'm using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\nI definitely recommend trying it, it really helps. Here's the link. 🙂",
     shareCopied: "REMI-Link in die Zwischenablage kopiert",
 
     defaultUserName: "Benutzer",
@@ -903,7 +903,7 @@ export const de = {
       description:
         "Hol Aufgaben, Ideen und Erinnerungen aus deinem Kopf, damit du dich auf das konzentrieren kannst, was wirklich zählt. Remi sorgt dafür, dass du das Richtige zur richtigen Zeit erinnerst.",
       ctaPrimary: "Jetzt starten",
-      ctaSecondary: "So funktioniert’s",
+      ctaSecondary: "So funktioniert's",
       userStatsHighlight: "Menschen, die Remi nutzen",
       userStats:
         "sagen, dass sie sich leichter fühlen und deutlich weniger mentale Last haben.",
@@ -953,7 +953,7 @@ export const de = {
       example3: "Tagesaufgaben organisiert",
       example3Freq: "Jeden Morgen",
       badge: "Dein externes Gedächtnis",
-      headline: "Heute läuft’s gut",
+      headline: "Heute läuft's gut",
       subheadline:
         "Heute haben wir deinen Kopf spürbar entlastet: Du hast 5 Aufgaben organisiert und 3 davon sind schon erledigt.",
       clearMindLabel: "Klarer Kopf",
@@ -1051,8 +1051,8 @@ export const de = {
       },
 
       how: {
-        title: "So funktioniert’s",
-        subtitle: "Du schreibst. Remi versteht’s. Und erinnert dich.",
+        title: "So funktioniert's",
+        subtitle: "Du schreibst. Remi versteht's. Und erinnert dich.",
         step1Title: "1) Schreib, was du nicht vergessen willst",
         step1Text:
           "Ein Satz, genau so wie er kommt. Ohne Menüs, ohne an Felder zu denken.",
@@ -1071,9 +1071,9 @@ export const de = {
         chips: ["Datum & Uhrzeit", "Gewohnheit / Wiederholung", "Erinnerungsmodus"],
         exampleLabel: "Beispiele",
         examples: [
-          "„Morgen um 18: Versicherung anrufen“",
-          "„Jeden Montag: Fitness“",
-          "„Am 5. Miete bezahlen“",
+          "\"Morgen um 18: Versicherung anrufen\"",
+          "\"Jeden Montag: Fitness\"",
+          "\"Am 5. Miete bezahlen\"",
         ],
         helperLine: "Schreib einen Satz – fertig",
       },
@@ -1082,7 +1082,7 @@ export const de = {
         badge: "Neu",
         title: "Teile Erinnerungen & Ideen, um mentale Last zu reduzieren",
         text:
-          "Hilf anderen, den Kopf zu entlasten: Teile eine Erinnerung oder Idee als Link. So können sie sie hinzufügen und müssen nicht mehr denken „Das darf ich nicht vergessen…“.",
+          "Hilf anderen, den Kopf zu entlasten: Teile eine Erinnerung oder Idee als Link. So können sie sie hinzufügen und müssen nicht mehr denken \"Das darf ich nicht vergessen…\".",
         points: [
           "Nützlich für Familie, Partner und Teams",
           "Teile Erinnerungen, Erledigungen und Ideen in Sekunden",
@@ -1090,7 +1090,7 @@ export const de = {
         ],
         exampleLabel: "Beispiel",
         example:
-          "„Zu Remi hinzufügen: ‚Morgen 18:00 Versicherung anrufen‘ → kommt als Link, du fügst es mit einem Tipp hinzu.“",
+          "\"Zu Remi hinzufügen: 'Morgen 18:00 Versicherung anrufen' → kommt als Link, du fügst es mit einem Tipp hinzu.\"",
         helperLine: "Schnelle Hilfe, ohne Erklärung",
         ctaTry: "Remi ausprobieren",
         tag: "Teilen",
@@ -1121,7 +1121,7 @@ export const de = {
         mini2: "Immer aktuell",
         mini3: "Für schnelles Erfassen gemacht",
         ctaHint:
-          "Tippe auf „Jetzt installieren“ und folge den Schritten für dein Gerät.",
+          "Tippe auf \"Jetzt installieren\" und folge den Schritten für dein Gerät.",
         device: {
           desktop: "PC",
           phone: "Handy",
@@ -1141,17 +1141,17 @@ export const de = {
         testimonials: [
           {
             quote:
-              "„Danke an meinen Kollegen, der mir Remi empfohlen hat – jedes Mal, wenn ich es nutze, spüre ich weniger mentale Last und vergesse weniger.“",
+              "\"Danke an meinen Kollegen, der mir Remi empfohlen hat – jedes Mal, wenn ich es nutze, spüre ich weniger mentale Last und vergesse weniger.\"",
             author: "Sarah",
           },
           {
             quote:
-              "„Es ist wie ein persönlicher Gedächtnis-Assistent. Ich liebe es!“",
+              "\"Es ist wie ein persönlicher Gedächtnis-Assistent. Ich liebe es!\"",
             author: "Christian",
           },
           {
             quote:
-              "„Sehr einfach zu benutzen und sehr nützlich – vor allem die Option, Erinnerungen oder Ideen zu teilen.“",
+              "\"Sehr einfach zu benutzen und sehr nützlich – vor allem die Option, Erinnerungen oder Ideen zu teilen.\"",
             author: "Erika",
           },
         ],
@@ -1172,12 +1172,12 @@ export const de = {
           "Die Installation ist nötig, um Benachrichtigungen zu deinen Erinnerungen zu erhalten.",
         iosSteps: [
           "Öffne das Teilen-Menü (Teilen-Icon in Safari).",
-          "Tippe auf „Zum Home-Bildschirm“.",
-          "Bestätige „Hinzufügen“.",
+          "Tippe auf \"Zum Home-Bildschirm\".",
+          "Bestätige \"Hinzufügen\".",
         ],
         desktopSteps: [
-          "Suche in Chrome/Edge nach dem „Installieren“-Icon in der Adressleiste oder im Menü.",
-          "Tippe auf „Installieren“.",
+          "Suche in Chrome/Edge nach dem \"Installieren\"-Icon in der Adressleiste oder im Menü.",
+          "Tippe auf \"Installieren\".",
         ],
         close: "Schliessen",
         openInBrowser: "Im Browser öffnen",
@@ -1188,12 +1188,10 @@ export const de = {
       iosBanner: {
         title: "Installiere Remi auf deinem iPhone – GRATIS",
         step1: "Tippe auf die Teilen-Taste",
-        step2: "Wähle „Zum Home-Bildschirm“ und bestätige.",
+        step2: "Wähle \"Zum Home-Bildschirm\" und bestätige.",
         closeAria: "Schliessen",
       },
     },
   },
 } as const;
-
-
 

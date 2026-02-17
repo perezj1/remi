@@ -55,16 +55,16 @@ export const es = {
 
     detectedReminder: {
       DAY_BEFORE_AND_DUE:
-        "Detecté “{word}” → lo marqué como: día antes + día límite.",
+        "Detecté \"{word}\" → lo marqué como: día antes + día límite.",
       DAILY_UNTIL_DUE:
-        "Detecté “{word}” → lo marqué como: diario hasta la fecha límite.",
+        "Detecté \"{word}\" → lo marqué como: diario hasta la fecha límite.",
       WEEK_BEFORE_AND_DUE:
-        "Detecté “{word}” → lo marqué como: 1 semana antes + día límite.",
+        "Detecté \"{word}\" → lo marqué como: 1 semana antes + día límite.",
     },
 
     why: {
-      verbTask: "Detecté “{word}” → lo marqué como tarea.",
-      prefixIdea: "Detecté “{word}” → lo marqué como idea.",
+      verbTask: "Detecté \"{word}\" → lo marqué como tarea.",
+      prefixIdea: "Detecté \"{word}\" → lo marqué como idea.",
       projectIdea: "Suena a idea/proyecto → lo marqué como idea.",
       defaultTask: "No vi una pista clara → lo marqué como tarea.",
       defaultIdea: "No vi una pista clara → lo marqué como idea.",
@@ -130,15 +130,15 @@ export const es = {
     4: "Piensa en personas: a quién quieres escribir, llamar o agradecer algo.",
     5: "Piensa en dinero y papeleo: facturas, bancos, suscripciones, documentos.",
     6: "Piensa en ti: hábitos, proyectos, ideas que no quieres que se pierdan.",
-    7:"No hace falta escribir perfecto. Usa tu lenguaje normal: “llamar al dentista el martes por la mañana”.", */
+    7:"No hace falta escribir perfecto. Usa tu lenguaje normal: \"llamar al dentista el martes por la mañana\".", */
     hints: {
       0: "Tú solo escribe, Remi lo ordena y agenda todo por ti para recordartelo cuando llegue el momento.",
       1: "Pega o envia texto de WhatsApp, un mail o una nota. Remi lo convierte en recordatorio.",
       2: "Tareas, ideas, recados… todo entra. Remi lo ordena y te lo recuerda cuando llega el momento.",
       3: "No necesitas formato perfecto. Escribe como hablas.",
       4: "¿Te dijeron algo importante? Copia y pega. Remi lo guarda por ti.",
-      5: "Escribe fechas u horas (ej: “martes 18:00, 17 de Enero a las 15...”). Remi las detecta.",
-      6: "Escribe “cada día / cada semana, etc” si es un hábito repetitivo.",
+      5: "Escribe fechas u horas (ej: \"martes 18:00, 17 de Enero a las 15...\"). Remi las detecta.",
+      6: "Escribe \"cada día / cada semana, etc\" si es un hábito repetitivo.",
       7: "Un minuto aquí = un dia mas relajado y menos cosas olvidadas.",
       8: "Consejo rápido: Escribe Idea para guardar notas sin recordatorios.",
     },
@@ -227,8 +227,8 @@ export const es = {
     weekSectionTitle: "Nuestra semana",
     weekSectionSubtitle:
       "Cada día que usas Remi, tu cabeza tiene un poco menos de carga.",
-    weekActiveLabel: "D�as activos esta semana",
-    usersTitle: "Cada vez somos m�s cuidando nuestra mente",
+    weekActiveLabel: "Días activos esta semana",
+    usersTitle: "Cada vez somos más cuidando nuestra mente",
     usersSubtitle: "Total de usuarios en Remi",
     usersUnavailable: "No disponible",
 
@@ -330,7 +330,7 @@ export const es = {
     },
 
     tips: {
-      0: "Consejo: Di o escribe “idea” para crear notas sin recordatorio",
+      0: "Consejo: Di o escribe \"idea\" para crear notas sin recordatorio",
       1: "Consejo: Puedes pegar texto de otras aplicaciones",
       2: "Consejo: No te preocupes por el formato, escribe como hablas",
       3: "Consejo: Mantén pulsado el micrófono para dictar",
@@ -365,7 +365,7 @@ export const es = {
     textareaPlaceholderIOS:
       "iPhone/iPad: usa el micrófono del teclado para dictar.\n" +
       "Si no aparece: Ajustes > General > Teclado > Activar dictado.\n" +
-      "Si pone “no disponible”: Ajustes > Privacidad y seguridad > Micrófono (activa tu navegador).",
+      "Si pone \"no disponible\": Ajustes > Privacidad y seguridad > Micrófono (activa tu navegador).",
 
     repeatOn: "Activado",
     repeatOff: "Desactivado",
@@ -380,9 +380,9 @@ export const es = {
     title: "Vacía tu mente",
     subtitle: "Habla, escribe o pega texto. Remi se encarga.",
     examplesTitle: "Ejemplos:",
-    exampleVoice: "🎤 “Llamar a mamá el domingo”",
-    exampleVoiceIOS: "🎤 “Usa el microfono del teclado para dictar”",
-    examplePaste: "📋 “Todos los martes a las 18 quedamos”",
+    exampleVoice: "🎤 \"Llamar a mamá el domingo\"",
+    exampleVoiceIOS: "🎤 \"Usa el microfono del teclado para dictar\"",
+    examplePaste: "📋 \"Todos los martes a las 18 quedamos\"",
     exampleIdea: "💡 Idea: viaje a Italia en primavera",
     holdToTalk: "Mantén pulsado para hablar",
     listening: "Escuchando…",
@@ -521,10 +521,10 @@ export const es = {
       stepsTitle: "Cómo funciona (rápido)",
       step1: "En un recordatorio/idea toca el icono de Compartir.",
       step2: "Envía el enlace por WhatsApp, Mail, etc.",
-      step3: "La persona que lo recibe toca “Añadir a Remi”.",
+      step3: "La persona que lo recibe toca \"Añadir a Remi\".",
       examplesTitle: "Ejemplos que van genial",
       examplesBody:
-        "• “Compra pan mañana” → se lo envío a mi pareja\n• “Médico el martes a las 14:00” → se lo envío a mi madre\n• “Traer cargador” → se lo envío al compañero",
+        "• \"Compra pan mañana\" → se lo envío a mi pareja\n• \"Médico el martes a las 14:00\" → se lo envío a mi madre\n• \"Traer cargador\" → se lo envío al compañero",
       footer: "Esto ayuda a otras personas a recordar cosas importantes para ellos y para tí.",
       ok: "Entendido",
       hideForever: "No volver a mostrar",
@@ -610,7 +610,7 @@ export const es = {
     tip: {
       shareReminders: {
         title: "Recordatorios en equipo",
-        body: "Comparte recordatorios o ideas.\n Los dem�s los a�aden a su Remi en 1 toque.",
+        body: "Comparte recordatorios o ideas.\n Los demás los añaden a su Remi en 1 toque.",
         cta: "Ver cómo",
       },
 
@@ -657,7 +657,7 @@ export const es = {
 
       shortcuts: {
         title: "Palabras que ahorran tiempo",
-        body: "Una idea = empieza con ‘Idea’. \nUna tarea = empieza con un verbo.",
+        body: "Una idea = empieza con 'Idea'. \nUna tarea = empieza con un verbo.",
         cta: "Ver ejemplos",
       },
 
@@ -674,17 +674,17 @@ export const es = {
       },
 
       shareToRemi: {
-        title: "Guarda cosas con “Compartir”",
+        title: "Guarda cosas con \"Compartir\"",
         body:
           "Desde WhatsApp/Correo/Notas: Compartir → Remi. \nSe abre listo para ordenar.",
         cta: "Probar",
-        toast: "Tip: en otra app pulsa “Compartir” → “Remi” para mandarlo directo 🙂",
+        toast: "Tip: en otra app pulsa \"Compartir\" → \"Remi\" para mandarlo directo 🙂",
       },
 
       natural: {
         title: "Escribe como hablas",
         body:
-          "Ej: “Pagar la luz mañana a las 6 de la tarde”. Remi se encarga y tú descansas.",
+          "Ej: \"Pagar la luz mañana a las 6 de la tarde\". Remi se encarga y tú descansas.",
         cta: "Probar ejemplo",
         prefill: "Pagar la luz mañana 18:00",
       },
@@ -717,17 +717,17 @@ export const es = {
 
     shareToRemiModal: {
       title: "Compartir a Remi",
-      body: "Guarda texto desde cualquier app usando “Compartir”.",
+      body: "Guarda texto desde cualquier app usando \"Compartir\".",
       iosTitle: "En iPhone (iOS)",
       iosStep1: "Abre WhatsApp/Correo/Notas.",
-      iosStep2: "Pulsa “Compartir”.",
-      iosStep3: "Si ves “Remi”, tócalo y se abrirá listo para ordenar.",
+      iosStep2: "Pulsa \"Compartir\".",
+      iosStep3: "Si ves \"Remi\", tócalo y se abrirá listo para ordenar.",
       iosStep4:
-        "Si no aparece, usa “Copiar” y luego pega en Remi (en iOS a veces depende del sistema/versión).",
+        "Si no aparece, usa \"Copiar\" y luego pega en Remi (en iOS a veces depende del sistema/versión).",
       androidTitle: "En Android",
       androidStep1: "Abre WhatsApp/Correo/Notas.",
-      androidStep2: "Selecciona el texto y/o Pulsa “Compartir”.",
-      androidStep3: "Elige “Remi” y se abrirá con el texto listo para ordenar.",
+      androidStep2: "Selecciona el texto y/o Pulsa \"Compartir\".",
+      androidStep3: "Elige \"Remi\" y se abrirá con el texto listo para ordenar.",
       androidStep4:
         "Si no aparece, asegúrate de tener Remi instalada como app (PWA) y prueba de nuevo.",
       ok: "Entendido",
@@ -753,7 +753,7 @@ export const es = {
       helpStepsTitle: "Pasos rápidos",
       step1: "Abre Ajustes",
       step2: "General → Teclado",
-      step3: "Activa “Activar Dictado”",
+      step3: "Activa \"Activar Dictado\"",
       ok: "Entendido",
       hideForever: "No volver mostrar",
     },
@@ -886,7 +886,7 @@ export const es = {
     logoutButton: "Cerrar sesión",
 
     shareText:
-      "I’m using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\nI definitely recommend trying it, it really helps. Here’s the link. 🙂",
+      "I'm using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\nI definitely recommend trying it, it really helps. Here's the link. 🙂",
     shareCopied: "Enlace de REMI copiado al portapapeles",
 
     defaultUserName: "Usuario",
@@ -1088,9 +1088,9 @@ export const es = {
         chips: ["Fecha y hora", "Hábito / repetición", "Modo de recordatorio"],
         exampleLabel: "Ejemplos",
         examples: [
-          "“Mañana a las 18: llamar al seguro”",
-          "“Cada lunes: gimnasio”",
-          "“El día 5 pagar el alquiler”",
+          "\"Mañana a las 18: llamar al seguro\"",
+          "\"Cada lunes: gimnasio\"",
+          "\"El día 5 pagar el alquiler\"",
         ],
         helperLine: "Escribe una frase y listo",
       },
@@ -1099,7 +1099,7 @@ export const es = {
         badge: "Nuevo",
         title: "Comparte tareas e ideas para aliviar la carga mental",
         text:
-          "Ayuda a otras personas a liberar su mente: comparte una tarea o una idea como un enlace. Así pueden añadirla y dejar de cargar con “no se me puede olvidar…”.",
+          "Ayuda a otras personas a liberar su mente: comparte una tarea o una idea como un enlace. Así pueden añadirla y dejar de cargar con \"no se me puede olvidar…\".",
         points: [
           "Útil para familia, pareja y equipos",
           "Comparte recordatorios, recados e ideas en segundos",
@@ -1107,7 +1107,7 @@ export const es = {
         ],
         exampleLabel: "Ejemplo",
         example:
-          "“Añadir a Remi: ‘Mañana 18:00 llamar al seguro’ → te llega como link y lo añades en un toque.”",
+          "\"Añadir a Remi: 'Mañana 18:00 llamar al seguro' → te llega como link y lo añades en un toque.\"",
         helperLine: "Ayuda rápida, sin explicación",
         ctaTry: "Probar Remi",
         tag: "Compartir",
@@ -1138,7 +1138,7 @@ export const es = {
         mini2: "Siempre actualizada",
         mini3: "Hecha para capturar rápido",
         ctaHint:
-          "Pulsa “Instalar ahora” y sigue los pasos según tu dispositivo.",
+          "Pulsa \"Instalar ahora\" y sigue los pasos según tu dispositivo.",
         device: {
           desktop: "Ordenador",
           phone: "Móvil",
@@ -1158,16 +1158,16 @@ export const es = {
         testimonials: [
           {
             quote:
-              "“Gracias a mi compañero de trabajo por recomendarme Remi, cada dia que lo uso noto menos carga mental y olvido menos cosas.”",
+              "\"Gracias a mi compañero de trabajo por recomendarme Remi, cada dia que lo uso noto menos carga mental y olvido menos cosas.\"",
             author: "Sarah",
           },
           {
-            quote: "“Es como tener un asistente de memoria personal, Me encanta!.”",
+            quote: "\"Es como tener un asistente de memoria personal, Me encanta!.\"",
             author: "Christian",
           },
           {
             quote:
-              "“Muy facil de usar y muy útil. sobre todo la opcion de compartir recordatorios o ideas.”",
+              "\"Muy facil de usar y muy útil. sobre todo la opcion de compartir recordatorios o ideas.\"",
             author: "Erika",
           },
         ],
@@ -1188,12 +1188,12 @@ export const es = {
           "La instalación es necesaria para recibir notificaciones con tus recordatorios.",
         iosSteps: [
           "Abre el menú de compartir (icono de compartir en Safari).",
-          "Pulsa “Añadir a pantalla de inicio”.",
-          "Confirma “Añadir”.",
+          "Pulsa \"Añadir a pantalla de inicio\".",
+          "Confirma \"Añadir\".",
         ],
         desktopSteps: [
-          "En Chrome/Edge, busca el icono de “Instalar” en la barra de direcciones o en el menú.",
-          "Pulsa “Instalar”.",
+          "En Chrome/Edge, busca el icono de \"Instalar\" en la barra de direcciones o en el menú.",
+          "Pulsa \"Instalar\".",
         ],
         close: "Cerrar",
         openInBrowser: "Abrir en navegador",
@@ -1210,6 +1210,5 @@ export const es = {
     },
   },
 } as const;
-
 
 
