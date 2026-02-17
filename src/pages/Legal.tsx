@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useI18n } from "@/contexts/I18nContext";
 import { ArrowLeft } from "lucide-react";
 
@@ -18,7 +18,7 @@ type LegalDoc = {
 };
 
 type LegalLocaleCopy = {
-  backToLanding: string;
+  backLabel: string;
   updatedAtLabel: string;
   updatedAt: string;
   nav: Record<LegalDocKey, string>;
@@ -27,7 +27,7 @@ type LegalLocaleCopy = {
 
 const legalCopyByLang: Record<"es" | "en" | "de", LegalLocaleCopy> = {
   es: {
-    backToLanding: "Volver a landing",
+    backLabel: "Atrás",
     updatedAtLabel: "Última actualización",
     updatedAt: "17 de febrero de 2026",
     nav: {
@@ -225,7 +225,7 @@ const legalCopyByLang: Record<"es" | "en" | "de", LegalLocaleCopy> = {
     },
   },
   en: {
-    backToLanding: "Back to landing",
+    backLabel: "Back",
     updatedAtLabel: "Last updated",
     updatedAt: "February 17, 2026",
     nav: {
@@ -405,7 +405,7 @@ const legalCopyByLang: Record<"es" | "en" | "de", LegalLocaleCopy> = {
     },
   },
   de: {
-    backToLanding: "Zurück zur Landing",
+    backLabel: "Zuruck",
     updatedAtLabel: "Letzte Aktualisierung",
     updatedAt: "17. Februar 2026",
     nav: {
@@ -606,6 +606,7 @@ const docOrder: LegalDocKey[] = [
 
 export default function LegalPage() {
   const { doc } = useParams<{ doc?: string }>();
+  const navigate = useNavigate();
   const { lang } = useI18n();
   const landingLang =
     typeof window !== "undefined"
@@ -619,6 +620,13 @@ export default function LegalPage() {
     ? (doc as LegalDocKey)
     : "terms";
   const active = copy.docs[activeKey];
+  const handleBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+    navigate("/landing");
+  };
 
   return (
     <div
@@ -639,23 +647,26 @@ export default function LegalPage() {
         }}
       >
         <div className="rounded-3xl border border-slate-200 bg-white p-4 md:p-6">
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex items-center gap-1.5">
-              <Link
-                to="/landing"
-                className="inline-flex h-7 w-7 items-center justify-center text-slate-600 hover:text-slate-900"
-                aria-label={copy.backToLanding}
-                title={copy.backToLanding}
-              >
+          <div className="inline-flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={handleBack}
+              className="inline-flex h-7 w-7 items-center justify-center text-slate-600 hover:text-slate-900"
+              aria-label={copy.backLabel}
+              title={copy.backLabel}
+            >
                 <ArrowLeft className="h-4 w-4" />
-              </Link>
-              <Link
-                to="/landing"
-                className="inline-flex items-center text-xs font-semibold text-slate-700 hover:text-slate-900"
-              >
-                {copy.backToLanding}
-              </Link>
-            </div>
+            </button>
+            <button
+              type="button"
+              onClick={handleBack}
+              className="inline-flex items-center text-xs font-semibold text-slate-700 hover:text-slate-900"
+            >
+              {copy.backLabel}
+            </button>
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
             {docOrder.map((item) => (
               <Link
                 key={item}

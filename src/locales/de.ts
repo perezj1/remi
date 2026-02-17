@@ -495,6 +495,7 @@ export const de = {
   },
 
   today: {
+    greetingHello: "Hallo,",
     captureSectionTitle: "Leere deinen Kopf",
     tipsTitle: "Tipps",
 

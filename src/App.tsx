@@ -303,7 +303,7 @@ function AppRoutes() {
       {/* ✅ NUEVO: también ocultar en URLs de share */}
       {user && !hideBottomNav && <BottomNav />}
 
-      {!isLandingRoute && !isLegalRoute && <InstallPrompt />}
+      {!isLandingRoute && !isLegalRoute && !isAuthRoute && <InstallPrompt />}
     </div>
   );
 }

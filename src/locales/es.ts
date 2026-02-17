@@ -510,6 +510,7 @@ export const es = {
   },
 
   today: {
+    greetingHello: "Hola,",
     captureSectionTitle: "Vacia tu mente",
     tipsTitle: "Consejos",
 

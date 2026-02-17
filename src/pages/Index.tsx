@@ -1270,7 +1270,7 @@ const anyModalOpen =
         className="relative overflow-visible"
         style={{
           zIndex: anyModalOpen ? 20 : 60,
-          paddingTop: "calc(14px + env(safe-area-inset-top))",
+          paddingTop: "calc(20px + env(safe-area-inset-top))",
           paddingBottom: 10,
           paddingLeft: "calc(16px + env(safe-area-inset-left))",
           paddingRight: "calc(16px + env(safe-area-inset-right))",
@@ -1284,32 +1284,18 @@ const anyModalOpen =
         <div className="mx-auto w-full relative z-[1]" style={{ maxWidth: "min(96vw, 1440px)" }}>
         <div className="mt-0.5 flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <p className="leading-tight font-extrabold text-slate-900" style={{ fontSize: "clamp(19px, 1.3vw, 28px)" }}>
-              {safeT("today.greetingHeader", `Hello ${displayName}!`, { name: displayName })}
+            <p
+              className="leading-tight font-semibold text-slate-500"
+              style={{ fontSize: "clamp(14px, 0.9vw, 18px)" }}
+            >
+              {safeT("today.greetingHello", "Hello,")}
             </p>
-            <p className="mt-0.5 font-semibold text-slate-500" style={{ fontSize: "clamp(13px, 0.9vw, 18px)" }}>
-              {safeT("today.greetingSubheader", "Let's get this done today!")}
+            <p
+              className="leading-tight font-extrabold text-slate-900"
+              style={{ fontSize: "clamp(21px, 1.45vw, 31px)", marginTop: 4 }}
+            >
+              {displayName} <span aria-hidden="true">👋</span>
             </p>
-            <div className="mt-2">
-              <div className="mb-1.5 flex items-center justify-between">
-                <p className="font-semibold text-slate-600" style={{ fontSize: "clamp(13px, 0.9vw, 19px)" }}>
-                  {safeT("index.clearMind", "Mente despejada")}
-                </p>
-                <p className="font-extrabold text-slate-800" style={{ fontSize: "clamp(13px, 0.9vw, 19px)" }}>
-                  {mindClearPercent}%
-                </p>
-              </div>
-              <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
-                <div
-                  className="h-full rounded-full transition-all duration-500 ease-out"
-                  style={{
-                    width: `${mindClearPercent}%`,
-                    background:
-                      "linear-gradient(90deg, #59a5c9 0%, #5989c9 12.5%, #596dc9 25%, #6b63c9 37.5%, #7d59c9 50%, #9959c9 62.5%, #b559c9 75%, #bf59b7 87.5%, #c959a5 100%)",
-                  }}
-                />
-              </div>
-            </div>
           </div>
 
           <div style={{ position: "relative" }} ref={profileMenuRef}>
@@ -1410,6 +1396,26 @@ const anyModalOpen =
                 </button>
               </div>
             )}
+          </div>
+        </div>
+        <div className="mt-2" style={{ width: "calc(100% - 56px)" }}>
+          <div className="mb-1.5 flex items-center justify-between">
+            <p className="font-semibold text-slate-600" style={{ fontSize: "clamp(13px, 0.9vw, 19px)" }}>
+              {safeT("index.clearMind", "Mente despejada")}
+            </p>
+            <p className="font-extrabold text-slate-800" style={{ fontSize: "clamp(13px, 0.9vw, 19px)" }}>
+              {mindClearPercent}%
+            </p>
+          </div>
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
+            <div
+              className="h-full rounded-full transition-all duration-500 ease-out"
+              style={{
+                width: `${mindClearPercent}%`,
+                background:
+                  "linear-gradient(90deg, #59a5c9 0%, #5989c9 12.5%, #596dc9 25%, #6b63c9 37.5%, #7d59c9 50%, #9959c9 62.5%, #b559c9 75%, #bf59b7 87.5%, #c959a5 100%)",
+              }}
+            />
           </div>
         </div>
         </div>
