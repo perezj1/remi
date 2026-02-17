@@ -34,6 +34,15 @@ import {
   shareTextOrCopy,
 } from "@/lib/shareInvitesApi";
 import { useSnapTipDeck } from "@/hooks/useSnapTipDeck";
+import FeedbackSurveyModal from "@/components/FeedbackSurveyModal";
+import {
+  flushPendingFeedback,
+  initFeedbackTracker,
+  markFeedbackDismissed,
+  markFeedbackSubmitted,
+  shouldShowAutoFeedbackSurvey,
+  submitFeedbackSurvey,
+} from "@/lib/feedbackSurvey";
 
 import {
   List,
@@ -120,6 +129,7 @@ const TIP_EMOJI_BY_ID: Record<string, string> = {
   mental: "🫶",
   birthday: "🎂",
   "clean-no-date": "✅",
+  "improve-remi": "💬",
 };
 
 const NO_DATE_GROUP_KEY = "__NO_DATE__";
@@ -207,6 +217,8 @@ export default function TodayPage() {
   const [showMultiDeviceHelp, setShowMultiDeviceHelp] = useState(false);
 
   const [showShareRemindersHelp, setShowShareRemindersHelp] = useState(false);
+  const [showFeedbackSurvey, setShowFeedbackSurvey] = useState(false);
+  const [savingFeedback, setSavingFeedback] = useState(false);
   const [mindDumpResetNonce, setMindDumpResetNonce] = useState(0);
 
   const [nowTick, setNowTick] = useState(0);
@@ -217,7 +229,8 @@ const anyModalOpen =
   showIosDictationHelp ||
   showShareToRemiHelp ||
   showMultiDeviceHelp ||
-  showShareRemindersHelp;
+  showShareRemindersHelp ||
+  showFeedbackSurvey;
 
  useEffect(() => {
     setModalOpen(anyModalOpen);
@@ -323,6 +336,26 @@ const anyModalOpen =
     window.addEventListener("remi-items-changed", onChanged);
     return () => window.removeEventListener("remi-items-changed", onChanged);
   }, [loadData, user]);
+
+  useEffect(() => {
+    if (!user) return;
+    initFeedbackTracker();
+    void flushPendingFeedback();
+    if (shouldShowAutoFeedbackSurvey()) {
+      setShowFeedbackSurvey(true);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user) return;
+    const onFeedbackUpdated = () => {
+      if (shouldShowAutoFeedbackSurvey()) setShowFeedbackSurvey(true);
+    };
+    window.addEventListener("remi-feedback-updated", onFeedbackUpdated);
+    return () => {
+      window.removeEventListener("remi-feedback-updated", onFeedbackUpdated);
+    };
+  }, [user?.id]);
 
   const mindClearPercent = useMemo(() => {
     return computeMindClearPercent(statusSummary);
@@ -671,6 +704,28 @@ const anyModalOpen =
     [loadData, statusSummary, user],
   );
 
+  const handleSubmitFeedbackSurvey = useCallback(
+    async (payload: { score: number; improvement: string }) => {
+      if (!user) return;
+      setSavingFeedback(true);
+      try {
+        await submitFeedbackSurvey({
+          userId: user.id,
+          lang,
+          score: payload.score,
+          improvement: payload.improvement,
+          source: "auto",
+        });
+        markFeedbackSubmitted();
+        setShowFeedbackSurvey(false);
+        toast.success(safeT("feedback.thanks", "Gracias por tu opinión sobre Remi."));
+      } finally {
+        setSavingFeedback(false);
+      }
+    },
+    [lang, safeT, user],
+  );
+
   const handlePostpone = async (task: BrainItem, option: "DAY" | "WEEK") => {
     const base = task.due_date ? new Date(task.due_date) : new Date();
     if (option === "DAY") base.setDate(base.getDate() + 1);
@@ -985,6 +1040,20 @@ const anyModalOpen =
     });
 
     cards.push({
+      id: "improve-remi",
+      title: safeT("today.tip.feedback.title", "Mejora Remi"),
+      body: safeT(
+        "today.tip.feedback.body",
+        "Cuéntanos en 20 segundos qué te está ayudando y qué mejorarías.",
+      ),
+      cta: safeT("today.tip.feedback.cta", "Dar opinión"),
+      icon: <Sparkles size={18} />,
+      bg: "",
+      border: "rgba(125,89,201,0.70)",
+      onClick: () => setShowFeedbackSurvey(true),
+    });
+
+    cards.push({
       id: "smart-shortcuts",
       title: safeT(
         "today.tip.smartShortcuts.title",
@@ -999,45 +1068,6 @@ const anyModalOpen =
       bg: "",
       border: "rgba(125,89,201,0.70)",
       onClick: () => openCapture(""),
-    });
-
-    if (noDateCount > 0) {
-      const key =
-        noDateCount === 1
-          ? "today.tip.noDate.title_one"
-          : "today.tip.noDate.title_other";
-
-      cards.push({
-        id: "no-date",
-        title: safeT(
-          key,
-          `Tienes ${noDateCount} tarea${noDateCount === 1 ? "" : "s"} sin fecha`,
-          { count: noDateCount },
-        ),
-        body: safeT(
-          "today.tip.noDate.body",
-          "¿Las ordenamos? En 30s te dejo la lista limpia.",
-        ),
-        cta: safeT("today.tip.noDate.cta", "Ver sin fecha"),
-        icon: <CalendarDays size={18} />,
-        bg: "",
-        border: "rgba(16,185,129,0.65)",
-        onClick: () => setFilter("NO_DATE"),
-      });
-    }
-
-    cards.push({
-      id: "week",
-      title: safeT("today.tip.week.title", "Plan rápido"),
-      body: safeT(
-        "today.tip.week.body",
-        "Mira tu semana en 1 gesto. Lo urgente primero, lo demás fuera de la cabeza.",
-      ),
-      cta: safeT("today.tip.week.cta", "Ver semana"),
-      icon: <CalendarDays size={18} />,
-      bg: "",
-      border: "rgba(125,89,201,0.65)",
-      onClick: () => setFilter("WEEK"),
     });
 
     cards.push({
@@ -2018,6 +2048,24 @@ const anyModalOpen =
           </div>
         </div>
       )}
+
+      <FeedbackSurveyModal
+        open={showFeedbackSurvey}
+        loading={savingFeedback}
+        title={safeT("feedback.title", "Tu opinión sobre Remi")}
+        questionScore={safeT("feedback.q1", "¿Te está ayudando Remi?")}
+        questionImprove={safeT("feedback.q2", "¿Qué mejorarías?")}
+        placeholderImprove={safeT("feedback.placeholder", "Escribe una sugerencia breve...")}
+        submitLabel={safeT("feedback.send", "Enviar opinión")}
+        laterLabel={safeT("feedback.later", "Ahora no")}
+        scoreHintLow={safeT("feedback.low", "Nada")}
+        scoreHintHigh={safeT("feedback.high", "Mucho")}
+        onClose={() => {
+          markFeedbackDismissed();
+          setShowFeedbackSurvey(false);
+        }}
+        onSubmit={handleSubmitFeedbackSurvey}
+      />
     </div>
   );
 }

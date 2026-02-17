@@ -9,6 +9,7 @@ import {
   loadCachedInbox,
   saveCachedInbox,
 } from "@/lib/localBrainCache";
+import { registerFeedbackUse } from "@/lib/feedbackSurvey";
 
 export type BrainItemType = "task" | "idea";
 export type BrainItemStatus = "ACTIVE" | "DONE" | "ARCHIVED";
@@ -245,6 +246,7 @@ export async function createTask(
 
     const created = data as BrainItem;
     cacheUpsertTask(userId, created);
+    registerFeedbackUse();
     return created;
   } catch (e) {
     // ✅ OFFLINE: optimistic create + cola
@@ -276,6 +278,7 @@ export async function createTask(
     };
 
     cacheUpsertTask(userId, localItem);
+    registerFeedbackUse();
 
     queueAdd({
       id: makeOpId(),
@@ -322,6 +325,7 @@ export async function createIdea(userId: string, title: string): Promise<BrainIt
 
     const created = data as BrainItem;
     cacheUpsertIdea(userId, created);
+    registerFeedbackUse();
     return created;
   } catch (e) {
     const nowIso = new Date().toISOString();
@@ -352,6 +356,7 @@ export async function createIdea(userId: string, title: string): Promise<BrainIt
     };
 
     cacheUpsertIdea(userId, localItem);
+    registerFeedbackUse();
 
     queueAdd({
       id: makeOpId(),

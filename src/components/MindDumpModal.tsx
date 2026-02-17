@@ -37,8 +37,9 @@ import { de as deLocale } from "@/locales/de";
 const REMI_PURPLE = "#7d59c9";
 const REMI_PURPLE_BORDER = "rgba(143,49,243,0.30)";
 const REMI_PURPLE_BG = "rgba(143,49,243,0.10)";
-const REMI_TEXT = "rgba(15,23,42,0.92)";
+const REMI_TEXT = "#334155";
 const REMI_SUB = "rgba(15,23,42,0.55)";
+const APP_PAGE_BG = "linear-gradient(180deg, #f1eff7 0%, #fafafe 42%, #fafafe 100%)";
 
 /*
   ⛔️ (comentado) Persistencia independiente del modal:
@@ -244,13 +245,13 @@ function detectDateSignal(text: string): string | null {
 
   const kw =
     s.match(
-      /\b(hoy|manana|pasado\s+manana|este\s+finde|este\s+fin\s+de\s+semana|today|tomorrow|this\s+weekend|heute|morgen|dieses\s+wochenende)\b/i
+      /\b(hoy|manana|pasado\s+manana|este\s+finde|este\s+fin\s+de\s+semana|today|tomorrow|day\s+after\s+tomorrow|this\s+weekend|heute|morgen|ubermorgen|dieses\s+wochenende)\b/i
     )?.[0] ?? null;
   if (kw) return kw;
 
   const weekday =
     s.match(
-      /\b(lunes|martes|miercoles|jueves|viernes|sabado|domingo|monday|tuesday|wednesday|thursday|friday|saturday|sunday|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)\b/i
+      /\b(lunes|martes|miercoles|jueves|viernes|sabado|domingo|lun|mar|mie|jue|vie|sab|dom|monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag|mo|di|mi|do|fr|sa|so)\b/i
     )?.[0] ?? null;
   if (weekday) return weekday;
 
@@ -262,13 +263,16 @@ function detectDateSignal(text: string): string | null {
 
   const monthName =
     s.match(
-      /\b(\d{1,2}\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre))\b/i
+      /\b(\d{1,2}\s+de\s+(enero|ene|febrero|feb|marzo|mar|abril|abr|mayo|may|junio|jun|julio|jul|agosto|ago|septiembre|setiembre|sep|octubre|oct|noviembre|nov|diciembre|dic))\b/i
     )?.[0] ??
     s.match(
-      /\b((january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2})\b/i
+      /\b(\d{1,2}\s+(january|jan|february|feb|march|mar|april|apr|may|june|jun|july|jul|august|aug|september|sep|sept|october|oct|november|nov|december|dec))\b/i
     )?.[0] ??
     s.match(
-      /\b(\d{1,2}\.?\s+(januar|februar|marz|maerz|april|mai|juni|juli|august|september|oktober|november|dezember))\b/i
+      /\b((january|jan|february|feb|march|mar|april|apr|may|june|jun|july|jul|august|aug|september|sep|sept|october|oct|november|nov|december|dec)\s+\d{1,2})\b/i
+    )?.[0] ??
+    s.match(
+      /\b(\d{1,2}\.?\s+(januar|jan|februar|feb|marz|maerz|mar|april|apr|mai|juni|jun|juli|jul|august|aug|september|sep|oktober|okt|oct|november|nov|dezember|dez|dec))\b/i
     )?.[0] ??
     null;
 
@@ -280,13 +284,28 @@ function detectDateSignal(text: string): string | null {
 function detectTimeSignal(text: string): string | null {
   const s = foldForMatch(text);
 
-  const hhmm = s.match(/\b\d{1,2}:\d{2}\b/)?.[0] ?? null;
+  const esContextAfter =
+    s.match(
+      /\b(a\s+las|a\s+la|alas)\s+\d{1,2}([:.,]\d{2})?\s*(de\s+la|por\s+la)\s*(manana|tarde|noche)\b/i
+    )?.[0] ?? null;
+  if (esContextAfter) return esContextAfter;
+
+  const esContextBefore =
+    s.match(
+      /\b(de\s+la|por\s+la)\s*(manana|tarde|noche)\s*(a\s+las|a\s+la|alas)\s+\d{1,2}([:.,]\d{2})?\b/i
+    )?.[0] ?? null;
+  if (esContextBefore) return esContextBefore;
+
+  const hhmm = s.match(/\b\d{1,2}[:.]\d{2}\b/)?.[0] ?? null;
   if (hhmm) return hhmm;
 
-  const spoken = s.match(/\b(a\s+las|um|at)\s+\d{1,2}(:\d{2})?\b/i)?.[0] ?? null;
+  const named = s.match(/\b(mediodia|medianoche|noon|midnight|mittag|mitternacht)\b/i)?.[0] ?? null;
+  if (named) return named;
+
+  const spoken = s.match(/\b(a\s+las|a\s+la|alas|um|at)\s+\d{1,2}([:.,]\d{2})?(\s*(am|pm|uhr))?\b/i)?.[0] ?? null;
   if (spoken) return spoken;
 
-  const h = s.match(/\b\d{1,2}\s*h\b/i)?.[0] ?? null;
+  const h = s.match(/\b\d{1,2}\s*(h|uhr)\b/i)?.[0] ?? null;
   if (h) return h;
 
   const ampm = s.match(/\b\d{1,2}(:\d{2})?\s*(am|pm)\b/i)?.[0] ?? null;
@@ -298,15 +317,19 @@ function detectTimeSignal(text: string): string | null {
 function detectHabitSignal(text: string): string | null {
   const s = foldForMatch(text);
 
+  // If the phrase explicitly asks Remi to "remind me" daily,
+  // we treat it as reminder intent (not repeating habit intent).
+  if (isDailyReminderIntent(s)) return null;
+
   const daily =
     s.match(
-      /\b(cada\s+dia|todos\s+los\s+dias|a\s+diario|daily|every\s+day|taglich|jeden\s+tag)\b/i
+      /\b(cada\s+dia|todos\s+los\s+dias|a\s+diario|daily|every\s+day|each\s+day|taglich|jeden\s+tag)\b/i
     )?.[0] ?? null;
   if (daily) return daily;
 
   const weekly =
     s.match(
-      /\b(cada\s+semana|semanal(mente)?|weekly|every\s+week|wochentlich|jede\s+woche)\b/i
+      /\b(cada\s+semana|semanal(mente)?|weekly|every\s+week|each\s+week|wochentlich|jede\s+woche)\b/i
     )?.[0] ?? null;
   if (weekly) return weekly;
 
@@ -318,25 +341,36 @@ function detectHabitSignal(text: string): string | null {
 
   const monthly =
     s.match(
-      /\b(cada\s+mes|mensual(mente)?|monthly|every\s+month|monatlich|jeden\s+monat)\b/i
+      /\b(cada\s+mes|mensual(mente)?|monthly|every\s+month|each\s+month|monatlich|jeden\s+monat)\b/i
     )?.[0] ?? null;
   if (monthly) return monthly;
 
   const yearly =
     s.match(
-      /\b(cada\s+ano|anual(mente)?|yearly|every\s+year|jahrlich|jedes\s+jahr)\b/i
+      /\b(cada\s+ano|anual(mente)?|yearly|every\s+year|each\s+year|jahrlich|jedes\s+jahr)\b/i
     )?.[0] ?? null;
   if (yearly) return yearly;
 
   return null;
 }
 
+function isDailyReminderIntent(foldedText: string): boolean {
+  const remindVerb =
+    /\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|acuerdate|remember\s+me|remind\s+me|erinnere\s+mich)\b/i;
+  const dailyCadence =
+    /\b(cada\s+dia|todos?\s+los\s+dias|diariamente|a\s+diario|daily|every\s+day|each\s+day|jeden\s+tag|taglich)\b/i;
+  return remindVerb.test(foldedText) && dailyCadence.test(foldedText);
+}
+
 function detectReminderSignal(text: string): string | null {
   const s = foldForMatch(text);
 
+  // Strong intent: "remind me each day" must map to daily reminder mode.
+  if (isDailyReminderIntent(s)) return "daily until";
+
   const dayBefore =
     s.match(
-      /\b(dia\s+de\s+antes|dia\s+antes|un\s+dia\s+antes|1\s*dia\s+antes|day\s+before|the\s+day\s+before|einen\s+tag\s+vorher|am\s+vortag)\b/i
+      /\b(dia\s+de\s+antes|dia\s+antes|un\s+dia\s+antes|1\s*dia\s+antes|el\s+dia\s+anterior|day\s+before|the\s+day\s+before|one\s+day\s+before|einen\s+tag\s+vorher|am\s+vortag)\b/i
     )?.[0] ?? null;
   if (dayBefore) return dayBefore;
 
@@ -348,7 +382,7 @@ function detectReminderSignal(text: string): string | null {
 
   const daily =
     s.match(
-      /\b(todos\s+los\s+dias\s+hasta|cada\s+dia\s+hasta|every\s+day\s+until|daily\s+until|jeden\s+tag\s+bis)\b/i
+      /\b(todos\s+los\s+dias\s+hasta|cada\s+dia\s+hasta|diariamente|a\s+diario|every\s+day\s+until|daily\s+until|every\s+day|each\s+day|jeden\s+tag\s+bis|jeden\s+tag|taglich)\b/i
     )?.[0] ?? null;
   if (daily) return daily;
 
@@ -492,8 +526,8 @@ function buildHighlightedHtml(text: string, tokens: HighlightToken[]): string {
   if (!text) return "";
   if (!tokens.length) return escapeHtml(text).replace(/\n/g, "<br>");
 
-  const hlStyle =
-    "background:#efe9ff;color:#7d59c9;border:1px solid #c7b5f6;border-radius:999px;padding:0 6px;font-weight:400;box-decoration-break:clone;-webkit-box-decoration-break:clone;";
+  // Highlight recognized fragments using text color only (no pill background/border).
+  const hlStyle = `color:${REMI_PURPLE};font-weight:500;`;
 
   let out = "";
   let cursor = 0;
@@ -615,8 +649,39 @@ function parseTimeToHHMM(signal: string | null): string | null {
   if (!signal) return null;
   const s = foldForMatch(signal);
 
+  if (/\b(medianoche|midnight|mitternacht)\b/i.test(s)) return "00:00";
+  if (/\b(mediodia|noon|mittag)\b/i.test(s)) return "12:00";
+
+  // Spanish conversational time context:
+  // "a las 5 de la tarde" => 17:00, "9 de la noche" => 21:00
+  // "por la tarde a las 5" => 17:00
+  const esAfter = s.match(
+    /\b(?:a\s+las|a\s+la|alas)?\s*(\d{1,2})(?:[:.](\d{2}))?\s*(?:de\s+la|por\s+la)\s*(manana|tarde|noche)\b/i
+  );
+  const esBefore = s.match(
+    /\b(?:de\s+la|por\s+la)\s*(manana|tarde|noche)\s*(?:a\s+las|a\s+la|alas)?\s*(\d{1,2})(?:[:.](\d{2}))?\b/i
+  );
+  const period = esAfter?.[3] ?? esBefore?.[1] ?? null;
+  const hourRaw = esAfter?.[1] ?? esBefore?.[2] ?? null;
+  const minuteRaw = esAfter?.[2] ?? esBefore?.[3] ?? null;
+  if (period && hourRaw) {
+    let h = Number(hourRaw);
+    const m = minuteRaw ? Number(minuteRaw) : 0;
+    if (Number.isFinite(h) && h >= 0 && h <= 23) {
+      if (period === "tarde") {
+        if (h >= 1 && h <= 11) h += 12;
+      } else if (period === "noche") {
+        if (h === 12) h = 0;
+        else if (h >= 1 && h <= 11) h += 12;
+      } else if (period === "manana") {
+        if (h === 12) h = 0;
+      }
+      return `${pad2(h)}:${pad2(Math.min(59, Math.max(0, m)))}`;
+    }
+  }
+
   // 14:00
-  const hhmm = s.match(/\b(\d{1,2}):(\d{2})\b/);
+  const hhmm = s.match(/\b(\d{1,2})[:.](\d{2})\b/);
   if (hhmm) {
     const h = Math.min(23, Math.max(0, Number(hhmm[1])));
     const m = Math.min(59, Math.max(0, Number(hhmm[2])));
@@ -636,14 +701,14 @@ function parseTimeToHHMM(signal: string | null): string | null {
   }
 
   // "a las 14" / "um 14" / "at 2"
-  const hOnly = s.match(/\b(\d{1,2})\b/);
+  const hOnly = s.match(/\b(?:a\s+las|a\s+la|alas|um|at)\s+(\d{1,2})\b/i);
   if (hOnly) {
     const h = Number(hOnly[1]);
     if (Number.isFinite(h) && h >= 0 && h <= 23) return `${pad2(h)}:00`;
   }
 
-  // "14h"
-  const hH = s.match(/\b(\d{1,2})\s*h\b/);
+  // "14h" / "14 uhr"
+  const hH = s.match(/\b(\d{1,2})\s*(h|uhr)\b/i);
   if (hH) {
     const h = Number(hH[1]);
     if (Number.isFinite(h) && h >= 0 && h <= 23) return `${pad2(h)}:00`;
@@ -679,6 +744,11 @@ function parseDateToISO(signal: string | null, uiLang: UiLang): string | null {
     d.setDate(d.getDate() + 2);
     return toISODate(d);
   }
+  if (/\b(day\s+after\s+tomorrow|ubermorgen)\b/i.test(s)) {
+    const d = startOfTodayLocal();
+    d.setDate(d.getDate() + 2);
+    return toISODate(d);
+  }
   if (
     /\b(this\s+weekend|este\s+finde|este\s+fin\s+de\s+semana|dieses\s+wochenende)\b/i.test(s)
   ) {
@@ -693,6 +763,13 @@ function parseDateToISO(signal: string | null, uiLang: UiLang): string | null {
     viernes: 5,
     sabado: 6,
     domingo: 0,
+    lun: 1,
+    mar: 2,
+    mie: 3,
+    jue: 4,
+    vie: 5,
+    sab: 6,
+    dom: 0,
     monday: 1,
     tuesday: 2,
     wednesday: 3,
@@ -700,6 +777,16 @@ function parseDateToISO(signal: string | null, uiLang: UiLang): string | null {
     friday: 5,
     saturday: 6,
     sunday: 0,
+    mon: 1,
+    tue: 2,
+    tues: 2,
+    wed: 3,
+    thu: 4,
+    thur: 4,
+    thurs: 4,
+    fri: 5,
+    sat: 6,
+    sun: 0,
     montag: 1,
     dienstag: 2,
     mittwoch: 3,
@@ -707,9 +794,16 @@ function parseDateToISO(signal: string | null, uiLang: UiLang): string | null {
     freitag: 5,
     samstag: 6,
     sonntag: 0,
+    mo: 1,
+    di: 2,
+    mi: 3,
+    do: 4,
+    fr: 5,
+    sa: 6,
+    so: 0,
   };
   const wd = s.match(
-    /\b(lunes|martes|miercoles|jueves|viernes|sabado|domingo|monday|tuesday|wednesday|thursday|friday|saturday|sunday|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)\b/i
+    /\b(lunes|martes|miercoles|jueves|viernes|sabado|domingo|lun|mar|mie|jue|vie|sab|dom|monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag|mo|di|mi|do|fr|sa|so)\b/i
   )?.[0];
   if (wd) {
     const key = wd.toLowerCase();
@@ -750,6 +844,83 @@ function parseDateToISO(signal: string | null, uiLang: UiLang): string | null {
     if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
       const cand = new Date(y, m - 1, d);
       const fixed = bumpToNextYearIfPast(cand, yearWasExplicit);
+      return toISODate(fixed);
+    }
+  }
+
+  // Month names in any supported language/order (more robust with mixed-language input).
+  const monthMap: Record<string, number> = {
+    enero: 1,
+    ene: 1,
+    febrero: 2,
+    feb: 2,
+    marzo: 3,
+    mar: 3,
+    abril: 4,
+    abr: 4,
+    mayo: 5,
+    may: 5,
+    junio: 6,
+    jun: 6,
+    julio: 7,
+    jul: 7,
+    agosto: 8,
+    ago: 8,
+    septiembre: 9,
+    setiembre: 9,
+    sep: 9,
+    octubre: 10,
+    oct: 10,
+    noviembre: 11,
+    nov: 11,
+    diciembre: 12,
+    dic: 12,
+    january: 1,
+    jan: 1,
+    february: 2,
+    march: 3,
+    april: 4,
+    june: 6,
+    july: 7,
+    august: 8,
+    september: 9,
+    sept: 9,
+    october: 10,
+    november: 11,
+    december: 12,
+    januar: 1,
+    februar: 2,
+    marz: 3,
+    maerz: 3,
+    apr: 4,
+    mai: 5,
+    juni: 6,
+    juli: 7,
+    oktober: 10,
+    okt: 10,
+    dezember: 12,
+    dez: 12,
+    dec: 12,
+  };
+  const monthToken =
+    "(enero|ene|febrero|feb|marzo|mar|abril|abr|mayo|may|junio|jun|julio|jul|agosto|ago|septiembre|setiembre|sep|octubre|oct|noviembre|nov|diciembre|dic|january|jan|february|march|april|apr|june|july|august|aug|september|sept|october|november|december|dec|januar|februar|marz|maerz|mai|juni|juli|oktober|okt|dezember|dez)";
+  const dMon = s.match(new RegExp(`\\b(\\d{1,2})\\.?\\s+(?:de\\s+)?${monthToken}\\b`, "i"));
+  if (dMon) {
+    const d = Number(dMon[1]);
+    const mo = monthMap[dMon[2]];
+    if (mo && d >= 1 && d <= 31) {
+      const cand = new Date(new Date().getFullYear(), mo - 1, d);
+      const fixed = bumpToNextYearIfPast(cand, false);
+      return toISODate(fixed);
+    }
+  }
+  const monD = s.match(new RegExp(`\\b${monthToken}\\s+(\\d{1,2})\\b`, "i"));
+  if (monD) {
+    const mo = monthMap[monD[1]];
+    const d = Number(monD[2]);
+    if (mo && d >= 1 && d <= 31) {
+      const cand = new Date(new Date().getFullYear(), mo - 1, d);
+      const fixed = bumpToNextYearIfPast(cand, false);
       return toISODate(fixed);
     }
   }
@@ -856,23 +1027,13 @@ function mapReminderSignalToMode(signal: string | null): ReminderMode | null {
   if (!signal) return null;
   const s = foldForMatch(signal);
 
-  if (
-    s.includes("dia") ||
-    s.includes("day") ||
-    s.includes("vortag") ||
-    s.includes("tag vorher")
-  ) {
+  if (/\b(dia\s+de\s+antes|dia\s+antes|un\s+dia\s+antes|1\s*dia\s+antes|el\s+dia\s+anterior|day\s+before|the\s+day\s+before|one\s+day\s+before|vortag|tag\s+vorher)\b/i.test(s)) {
     return "DAY_BEFORE_AND_DUE";
   }
-  if (s.includes("semana") || s.includes("week") || s.includes("woche")) {
+  if (/\b(una\s+semana\s+antes|1\s+semana\s+antes|week\s+before|one\s+week\s+before|eine\s+woche\s+vorher|eine\s+woche\s+davor)\b/i.test(s)) {
     return "WEEK_BEFORE_AND_DUE";
   }
-  if (
-    s.includes("every day until") ||
-    s.includes("cada dia hasta") ||
-    s.includes("jeden tag bis") ||
-    s.includes("daily until")
-  ) {
+  if (/\b(todos?\s+los\s+dias\s+hasta|cada\s+dia\s+hasta|diariamente|a\s+diario|every\s+day(?:\s+until)?|each\s+day|daily(?:\s+until)?|jeden\s+tag(?:\s+bis)?|taglich)\b/i.test(s)) {
     return "DAILY_UNTIL_DUE";
   }
   return null;
@@ -885,6 +1046,7 @@ function mapHabitSignalToRepeat(signal: string | null): RepeatType | null {
   if (
     s.includes("cada dia") ||
     s.includes("every day") ||
+    s.includes("each day") ||
     s.includes("taglich") ||
     s.includes("jeden tag") ||
     s.includes("a diario")
@@ -893,6 +1055,7 @@ function mapHabitSignalToRepeat(signal: string | null): RepeatType | null {
   if (
     s.includes("cada semana") ||
     s.includes("every week") ||
+    s.includes("each week") ||
     s.includes("wochentlich") ||
     s.includes("jede woche") ||
     s.includes("semanal")
@@ -907,6 +1070,7 @@ function mapHabitSignalToRepeat(signal: string | null): RepeatType | null {
   if (
     s.includes("cada mes") ||
     s.includes("every month") ||
+    s.includes("each month") ||
     s.includes("monatlich") ||
     s.includes("jeden monat") ||
     s.includes("mensual")
@@ -915,6 +1079,7 @@ function mapHabitSignalToRepeat(signal: string | null): RepeatType | null {
   if (
     s.includes("cada ano") ||
     s.includes("every year") ||
+    s.includes("each year") ||
     s.includes("jahrlich") ||
     s.includes("jedes jahr") ||
     s.includes("anual")
@@ -1446,7 +1611,8 @@ export default function MindDumpModal({
     const hasDate = !!pickedDate;
     const time = pickedTime || "12:00";
     const dueDateISO = hasDate ? buildISOFromLocalParts(pickedDate, time) : null;
-    const finalReminderMode: ReminderMode = dueDateISO ? reminderMode : "NONE";
+    const finalReminderMode: ReminderMode =
+      dueDateISO || reminderMode === "DAILY_UNTIL_DUE" ? reminderMode : "NONE";
     const finalRepeatType: RepeatType = habitRepeat;
 
     // Cierre instantáneo para evitar sensación de bloqueo.
@@ -2078,7 +2244,8 @@ export default function MindDumpModal({
 
   const reminderLabel = (() => {
     if (itemKind !== "task") return t("pill.reminderNone", "Sin recordatorio");
-    if (!hasSomeDate || reminderMode === "NONE") return t("pill.reminderNone", "Sin recordatorio");
+    if (reminderMode === "NONE") return t("pill.reminderNone", "Sin recordatorio");
+    if (!hasSomeDate && reminderMode !== "DAILY_UNTIL_DUE") return t("pill.reminderNone", "Sin recordatorio");
     if (reminderMode === "DAILY_UNTIL_DUE") return t("pill.remDaily", "Diaria");
     if (reminderMode === "DAY_BEFORE_AND_DUE") return t("pill.remDayBefore", "1 día antes");
     if (reminderMode === "WEEK_BEFORE_AND_DUE") return t("pill.remWeekBefore", "1 semana antes");
@@ -2140,7 +2307,7 @@ export default function MindDumpModal({
         }
       `}</style>
 
-      {!embedded && <div className="absolute inset-0" style={{ background: "#ffffff" }} />}
+      {!embedded && <div className="absolute inset-0" style={{ background: APP_PAGE_BG }} />}
 
       <div
         className={embedded ? "relative flex flex-col w-full" : "absolute inset-0 flex flex-col"}
@@ -2812,12 +2979,7 @@ export default function MindDumpModal({
 
                       <MenuItem
                         active={reminderMode === "DAILY_UNTIL_DUE"}
-                        disabled={!hasSomeDate}
                         onClick={() => {
-                          if (!hasSomeDate) {
-                            toast.message(t("capture.toast.pickDateFirst", "Elige una fecha primero."));
-                            return;
-                          }
                           setReminderTouched(true);
                           setTypeTouched(true);
                           setReminderMode("DAILY_UNTIL_DUE");

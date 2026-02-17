@@ -17,12 +17,20 @@ import {
   Globe2,
   Camera,
   Bell,
+  MessageSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { registerPushSubscription } from "@/lib/registerPush";
 import { useI18n } from "@/contexts/I18nContext";
+import FeedbackSurveyModal from "@/components/FeedbackSurveyModal";
+import {
+  flushPendingFeedback,
+  initFeedbackTracker,
+  markFeedbackSubmitted,
+  submitFeedbackSurvey,
+} from "@/lib/feedbackSurvey";
 import type { RemiLocale } from "@/locales";
 
 type DevicePushStatus =
@@ -105,6 +113,8 @@ export default function ProfilePage() {
   // ---- contraseña / guardado ----
   const [newPassword, setNewPassword] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showFeedbackSurvey, setShowFeedbackSurvey] = useState(false);
+  const [sendingFeedback, setSendingFeedback] = useState(false);
 
   // ---- avatar ----
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -397,6 +407,12 @@ export default function ProfilePage() {
     })();
   }, [user, profile, setLang]);
 
+  useEffect(() => {
+    if (!user) return;
+    initFeedbackTracker();
+    void flushPendingFeedback();
+  }, [user?.id]);
+
   const handleLanguageChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value as RemiLocale;
     setPreferredLanguage(value);
@@ -539,6 +555,30 @@ export default function ProfilePage() {
     }
   };
 
+  const handleSubmitFeedbackSurvey = async (payload: {
+    score: number;
+    improvement: string;
+  }) => {
+    if (!user) return;
+    setSendingFeedback(true);
+    try {
+      await submitFeedbackSurvey({
+        userId: user.id,
+        lang,
+        score: payload.score,
+        improvement: payload.improvement,
+        source: "profile_button",
+      });
+      markFeedbackSubmitted();
+      setShowFeedbackSurvey(false);
+      toast.success(
+        safeT("feedback.thanks", "Gracias por tu opinión sobre Remi."),
+      );
+    } finally {
+      setSendingFeedback(false);
+    }
+  };
+
   const displayName = username || (user?.email ?? t("profile.defaultUserName"));
   const initial =
     !avatarUrl && displayName ? displayName.charAt(0).toUpperCase() : "R";
@@ -574,7 +614,7 @@ export default function ProfilePage() {
       className="remi-page text-slate-900"
       style={{
         minHeight: "100dvh",
-        background: "linear-gradient(180deg, #f8f7fb 0%, #ffffff 42%, #ffffff 100%)",
+        background: "linear-gradient(180deg, #f1eff7 0%, #fafafe 42%, #fafafe 100%)",
         paddingBottom: "calc(96px + env(safe-area-inset-bottom))",
       }}
     >
@@ -865,6 +905,17 @@ export default function ProfilePage() {
 
             <button
               type="button"
+              onClick={() => setShowFeedbackSurvey(true)}
+              className="w-full flex items-center justify-center gap-2 rounded-full border border-violet-200 text-violet-600 text-xs py-2.5 mb-2 shadow-sm hover:bg-violet-50 transition md:py-3 md:text-sm"
+            >
+              <MessageSquare size={14} />
+              <span>
+                {safeT("profile.feedbackButton", "Dejar opinión")}
+              </span>
+            </button>
+
+            <button
+              type="button"
               onClick={handleShareApp}
               className="w-full flex items-center justify-center gap-2 rounded-full border border-violet-200 text-violet-600 text-xs py-2.5 mb-2 shadow-sm hover:bg-violet-50 transition md:py-3 md:text-sm"
             >
@@ -883,6 +934,21 @@ export default function ProfilePage() {
           </section>
         </div>
       </div>
+
+      <FeedbackSurveyModal
+        open={showFeedbackSurvey}
+        loading={sendingFeedback}
+        title={safeT("feedback.title", "Tu opinión sobre Remi")}
+        questionScore={safeT("feedback.q1", "¿Te está ayudando Remi?")}
+        questionImprove={safeT("feedback.q2", "¿Qué mejorarías?")}
+        placeholderImprove={safeT("feedback.placeholder", "Escribe una sugerencia breve...")}
+        submitLabel={safeT("feedback.send", "Enviar opinión")}
+        laterLabel={safeT("feedback.later", "Ahora no")}
+        scoreHintLow={safeT("feedback.low", "Nada")}
+        scoreHintHigh={safeT("feedback.high", "Mucho")}
+        onClose={() => setShowFeedbackSurvey(false)}
+        onSubmit={handleSubmitFeedbackSurvey}
+      />
     </div>
   );
 }

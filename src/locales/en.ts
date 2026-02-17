@@ -695,6 +695,12 @@ export const en = {
         prefill: "___'s birthday on ___",
       },
 
+      feedback: {
+        title: "Improve Remi",
+        body: "Tell us in 20 seconds what's helping you and what we should improve.",
+        cta: "Give feedback",
+      },
+
       cleanNoDate: {
         title: "✅ No tasks without a date",
         body: "Perfect. Now it's easy to prioritize.",
@@ -869,6 +875,7 @@ export const en = {
     sectionAccountDescription:
       "Share REMI or sign out on this device.",
 
+    feedbackButton: "Leave feedback",
     shareButton: "Share app",
     logoutButton: "Sign out",
 
@@ -885,6 +892,18 @@ export const en = {
     updateSuccess: "Profile updated successfully.",
     updateError: "Couldn't save changes.",
     logoutError: "Couldn't sign out. Please try again.",
+  },
+
+  feedback: {
+    title: "Your opinion about Remi",
+    q1: "Is Remi helping you?",
+    q2: "What would you improve?",
+    placeholder: "Write a short suggestion...",
+    send: "Send feedback",
+    later: "Not now",
+    thanks: "Thanks for sharing your opinion about Remi.",
+    low: "Not at all",
+    high: "A lot",
   },
 
   notifications: {
@@ -1198,4 +1217,3 @@ export const en = {
     },
   },
 } as const;
-

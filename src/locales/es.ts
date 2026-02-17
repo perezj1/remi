@@ -708,6 +708,12 @@ export const es = {
         prefill: "Cumpleaños de ___ el ___",
       },
 
+      feedback: {
+        title: "Mejora Remi",
+        body: "Cu?ntanos en 20 segundos qu? te est? ayudando y qu? mejorar?as.",
+        cta: "Dar opini?n",
+      },
+
       cleanNoDate: {
         title: "✅ Sin tareas sin fecha",
         body: "Perfecto. Ahora es fácil priorizar.",
@@ -882,6 +888,7 @@ export const es = {
     sectionAccountDescription:
       "Comparte REMI o cierra sesión en este dispositivo.",
 
+    feedbackButton: "Dejar opinión",
     shareButton: "Compartir app",
     logoutButton: "Cerrar sesión",
 
@@ -898,6 +905,18 @@ export const es = {
     updateSuccess: "Perfil actualizado correctamente.",
     updateError: "No se pudieron guardar los cambios.",
     logoutError: "No se pudo cerrar sesión. Intenta de nuevo.",
+  },
+
+  feedback: {
+    title: "Tu opinión sobre Remi",
+    q1: "¿Te está ayudando Remi?",
+    q2: "¿Qué mejorarías?",
+    placeholder: "Escribe una sugerencia breve...",
+    send: "Enviar opinión",
+    later: "Ahora no",
+    thanks: "Gracias por tu opinión sobre Remi.",
+    low: "Nada",
+    high: "Mucho",
   },
 
   notifications: {
@@ -1210,5 +1229,4 @@ export const es = {
     },
   },
 } as const;
-
 
