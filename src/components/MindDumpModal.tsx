@@ -1443,30 +1443,34 @@ export default function MindDumpModal({
 
     const body = stripVisualBullets(trimmed);
 
-    try {
-      if (itemKind === "idea") {
-        if (onCreateIdea) {
-          await onCreateIdea(title, body);
-        } else {
-          await onCreateTask(title, null, "NONE", "none");
+    const hasDate = !!pickedDate;
+    const time = pickedTime || "12:00";
+    const dueDateISO = hasDate ? buildISOFromLocalParts(pickedDate, time) : null;
+    const finalReminderMode: ReminderMode = dueDateISO ? reminderMode : "NONE";
+    const finalRepeatType: RepeatType = habitRepeat;
+
+    // Cierre instantáneo para evitar sensación de bloqueo.
+    onClose();
+
+    // Guardado en segundo plano para que la UI pinte primero.
+    setTimeout(() => {
+      void (async () => {
+        try {
+          if (itemKind === "idea") {
+            if (onCreateIdea) {
+              await onCreateIdea(title, body);
+            } else {
+              await onCreateTask(title, null, "NONE", "none");
+            }
+            return;
+          }
+
+          await onCreateTask(title, dueDateISO, finalReminderMode, finalRepeatType);
+        } catch {
+          toast.error(t("capture.toast.saveError", "No se pudo guardar."));
         }
-        onClose();
-        return;
-      }
-
-      const hasDate = !!pickedDate;
-      const time = pickedTime || "12:00";
-      const dueDateISO = hasDate ? buildISOFromLocalParts(pickedDate, time) : null;
-
-      const finalReminderMode: ReminderMode = dueDateISO ? reminderMode : "NONE";
-      const finalRepeatType: RepeatType = habitRepeat;
-
-      await onCreateTask(title, dueDateISO, finalReminderMode, finalRepeatType);
-      onClose();
-    } catch {
-      toast.error(t("capture.toast.saveError", "No se pudo guardar."));
-      if (onOpenReview) onOpenReview(trimmed);
-    }
+      })();
+    }, 0);
   };
 
   const handleClose = () => {

@@ -368,10 +368,6 @@ export default function TasksPage() {
                       {group.items.map((item) => {
                         const isDone = item.status === "DONE";
 
-                        const dueText = item.due_date
-                          ? formatDue(item.due_date as string, uiLocale) ??
-                            new Date(item.due_date as string).toLocaleString(uiLocale)
-                          : t("today.dueNoDate");
                         const mainText = String(item.title ?? "");
 
                         // ✅ Botones más pequeños
@@ -426,11 +422,6 @@ export default function TasksPage() {
                                 >
                                   {mainText}
                                 </p>
-
-                                <div className="mt-2 flex items-center gap-1 text-slate-500" style={{ fontSize: "clamp(13px, 0.85vw, 17px)" }}>
-                                  <Calendar size={14} className="text-slate-400" />
-                                  <span className="truncate">{dueText}</span>
-                                </div>
                               </div>
 
                               {/* ✅ Lápiz sin círculo */}
@@ -448,6 +439,8 @@ export default function TasksPage() {
                               </button>
                             </div>
 
+                            <div className="mt-2 h-px bg-slate-100" />
+
                             {/* Footer row */}
                             <div className="mt-3 flex items-center gap-3">
                               <button
@@ -464,7 +457,6 @@ export default function TasksPage() {
                                 <Share2 size={15} color="#94A3B8" />
                                 <span>{shareLabel}</span>
                               </button>
-
                               <button
                                 type="button"
                                 onClick={(e) => {

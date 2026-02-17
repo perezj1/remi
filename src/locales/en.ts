@@ -218,6 +218,9 @@ export const en = {
     weekSectionSubtitle:
       "Every day you use Remi, your head carries a bit less.",
     weekActiveLabel: "Active days this week",
+    usersTitle: "More people caring for their minds",
+    usersSubtitle: "Total users on Remi",
+    usersUnavailable: "Not available",
 
     loading: "Updating your Remi summary…",
 
@@ -744,7 +747,7 @@ export const en = {
 
   inbox: {
     title: "Inbox",
-    tasksTab: "Tasks",
+    tasksTab: "Reminders",
     ideasTab: "Ideas",
     allTab: "All",
     statusDone: "Done",
@@ -1194,5 +1197,6 @@ export const en = {
     },
   },
 } as const;
+
 
 

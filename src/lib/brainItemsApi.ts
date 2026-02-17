@@ -575,6 +575,19 @@ export type RemiStatusInsights = {
   completedWithDueCount: number;
 };
 
+export async function fetchRemiUsersCount(): Promise<number | null> {
+  const { count, error } = await supabase
+    .from("remi_user_settings")
+    .select("user_id", { count: "exact", head: true });
+
+  if (error) {
+    console.warn("Could not fetch Remi users count", error);
+    return null;
+  }
+
+  return typeof count === "number" ? count : null;
+}
+
 export async function fetchRemiStatusSummary(userId: string): Promise<RemiStatusSummary> {
   const now = new Date();
 

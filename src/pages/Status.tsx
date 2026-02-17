@@ -549,11 +549,11 @@ export default function StatusPage() {
                   <div className="h-full" style={{ width: `${ideaSharePercent}%`, background: "#f4cf6a", float: "left" }} />
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2 text-[12px]">
-                  <div className="rounded-xl border border-violet-200 bg-white/65 p-2">
+                  <div className="rounded-xl border border-violet-200 bg-white/65 p-2 text-center">
                     <p className="font-semibold text-violet-700">Tareas</p>
                     <p className="mt-0.5 font-extrabold text-slate-900">{totalTasksStored} ({taskSharePercent}%)</p>
                   </div>
-                  <div className="rounded-xl border bg-white/65 p-2" style={{ borderColor: "#f4dc9a" }}>
+                  <div className="rounded-xl border bg-white/65 p-2 text-center" style={{ borderColor: "#f4dc9a" }}>
                     <p className="font-semibold" style={{ color: "#b48617" }}>Ideas</p>
                     <p className="mt-0.5 font-extrabold text-slate-900">{totalIdeasStored} ({ideaSharePercent}%)</p>
                   </div>

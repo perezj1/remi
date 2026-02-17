@@ -9,6 +9,8 @@
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { celebrateCreation } from "@/lib/creationCelebration";
+import { computeMindClearPercent } from "@/lib/mindClear";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
 import {
@@ -236,15 +238,6 @@ const anyModalOpen =
   };
 
   const activeTasksCount = tasks.length;
-  const dueDateFormatter = useMemo(
-    () =>
-      new Intl.DateTimeFormat(undefined, {
-        dateStyle: "medium",
-        timeStyle: "short",
-      }),
-    [],
-  );
-
   const dismissTip = (id: string) => {
     setDismissedTips((prev) => {
       const next = { ...prev, [id]: true };
@@ -332,27 +325,7 @@ const anyModalOpen =
   }, [loadData, user]);
 
   const mindClearPercent = useMemo(() => {
-    if (!statusSummary) return 10;
-
-    const totalItems =
-      statusSummary.totalItemsStored ??
-      statusSummary.totalTasksStored + statusSummary.totalIdeasStored;
-    const delegatedItems = totalItems;
-    const completedToday = statusSummary.todayDone ?? 0;
-    const streakBonusDays = Math.min(statusSummary.streakDays ?? 0, 14);
-    const weeklyBonusDays = Math.min(statusSummary.weekActiveDays ?? 0, 7);
-    const inactiveDays = Math.max(0, statusSummary.daysSinceLastActivity ?? 0);
-    const inactivityPenalty = Math.min(40, inactiveDays * 4);
-
-    const value =
-      10 +
-      delegatedItems * 4 +
-      completedToday * 6 +
-      streakBonusDays * 2 +
-      weeklyBonusDays -
-      inactivityPenalty;
-
-    return Math.max(10, Math.min(100, Math.round(value)));
+    return computeMindClearPercent(statusSummary);
   }, [statusSummary]);
 
   useEffect(() => {
@@ -636,9 +609,19 @@ const anyModalOpen =
   const formatDueLabel = useCallback(
     (dueDate?: string | null) => {
       if (!dueDate) return safeT("today.dueNoDate", "Sin fecha");
-      return dueDateFormatter.format(new Date(dueDate));
+      const d = new Date(dueDate);
+      const datePart = d.toLocaleDateString(uiLocale, {
+        day: "numeric",
+        month: "short",
+      });
+      const timePart = d.toLocaleTimeString(uiLocale, {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+      return `${datePart},${timePart}`;
     },
-    [dueDateFormatter, safeT],
+    [safeT, uiLocale],
   );
 
   const handleShareTask = async (task: BrainItem) => {
@@ -665,19 +648,27 @@ const anyModalOpen =
       repeatType: RepeatType,
     ) => {
       if (!user) return;
+      const before = computeMindClearPercent(statusSummary);
       await createTask(user.id, title, dueDateISO, reminderMode, repeatType);
+      const updatedSummary = await fetchRemiStatusSummary(user.id);
+      const after = computeMindClearPercent(updatedSummary);
+      celebrateCreation(after - before);
       await loadData();
     },
-    [loadData, user],
+    [loadData, statusSummary, user],
   );
 
   const handleCreateIdeaFromMindDump = useCallback(
     async (title: string) => {
       if (!user) return;
+      const before = computeMindClearPercent(statusSummary);
       await createIdea(user.id, title);
+      const updatedSummary = await fetchRemiStatusSummary(user.id);
+      const after = computeMindClearPercent(updatedSummary);
+      celebrateCreation(after - before);
       await loadData();
     },
-    [loadData, user],
+    [loadData, statusSummary, user],
   );
 
   const handlePostpone = async (task: BrainItem, option: "DAY" | "WEEK") => {
@@ -1555,41 +1546,43 @@ const anyModalOpen =
                             >
                               {task.title}
                             </p>
-                            <div
-                              className="mt-2 flex items-center gap-1 text-slate-500"
-                              style={{ fontSize: "clamp(13px, 0.85vw, 17px)" }}
-                            >
-                              <CalendarDays size={14} className="text-slate-400" />
-                              <span className="truncate">
-                                {safeT("today.dueNoDate", "Sin fecha")}
-                              </span>
-                            </div>
                           </div>
                         </div>
 
+                        <div className="mt-3 h-px bg-slate-100" />
+
                         <div className="mt-3 flex items-center gap-3">
+                          <div
+                            className="inline-flex items-center gap-1 text-slate-500"
+                            style={{ fontSize: "clamp(12px, 0.8vw, 15px)" }}
+                          >
+                            <CalendarDays size={13} className="text-slate-400" />
+                            <span className="truncate max-w-[120px]">
+                              {safeT("today.dueNoDate", "Sin fecha")}
+                            </span>
+                          </div>
+                          <div className="ml-auto flex items-center gap-2">
                           <button
                             type="button"
                             onPointerDown={() => prefetchShareInvite(task.id)}
                             onClick={() => handleShareTask(task)}
-                            className="flex-1 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center gap-2 text-[12px] font-semibold text-slate-700 md:h-10 md:text-[13px] lg:h-11 lg:text-[15px]"
+                            className="h-9 w-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center md:h-10 md:w-10 lg:h-11 lg:w-11"
                             aria-label={safeT("shareInvite.share", "Compartir")}
                             title={safeT("shareInvite.share", "Compartir")}
                           >
                             <Share2 size={15} color="#94A3B8" />
-                            <span>{safeT("shareInvite.share", "Compartir")}</span>
                           </button>
 
                           <button
                             type="button"
                             onClick={() => handleDone(task)}
-                            className="flex-1 h-9 rounded-full border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 inline-flex items-center justify-center gap-2 text-[12px] font-semibold text-emerald-700 md:h-10 md:text-[13px] lg:h-11 lg:text-[15px]"
+                            className="h-9 w-9 rounded-full border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 inline-flex items-center justify-center md:h-10 md:w-10 lg:h-11 lg:w-11"
                             aria-label={safeT("today.done", "Hecho")}
                             title={safeT("today.done", "Hecho")}
                           >
                             <Check size={15} color="#10B981" />
-                            <span>{safeT("today.done", "Hecho")}</span>
                           </button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -1646,41 +1639,43 @@ const anyModalOpen =
                                   >
                                     {task.title}
                                   </p>
-                                  <div
-                                    className="mt-2 flex items-center gap-1 text-slate-500"
-                                    style={{ fontSize: "clamp(13px, 0.85vw, 17px)" }}
-                                  >
-                                    <CalendarDays size={14} className="text-slate-400" />
-                                    <span className="truncate">
-                                      {formatDueLabel(task.due_date as string | null)}
-                                    </span>
-                                  </div>
                                 </div>
                               </div>
 
+                              <div className="mt-3 h-px bg-slate-100" />
+
                               <div className="mt-3 flex items-center gap-3">
+                                <div
+                                  className="inline-flex items-center gap-1 text-slate-500"
+                                  style={{ fontSize: "clamp(12px, 0.8vw, 15px)" }}
+                                >
+                                  <CalendarDays size={13} className="text-slate-400" />
+                                  <span className="truncate max-w-[120px]">
+                                    {formatDueLabel(task.due_date as string | null)}
+                                  </span>
+                                </div>
+                                <div className="ml-auto flex items-center gap-2">
                                 <button
                                   type="button"
                                   onPointerDown={() => prefetchShareInvite(task.id)}
                                   onClick={() => handleShareTask(task)}
-                                  className="flex-1 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center gap-2 text-[12px] font-semibold text-slate-700 md:h-10 md:text-[13px] lg:h-11 lg:text-[15px]"
+                                  className="h-9 w-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center md:h-10 md:w-10 lg:h-11 lg:w-11"
                                   aria-label={safeT("shareInvite.share", "Compartir")}
                                   title={safeT("shareInvite.share", "Compartir")}
                                 >
                                   <Share2 size={15} color="#94A3B8" />
-                                  <span>{safeT("shareInvite.share", "Compartir")}</span>
                                 </button>
 
                                 <button
                                   type="button"
                                   onClick={() => handleDone(task)}
-                                  className="flex-1 h-9 rounded-full border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 inline-flex items-center justify-center gap-2 text-[12px] font-semibold text-emerald-700 md:h-10 md:text-[13px] lg:h-11 lg:text-[15px]"
+                                  className="h-9 w-9 rounded-full border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 inline-flex items-center justify-center md:h-10 md:w-10 lg:h-11 lg:w-11"
                                   aria-label={safeT("today.done", "Hecho")}
                                   title={safeT("today.done", "Hecho")}
                                 >
                                   <Check size={15} color="#10B981" />
-                                  <span>{safeT("today.done", "Hecho")}</span>
                                 </button>
+                                </div>
                               </div>
                             </div>
                           ))}

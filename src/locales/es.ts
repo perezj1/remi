@@ -227,7 +227,10 @@ export const es = {
     weekSectionTitle: "Nuestra semana",
     weekSectionSubtitle:
       "Cada d√≠a que usas Remi, tu cabeza tiene un poco menos de carga.",
-    weekActiveLabel: "D√≠as activos esta semana",
+    weekActiveLabel: "DÌas activos esta semana",
+    usersTitle: "Cada vez somos m·s cuidando nuestra mente",
+    usersSubtitle: "Total de usuarios en Remi",
+    usersUnavailable: "No disponible",
 
     loading: "Actualizando tu resumen con Remi‚Ä¶",
 
@@ -757,7 +760,7 @@ export const es = {
 
   inbox: {
     title: "Bandeja de entrada",
-    tasksTab: "Tareas",
+    tasksTab: "Recordatorios",
     ideasTab: "Ideas",
     allTab: "Todo",
     statusDone: "Hecha",
@@ -1206,5 +1209,6 @@ export const es = {
     },
   },
 } as const;
+
 
 

@@ -221,6 +221,9 @@ export const de = {
     weekSectionSubtitle:
       "Jeder Tag mit Remi bedeutet ein bisschen weniger Last im Kopf.",
     weekActiveLabel: "Aktive Tage diese Woche",
+    usersTitle: "Immer mehr Menschen entlasten ihren Kopf",
+    usersSubtitle: "Gesamtzahl der Remi-Nutzer",
+    usersUnavailable: "Nicht verfugbar",
 
     loading: "Dein Remi-Überblick wird aktualisiert…",
 
@@ -738,7 +741,7 @@ export const de = {
 
   inbox: {
     title: "Posteingang",
-    tasksTab: "Aufgaben",
+    tasksTab: "Erinnerungen",
     ideasTab: "Ideen",
     allTab: "Alles",
     statusDone: "Erledigt",
@@ -1190,5 +1193,6 @@ export const de = {
     },
   },
 } as const;
+
 
 

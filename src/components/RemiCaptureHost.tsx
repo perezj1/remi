@@ -3,6 +3,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { celebrateCreation } from "@/lib/creationCelebration";
+import { computeMindClearPercent } from "@/lib/mindClear";
 import { useModalUi } from "@/contexts/ModalUiContext";
 
 import MindDumpModal from "@/components/MindDumpModal";
@@ -13,6 +15,7 @@ import {
   RepeatType,
   createIdea,
   createTask,
+  fetchRemiStatusSummary,
 } from "@/lib/brainItemsApi";
 
 import { SHARE_DRAFT_KEY } from "@/pages/ShareTarget";
@@ -302,7 +305,12 @@ export default function RemiCaptureHost() {
       repeatType: RepeatType
     ) => {
       if (!user) return;
+      const beforeSummary = await fetchRemiStatusSummary(user.id);
+      const before = computeMindClearPercent(beforeSummary);
       await createTask(user.id, title, dueDate, reminderMode, repeatType);
+      const afterSummary = await fetchRemiStatusSummary(user.id);
+      const after = computeMindClearPercent(afterSummary);
+      celebrateCreation(after - before);
       emitItemsChanged();
     },
     [emitItemsChanged, user]
@@ -311,7 +319,12 @@ export default function RemiCaptureHost() {
   const handleCreateIdea = useCallback(
     async (title: string) => {
       if (!user) return;
+      const beforeSummary = await fetchRemiStatusSummary(user.id);
+      const before = computeMindClearPercent(beforeSummary);
       await createIdea(user.id, title);
+      const afterSummary = await fetchRemiStatusSummary(user.id);
+      const after = computeMindClearPercent(afterSummary);
+      celebrateCreation(after - before);
       emitItemsChanged();
     },
     [emitItemsChanged, user]

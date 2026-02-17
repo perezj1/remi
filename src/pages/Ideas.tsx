@@ -429,6 +429,8 @@ export default function IdeasPage() {
                               </button>
                             </div>
 
+                            <div className="mt-2 h-px bg-slate-100" />
+
                             {/* Footer row: two pill buttons */}
                             <div className="mt-3 flex items-center gap-3">
                               {/* Left: Compartir */}
