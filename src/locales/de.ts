@@ -796,17 +796,17 @@ export const de = {
     savedAt: "Gespeichert am {{date}}",
     errorLoading: "Fehler beim Laden deiner Ideen",
     updateError: "Die Idee konnte nicht aktualisiert werden.",
-    convertError: "Die Idee konnte nicht in eine Aufgabe umgewandelt werden.",
+    convertError: "Die Idee konnte nicht in eine Erinnerung umgewandelt werden.",
 
     editLabel: "Idee bearbeiten",
     editTitle: "Mach aus dieser Idee etwas Umsetzbares",
     editSubtitle:
-      "Verbessere den Text oder verwandle sie in eine Aufgabe mit Datum und Erinnerung.",
+      "Verbessere den Text oder verwandle sie in eine Erinnerung mit Datum.",
 
     fieldTitle: "Ideentext",
     fieldTitlePlaceholder: "Z. B. neue Schuhe für die Hochzeit kaufen",
 
-    taskOptionsTitle: "Aufgabenoptionen",
+    taskOptionsTitle: "Erinnerungsoptionen",
     dueDateLabel: "Fälligkeitsdatum und -uhrzeit (optional)",
     reminderLabel: "Erinnerung",
 
@@ -818,11 +818,11 @@ export const de = {
     },
 
     saveAsIdea: "Als Idee speichern",
-    convertToTask: "In Aufgabe umwandeln",
-    confirmConvert: "Jetzt in Aufgabe umwandeln",
+    convertToTask: "In Erinnerung umwandeln",
+    confirmConvert: "Jetzt in Erinnerung umwandeln",
 
     footerHint:
-      "Eine Idee in eine Aufgabe umzuwandeln dupliziert sie nicht: Die ursprüngliche Idee wird zur Aufgabe.",
+      "Eine Idee in eine Erinnerung umzuwandeln dupliziert sie nicht: Die ursprüngliche Idee wird zur Erinnerung.",
   },
 
   profile: {

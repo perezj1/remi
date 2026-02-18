@@ -802,17 +802,17 @@ export const en = {
     savedAt: "Saved on {{date}}",
     errorLoading: "Error loading your ideas",
     updateError: "Couldn't update the idea.",
-    convertError: "Couldn't convert the idea into a task.",
+    convertError: "Couldn't convert the idea into a reminder.",
 
     editLabel: "Edit idea",
     editTitle: "Turn this idea into something actionable",
     editSubtitle:
-      "Improve the text or convert it into a task with a date and reminder.",
+      "Improve the text or convert it into a reminder with a date.",
 
     fieldTitle: "Idea text",
     fieldTitlePlaceholder: "E.g. buy new shoes for the wedding",
 
-    taskOptionsTitle: "Task options",
+    taskOptionsTitle: "Reminder options",
     dueDateLabel: "Due date and time (optional)",
     reminderLabel: "Reminder",
 
@@ -824,11 +824,11 @@ export const en = {
     },
 
     saveAsIdea: "Save as idea",
-    convertToTask: "Convert to task",
-    confirmConvert: "Convert to task now",
+    convertToTask: "Convert to reminder",
+    confirmConvert: "Convert to reminder now",
 
     footerHint:
-      "Converting an idea into a task doesn't duplicate it: the original idea becomes a task.",
+      "Converting an idea into a reminder doesn't duplicate it: the original idea becomes a reminder.",
   },
 
   profile: {

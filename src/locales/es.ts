@@ -815,17 +815,17 @@ export const es = {
     savedAt: "Guardada el {{date}}",
     errorLoading: "Error cargando tus ideas",
     updateError: "No se ha podido actualizar la idea.",
-    convertError: "No se ha podido convertir la idea en tarea.",
+    convertError: "No se ha podido convertir la idea en recordatorio.",
 
     editLabel: "Editar idea",
     editTitle: "Convierte esta idea en algo accionable",
     editSubtitle:
-      "Mejora el texto o conviértela en una tarea con fecha y recordatorio.",
+      "Mejora el texto o conviértela en un recordatorio con fecha.",
 
     fieldTitle: "Texto de la idea",
     fieldTitlePlaceholder: "Ej: comprar zapatos nuevos para la boda",
 
-    taskOptionsTitle: "Opciones de tarea",
+    taskOptionsTitle: "Opciones de recordatorio",
     dueDateLabel: "Fecha y hora límite (opcional)",
     reminderLabel: "Recordatorio",
 
@@ -837,11 +837,11 @@ export const es = {
     },
 
     saveAsIdea: "Guardar como idea",
-    convertToTask: "Convertir en tarea",
-    confirmConvert: "Convertir en tarea ahora",
+    convertToTask: "Convertir en recordatorio",
+    confirmConvert: "Convertir en recordatorio ahora",
 
     footerHint:
-      "Convertir una idea en tarea no la duplica: la idea original pasa a ser una tarea.",
+      "Convertir una idea en recordatorio no la duplica: la idea original pasa a ser un recordatorio.",
   },
 
   profile: {
