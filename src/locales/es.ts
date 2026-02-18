@@ -385,6 +385,7 @@ export const es = {
     timeMinute: "Minutos",
     dateTimeLabel: "Fecha y hora",
     dateTimeNoneShort: "Sin fecha ni hora",
+    timeUnset: "Sin hora",
     placeholder: "Toca para escribir",
 
     title: "Vacía tu mente",

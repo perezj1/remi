@@ -367,6 +367,57 @@ function isDailyReminderIntent(foldedText: string): boolean {
   return detectDailyReminderPhrase(foldedText) !== null;
 }
 
+function hasScheduleRightAfterDailyReminderPhrase(text: string): boolean {
+  const folded = foldForMatch(text);
+  const patterns = [
+    /\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|acuerdate|remember\s+me|remind\s+me|erinnere\s+mich)\b[\s\S]{0,40}\b(cada\s+dia|todos?\s+los\s+dias|diariamente|a\s+diario|daily|every\s+day|each\s+day|jeden\s+tag|taglich)\b/gi,
+    /\b(cada\s+dia|todos?\s+los\s+dias|diariamente|a\s+diario|daily|every\s+day|each\s+day|jeden\s+tag|taglich)\b[\s\S]{0,40}\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|acuerdate|remember\s+me|remind\s+me|erinnere\s+mich)\b/gi,
+  ];
+
+  const hasScheduleInSameSentence = (tailRaw: string) => {
+    const tail = tailRaw.replace(/^[\s,;:.-]+/, "");
+    const stopAt = tail.search(/[.!?\n]/);
+    const segment = (stopAt === -1 ? tail : tail.slice(0, stopAt)).slice(0, 140);
+    return /\b(a\s+las|a\s+la|at|um)\s*\d{1,2}(?:[:.]\d{2})?\b/i.test(segment)
+      || /\b\d{1,2}(?:[:.]\d{2})\s*(am|pm|uhr)?\b/i.test(segment)
+      || /\b(hoy|manana|pasado\s+manana|today|tomorrow|day\s+after\s+tomorrow|heute|morgen|ubermorgen)\b/i.test(segment)
+      || /\b(\d{1,2}[/.:-]\d{1,2}(?:[/.:-]\d{2,4})?|\d{4}[/.:-]\d{1,2}[/.:-]\d{1,2})\b/i.test(segment)
+      || /\b\d{1,2}\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\b/i.test(segment)
+      || /\b\d{1,2}\s+(january|jan|february|feb|march|mar|april|apr|may|june|jun|july|jul|august|aug|september|sep|sept|october|oct|november|nov|december|dec)\b/i.test(segment)
+      || /\b\d{1,2}\.?\s+(januar|jan|februar|feb|marz|maerz|mar|april|apr|mai|juni|jun|juli|jul|august|aug|september|sep|oktober|okt|oct|november|nov|dezember|dez|dec)\b/i.test(segment);
+  };
+
+  for (const re of patterns) {
+    let match: RegExpExecArray | null = null;
+    while ((match = re.exec(folded)) !== null) {
+      const end = match.index + match[0].length;
+      const tail = folded.slice(end, end + 120);
+      if (hasScheduleInSameSentence(tail)) return true;
+    }
+  }
+  return false;
+}
+
+function hasUntilQualifierAfterDailyReminderPhrase(text: string): boolean {
+  const folded = foldForMatch(text);
+  const patterns = [
+    /\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|acuerdate|remember\s+me|remind\s+me|erinnere\s+mich)\b[\s\S]{0,40}\b(cada\s+dia|todos?\s+los\s+dias|diariamente|a\s+diario|daily|every\s+day|each\s+day|jeden\s+tag|taglich)\b/gi,
+    /\b(cada\s+dia|todos?\s+los\s+dias|diariamente|a\s+diario|daily|every\s+day|each\s+day|jeden\s+tag|taglich)\b[\s\S]{0,40}\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|acuerdate|remember\s+me|remind\s+me|erinnere\s+mich)\b/gi,
+  ];
+
+  for (const re of patterns) {
+    let match: RegExpExecArray | null = null;
+    while ((match = re.exec(folded)) !== null) {
+      const end = match.index + match[0].length;
+      const tail = folded.slice(end).replace(/^[\s,;:.-]+/, "");
+      const stopAt = tail.search(/[.!?\n]/);
+      const segment = (stopAt === -1 ? tail : tail.slice(0, stopAt)).slice(0, 180);
+      if (/\b(hasta|until|bis)\b/i.test(segment)) return true;
+    }
+  }
+  return false;
+}
+
 function detectReminderSignal(text: string): string | null {
   const s = foldForMatch(text);
 
@@ -2208,15 +2259,40 @@ export default function MindDumpModal({
 
     if (!reminderTouched) {
       const hasDetectedTime = !!parseTimeToHHMM(detectedTime);
-      const mode = mapReminderSignalToMode(detectedReminder, hasDetectedTime);
+      const isDailyReminder =
+        !!detectedReminder && isDailyReminderIntent(detectedReminder);
+      const dailyReminderHasUntil =
+        !!detectedReminder &&
+        isDailyReminderIntent(detectedReminder) &&
+        hasUntilQualifierAfterDailyReminderPhrase(currentLine || allTextForSignals);
+      const dailyReminderNeedsTrailingSchedule =
+        !!detectedReminder &&
+        isDailyReminderIntent(detectedReminder) &&
+        hasScheduleRightAfterDailyReminderPhrase(currentLine || allTextForSignals);
+      const mode =
+        isDailyReminder && dailyReminderHasUntil
+          ? "DAILY_UNTIL_DUE"
+          : mapReminderSignalToMode(
+              detectedReminder,
+              isDailyReminder ? dailyReminderNeedsTrailingSchedule : hasDetectedTime
+            );
       if (mode && mode !== reminderMode) setReminderMode(mode);
       if (!mode && reminderMode !== "NONE") setReminderMode("NONE");
     }
 
     if (!habitTouched) {
-      const hasDetectedTime = !!parseTimeToHHMM(detectedTime);
+      const dailyReminderHasUntil =
+        !!detectedReminder &&
+        isDailyReminderIntent(detectedReminder) &&
+        hasUntilQualifierAfterDailyReminderPhrase(currentLine || allTextForSignals);
+      const dailyReminderHasTrailingSchedule =
+        !!detectedReminder &&
+        isDailyReminderIntent(detectedReminder) &&
+        hasScheduleRightAfterDailyReminderPhrase(currentLine || allTextForSignals);
       const shouldForceReminderOnly =
-        !!detectedReminder && isDailyReminderIntent(detectedReminder) && !hasDetectedTime;
+        !!detectedReminder &&
+        isDailyReminderIntent(detectedReminder) &&
+        (dailyReminderHasUntil || !dailyReminderHasTrailingSchedule);
       const rt = shouldForceReminderOnly ? null : mapHabitSignalToRepeat(detectedHabit);
       if (rt && rt !== habitRepeat) setHabitRepeat(rt);
       if (!rt && habitRepeat !== "none") setHabitRepeat("none");
@@ -2227,6 +2303,8 @@ export default function MindDumpModal({
     detectedTime,
     detectedReminder,
     detectedHabit,
+    currentLine,
+    allTextForSignals,
     uiLang,
     dateTouched,
     timeTouched,

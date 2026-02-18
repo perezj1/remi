@@ -662,17 +662,69 @@ function hasDailyCadenceAny(raw: string): boolean {
 
 function hasReminderVerbAny(raw: string): boolean {
   const text = normalize(raw);
-  return /\b(recuerdame|recordarme|recorda(?:me|melo)?|acuerdate|recuérdame|remember|remember me|remind me|erinnere mich|erinner mich)\b/.test(
+  return /\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|recordarme|acuerdate|remember|remember me|remind(?: me)?|erinnere mich|erinner mich)\b/.test(
     text
   );
 }
 
-function hasExplicitTimeAny(raw: string): boolean {
-  if (parseTimeOverrideAny(raw)) return true;
+function hasDailyReminderPhraseAny(raw: string): boolean {
   const text = normalize(raw);
-  return /\b(\d{1,2}([:.]\d{2})?\s*(am|pm|uhr)|(?:a\s+las|a\s+la|at|um)\s*\d{1,2}([:.]\d{2})?)\b/.test(
-    text
-  );
+  const patterns = [
+    /\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|acuerdate|remember\s+me|remind\s+me|erinnere\s+mich)\b[\s\S]{0,40}\b(cada\s+dia|todos?\s+los\s+dias|diariamente|a\s+diario|daily|every\s+day|each\s+day|jeden\s+tag|taglich)\b/i,
+    /\b(cada\s+dia|todos?\s+los\s+dias|diariamente|a\s+diario|daily|every\s+day|each\s+day|jeden\s+tag|taglich)\b[\s\S]{0,40}\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|acuerdate|remember\s+me|remind\s+me|erinnere\s+mich)\b/i,
+  ];
+  return patterns.some((re) => re.test(text));
+}
+
+function hasScheduleRightAfterDailyReminderPhraseAny(raw: string): boolean {
+  const text = normalize(raw);
+  const patterns = [
+    /\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|acuerdate|remember\s+me|remind\s+me|erinnere\s+mich)\b[\s\S]{0,40}\b(cada\s+dia|todos?\s+los\s+dias|diariamente|a\s+diario|daily|every\s+day|each\s+day|jeden\s+tag|taglich)\b/gi,
+    /\b(cada\s+dia|todos?\s+los\s+dias|diariamente|a\s+diario|daily|every\s+day|each\s+day|jeden\s+tag|taglich)\b[\s\S]{0,40}\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|acuerdate|remember\s+me|remind\s+me|erinnere\s+mich)\b/gi,
+  ];
+
+  const hasScheduleInSameSentence = (tailRaw: string) => {
+    const tail = tailRaw.replace(/^[\s,;:.-]+/, "");
+    const stopAt = tail.search(/[.!?\n]/);
+    const segment = (stopAt === -1 ? tail : tail.slice(0, stopAt)).slice(0, 140);
+    return /\b(a\s+las|a\s+la|at|um)\s*\d{1,2}(?:[:.]\d{2})?\b/i.test(segment)
+      || /\b\d{1,2}(?:[:.]\d{2})\s*(am|pm|uhr)?\b/i.test(segment)
+      || /\b(hoy|manana|pasado\s+manana|today|tomorrow|day\s+after\s+tomorrow|heute|morgen|ubermorgen)\b/i.test(segment)
+      || /\b(\d{1,2}[/.:-]\d{1,2}(?:[/.:-]\d{2,4})?|\d{4}[/.:-]\d{1,2}[/.:-]\d{1,2})\b/i.test(segment)
+      || /\b\d{1,2}\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\b/i.test(segment)
+      || /\b\d{1,2}\s+(january|jan|february|feb|march|mar|april|apr|may|june|jun|july|jul|august|aug|september|sep|sept|october|oct|november|nov|december|dec)\b/i.test(segment)
+      || /\b\d{1,2}\.?\s+(januar|jan|februar|feb|marz|maerz|mar|april|apr|mai|juni|jun|juli|jul|august|aug|september|sep|oktober|okt|oct|november|nov|dezember|dez|dec)\b/i.test(segment);
+  };
+
+  for (const re of patterns) {
+    let match: RegExpExecArray | null = null;
+    while ((match = re.exec(text)) !== null) {
+      const end = match.index + match[0].length;
+      const tail = text.slice(end, end + 120);
+      if (hasScheduleInSameSentence(tail)) return true;
+    }
+  }
+  return false;
+}
+
+function hasUntilQualifierAfterDailyReminderPhraseAny(raw: string): boolean {
+  const text = normalize(raw);
+  const patterns = [
+    /\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|acuerdate|remember\s+me|remind\s+me|erinnere\s+mich)\b[\s\S]{0,40}\b(cada\s+dia|todos?\s+los\s+dias|diariamente|a\s+diario|daily|every\s+day|each\s+day|jeden\s+tag|taglich)\b/gi,
+    /\b(cada\s+dia|todos?\s+los\s+dias|diariamente|a\s+diario|daily|every\s+day|each\s+day|jeden\s+tag|taglich)\b[\s\S]{0,40}\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|acuerdate|remember\s+me|remind\s+me|erinnere\s+mich)\b/gi,
+  ];
+
+  for (const re of patterns) {
+    let match: RegExpExecArray | null = null;
+    while ((match = re.exec(text)) !== null) {
+      const end = match.index + match[0].length;
+      const tail = text.slice(end).replace(/^[\s,;:.-]+/, "");
+      const stopAt = tail.search(/[.!?\n]/);
+      const segment = (stopAt === -1 ? tail : tail.slice(0, stopAt)).slice(0, 180);
+      if (/\b(hasta|until|bis)\b/i.test(segment)) return true;
+    }
+  }
+  return false;
 }
 
 // Detectar si el texto sugiere un hábito recurrente
@@ -789,10 +841,11 @@ function detectRepeatHint(
 
 function detectRepeatHintAny(raw: string): ParsedResult["repeatHint"] {
   // Regla UX:
-  // "recuérdame cada día" (sin hora) => recordatorio diario, no repetición.
-  // Con hora explícita ("... a las 12") => repetición diaria.
-  if (hasDailyCadenceAny(raw) && hasReminderVerbAny(raw) && !hasExplicitTimeAny(raw)) {
-    return null;
+  // - "recuérdame cada día" => recordatorio diario
+  // - Solo pasa a repetición diaria si justo después de esa frase viene fecha/hora.
+  if (hasDailyReminderPhraseAny(raw) || (hasDailyCadenceAny(raw) && hasReminderVerbAny(raw))) {
+    if (hasUntilQualifierAfterDailyReminderPhraseAny(raw)) return null;
+    if (!hasScheduleRightAfterDailyReminderPhraseAny(raw)) return null;
   }
 
   for (const l of ALL_LOCALES) {
@@ -1066,10 +1119,12 @@ function normalizeRelativeWeeksAny(raw: string): string {
 
 function detectReminderHintAny(raw: string): ParsedResult["reminderHint"] {
   // Regla UX:
-  // "recuérdame cada día" (sin hora) => DAILY_UNTIL_DUE.
-  // Si incluye hora explícita, esa intención se trata como repetición diaria.
-  if (hasDailyCadenceAny(raw) && hasReminderVerbAny(raw) && !hasExplicitTimeAny(raw)) {
-    return "DAILY_UNTIL_DUE";
+  // - "recuérdame cada día" => DAILY_UNTIL_DUE.
+  // - Si justo después de esa frase hay fecha/hora, se tratará como repetición diaria.
+  if (hasDailyReminderPhraseAny(raw) || (hasDailyCadenceAny(raw) && hasReminderVerbAny(raw))) {
+    if (hasUntilQualifierAfterDailyReminderPhraseAny(raw)) return "DAILY_UNTIL_DUE";
+    if (!hasScheduleRightAfterDailyReminderPhraseAny(raw)) return "DAILY_UNTIL_DUE";
+    return null;
   }
 
   for (const l of ALL_LOCALES) {
@@ -1448,3 +1503,5 @@ export function parseDateTimeFromText(
 
   return { cleanTitle, dueDateISO, repeatHint, reminderHint };
 }
+
+

@@ -371,6 +371,7 @@ export const en = {
     timeMinute: "Minutes",
     dateTimeLabel: "Date and time",
     dateTimeNoneShort: "No date or time",
+    timeUnset: "No time",
     placeholder: "Tap to type",
 
     title: "Clear your mind",

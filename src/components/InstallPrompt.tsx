@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useI18n } from "@/contexts/I18nContext";
 
+const INSTALL_PROMPT_DISMISSED_KEY = "remi.installPrompt.dismissed.v1";
+
 declare global {
   interface BeforeInstallPromptEvent extends Event {
     prompt: () => Promise<void>;
@@ -36,8 +38,28 @@ export default function InstallPrompt() {
   const [showPwaPrompt, setShowPwaPrompt] = useState(false);
   const [showIosInstructions, setShowIosInstructions] = useState(false);
   const [isIos, setIsIos] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+
+  const persistDismissed = () => {
+    setDismissed(true);
+    try {
+      window.localStorage.setItem(INSTALL_PROMPT_DISMISSED_KEY, "1");
+    } catch {
+      // ignore storage errors
+    }
+  };
 
   useEffect(() => {
+    try {
+      const value = window.localStorage.getItem(INSTALL_PROMPT_DISMISSED_KEY);
+      if (value === "1") {
+        setDismissed(true);
+        return;
+      }
+    } catch {
+      // ignore storage errors
+    }
+
     const ios = detectIsIos();
     setIsIos(ios);
 
@@ -47,9 +69,10 @@ export default function InstallPrompt() {
   }, []);
 
   useEffect(() => {
-    if (isIos) return;
+    if (isIos || dismissed) return;
 
     const handler = (e: BeforeInstallPromptEvent) => {
+      if (dismissed) return;
       e.preventDefault();
       setDeferredPrompt(e);
       setShowPwaPrompt(true);
@@ -57,10 +80,11 @@ export default function InstallPrompt() {
 
     window.addEventListener("beforeinstallprompt", handler);
     return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, [isIos]);
+  }, [isIos, dismissed]);
 
   useEffect(() => {
     const openHandler = () => {
+      if (dismissed) return;
       if (isIos) {
         if (!detectIsStandalone()) setShowIosInstructions(true);
       } else if (deferredPrompt) {
@@ -70,7 +94,7 @@ export default function InstallPrompt() {
 
     window.addEventListener("remi-open-install", openHandler);
     return () => window.removeEventListener("remi-open-install", openHandler);
-  }, [isIos, deferredPrompt]);
+  }, [isIos, deferredPrompt, dismissed]);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
@@ -83,8 +107,14 @@ export default function InstallPrompt() {
     setShowPwaPrompt(false);
   };
 
-  const handleClosePwa = () => setShowPwaPrompt(false);
-  const handleCloseIos = () => setShowIosInstructions(false);
+  const handleClosePwa = () => {
+    setShowPwaPrompt(false);
+    persistDismissed();
+  };
+  const handleCloseIos = () => {
+    setShowIosInstructions(false);
+    persistDismissed();
+  };
 
   if (!showPwaPrompt && !showIosInstructions) return null;
 

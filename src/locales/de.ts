@@ -370,6 +370,7 @@ export const de = {
     timeMinute: "Minuten",
     dateTimeLabel: "Datum und Uhrzeit",
     dateTimeNoneShort: "Ohne Datum/Uhrzeit",
+    timeUnset: "Keine Uhrzeit",
     placeholder: "Tippen zum Schreiben",
 
     title: "Kopf frei machen",
