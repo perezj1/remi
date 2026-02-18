@@ -390,7 +390,7 @@ export default function IdeasPage() {
                                     fontSize: "clamp(16px, 1.1vw, 26px)",
                                   }}
                                 >
-                                  Idea
+                                  {t("pill.type.idea")}
                                 </p>
                                 <p
                                   className="mt-1 text-slate-700"

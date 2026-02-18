@@ -236,7 +236,7 @@ export default function TaskEditModal({
     const trimmed = title.trim();
     if (!trimmed) return;
 
-    const { dueDateISO, repeatHint } = parseDateTimeFromText(trimmed, lang);
+    const { dueDateISO, repeatHint, reminderHint } = parseDateTimeFromText(trimmed, lang);
 
     if (dueDateISO && !manualDateOverride) {
       const d = new Date(dueDateISO);
@@ -250,6 +250,10 @@ export default function TaskEditModal({
         setRepeatEnabled(true);
         setRepeatType(repeatHint as RepeatType);
         setReminderMode("NONE");
+      } else if (reminderHint) {
+        setRepeatEnabled(false);
+        setRepeatType("none");
+        setReminderMode(reminderHint as ReminderMode);
       }
     }
   }, [title, lang, manualDateOverride, manualRepeatOverride, applyDateTime]);

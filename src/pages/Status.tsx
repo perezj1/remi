@@ -1,5 +1,5 @@
 ﻿// src/pages/Status.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Flame,
@@ -238,7 +238,7 @@ function RemiAvatar({
 export default function StatusPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   const [summary, setSummary] = useState<RemiStatusSummary | null>(null);
   const [insights, setInsights] = useState<RemiStatusInsights | null>(null);
@@ -284,10 +284,22 @@ export default function StatusPage() {
   const ideaSharePercent = totalItemsStored > 0 ? Math.round((totalIdeasStored / totalItemsStored) * 100) : 0;
   const streakDays = summary?.streakDays ?? 0;
   const daysSinceLastActivity = summary?.daysSinceLastActivity ?? null;
-  const weekDateLabels = insights?.weekDateLabels ?? ["L", "M", "X", "J", "V", "S", "D"];
   const capturedSeries = insights?.capturedSeries ?? [0, 0, 0, 0, 0, 0, 0];
   const resolvedSeries = insights?.resolvedSeries ?? [0, 0, 0, 0, 0, 0, 0];
   const balanceMax = Math.max(1, ...capturedSeries, ...resolvedSeries);
+  const weekDateLabels = useMemo(() => {
+    const locale = lang === "de" ? "de-DE" : lang === "en" ? "en-US" : "es-ES";
+    const fmt = new Intl.DateTimeFormat(locale, { weekday: "short" });
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - 6);
+    return Array.from({ length: 7 }).map((_, idx) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + idx);
+      const s = fmt.format(d).replace(".", "").trim();
+      return (s[0] ?? "-").toUpperCase();
+    });
+  }, [lang]);
 
   // Mind clear score rewards offloading/completing and decays with inactivity.
   const mindClearPercent = (() => {
@@ -494,10 +506,10 @@ export default function StatusPage() {
             <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="rounded-[18px] border p-3.5" style={{ background: "#596dc912", borderColor: "#596dc955" }}>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.04em]" style={{ color: "#46579f" }}>
-                  Balance de carga mental
+                  {t("status.mentalLoadTitle")}
                 </p>
                 <p className="mt-1 text-slate-600" style={{ fontSize: "clamp(12px, 0.8vw, 15px)" }}>
-                  Capturado vs resuelto en los ultimos 7 dias
+                  {t("status.mentalLoadSubtitle")}
                 </p>
                 <div className="mt-2 rounded-xl bg-white/70 p-2.5">
                   <div className="grid grid-cols-7 gap-1.5">
@@ -511,12 +523,12 @@ export default function StatusPage() {
                             <span
                               className="w-1.5 rounded-sm"
                               style={{ height: `${capturedHeight}px`, background: "#7d59c9" }}
-                              title={`Capturado: ${captured}`}
+                              title={t("status.mentalCapturedTooltip", { count: captured })}
                             />
                             <span
                               className="w-1.5 rounded-sm"
                               style={{ height: `${resolvedHeight}px`, background: "#59c9b5" }}
-                              title={`Resuelto: ${resolved}`}
+                              title={t("status.mentalResolvedTooltip", { count: resolved })}
                             />
                           </div>
                           <span className="text-[10px] font-semibold text-slate-500">{weekDateLabels[idx] ?? "-"}</span>
@@ -527,11 +539,11 @@ export default function StatusPage() {
                   <div className="mt-2 flex items-center gap-3 text-[11px] text-slate-600">
                     <span className="inline-flex items-center gap-1">
                       <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#7d59c9" }} />
-                      Capturado
+                      {t("status.memoryCaptured")}
                     </span>
                     <span className="inline-flex items-center gap-1">
                       <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#59c9b5" }} />
-                      Resuelto
+                      {t("status.memoryResolved")}
                     </span>
                   </div>
                 </div>
@@ -539,10 +551,10 @@ export default function StatusPage() {
 
               <div className="rounded-[18px] border p-3.5" style={{ background: "#f4cf6a1f", borderColor: "#f4dc9a" }}>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-slate-900">
-                  Distribucion de memoria
+                  {t("status.memoryDistributionTitle")}
                 </p>
                 <p className="mt-1 text-slate-600" style={{ fontSize: "clamp(12px, 0.8vw, 15px)" }}>
-                  Que tipo de carga estas delegando en Remi
+                  {t("status.memoryDistributionSubtitle")}
                 </p>
                 <div className="mt-3 h-3.5 overflow-hidden rounded-full bg-white/70">
                   <div className="h-full" style={{ width: `${taskSharePercent}%`, background: "#7d59c9", float: "left" }} />
@@ -550,11 +562,11 @@ export default function StatusPage() {
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2 text-[12px]">
                   <div className="rounded-xl border border-violet-200 bg-white/65 p-2 text-center">
-                    <p className="font-semibold text-violet-700">Tareas</p>
+                    <p className="font-semibold text-violet-700">{t("status.memoryTasksLabel")}</p>
                     <p className="mt-0.5 font-extrabold text-slate-900">{totalTasksStored} ({taskSharePercent}%)</p>
                   </div>
                   <div className="rounded-xl border bg-white/65 p-2 text-center" style={{ borderColor: "#f4dc9a" }}>
-                    <p className="font-semibold" style={{ color: "#b48617" }}>Ideas</p>
+                    <p className="font-semibold" style={{ color: "#b48617" }}>{t("status.memoryIdeasLabel")}</p>
                     <p className="mt-0.5 font-extrabold text-slate-900">{totalIdeasStored} ({ideaSharePercent}%)</p>
                   </div>
                 </div>

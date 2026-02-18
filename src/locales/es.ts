@@ -228,6 +228,16 @@ export const es = {
     weekSectionSubtitle:
       "Cada día que usas Remi, tu cabeza tiene un poco menos de carga.",
     weekActiveLabel: "Días activos esta semana",
+    mentalLoadTitle: "Balance de carga mental",
+    mentalLoadSubtitle: "Capturado vs resuelto en los ?ltimos 7 d?as",
+    mentalCapturedTooltip: "Capturado: {{count}}",
+    mentalResolvedTooltip: "Resuelto: {{count}}",
+    memoryCaptured: "Capturado",
+    memoryResolved: "Resuelto",
+    memoryDistributionTitle: "Distribuci?n de memoria",
+    memoryDistributionSubtitle: "Qu? tipo de carga est?s delegando a Remi",
+    memoryTasksLabel: "Recordatorios",
+    memoryIdeasLabel: "Ideas",
     usersTitle: "Cada vez somos más cuidando nuestra mente",
     usersSubtitle: "Total de usuarios en Remi",
     usersUnavailable: "No disponible",
@@ -422,7 +432,7 @@ export const es = {
   pill: {
     type: {
       label: "Tipo",
-      task: "Tarea",
+      task: "Recordatorio",
       idea: "Idea",
     },
 
@@ -613,6 +623,11 @@ export const es = {
         body: "Comparte recordatorios o ideas.\n Los demás los añaden a su Remi en 1 toque.",
         cta: "Ver cómo",
       },
+      shareApp: {
+        title: "Compartir Remi",
+        body: "Invita a alguien a probar Remi en un toque.",
+        cta: "Compartir",
+      },
 
       multidevice: {
         title: "Remi siempre contigo",
@@ -622,7 +637,7 @@ export const es = {
       },
 
       smartShortcuts: {
-        title: "Atajos inteligentes (ahorran 10s)",
+        title: "Atajos inteligentes",
         body: "Agrega palabras con 1 toque. \nEj: Idea / Comprar / a las 18:00.",
         cta: "Probar ahora",
         prefill: "Comprar: leche, pan, huevos",
@@ -642,7 +657,7 @@ export const es = {
       },
 
       iosDict: {
-        title: "Activa el micrófono del teclado",
+        title: "Habla con Remi",
         body:
           "Si no ves el micro en el teclado, actívalo en Ajustes y dicta más rápido.",
         cta: "Ver cómo",
@@ -853,6 +868,8 @@ export const es = {
     devicePushNeedsPermissionLine:
       "Aún no has concedido permiso en este dispositivo.",
     devicePushNeedsRegisterLine: "Permiso OK, pero falta activar aquí.",
+    devicePushPaused: "Pausadas",
+    devicePushPausedLine: "Pausado en este dispositivo",
     devicePushActiveLine: "Activo en este dispositivo ✅",
     devicePushToggleAria:
       "Activar o pausar notificaciones en este dispositivo",
@@ -1229,4 +1246,3 @@ export const es = {
     },
   },
 } as const;
-

@@ -407,7 +407,7 @@ export default function TasksPage() {
                                     fontSize: "clamp(16px, 1.1vw, 26px)",
                                   }}
                                 >
-                                  Recordatorio
+                                  {t("pill.type.task")}
                                 </p>
                                 <p
                                   className="mt-1 text-slate-700"

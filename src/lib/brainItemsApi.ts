@@ -494,6 +494,40 @@ export async function convertIdeaToTask(
   return converted;
 }
 
+/**
+ * ConvertTaskToIdea se mantiene online por ahora.
+ */
+export async function convertTaskToIdea(
+  id: string,
+  title: string
+): Promise<BrainItem> {
+  const { data, error } = await supabase
+    .from("brain_items")
+    .update({
+      type: "idea",
+      title,
+      due_date: null,
+      reminder_mode: "NONE",
+      repeat_type: "none",
+      next_reminder_at: null,
+      is_habit: false,
+      habit_offset_minutes: 0,
+      next_notification_at: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("type", "task")
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  const converted = data as BrainItem;
+  cacheRemoveTask(converted.user_id, converted.id);
+  cacheUpsertIdea(converted.user_id, converted);
+  return converted;
+}
+
 export async function setTaskStatus(
   id: string,
   status: BrainItemStatus

@@ -10,6 +10,7 @@ import {
   updateIdeaTitle,
   convertIdeaToTask,
 } from "@/lib/brainItemsApi";
+import { parseDateTimeFromText } from "@/lib/parseDateTimeFromText";
 
 // ✅ NUEVO
 import { useModalUi } from "@/contexts/ModalUiContext";
@@ -31,7 +32,7 @@ export default function IdeaEditModal({
   onUpdated,
   onConverted,
 }: IdeaEditModalProps) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   // ✅ NUEVO
   const { setModalOpen } = useModalUi();
@@ -228,6 +229,32 @@ export default function IdeaEditModal({
     setSelectedMinute(d.getMinutes());
     setCalendarMonth(new Date(d.getFullYear(), d.getMonth(), 1));
   }, [dueDateTime]);
+
+  // Detectar fecha/hora + hábito desde el texto (igual criterio que TaskEditModal)
+  useEffect(() => {
+    if (!showTaskOptions) return;
+    const trimmed = title.trim();
+    if (!trimmed) return;
+
+    const { dueDateISO, repeatHint, reminderHint } = parseDateTimeFromText(trimmed, lang);
+
+    if (dueDateISO) {
+      const d = new Date(dueDateISO);
+      if (!Number.isNaN(d.getTime())) {
+        applyDateTime(d, d.getHours(), d.getMinutes(), "CUSTOM");
+      }
+    }
+
+    if (repeatHint) {
+      setRepeatEnabled(true);
+      setRepeatType(repeatHint as RepeatType);
+      setReminderMode("NONE");
+    } else if (reminderHint) {
+      setRepeatEnabled(false);
+      setRepeatType("none");
+      setReminderMode(reminderHint as ReminderMode);
+    }
+  }, [showTaskOptions, title, lang, applyDateTime]);
 
   if (!open || !idea) return null;
   if (idea.type !== "idea") return null;

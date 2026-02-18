@@ -221,6 +221,16 @@ export const de = {
     weekSectionSubtitle:
       "Jeder Tag mit Remi bedeutet ein bisschen weniger Last im Kopf.",
     weekActiveLabel: "Aktive Tage diese Woche",
+    mentalLoadTitle: "Balance der mentalen Last",
+    mentalLoadSubtitle: "Erfasst vs gel\u00F6st in den letzten 7 Tagen",
+    mentalCapturedTooltip: "Erfasst: {{count}}",
+    mentalResolvedTooltip: "Gel\u00F6st: {{count}}",
+    memoryCaptured: "Erfasst",
+    memoryResolved: "Gel\u00F6st",
+    memoryDistributionTitle: "Ged\u00E4chtnisverteilung",
+    memoryDistributionSubtitle: "Welche Art von Last delegierst du an Remi",
+    memoryTasksLabel: "Erinnerungen",
+    memoryIdeasLabel: "Ideen",
     usersTitle: "Immer mehr Menschen entlasten ihren Kopf",
     usersSubtitle: "Gesamtzahl der Remi-Nutzer",
     usersUnavailable: "Nicht verfugbar",
@@ -406,7 +416,7 @@ export const de = {
   pill: {
     type: {
       label: "Typ",
-      task: "Aufgabe",
+      task: "Erinnerung",
       idea: "Idee",
     },
 
@@ -589,16 +599,21 @@ export const de = {
         body: "Teile Erinnerungen oder Ideen.\nAndere fügen sie mit einem Tipp zu Remi hinzu.",
         cta: "So geht's",
       },
+      shareApp: {
+        title: "Remi teilen",
+        body: "Lade jemanden ein, Remi mit einem Tipp zu testen.",
+        cta: "Teilen",
+      },
 
       multidevice: {
-        title: "Remi auf Handy, iPad/Tablet und PC",
+        title: "Remi immer bei dir",
         body:
           "Mach deinen Kopf frei – egal wo du bist. Alles synchronisiert, und du entscheidest, auf welchem Gerät du Benachrichtigungen willst.",
         cta: "So funktioniert's",
       },
 
       smartShortcuts: {
-        title: "Smarte Shortcuts (sparen 10s)",
+        title: "Smarte Shortcuts",
         body: "Füge Wörter mit 1 Tipp hinzu.\nZ. B. Idee / Kaufen / um 18:00.",
         cta: "Jetzt testen",
         prefill: "Kaufen: Milch, Brot, Eier",
@@ -618,7 +633,7 @@ export const de = {
       },
 
       iosDict: {
-        title: "Aktiviere das Tastatur-Mikro",
+        title: "Sprich mit Remi",
         body:
           "Wenn du das Mikro in der Tastatur nicht siehst, aktiviere es in den Einstellungen und diktiere schneller.",
         cta: "Anleitung",
@@ -834,6 +849,8 @@ export const de = {
     devicePushNeedsPermissionLine:
       "Du hast auf diesem Gerät noch keine Berechtigung erteilt.",
     devicePushNeedsRegisterLine: "Berechtigung OK, aber hier noch nicht aktiviert.",
+    devicePushPaused: "Pausiert",
+    devicePushPausedLine: "Auf diesem Gerät pausiert",
     devicePushActiveLine: "Aktiv auf diesem Gerät ✅",
     devicePushToggleAria:
       "Benachrichtigungen auf diesem Gerät aktivieren oder pausieren",

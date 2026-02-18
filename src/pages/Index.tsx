@@ -118,6 +118,7 @@ const TIP_EMOJI_BY_ID: Record<string, string> = {
   push: "🔔",
   "ios-dictation": "🎙️",
   "multi-device": "💻",
+  "share-app": "📣",
   "share-reminders": "🔗",
   shortcuts: "⚡",
   "day-close": "🌙",
@@ -925,7 +926,7 @@ const anyModalOpen =
         id: "ios-dictation",
         title: safeT(
           "today.tip.iosDict.title",
-          "Activa el micrófono del teclado",
+          "Habla con Remi",
         ),
         body: safeT(
           "today.tip.iosDict.body",
@@ -989,17 +990,17 @@ const anyModalOpen =
     }
 
     cards.push({
-      id: "paste",
-      title: safeT("today.tip.paste.title", "¿Has probado a pegar texto?"),
+      id: "improve-remi",
+      title: safeT("today.tip.feedback.title", "Mejora Remi"),
       body: safeT(
-        "today.tip.paste.body",
-        "Copia cualquier cosa (WhatsApp, Mail, Notas) y deja que Remi lo ordene.",
+        "today.tip.feedback.body",
+        "Cuéntanos en 20 segundos qué te está ayudando y qué mejorarías.",
       ),
-      cta: safeT("today.tip.paste.cta", "Pegar ahora"),
-      icon: <ClipboardPaste size={18} />,
+      cta: safeT("today.tip.feedback.cta", "Dar opinión"),
+      icon: <Sparkles size={18} />,
       bg: "",
-      border: "rgba(59,130,246,0.65)",
-      onClick: () => void handlePasteFromClipboard(),
+      border: "rgba(125,89,201,0.70)",
+      onClick: () => setShowFeedbackSurvey(true),
     });
 
       if (!dismissedTips[SHARE_REMINDERS_TIP_KEY]) {
@@ -1021,6 +1022,20 @@ const anyModalOpen =
         });
       }
 
+    cards.push({
+      id: "share-app",
+      title: safeT("today.tip.shareApp.title", "Compartir Remi"),
+      body: safeT(
+        "today.tip.shareApp.body",
+        "Invita a alguien a probar Remi en un toque.",
+      ),
+      cta: safeT("today.tip.shareApp.cta", "Compartir"),
+      icon: <Share2 size={18} />,
+      bg: "",
+      border: "rgba(125,89,201,0.70)",
+      onClick: () => void handleShareApp(),
+    });
+
 
     cards.push({
       id: "natural",
@@ -1040,17 +1055,17 @@ const anyModalOpen =
     });
 
     cards.push({
-      id: "improve-remi",
-      title: safeT("today.tip.feedback.title", "Mejora Remi"),
+      id: "paste",
+      title: safeT("today.tip.paste.title", "¿Has probado a pegar texto?"),
       body: safeT(
-        "today.tip.feedback.body",
-        "Cuéntanos en 20 segundos qué te está ayudando y qué mejorarías.",
+        "today.tip.paste.body",
+        "Copia cualquier cosa (WhatsApp, Mail, Notas) y deja que Remi lo ordene.",
       ),
-      cta: safeT("today.tip.feedback.cta", "Dar opinión"),
-      icon: <Sparkles size={18} />,
+      cta: safeT("today.tip.paste.cta", "Pegar ahora"),
+      icon: <ClipboardPaste size={18} />,
       bg: "",
-      border: "rgba(125,89,201,0.70)",
-      onClick: () => setShowFeedbackSurvey(true),
+      border: "rgba(59,130,246,0.65)",
+      onClick: () => void handlePasteFromClipboard(),
     });
 
     cards.push({
@@ -1523,7 +1538,7 @@ const anyModalOpen =
         <div className="mt-2">
           <div>
             <p className="font-extrabold text-slate-900" style={{ fontSize: "clamp(15px, 0.9vw, 20px)" }}>
-              Recordatorios
+              {safeT("inbox.tasksTab", "Recordatorios")}
             </p>
           </div>
 
@@ -1567,7 +1582,7 @@ const anyModalOpen =
                               className="font-semibold text-slate-900 leading-snug"
                               style={{ fontSize: "clamp(16px, 1.1vw, 26px)" }}
                             >
-                              Recordatorio
+                              {safeT("pill.type.task", "Recordatorio")}
                             </p>
                             <p
                               className="mt-1 text-slate-700"
@@ -1660,7 +1675,7 @@ const anyModalOpen =
                                     className="font-semibold text-slate-900 leading-snug"
                                     style={{ fontSize: "clamp(16px, 1.1vw, 26px)" }}
                                   >
-                                    Recordatorio
+                                    {safeT("pill.type.task", "Recordatorio")}
                                   </p>
                                   <p
                                     className="mt-1 text-slate-700"

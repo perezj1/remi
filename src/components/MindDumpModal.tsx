@@ -317,10 +317,6 @@ function detectTimeSignal(text: string): string | null {
 function detectHabitSignal(text: string): string | null {
   const s = foldForMatch(text);
 
-  // If the phrase explicitly asks Remi to "remind me" daily,
-  // we treat it as reminder intent (not repeating habit intent).
-  if (isDailyReminderIntent(s)) return null;
-
   const daily =
     s.match(
       /\b(cada\s+dia|todos\s+los\s+dias|a\s+diario|daily|every\s+day|each\s+day|taglich|jeden\s+tag)\b/i
@@ -335,7 +331,7 @@ function detectHabitSignal(text: string): string | null {
 
   const weeklyByWeekday =
     s.match(
-      /\b((todos?\s+los|todas?\s+las|cada)\s+(lunes|martes|miercoles|jueves|viernes|sabado|domingo)|every\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)|on\s+(mondays|tuesdays|wednesdays|thursdays|fridays|saturdays|sundays)|jeden\s+(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)|am\s+(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag))\b/i
+      /\b((todos?\s+los|todas?\s+las|cada)\s+(lunes|martes|miercoles|jueves|viernes|sabado|domingo)|((cada|todas?\s+las)\s+semana(s)?\s+(los?\s+)?(lunes|martes|miercoles|jueves|viernes|sabado|domingo))|every\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)|every\s+week\s+on\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)|on\s+(mondays|tuesdays|wednesdays|thursdays|fridays|saturdays|sundays)|jeden\s+(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)|jede\s+woche\s+am\s+(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)|am\s+(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag))\b/i
     )?.[0] ?? null;
   if (weeklyByWeekday) return weeklyByWeekday;
 
@@ -354,19 +350,28 @@ function detectHabitSignal(text: string): string | null {
   return null;
 }
 
+function detectDailyReminderPhrase(foldedText: string): string | null {
+  const patterns = [
+    /\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|acuerdate|remember\s+me|remind\s+me|erinnere\s+mich)\b[\s\S]{0,40}\b(cada\s+dia|todos?\s+los\s+dias|diariamente|a\s+diario|daily|every\s+day|each\s+day|jeden\s+tag|taglich)\b/i,
+    /\b(cada\s+dia|todos?\s+los\s+dias|diariamente|a\s+diario|daily|every\s+day|each\s+day|jeden\s+tag|taglich)\b[\s\S]{0,40}\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|acuerdate|remember\s+me|remind\s+me|erinnere\s+mich)\b/i,
+  ];
+
+  for (const re of patterns) {
+    const hit = foldedText.match(re)?.[0] ?? null;
+    if (hit) return hit;
+  }
+  return null;
+}
+
 function isDailyReminderIntent(foldedText: string): boolean {
-  const remindVerb =
-    /\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|acuerdate|remember\s+me|remind\s+me|erinnere\s+mich)\b/i;
-  const dailyCadence =
-    /\b(cada\s+dia|todos?\s+los\s+dias|diariamente|a\s+diario|daily|every\s+day|each\s+day|jeden\s+tag|taglich)\b/i;
-  return remindVerb.test(foldedText) && dailyCadence.test(foldedText);
+  return detectDailyReminderPhrase(foldedText) !== null;
 }
 
 function detectReminderSignal(text: string): string | null {
   const s = foldForMatch(text);
 
-  // Strong intent: "remind me each day" must map to daily reminder mode.
-  if (isDailyReminderIntent(s)) return "daily until";
+  const dailyReminderPhrase = detectDailyReminderPhrase(s);
+  if (dailyReminderPhrase) return dailyReminderPhrase;
 
   const dayBefore =
     s.match(
@@ -382,14 +387,20 @@ function detectReminderSignal(text: string): string | null {
 
   const daily =
     s.match(
-      /\b(todos\s+los\s+dias\s+hasta|cada\s+dia\s+hasta|diariamente|a\s+diario|every\s+day\s+until|daily\s+until|every\s+day|each\s+day|jeden\s+tag\s+bis|jeden\s+tag|taglich)\b/i
+      /\b(todos\s+los\s+dias\s+hasta|cada\s+dia\s+hasta|every\s+day\s+until|daily\s+until|jeden\s+tag\s+bis)\b/i
     )?.[0] ?? null;
   if (daily) return daily;
 
   return null;
 }
 
-type HighlightKind = "date" | "time" | "reminder" | "habit";
+function detectIdeaSignal(text: string): string | null {
+  const s = foldForMatch(text);
+  const hit = s.match(/\b(idea|idee)\b/i)?.[0] ?? null;
+  return hit;
+}
+
+type HighlightKind = "date" | "time" | "reminder" | "habit" | "idea";
 type HighlightToken = {
   start: number;
   end: number;
@@ -397,6 +408,7 @@ type HighlightToken = {
 };
 
 const HIGHLIGHT_PRIORITY: Record<HighlightKind, number> = {
+  idea: 5,
   reminder: 4,
   time: 3,
   date: 2,
@@ -422,6 +434,11 @@ const HIGHLIGHT_PATTERNS: Array<{ kind: HighlightKind; regex: RegExp }> = [
     kind: "habit",
     regex:
       /\b(cada\s+d[ií]a|todos\s+los\s+d[ií]as|a\s+diario|daily|every\s+day|t[aä]glich|jeden\s+tag|cada\s+semana|semanal(?:mente)?|weekly|every\s+week|w[öo]chentlich|jede\s+woche|cada\s+mes|mensual(?:mente)?|monthly|every\s+month|monatlich|jeden\s+monat|cada\s+año|cada\s+ano|anual(?:mente)?|yearly|every\s+year|j[aä]hrlich|jedes\s+jahr)\b/gi,
+  },
+
+  {
+    kind: "idea",
+    regex: /\b(idea|idee)\b/gi,
   },
 ];
 
@@ -526,8 +543,10 @@ function buildHighlightedHtml(text: string, tokens: HighlightToken[]): string {
   if (!text) return "";
   if (!tokens.length) return escapeHtml(text).replace(/\n/g, "<br>");
 
-  // Highlight recognized fragments using text color only (no pill background/border).
-  const hlStyle = `color:${REMI_PURPLE};font-weight:500;`;
+  const styleFor = (kind: HighlightKind) =>
+    kind === "idea"
+      ? "color:#b48617;font-weight:600;"
+      : `color:${REMI_PURPLE};font-weight:600;`;
 
   let out = "";
   let cursor = 0;
@@ -536,7 +555,7 @@ function buildHighlightedHtml(text: string, tokens: HighlightToken[]): string {
       out += escapeHtml(text.slice(cursor, token.start));
     }
     const piece = escapeHtml(text.slice(token.start, token.end));
-    out += `<span style="${hlStyle}">${piece}</span>`;
+    out += `<span style="${styleFor(token.kind)}">${piece}</span>`;
     cursor = token.end;
   }
   if (cursor < text.length) out += escapeHtml(text.slice(cursor));
@@ -1023,9 +1042,16 @@ function parseDateToISO(signal: string | null, uiLang: UiLang): string | null {
   return null;
 }
 
-function mapReminderSignalToMode(signal: string | null): ReminderMode | null {
+function mapReminderSignalToMode(signal: string | null, hasDetectedTime: boolean): ReminderMode | null {
   if (!signal) return null;
   const s = foldForMatch(signal);
+
+  // Rule:
+  // - "recuérdamelo cada día / every day" WITHOUT time => daily reminder
+  // - same phrase WITH time => daily repeat (handled by habit), not reminder
+  if (isDailyReminderIntent(s)) {
+    return hasDetectedTime ? null : "DAILY_UNTIL_DUE";
+  }
 
   if (/\b(dia\s+de\s+antes|dia\s+antes|un\s+dia\s+antes|1\s*dia\s+antes|el\s+dia\s+anterior|day\s+before|the\s+day\s+before|one\s+day\s+before|vortag|tag\s+vorher)\b/i.test(s)) {
     return "DAY_BEFORE_AND_DUE";
@@ -1033,7 +1059,7 @@ function mapReminderSignalToMode(signal: string | null): ReminderMode | null {
   if (/\b(una\s+semana\s+antes|1\s+semana\s+antes|week\s+before|one\s+week\s+before|eine\s+woche\s+vorher|eine\s+woche\s+davor)\b/i.test(s)) {
     return "WEEK_BEFORE_AND_DUE";
   }
-  if (/\b(todos?\s+los\s+dias\s+hasta|cada\s+dia\s+hasta|diariamente|a\s+diario|every\s+day(?:\s+until)?|each\s+day|daily(?:\s+until)?|jeden\s+tag(?:\s+bis)?|taglich)\b/i.test(s)) {
+  if (/\b(todos?\s+los\s+dias\s+hasta|cada\s+dia\s+hasta|every\s+day\s+until|daily\s+until|jeden\s+tag\s+bis)\b/i.test(s)) {
     return "DAILY_UNTIL_DUE";
   }
   return null;
@@ -1045,6 +1071,7 @@ function mapHabitSignalToRepeat(signal: string | null): RepeatType | null {
 
   if (
     s.includes("cada dia") ||
+    s.includes("todos los dias") ||
     s.includes("every day") ||
     s.includes("each day") ||
     s.includes("taglich") ||
@@ -1062,7 +1089,7 @@ function mapHabitSignalToRepeat(signal: string | null): RepeatType | null {
   )
     return "weekly";
   if (
-    /\b((todos?\s+los|todas?\s+las|cada)\s+(lunes|martes|miercoles|jueves|viernes|sabado|domingo)|every\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)|on\s+(mondays|tuesdays|wednesdays|thursdays|fridays|saturdays|sundays)|jeden\s+(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)|am\s+(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag))\b/i.test(
+    /\b((todos?\s+los|todas?\s+las|cada)\s+(lunes|martes|miercoles|jueves|viernes|sabado|domingo)|((cada|todas?\s+las)\s+semana(s)?\s+(los?\s+)?(lunes|martes|miercoles|jueves|viernes|sabado|domingo))|every\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)|every\s+week\s+on\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)|on\s+(mondays|tuesdays|wednesdays|thursdays|fridays|saturdays|sundays)|jeden\s+(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)|jede\s+woche\s+am\s+(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)|am\s+(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag))\b/i.test(
       s
     )
   )
@@ -2043,13 +2070,10 @@ export default function MindDumpModal({
 
   useEffect(() => {
     if (!open) return;
-    if (typeTouched) return;
-
-    const next: ItemKind = activeRootChip === "idea" ? "idea" : "task";
-    if (next !== itemKind) {
-      setItemKind(next);
-
-      if (next === "idea") {
+    // Si el texto detecta explícitamente "idea", priorizamos siempre ese tipo.
+    if (activeRootChip === "idea") {
+      if (itemKind !== "idea") {
+        setItemKind("idea");
         setPickedDate("");
         setPickedTime("");
         setReminderMode("NONE");
@@ -2059,6 +2083,14 @@ export default function MindDumpModal({
         setReminderTouched(false);
         setHabitTouched(false);
       }
+      return;
+    }
+
+    if (typeTouched) return;
+
+    const next: ItemKind = "task";
+    if (next !== itemKind) {
+      setItemKind(next);
     }
   }, [open, activeRootChip, typeTouched, itemKind]);
 
@@ -2113,6 +2145,7 @@ export default function MindDumpModal({
   const detectedTime = detectTimeSignal(currentLine) ?? detectTimeSignal(allTextForSignals);
   const detectedReminder = detectReminderSignal(currentLine) ?? detectReminderSignal(allTextForSignals);
   const detectedHabit = detectHabitSignal(currentLine) ?? detectHabitSignal(allTextForSignals);
+  const detectedIdea = detectIdeaSignal(currentLine) ?? detectIdeaSignal(allTextForSignals);
   const highlightTokens = useMemo(() => {
     const base = collectHighlightTokens(text);
     const fromSignals = collectSignalTokens(text, [
@@ -2120,6 +2153,7 @@ export default function MindDumpModal({
       { kind: "time", value: detectedTime },
       { kind: "reminder", value: detectedReminder },
       { kind: "habit", value: detectedHabit },
+      { kind: "idea", value: detectedIdea },
     ]);
     const merged = [...base, ...fromSignals];
     if (merged.length === 0) return merged;
@@ -2139,7 +2173,7 @@ export default function MindDumpModal({
       if (!overlaps) selected.push(token);
     }
     return selected.sort((a, b) => a.start - b.start);
-  }, [text, detectedDate, detectedTime, detectedReminder, detectedHabit]);
+  }, [text, detectedDate, detectedTime, detectedReminder, detectedHabit, detectedIdea]);
   const highlightedHtml = useMemo(() => buildHighlightedHtml(text, highlightTokens), [text, highlightTokens]);
 
   useEffect(() => {
@@ -2173,13 +2207,17 @@ export default function MindDumpModal({
     }
 
     if (!reminderTouched) {
-      const mode = mapReminderSignalToMode(detectedReminder);
+      const hasDetectedTime = !!parseTimeToHHMM(detectedTime);
+      const mode = mapReminderSignalToMode(detectedReminder, hasDetectedTime);
       if (mode && mode !== reminderMode) setReminderMode(mode);
       if (!mode && reminderMode !== "NONE") setReminderMode("NONE");
     }
 
     if (!habitTouched) {
-      const rt = mapHabitSignalToRepeat(detectedHabit);
+      const hasDetectedTime = !!parseTimeToHHMM(detectedTime);
+      const shouldForceReminderOnly =
+        !!detectedReminder && isDailyReminderIntent(detectedReminder) && !hasDetectedTime;
+      const rt = shouldForceReminderOnly ? null : mapHabitSignalToRepeat(detectedHabit);
       if (rt && rt !== habitRepeat) setHabitRepeat(rt);
       if (!rt && habitRepeat !== "none") setHabitRepeat("none");
     }
@@ -2468,28 +2506,77 @@ export default function MindDumpModal({
               </div>
 
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                {chipStage !== "ROOT" && (
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    padding: 3,
+                    borderRadius: 999,
+                    border: "1px solid #e2e8f0",
+                    background: "#ffffff",
+                  }}
+                >
                   <button
                     type="button"
-                    onClick={resetChips}
-                    style={{
-                      height: 26,
-                      padding: "0 10px",
-                      borderRadius: 999,
-                      border: embedded ? "1px solid #c7b5f6" : "1px solid #d8cdf8",
-                      background: embedded ? "#f3f4f6" : "#ffffff",
-                      color: embedded ? "#111827" : "#7d59c9",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
+                    onClick={() => {
+                      setTypeTouched(true);
+                      setItemKind("task");
                     }}
-                    title={t("capture.chips.backHint", "Volver a atajos")}
-                    aria-label={t("capture.chips.backHint", "Volver a atajos")}
+                    style={{
+                      height: 22,
+                      padding: "0 8px",
+                      borderRadius: 999,
+                      border: "none",
+                      background: itemKind === "task" ? "#ede9fe" : "transparent",
+                      color: itemKind === "task" ? "#7d59c9" : "#64748b",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                    }}
+                    title={t("pill.type.task", "Recordatorio")}
+                    aria-label={t("pill.type.task", "Recordatorio")}
                   >
-                    <Sparkles size={14} style={{ display: "inline-block", marginRight: 6 }} />
-                    {t("capture.chips.back", "Atajos")}
+                    <List size={13} />
                   </button>
-                )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTypeTouched(true);
+                      setItemKind("idea");
+                      setPickedDate("");
+                      setPickedTime("");
+                      setReminderMode("NONE");
+                      setHabitRepeat("none");
+                      setDateTouched(false);
+                      setTimeTouched(false);
+                      setReminderTouched(false);
+                      setHabitTouched(false);
+                      setReminderMenuOpen(false);
+                      setRepeatMenuOpen(false);
+                    }}
+                    style={{
+                      height: 22,
+                      padding: "0 8px",
+                      borderRadius: 999,
+                      border: "none",
+                      background: itemKind === "idea" ? "#fef3c7" : "transparent",
+                      color: itemKind === "idea" ? "#a16207" : "#64748b",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                    }}
+                    title={t("pill.type.idea", "Idea")}
+                    aria-label={t("pill.type.idea", "Idea")}
+                  >
+                    <Lightbulb size={13} />
+                  </button>
+                </div>
+                
               </div>
             </div>
 
@@ -2854,7 +2941,7 @@ export default function MindDumpModal({
                         }}
                         icon={<List className="h-3.5 w-3.5" />}
                       >
-                        {t("pill.type.task", "Tarea")}
+                        {t("pill.type.task", "Recordatorio")}
                       </PillButton>
 
                       <PillButton

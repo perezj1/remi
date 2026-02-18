@@ -218,6 +218,16 @@ export const en = {
     weekSectionSubtitle:
       "Every day you use Remi, your head carries a bit less.",
     weekActiveLabel: "Active days this week",
+    mentalLoadTitle: "Mental load balance",
+    mentalLoadSubtitle: "Captured vs resolved in the last 7 days",
+    mentalCapturedTooltip: "Captured: {{count}}",
+    mentalResolvedTooltip: "Resolved: {{count}}",
+    memoryCaptured: "Captured",
+    memoryResolved: "Resolved",
+    memoryDistributionTitle: "Memory distribution",
+    memoryDistributionSubtitle: "What kind of load are you delegating to Remi",
+    memoryTasksLabel: "Reminders",
+    memoryIdeasLabel: "Ideas",
     usersTitle: "More people caring for their minds",
     usersSubtitle: "Total users on Remi",
     usersUnavailable: "Not available",
@@ -407,7 +417,7 @@ export const en = {
   pill: {
     type: {
       label: "Type",
-      task: "Task",
+      task: "Reminder",
       idea: "Idea",
     },
 
@@ -598,16 +608,21 @@ export const en = {
         body: "share reminders or ideas.\nOthers add them to their Remi in 1 tap.",
         cta: "See how",
       },
+      shareApp: {
+        title: "Share Remi",
+        body: "Invite someone to try Remi in one tap.",
+        cta: "Share",
+      },
 
       multidevice: {
-        title: "Remi on phone, iPad/tablet, and PC",
+        title: "Remi always with you",
         body:
           "Clear your head wherever you are. Everything syncs, and you choose which devices get notifications.",
         cta: "How it works",
       },
 
       smartShortcuts: {
-        title: "Smart shortcuts (save 10s)",
+        title: "Smart shortcuts",
         body: "Add words in 1 tap.\nE.g. Idea / Buy / at 18:00.",
         cta: "Try now",
         prefill: "Buy: milk, bread, eggs",
@@ -627,7 +642,7 @@ export const en = {
       },
 
       iosDict: {
-        title: "Enable the keyboard microphone",
+        title: "Talk with Remi",
         body:
           "If you don't see the mic on the keyboard, enable it in Settings and dictate faster.",
         cta: "See how",
@@ -840,6 +855,8 @@ export const en = {
     devicePushNeedsPermissionLine:
       "You haven't granted permission on this device yet.",
     devicePushNeedsRegisterLine: "Permission OK, but you still need to enable it here.",
+    devicePushPaused: "Paused",
+    devicePushPausedLine: "Paused on this device",
     devicePushActiveLine: "Active on this device ✅",
     devicePushToggleAria:
       "Enable or pause notifications on this device",
