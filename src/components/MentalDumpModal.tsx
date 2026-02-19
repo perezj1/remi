@@ -72,7 +72,7 @@ const ACTION_VERBS = [
   "volver",
 ];
 
-const IDEA_PREFIXES = ["idea", "idee", "pensar", "quizá", "quizás", "tal vez", "talvez"];
+const IDEA_PREFIXES = ["nota", "note", "notiz", "idea", "idee", "pensar", "quizá", "quizás", "tal vez", "talvez"];
 
 // Solo las keys; los textos vienen de i18n
 const HINT_KEYS = [

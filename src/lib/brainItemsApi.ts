@@ -612,6 +612,7 @@ export type RemiStatusInsights = {
   capturedHeatmap: number[][];
   resolvedHeatmap: number[][];
   capturedLast30Count: number;
+  ideasLast30Count: number;
   activeDueTasksCount: number;
   overdueUnfinishedCount: number;
   completedWithDueCount: number;
@@ -884,6 +885,17 @@ export async function fetchRemiStatusInsights(userId: string): Promise<RemiStatu
 
   if (capturedTaskError) throw capturedTaskError;
 
+  const { data: capturedIdeaRows, error: capturedIdeaError } = await supabase
+    .from("brain_items")
+    .select("created_at")
+    .eq("user_id", userId)
+    .eq("type", "idea")
+    .neq("status", "ARCHIVED")
+    .gte("created_at", lookbackStart.toISOString())
+    .lte("created_at", todayEnd.toISOString());
+
+  if (capturedIdeaError) throw capturedIdeaError;
+
   const capturedSeries = new Array<number>(7).fill(0);
   const resolvedSeries = new Array<number>(7).fill(0);
   const capturedHeatmap = Array.from({ length: 30 }).map(() => new Array<number>(24).fill(0));
@@ -937,6 +949,26 @@ export async function fetchRemiStatusInsights(userId: string): Promise<RemiStatu
     }
   }
 
+  const { data: overdueRows, error: overdueRowsError } = await supabase
+    .from("brain_items")
+    .select("due_date")
+    .eq("user_id", userId)
+    .eq("type", "task")
+    .eq("status", "ACTIVE")
+    .not("due_date", "is", null)
+    .gte("due_date", lookbackStart.toISOString())
+    .lte("due_date", todayEnd.toISOString());
+
+  if (overdueRowsError) throw overdueRowsError;
+
+  let overdueInLast30Count = 0;
+  for (const row of (overdueRows ?? []) as Array<{ due_date: string | null }>) {
+    if (!row.due_date) continue;
+    const due = new Date(row.due_date);
+    if (Number.isNaN(due.getTime())) continue;
+    if (due.getTime() < now.getTime()) overdueInLast30Count += 1;
+  }
+
   const { data: doneRows, error: doneError } = await supabase
     .from("brain_items")
     .select("due_date, updated_at")
@@ -965,8 +997,9 @@ export async function fetchRemiStatusInsights(userId: string): Promise<RemiStatu
     capturedHeatmap,
     resolvedHeatmap,
     capturedLast30Count: (capturedRows ?? []).length,
+    ideasLast30Count: (capturedIdeaRows ?? []).length,
     activeDueTasksCount,
-    overdueUnfinishedCount,
+    overdueUnfinishedCount: overdueInLast30Count,
     completedWithDueCount: doneWithDueCount,
   };
 }

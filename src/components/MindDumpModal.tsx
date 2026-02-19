@@ -105,6 +105,14 @@ const LOCALES: Record<UiLang, any> = {
   de: deLocale,
 };
 
+function normalizeIdeaTerms(input: string): string {
+  return input
+    .replace(/\bIdeas\b/g, "Notas")
+    .replace(/\bIdea\b/g, "Nota")
+    .replace(/\bideas\b/g, "notas")
+    .replace(/\bidea\b/g, "nota");
+}
+
 function getDeepValue(obj: any, path: string): any {
   if (!obj || !path) return undefined;
   if (Object.prototype.hasOwnProperty.call(obj, path)) return obj[path]; // flat keys
@@ -136,11 +144,11 @@ function tFromLocales(
     const dict = LOCALES[lang] ?? LOCALES.es;
     const raw = getDeepValue(dict, key);
     if (typeof raw === "string" && raw.trim().length > 0) {
-      return interpolateVars(raw, vars);
+      return normalizeIdeaTerms(interpolateVars(raw, vars));
     }
-    return interpolateVars(fallback, vars);
+    return normalizeIdeaTerms(interpolateVars(fallback, vars));
   } catch {
-    return interpolateVars(fallback, vars);
+    return normalizeIdeaTerms(interpolateVars(fallback, vars));
   }
 }
 
@@ -447,7 +455,7 @@ function detectReminderSignal(text: string): string | null {
 
 function detectIdeaSignal(text: string): string | null {
   const s = foldForMatch(text);
-  const hit = s.match(/\b(idea|idee)\b/i)?.[0] ?? null;
+  const hit = s.match(/\b(nota|idea|idee)\b/i)?.[0] ?? null;
   return hit;
 }
 
@@ -489,7 +497,7 @@ const HIGHLIGHT_PATTERNS: Array<{ kind: HighlightKind; regex: RegExp }> = [
 
   {
     kind: "idea",
-    regex: /\b(idea|idee)\b/gi,
+    regex: /\b(nota|idea|idee)\b/gi,
   },
 ];
 
@@ -1889,7 +1897,7 @@ export default function MindDumpModal({
         { id: "pay" as const, re: /^(paga|pagar|pago)\b/i },
         { id: "birthday" as const, re: /^(cumple|cumpleanos)\b/i },
         { id: "appointment" as const, re: /^(cita|reunion)\b/i },
-        { id: "idea" as const, re: /^(idea)\b/i },
+        { id: "idea" as const, re: /^(nota|idea)\b/i },
       ],
       scheduleTokens: [
         /\bel\b/i,
@@ -1913,7 +1921,7 @@ export default function MindDumpModal({
         { id: "pay" as const, re: /^(pay)\b/i },
         { id: "birthday" as const, re: /^(birthday)\b/i },
         { id: "appointment" as const, re: /^(meeting|appointment)\b/i },
-        { id: "idea" as const, re: /^(idea)\b/i },
+        { id: "idea" as const, re: /^(note|idea)\b/i },
       ],
       scheduleTokens: [/\bon\b/i, /\bevery\b/i, /\bbefore\b/i, /\btoday\b/i, /\btomorrow\b/i],
       timeTokens: [/\bat\b/i, /\b\d{1,2}:\d{2}\b/, /\b\d{1,2}\s?(am|pm)\b/i],
@@ -1927,7 +1935,7 @@ export default function MindDumpModal({
         { id: "pay" as const, re: /^(zahlen|bezahlen)\b/i },
         { id: "birthday" as const, re: /^(geburtstag)\b/i },
         { id: "appointment" as const, re: /^(termin|meeting)\b/i },
-        { id: "idea" as const, re: /^(idee)\b/i },
+        { id: "idea" as const, re: /^(notiz|idee)\b/i },
       ],
       scheduleTokens: [/\bam\b/i, /\bjeden\b/i, /\bvor\b/i, /\bheute\b/i, /\bmorgen\b/i],
       timeTokens: [/\bum\b/i, /\b\d{1,2}:\d{2}\b/],

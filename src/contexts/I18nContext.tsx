@@ -17,6 +17,14 @@ import {
 
 const LANGUAGE_KEY = "remi_language";
 
+function normalizeIdeaTerms(input: string): string {
+  return input
+    .replace(/\bIdeas\b/g, "Notas")
+    .replace(/\bIdea\b/g, "Nota")
+    .replace(/\bideas\b/g, "notas")
+    .replace(/\bidea\b/g, "nota");
+}
+
 type I18nContextValue = {
   lang: RemiLocale;
   setLang: (lang: RemiLocale) => void;
@@ -89,7 +97,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
         });
       }
 
-      return text!;
+      return normalizeIdeaTerms(text!);
     },
     [getFromTree, lang]
   );

@@ -256,7 +256,7 @@ export const en = {
     hourMapTitle: "Hour map",
     hourMapSubtitle: "When you capture more mental load (last 30 days)",
     pieTitle: "General status",
-    pieSubtitle: "Captured, ideas, closed and overdue",
+    pieSubtitle: "Captured, notes, closed and overdue (last 30 days)",
     pieCaptured: "Captured",
     pieIdeas: "Ideas",
     pieClosed: "Closed",
