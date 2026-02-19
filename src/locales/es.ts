@@ -676,6 +676,11 @@ export const es = {
         cta: "Probar ahora",
         prefill: "Comprar: leche, pan, huevos",
       },
+      language: {
+        title: "Remi en tu idioma",
+        body: "Cambia el idioma de Remi cuando quieras desde tu perfil.",
+        cta: "Cambiar idioma",
+      },
 
       install: {
         title: "Instala Remi como app",
