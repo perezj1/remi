@@ -655,7 +655,7 @@ const anyModalOpen =
         minute: "2-digit",
         hour12: false,
       });
-      return `${datePart},${timePart}`;
+      return `${datePart} ${timePart}`;
     },
     [safeT, uiLocale],
   );
@@ -1059,7 +1059,7 @@ const anyModalOpen =
 
     cards.push({
       id: "paste",
-      title: safeT("today.tip.paste.title", "¿Has probado a pegar texto?"),
+      title: safeT("today.tip.paste.title", "Pegar texto"),
       body: safeT(
         "today.tip.paste.body",
         "Copia cualquier cosa (WhatsApp, Mail, Notas) y deja que Remi lo ordene.",
@@ -1488,7 +1488,7 @@ const anyModalOpen =
         <div className="mx-auto mt-7 mb-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
           <div>
             <p className="font-extrabold text-slate-900" style={{ fontSize: "clamp(16px, 1vw, 22px)" }}>
-              {safeT("today.tipsTitle", "Consejos")}
+              {safeT("today.tipsTitle", "Acciones")}
             </p>
           </div>
           <div

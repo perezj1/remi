@@ -541,7 +541,7 @@ export const de = {
   today: {
     greetingHello: "Hallo,",
     captureSectionTitle: "Leere deinen Kopf",
-    tipsTitle: "Tipps",
+    tipsTitle: "Aktionen",
 
     shareRemindersModal: {
       title: "Erinnerungen mit anderen teilen",
@@ -698,7 +698,7 @@ export const de = {
       },
 
       paste: {
-        title: "Schon mal Text eingefügt?",
+        title: "Text einfügen",
         body:
           "Kopiere irgendwas (WhatsApp, Mail, Notizen) und lass Remi es ordnen.",
         cta: "Jetzt einfügen",

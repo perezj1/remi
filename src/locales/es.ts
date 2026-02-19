@@ -556,7 +556,7 @@ export const es = {
   today: {
     greetingHello: "Hola,",
     captureSectionTitle: "Vacia tu mente",
-    tipsTitle: "Consejos",
+    tipsTitle: "Acciones",
 
     shareRemindersModal: {
       title: "Compartir recordatorios con otras personas",
@@ -722,7 +722,7 @@ export const es = {
       },
 
       paste: {
-        title: "¿Has probado a pegar texto?",
+        title: "Pegar texto",
         body: "Copia cualquier cosa (WhatsApp, Mail, Notas) y deja que Remi lo ordene.",
         cta: "Pegar ahora",
       },
