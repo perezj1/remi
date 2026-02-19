@@ -263,7 +263,14 @@ export const es = {
     memoryDistributionTitle: "Distribución de memoria",
     memoryDistributionSubtitle: "Qué tipo de carga estás delegando a Remi",
     memoryTasksLabel: "Recordatorios",
-    memoryIdeasLabel: "Ideas",
+    hourMapTitle: "Mapa de horas",
+    hourMapSubtitle: "Cuando capturas mas carga mental (ultimos 30 dias)",
+    pieTitle: "Estado general",
+    pieSubtitle: "Capturado, ideas, cerrado y vencidas",
+    pieCaptured: "Capturado",
+    pieIdeas: "Ideas",
+    pieClosed: "Cerrado",
+    pieOverdue: "Vencidas",
     usersTitle: "Cada vez somos más cuidando nuestra mente",
     usersSubtitle: "Total de usuarios en Remi",
     usersUnavailable: "No disponible",
@@ -1273,4 +1280,7 @@ export const es = {
     },
   },
 } as const;
+
+
+
 

@@ -256,7 +256,14 @@ export const de = {
     memoryDistributionTitle: "Ged\u00E4chtnisverteilung",
     memoryDistributionSubtitle: "Welche Art von Last delegierst du an Remi",
     memoryTasksLabel: "Erinnerungen",
-    memoryIdeasLabel: "Ideen",
+    hourMapTitle: "Stundenkarte",
+    hourMapSubtitle: "Wann du mehr mentale Last erfasst (letzte 30 Tage)",
+    pieTitle: "Allgemeiner Status",
+    pieSubtitle: "Erfasst, Ideen, geschlossen und uberfallig",
+    pieCaptured: "Erfasst",
+    pieIdeas: "Ideen",
+    pieClosed: "Geschlossen",
+    pieOverdue: "Uberfallig",
     usersTitle: "Immer mehr Menschen entlasten ihren Kopf",
     usersSubtitle: "Gesamtzahl der Remi-Nutzer",
     usersUnavailable: "Nicht verfugbar",
@@ -1257,3 +1264,6 @@ export const de = {
     },
   },
 } as const;
+
+
+

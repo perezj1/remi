@@ -87,6 +87,35 @@ function getMoodFromMindClearPercent(percent: number): RemiMood {
   return "concerned";
 }
 
+function getPeakTwoSlotWindow(series: number[]): { start: number; end: number } {
+  if (series.length === 0) return { start: 0, end: 0 };
+  if (series.length === 1) return { start: 0, end: 0 };
+  let bestStart = 0;
+  let bestValue = -1;
+  for (let i = 0; i < series.length - 1; i += 1) {
+    const value = (series[i] ?? 0) + (series[i + 1] ?? 0);
+    if (value > bestValue) {
+      bestValue = value;
+      bestStart = i;
+    }
+  }
+  return { start: bestStart, end: bestStart + 1 };
+}
+
+function sumByHour(matrix: number[][]): number[] {
+  const out = new Array<number>(24).fill(0);
+  for (const row of matrix) {
+    for (let h = 0; h < 24; h += 1) {
+      out[h] += row[h] ?? 0;
+    }
+  }
+  return out;
+}
+
+function formatHour(hour: number): string {
+  return `${String(hour).padStart(2, "0")}:00`;
+}
+
 function RemiAvatar({
   loading,
   mindClearPercent,
@@ -282,13 +311,37 @@ export default function StatusPage() {
   const totalTasksStored = summary?.totalTasksStored ?? 0;
   const totalIdeasStored = summary?.totalIdeasStored ?? 0;
   const totalItemsStored = summary?.totalItemsStored ?? totalTasksStored + totalIdeasStored;
-  const taskSharePercent = totalItemsStored > 0 ? Math.round((totalTasksStored / totalItemsStored) * 100) : 0;
-  const ideaSharePercent = totalItemsStored > 0 ? Math.round((totalIdeasStored / totalItemsStored) * 100) : 0;
   const streakDays = summary?.streakDays ?? 0;
   const daysSinceLastActivity = summary?.daysSinceLastActivity ?? null;
   const capturedSeries = insights?.capturedSeries ?? [0, 0, 0, 0, 0, 0, 0];
   const resolvedSeries = insights?.resolvedSeries ?? [0, 0, 0, 0, 0, 0, 0];
+  const capturedHeatmap = insights?.capturedHeatmap ?? [];
+  const resolvedHeatmap = insights?.resolvedHeatmap ?? [];
+  const capturedByHour = useMemo(() => sumByHour(capturedHeatmap), [capturedHeatmap]);
+  const resolvedByHour = useMemo(() => sumByHour(resolvedHeatmap), [resolvedHeatmap]);
+  const capturedLast30Count = insights?.capturedLast30Count ?? capturedSeries.reduce((acc, cur) => acc + cur, 0);
+  const closedWithDueCount = insights?.completedWithDueCount ?? 0;
+  const overdueCount = insights?.overdueUnfinishedCount ?? 0;
   const balanceMax = Math.max(1, ...capturedSeries, ...resolvedSeries);
+  const pieData = [
+    { key: "captured", label: t("status.pieCaptured"), value: capturedLast30Count, color: "#7d59c9" },
+    { key: "ideas", label: t("status.pieIdeas"), value: totalIdeasStored, color: "#59a5c9" },
+    { key: "closed", label: t("status.pieClosed"), value: closedWithDueCount, color: "#59c9b5" },
+    { key: "overdue", label: t("status.pieOverdue"), value: overdueCount, color: "#f19aa9" },
+  ];
+  const pieTotal = pieData.reduce((acc, item) => acc + item.value, 0);
+  const pieGradient = (() => {
+    if (pieTotal <= 0) return "conic-gradient(#e2e8f0 0deg 360deg)";
+    let cursor = 0;
+    const stops: string[] = [];
+    for (const item of pieData) {
+      const size = (item.value / pieTotal) * 360;
+      const end = cursor + size;
+      stops.push(`${item.color} ${cursor}deg ${end}deg`);
+      cursor = end;
+    }
+    return `conic-gradient(${stops.join(", ")})`;
+  })();
   const weekDateLabels = useMemo(() => {
     const locale = lang === "de" ? "de-DE" : lang === "en" ? "en-US" : "es-ES";
     const fmt = new Intl.DateTimeFormat(locale, { weekday: "short" });
@@ -302,6 +355,10 @@ export default function StatusPage() {
       return (s[0] ?? "-").toUpperCase();
     });
   }, [lang]);
+  const capturedPeakWindow = useMemo(() => getPeakTwoSlotWindow(capturedByHour), [capturedByHour]);
+  const resolvedPeakWindow = useMemo(() => getPeakTwoSlotWindow(resolvedByHour), [resolvedByHour]);
+  const capturedPeakRangeLabel = `${formatHour(capturedPeakWindow.start)}-${formatHour((capturedPeakWindow.end + 1) % 24)}`;
+  const resolvedPeakRangeLabel = `${formatHour(resolvedPeakWindow.start)}-${formatHour((resolvedPeakWindow.end + 1) % 24)}`;
 
   // Mind clear score rewards offloading/completing and decays with inactivity.
   const mindClearPercent = (() => {
@@ -502,7 +559,7 @@ export default function StatusPage() {
               </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className="mt-3 grid grid-cols-1 gap-3">
               <div className="rounded-[18px] border p-3.5" style={{ background: "#596dc912", borderColor: "#596dc955" }}>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.04em]" style={{ color: "#46579f" }}>
                   {t("status.mentalLoadTitle")}
@@ -553,28 +610,43 @@ export default function StatusPage() {
                       {t("status.memoryResolved")}
                     </span>
                   </div>
+                  <div className="mt-2 text-[11px] text-slate-600">
+                    <p>Sueles capturar mas entre {capturedPeakRangeLabel}</p>
+                    <p>Sueles resolver mas entre {resolvedPeakRangeLabel}</p>
+                  </div>
                 </div>
               </div>
+            </div>
 
-              <div className="rounded-[18px] border p-3.5" style={{ background: "#f4cf6a1f", borderColor: "#f4dc9a" }}>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-slate-900">
-                  {t("status.memoryDistributionTitle")}
+            <div className="mt-3 grid grid-cols-1 gap-3">
+              <div className="rounded-[18px] border p-3.5" style={{ background: "#f2eefe", borderColor: "#cfbeef" }}>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-violet-800">
+                  {t("status.pieTitle")}
                 </p>
                 <p className="mt-1 text-slate-600" style={{ fontSize: "clamp(12px, 0.8vw, 15px)" }}>
-                  {t("status.memoryDistributionSubtitle")}
+                  {t("status.pieSubtitle")}
                 </p>
-                <div className="mt-3 h-3.5 overflow-hidden rounded-full bg-white/70">
-                  <div className="h-full" style={{ width: `${taskSharePercent}%`, background: "#7d59c9", float: "left" }} />
-                  <div className="h-full" style={{ width: `${ideaSharePercent}%`, background: "#f4cf6a", float: "left" }} />
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-2 text-[12px]">
-                  <div className="rounded-xl border border-violet-200 bg-white/65 p-2 text-center">
-                    <p className="font-semibold text-violet-700">{t("status.memoryTasksLabel")}</p>
-                    <p className="mt-0.5 font-extrabold text-slate-900">{totalTasksStored} ({taskSharePercent}%)</p>
+                <div className="mt-3 flex items-center gap-4 rounded-xl border border-violet-100 bg-white/75 p-3">
+                  <div className="relative h-[96px] w-[96px] shrink-0 rounded-full" style={{ background: pieGradient }}>
+                    <div className="absolute inset-[16px] rounded-full bg-white/95 flex items-center justify-center">
+                      <span className="text-[14px] font-extrabold text-slate-800">{pieTotal}</span>
+                    </div>
                   </div>
-                  <div className="rounded-xl border bg-white/65 p-2 text-center" style={{ borderColor: "#f4dc9a" }}>
-                    <p className="font-semibold" style={{ color: "#b48617" }}>{t("status.memoryIdeasLabel")}</p>
-                    <p className="mt-0.5 font-extrabold text-slate-900">{totalIdeasStored} ({ideaSharePercent}%)</p>
+                  <div className="min-w-0 grow space-y-1.5">
+                    {pieData.map((item) => {
+                      const percent = pieTotal > 0 ? Math.round((item.value / pieTotal) * 100) : 0;
+                      return (
+                        <div key={item.key} className="flex items-center justify-between gap-2 text-[12px]">
+                          <span className="inline-flex min-w-0 items-center gap-1.5 text-slate-700">
+                            <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: item.color }} />
+                            <span className="truncate">{item.label}</span>
+                          </span>
+                          <span className="shrink-0 font-semibold text-slate-900">
+                            {item.value} ({percent}%)
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

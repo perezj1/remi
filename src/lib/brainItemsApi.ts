@@ -609,6 +609,9 @@ export type RemiStatusInsights = {
   weekDateLabels: string[];
   capturedSeries: number[];
   resolvedSeries: number[];
+  capturedHeatmap: number[][];
+  resolvedHeatmap: number[][];
+  capturedLast30Count: number;
   activeDueTasksCount: number;
   overdueUnfinishedCount: number;
   completedWithDueCount: number;
@@ -840,13 +843,21 @@ export async function fetchRemiStatusInsights(userId: string): Promise<RemiStatu
   const weekDateKeys = weekDays.map(formatLocalDateKey);
   const keyToIndex = new Map<string, number>();
   weekDateKeys.forEach((key, idx) => keyToIndex.set(key, idx));
+  const last30Days: Date[] = Array.from({ length: 30 }).map((_, index) => {
+    const d = new Date(lookbackStart);
+    d.setDate(lookbackStart.getDate() + index);
+    return d;
+  });
+  const last30DateKeys = last30Days.map(formatLocalDateKey);
+  const keyToLast30Index = new Map<string, number>();
+  last30DateKeys.forEach((key, idx) => keyToLast30Index.set(key, idx));
 
   const { data: capturedRows, error: capturedError } = await supabase
     .from("brain_items")
     .select("created_at")
     .eq("user_id", userId)
     .neq("status", "ARCHIVED")
-    .gte("created_at", weekStart.toISOString())
+    .gte("created_at", lookbackStart.toISOString())
     .lte("created_at", todayEnd.toISOString());
 
   if (capturedError) throw capturedError;
@@ -857,22 +868,50 @@ export async function fetchRemiStatusInsights(userId: string): Promise<RemiStatu
     .eq("user_id", userId)
     .eq("type", "task")
     .eq("status", "DONE")
-    .gte("updated_at", weekStart.toISOString())
+    .gte("updated_at", lookbackStart.toISOString())
     .lte("updated_at", todayEnd.toISOString());
 
   if (resolvedError) throw resolvedError;
 
+  const { data: capturedTaskRows, error: capturedTaskError } = await supabase
+    .from("brain_items")
+    .select("created_at")
+    .eq("user_id", userId)
+    .eq("type", "task")
+    .neq("status", "ARCHIVED")
+    .gte("created_at", lookbackStart.toISOString())
+    .lte("created_at", todayEnd.toISOString());
+
+  if (capturedTaskError) throw capturedTaskError;
+
   const capturedSeries = new Array<number>(7).fill(0);
   const resolvedSeries = new Array<number>(7).fill(0);
+  const capturedHeatmap = Array.from({ length: 30 }).map(() => new Array<number>(24).fill(0));
+  const resolvedHeatmap = Array.from({ length: 30 }).map(() => new Array<number>(24).fill(0));
 
   for (const row of (capturedRows ?? []) as Array<{ created_at: string }>) {
     const idx = keyToIndex.get(formatLocalDateKey(new Date(row.created_at)));
     if (idx != null) capturedSeries[idx] += 1;
   }
 
+  for (const row of (capturedTaskRows ?? []) as Array<{ created_at: string }>) {
+    const createdAt = new Date(row.created_at);
+    const rowIdx = keyToLast30Index.get(formatLocalDateKey(createdAt));
+    const hour = createdAt.getHours();
+    if (rowIdx != null && hour >= 0 && hour <= 23) {
+      capturedHeatmap[rowIdx][hour] += 1;
+    }
+  }
+
   for (const row of (resolvedRows ?? []) as Array<{ updated_at: string }>) {
-    const idx = keyToIndex.get(formatLocalDateKey(new Date(row.updated_at)));
+    const updatedAt = new Date(row.updated_at);
+    const idx = keyToIndex.get(formatLocalDateKey(updatedAt));
     if (idx != null) resolvedSeries[idx] += 1;
+    const rowIdx = keyToLast30Index.get(formatLocalDateKey(updatedAt));
+    const hour = updatedAt.getHours();
+    if (rowIdx != null && hour >= 0 && hour <= 23) {
+      resolvedHeatmap[rowIdx][hour] += 1;
+    }
   }
 
   const { data: activeDueRows, error: activeDueError } = await supabase
@@ -923,6 +962,9 @@ export async function fetchRemiStatusInsights(userId: string): Promise<RemiStatu
     weekDateLabels,
     capturedSeries,
     resolvedSeries,
+    capturedHeatmap,
+    resolvedHeatmap,
+    capturedLast30Count: (capturedRows ?? []).length,
     activeDueTasksCount,
     overdueUnfinishedCount,
     completedWithDueCount: doneWithDueCount,
