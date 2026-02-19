@@ -213,6 +213,8 @@ export const en = {
     relaxExhaleShort: "Out",
     relaxCycles: "Cycles",
     relaxCapture: "Capture",
+    relaxViewCanvas: "View canvas",
+    relaxTapToReturn: "Tap to return",
     relaxModalTitle: "Take a deep breath",
     relaxModalSubtitle: "Follow the rhythm for 30 seconds.",
     relaxInhale: "Inhale slowly",

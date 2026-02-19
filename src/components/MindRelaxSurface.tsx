@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
+import { createPortal } from "react-dom";
 import { Volume2, VolumeX, X } from "lucide-react";
 import { useRegisterModalOpen } from "@/contexts/ModalUiContext";
 
@@ -16,6 +17,8 @@ type Bubble = {
   phase: number;
   opacity: number;
   hue: number;
+  sat: number;
+  light: number;
 };
 
 type Particle = {
@@ -41,6 +44,19 @@ type PopRing = {
   hue: number;
 };
 
+type Stain = {
+  x: number;
+  y: number;
+  radius: number;
+  alpha: number;
+  hue: number;
+  sat: number;
+  light: number;
+  rotation: number;
+  stretchX: number;
+  stretchY: number;
+};
+
 type MindRelaxSurfaceLabels = {
   close: string;
   sound: string;
@@ -52,6 +68,8 @@ type MindRelaxSurfaceLabels = {
   resetDoneTitle: string;
   resetDoneSubtitle: string;
   capture: string;
+  viewCanvas: string;
+  tapToReturn: string;
 };
 
 type MindRelaxSurfaceProps = {
@@ -92,6 +110,15 @@ function modeConfig(mode: ZenMode) {
 }
 
 function createBubble(width: number, height: number, id: number): Bubble {
+  const palette = [
+    { h: 204, s: 72, l: 66 },
+    { h: 224, s: 70, l: 68 },
+    { h: 287, s: 64, l: 70 },
+    { h: 332, s: 70, l: 72 },
+    { h: 168, s: 54, l: 68 },
+    { h: 258, s: 62, l: 67 },
+  ] as const;
+  const tone = palette[Math.floor(Math.random() * palette.length)];
   const radius = pickRadius();
   return {
     id,
@@ -102,8 +129,10 @@ function createBubble(width: number, height: number, id: number): Bubble {
     amp: randomBetween(6, 24),
     freq: randomBetween(0.8, 1.6),
     phase: randomBetween(0, Math.PI * 2),
-    opacity: randomBetween(0.45, 0.85),
-    hue: randomBetween(252, 272),
+    opacity: randomBetween(0.5, 0.86),
+    hue: tone.h,
+    sat: tone.s,
+    light: tone.l,
   };
 }
 
@@ -124,6 +153,7 @@ export default function MindRelaxSurface({
   const bubblesRef = useRef<Bubble[]>([]);
   const particlesRef = useRef<Particle[]>([]);
   const ringsRef = useRef<PopRing[]>([]);
+  const stainsRef = useRef<Stain[]>([]);
   const audioRef = useRef<AudioContext | null>(null);
 
   const [mode, setMode] = useState<ZenMode | null>(null);
@@ -131,8 +161,9 @@ export default function MindRelaxSurface({
   const [soundOn, setSoundOn] = useState(true);
   const [remainingMs, setRemainingMs] = useState(SESSION_MS);
   const [ended, setEnded] = useState(false);
+  const [showCanvasOnly, setShowCanvasOnly] = useState(false);
 
-  const started = mode !== null && !ended;
+  const started = mode !== null;
 
   useEffect(() => {
     if (!open) return;
@@ -140,9 +171,11 @@ export default function MindRelaxSurface({
     setPops(0);
     setRemainingMs(SESSION_MS);
     setEnded(false);
+    setShowCanvasOnly(false);
     bubblesRef.current = [];
     particlesRef.current = [];
     ringsRef.current = [];
+    stainsRef.current = [];
     bubbleIdRef.current = 1;
   }, [open]);
 
@@ -215,6 +248,42 @@ export default function MindRelaxSurface({
   const explodeBubble = (bubble: Bubble) => {
     const particleCount = Math.floor(randomBetween(8, 16));
     const baseHue = bubble.hue;
+    const splatCount = Math.floor(randomBetween(5, 10));
+
+    stainsRef.current.push({
+      x: bubble.x,
+      y: bubble.y,
+      radius: bubble.radius * randomBetween(0.75, 1.15),
+      alpha: randomBetween(0.16, 0.24),
+      hue: bubble.hue,
+      sat: bubble.sat,
+      light: bubble.light,
+      rotation: randomBetween(0, Math.PI * 2),
+      stretchX: randomBetween(0.95, 1.25),
+      stretchY: randomBetween(0.78, 1.08),
+    });
+
+    for (let i = 0; i < splatCount; i += 1) {
+      const angle = randomBetween(0, Math.PI * 2);
+      const dist = randomBetween(bubble.radius * 0.16, bubble.radius * 0.95);
+      stainsRef.current.push({
+        x: bubble.x + Math.cos(angle) * dist,
+        y: bubble.y + Math.sin(angle) * dist,
+        radius: bubble.radius * randomBetween(0.14, 0.42),
+        alpha: randomBetween(0.09, 0.16),
+        hue: bubble.hue,
+        sat: bubble.sat,
+        light: bubble.light,
+        rotation: randomBetween(0, Math.PI * 2),
+        stretchX: randomBetween(0.7, 1.45),
+        stretchY: randomBetween(0.65, 1.3),
+      });
+    }
+
+    if (stainsRef.current.length > 300) {
+      stainsRef.current.splice(0, stainsRef.current.length - 300);
+    }
+
     ringsRef.current.push({
       x: bubble.x,
       y: bubble.y,
@@ -245,7 +314,6 @@ export default function MindRelaxSurface({
 
   useEffect(() => {
     if (!open || !started) return;
-    if (ended) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -277,108 +345,125 @@ export default function MindRelaxSurface({
       const dt = Math.min((now - lastFrameRef.current) / 1000, 0.033);
       lastFrameRef.current = now;
 
-      const elapsed = now - startAtRef.current;
-      const remaining = Math.max(0, SESSION_MS - elapsed);
-      setRemainingMs(remaining);
-      if (remaining <= 0) {
-        setEnded(true);
+      if (!ended) {
+        const elapsed = now - startAtRef.current;
+        const remaining = Math.max(0, SESSION_MS - elapsed);
+        setRemainingMs(remaining);
+        if (remaining <= 0) {
+          setEnded(true);
+        }
       }
 
       ctx.clearRect(0, 0, width, height);
 
-      const target = Math.floor(randomBetween(config.minBubbles, config.maxBubbles + 0.999));
-      while (bubblesRef.current.length < config.minBubbles) {
-        spawnBubble(width, height);
-      }
-      if (now >= nextSpawnAtRef.current && bubblesRef.current.length < target) {
-        spawnBubble(width, height);
-        nextSpawnAtRef.current = now + randomBetween(config.spawnMinMs, config.spawnMaxMs);
+      for (let i = 0; i < stainsRef.current.length; i += 1) {
+        const stain = stainsRef.current[i];
+        ctx.save();
+        ctx.translate(stain.x, stain.y);
+        ctx.rotate(stain.rotation);
+        ctx.scale(stain.stretchX, stain.stretchY);
+        ctx.fillStyle = `hsla(${stain.hue}, ${Math.max(24, stain.sat - 20)}%, ${Math.max(62, stain.light - 8)}%, ${stain.alpha})`;
+        ctx.beginPath();
+        ctx.arc(0, 0, stain.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
       }
 
-      for (let i = bubblesRef.current.length - 1; i >= 0; i -= 1) {
-        const bubble = bubblesRef.current[i];
-        bubble.y -= bubble.speedY * dt;
-        bubble.x += Math.sin(now * 0.001 * bubble.freq + bubble.phase) * 14 * dt;
-        if (bubble.y + bubble.radius < -20) {
-          bubblesRef.current.splice(i, 1);
-          continue;
+      if (!showCanvasOnly) {
+        const target = Math.floor(randomBetween(config.minBubbles, config.maxBubbles + 0.999));
+        while (bubblesRef.current.length < config.minBubbles) {
+          spawnBubble(width, height);
+        }
+        if (now >= nextSpawnAtRef.current && bubblesRef.current.length < target) {
+          spawnBubble(width, height);
+          nextSpawnAtRef.current = now + randomBetween(config.spawnMinMs, config.spawnMaxMs);
         }
 
-        const topFade = Math.min(1, Math.max(0, (bubble.y + bubble.radius) / 140));
-        const alpha = bubble.opacity * topFade;
+        for (let i = bubblesRef.current.length - 1; i >= 0; i -= 1) {
+          const bubble = bubblesRef.current[i];
+          bubble.y -= bubble.speedY * dt;
+          bubble.x += Math.sin(now * 0.001 * bubble.freq + bubble.phase) * 14 * dt;
+          if (bubble.y + bubble.radius < -20) {
+            bubblesRef.current.splice(i, 1);
+            continue;
+          }
 
-        const grad = ctx.createRadialGradient(
-          bubble.x - bubble.radius * 0.35,
-          bubble.y - bubble.radius * 0.4,
-          bubble.radius * 0.15,
-          bubble.x,
-          bubble.y,
-          bubble.radius,
-        );
-        grad.addColorStop(0, `hsla(${bubble.hue - 8}, 100%, 90%, ${alpha * 0.95})`);
-        grad.addColorStop(0.45, `hsla(${bubble.hue}, 92%, 72%, ${alpha * 0.38})`);
-        grad.addColorStop(1, `hsla(${bubble.hue + 8}, 85%, 56%, ${alpha * 0.2})`);
+          const topFade = Math.min(1, Math.max(0, (bubble.y + bubble.radius) / 140));
+          const alpha = bubble.opacity * topFade;
 
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(bubble.x, bubble.y, bubble.radius, 0, Math.PI * 2);
-        ctx.fill();
+          const grad = ctx.createRadialGradient(
+            bubble.x - bubble.radius * 0.35,
+            bubble.y - bubble.radius * 0.4,
+            bubble.radius * 0.15,
+            bubble.x,
+            bubble.y,
+            bubble.radius,
+          );
+          grad.addColorStop(0, `hsla(${bubble.hue}, ${Math.min(90, bubble.sat + 14)}%, 96%, ${alpha * 0.98})`);
+          grad.addColorStop(0.45, `hsla(${bubble.hue}, ${bubble.sat}%, ${bubble.light}%, ${alpha * 0.45})`);
+          grad.addColorStop(1, `hsla(${bubble.hue}, ${Math.max(36, bubble.sat - 20)}%, ${Math.max(56, bubble.light - 20)}%, ${alpha * 0.22})`);
 
-        ctx.strokeStyle = `hsla(${bubble.hue + 10}, 98%, 88%, ${alpha * 0.75})`;
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.arc(bubble.x, bubble.y, bubble.radius - 0.6, 0, Math.PI * 2);
-        ctx.stroke();
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(bubble.x, bubble.y, bubble.radius, 0, Math.PI * 2);
+          ctx.fill();
 
-        ctx.fillStyle = `rgba(255,255,255,${alpha * 0.55})`;
-        ctx.beginPath();
-        ctx.arc(
-          bubble.x - bubble.radius * 0.28,
-          bubble.y - bubble.radius * 0.3,
-          Math.max(1.5, bubble.radius * 0.12),
-          0,
-          Math.PI * 2,
-        );
-        ctx.fill();
-      }
+          ctx.strokeStyle = `hsla(${bubble.hue}, ${Math.min(85, bubble.sat + 10)}%, 90%, ${alpha * 0.78})`;
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.arc(bubble.x, bubble.y, bubble.radius - 0.6, 0, Math.PI * 2);
+          ctx.stroke();
 
-      for (let i = ringsRef.current.length - 1; i >= 0; i -= 1) {
-        const ring = ringsRef.current[i];
-        ring.life += dt;
-        const progress = ring.life / ring.ttl;
-        if (progress >= 1) {
-          ringsRef.current.splice(i, 1);
-          continue;
+          ctx.fillStyle = `rgba(255,255,255,${alpha * 0.55})`;
+          ctx.beginPath();
+          ctx.arc(
+            bubble.x - bubble.radius * 0.28,
+            bubble.y - bubble.radius * 0.3,
+            Math.max(1.5, bubble.radius * 0.12),
+            0,
+            Math.PI * 2,
+          );
+          ctx.fill();
         }
-        ring.radius += dt * 95;
-        const alpha = ring.alpha * (1 - progress);
-        ctx.strokeStyle = `hsla(${ring.hue}, 95%, 78%, ${alpha})`;
-        ctx.lineWidth = ring.width * (1 - progress * 0.4);
-        ctx.beginPath();
-        ctx.arc(ring.x, ring.y, ring.radius, 0, Math.PI * 2);
-        ctx.stroke();
-      }
 
-      for (let i = particlesRef.current.length - 1; i >= 0; i -= 1) {
-        const p = particlesRef.current[i];
-        p.life += dt;
-        const progress = p.life / p.ttl;
-        if (progress >= 1) {
-          particlesRef.current.splice(i, 1);
-          continue;
+        for (let i = ringsRef.current.length - 1; i >= 0; i -= 1) {
+          const ring = ringsRef.current[i];
+          ring.life += dt;
+          const progress = ring.life / ring.ttl;
+          if (progress >= 1) {
+            ringsRef.current.splice(i, 1);
+            continue;
+          }
+          ring.radius += dt * 95;
+          const alpha = ring.alpha * (1 - progress);
+          ctx.strokeStyle = `hsla(${ring.hue}, 95%, 78%, ${alpha})`;
+          ctx.lineWidth = ring.width * (1 - progress * 0.4);
+          ctx.beginPath();
+          ctx.arc(ring.x, ring.y, ring.radius, 0, Math.PI * 2);
+          ctx.stroke();
         }
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
-        p.vx *= 0.986;
-        p.vy *= 0.986;
-        const alpha = p.alpha * (1 - progress);
-        ctx.fillStyle = `hsla(${p.hue}, 98%, 74%, ${alpha})`;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size * (1 - progress * 0.4), 0, Math.PI * 2);
-        ctx.fill();
+
+        for (let i = particlesRef.current.length - 1; i >= 0; i -= 1) {
+          const p = particlesRef.current[i];
+          p.life += dt;
+          const progress = p.life / p.ttl;
+          if (progress >= 1) {
+            particlesRef.current.splice(i, 1);
+            continue;
+          }
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+          p.vx *= 0.986;
+          p.vy *= 0.986;
+          const alpha = p.alpha * (1 - progress);
+          ctx.fillStyle = `hsla(${p.hue}, 84%, 76%, ${alpha})`;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * (1 - progress * 0.4), 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
 
-      if (!ended) frameRef.current = window.requestAnimationFrame(animate);
+      frameRef.current = window.requestAnimationFrame(animate);
     };
 
     frameRef.current = window.requestAnimationFrame(animate);
@@ -387,7 +472,7 @@ export default function MindRelaxSurface({
       if (frameRef.current) window.cancelAnimationFrame(frameRef.current);
       frameRef.current = null;
     };
-  }, [ended, mode, open, started]);
+  }, [ended, mode, open, showCanvasOnly, started]);
 
   const timeLabel = useMemo(() => {
     const sec = Math.ceil(remainingMs / 1000);
@@ -418,17 +503,22 @@ export default function MindRelaxSurface({
   };
 
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (showCanvasOnly) {
+      setShowCanvasOnly(false);
+      return;
+    }
     tryPopAt(event.clientX, event.clientY);
   };
 
   if (!open) return null;
+  if (typeof document === "undefined") return null;
 
-  return (
+  const content = (
     <div
-      className="fixed inset-0 z-50 overflow-hidden"
+      className="fixed inset-0 z-[9999] overflow-hidden"
       style={{
         background:
-          "linear-gradient(125deg, #0b0c1f 0%, #151037 34%, #1f1450 62%, #130d33 100%)",
+          "linear-gradient(128deg, #ffffff 0%, #f6f9ff 34%, #fef6ff 62%, #f5fbff 100%)",
         backgroundSize: "180% 180%",
         animation: "zen-gradient 32s ease-in-out infinite",
       }}
@@ -445,14 +535,15 @@ export default function MindRelaxSurface({
       </style>
 
       <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(165,134,255,0.08),transparent_55%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(124,58,237,0.05),transparent_55%)]" />
 
+      {!showCanvasOnly && (
       <div className="absolute left-0 right-0 top-0 flex items-center justify-between px-4 pt-[calc(12px+env(safe-area-inset-top))]">
         <button
           type="button"
           aria-label={labels.close}
           onClick={onClose}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-violet-200/30 bg-black/25 text-violet-100 backdrop-blur-sm transition hover:border-violet-100/55"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-300/80 bg-white/80 text-slate-700 backdrop-blur-sm transition hover:border-slate-400"
         >
           <X className="h-5 w-5" />
         </button>
@@ -460,37 +551,40 @@ export default function MindRelaxSurface({
           type="button"
           aria-label={labels.sound}
           onClick={() => setSoundOn((prev) => !prev)}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-violet-200/30 bg-black/25 text-violet-100 backdrop-blur-sm transition hover:border-violet-100/55"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-300/80 bg-white/80 text-slate-700 backdrop-blur-sm transition hover:border-slate-400"
         >
           {soundOn ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
         </button>
       </div>
+      )}
 
-      <div className="pointer-events-none absolute left-4 top-[calc(62px+env(safe-area-inset-top))] rounded-full border border-violet-200/25 bg-black/20 px-3 py-1 text-xs text-violet-100/90">
+      {!showCanvasOnly && (
+      <div className="pointer-events-none absolute left-4 top-[calc(62px+env(safe-area-inset-top))] rounded-full border border-slate-300/80 bg-white/80 px-3 py-1 text-xs text-slate-700">
         {labels.pops}: {pops}
       </div>
+      )}
       {started && !ended && (
-        <div className="pointer-events-none absolute right-4 top-[calc(62px+env(safe-area-inset-top))] rounded-full border border-violet-200/25 bg-black/20 px-3 py-1 text-xs text-violet-100/90">
+        <div className="pointer-events-none absolute right-4 top-[calc(62px+env(safe-area-inset-top))] rounded-full border border-slate-300/80 bg-white/80 px-3 py-1 text-xs text-slate-700">
           {timeLabel}
         </div>
       )}
 
-      {!started && (
+      {!started && !showCanvasOnly && (
         <div className="absolute inset-0 flex items-center justify-center px-5">
-          <div className="w-full max-w-sm rounded-3xl border border-violet-200/20 bg-black/30 p-6 text-center backdrop-blur-md">
-            <h2 className="text-lg font-semibold text-violet-100">{labels.modeTitle}</h2>
+          <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white/90 p-6 text-center backdrop-blur-md shadow-[0_16px_36px_rgba(15,23,42,0.08)]">
+            <h2 className="text-lg font-semibold text-slate-800">{labels.modeTitle}</h2>
             <div className="mt-5 grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => setMode("calm")}
-                className="rounded-xl border border-violet-200/35 bg-violet-500/20 px-4 py-3 text-sm font-semibold text-violet-100 transition hover:bg-violet-500/30"
+                className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-700 transition hover:bg-sky-100"
               >
                 {labels.modeCalm}
               </button>
               <button
                 type="button"
                 onClick={() => setMode("energy")}
-                className="rounded-xl border border-fuchsia-200/35 bg-fuchsia-500/20 px-4 py-3 text-sm font-semibold text-fuchsia-100 transition hover:bg-fuchsia-500/30"
+                className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"
               >
                 {labels.modeEnergy}
               </button>
@@ -499,36 +593,46 @@ export default function MindRelaxSurface({
         </div>
       )}
 
-      {ended && (
+      {ended && !showCanvasOnly && (
         <div className="absolute inset-0 flex items-center justify-center px-5">
-          <div className="w-full max-w-sm rounded-3xl border border-emerald-200/25 bg-black/45 p-6 text-center backdrop-blur-md">
-            <h3 className="text-xl font-bold text-emerald-100">{labels.resetDoneTitle}</h3>
-            <p className="mt-2 text-sm text-emerald-50/90">{labels.resetDoneSubtitle}</p>
+          <div className="w-full max-w-sm rounded-3xl border border-emerald-200 bg-white/90 p-6 text-center backdrop-blur-md shadow-[0_16px_36px_rgba(16,185,129,0.12)]">
+            <h3 className="text-xl font-bold text-emerald-700">{labels.resetDoneTitle}</h3>
+            <p className="mt-2 text-sm text-slate-600">{labels.resetDoneSubtitle}</p>
             <div className="mt-5 grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={onCapture}
-                className="rounded-xl border border-emerald-200/30 bg-emerald-500/25 px-4 py-3 text-sm font-semibold text-emerald-50 transition hover:bg-emerald-500/35"
+                className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100"
               >
                 {labels.capture}
               </button>
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-xl border border-violet-200/30 bg-violet-500/20 px-4 py-3 text-sm font-semibold text-violet-100 transition hover:bg-violet-500/30"
+                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
               >
                 {labels.close}
               </button>
             </div>
+            <button
+              type="button"
+              onClick={() => setShowCanvasOnly(true)}
+              className="mt-3 text-[12px] font-medium text-slate-500 underline underline-offset-2 hover:text-slate-700"
+            >
+              {labels.viewCanvas}
+            </button>
           </div>
         </div>
       )}
 
-      {!soundOn && (
-        <div className="pointer-events-none absolute right-4 top-[calc(112px+env(safe-area-inset-top))] rounded-full border border-violet-200/25 bg-black/20 px-3 py-1 text-[11px] text-violet-100/85">
+      {!soundOn && !showCanvasOnly && (
+        <div className="pointer-events-none absolute right-4 top-[calc(112px+env(safe-area-inset-top))] rounded-full border border-slate-300/80 bg-white/80 px-3 py-1 text-[11px] text-slate-600">
           {labels.soundOff}
         </div>
       )}
+
     </div>
   );
+
+  return createPortal(content, document.body);
 }

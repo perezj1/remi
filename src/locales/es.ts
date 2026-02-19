@@ -223,6 +223,8 @@ export const es = {
     relaxExhaleShort: "Exp",
     relaxCycles: "Ciclos",
     relaxCapture: "Capturar",
+    relaxViewCanvas: "Ver lienzo",
+    relaxTapToReturn: "Toca para volver",
     relaxModalTitle: "Respira profundo",
     relaxModalSubtitle: "Solo sigue el ritmo durante 30 segundos.",
     relaxInhale: "Inhala lento",

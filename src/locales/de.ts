@@ -216,6 +216,8 @@ export const de = {
     relaxExhaleShort: "Aus",
     relaxCycles: "Zyklen",
     relaxCapture: "Erfassen",
+    relaxViewCanvas: "Leinwand ansehen",
+    relaxTapToReturn: "Tippen zum Zuruckkehren",
     relaxModalTitle: "Atme tief ein",
     relaxModalSubtitle: "Folge dem Rhythmus fur 30 Sekunden.",
     relaxInhale: "Langsam einatmen",

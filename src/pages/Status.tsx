@@ -602,6 +602,8 @@ export default function StatusPage() {
           resetDoneTitle: t("status.relaxDoneTitle"),
           resetDoneSubtitle: t("status.relaxDoneSubtitle"),
           capture: t("status.relaxCapture"),
+          viewCanvas: t("status.relaxViewCanvas"),
+          tapToReturn: t("status.relaxTapToReturn"),
           close: t("common.close"),
         }}
       />

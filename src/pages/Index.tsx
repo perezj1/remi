@@ -67,6 +67,7 @@ import {
 
 import { useModalUi } from "@/contexts/ModalUiContext";
 import MindDumpModal from "@/components/MindDumpModal";
+import MindRelaxSurface from "@/components/MindRelaxSurface";
 
 const AVATAR_KEY = "remi_avatar";
 
@@ -221,6 +222,7 @@ export default function TodayPage() {
   const [showFeedbackSurvey, setShowFeedbackSurvey] = useState(false);
   const [savingFeedback, setSavingFeedback] = useState(false);
   const [mindDumpResetNonce, setMindDumpResetNonce] = useState(0);
+  const [relaxOpen, setRelaxOpen] = useState(false);
 
   const [nowTick, setNowTick] = useState(0);
 
@@ -1096,7 +1098,7 @@ const anyModalOpen =
       icon: <HeartPulse size={18} />,
       bg: "",
       border: "rgba(244,63,94,0.60)",
-      onClick: () => openCapture(""),
+      onClick: () => setRelaxOpen(true),
     });
 
     cards.push({
@@ -1501,10 +1503,11 @@ const anyModalOpen =
                 key={tip.id}
                 type="button"
                 onClick={tip.onClick}
-                className="shrink-0 rounded-2xl border border-slate-200 bg-white shadow-[0_6px_16px_rgba(15,23,42,0.06)] hover:bg-slate-50"
+                className="shrink-0 rounded-2xl border border-slate-200 bg-white shadow-[0_6px_16px_rgba(15,23,42,0.06)] hover:bg-slate-50 flex flex-col"
                 style={{
                   width: "clamp(100px, 7.8vw, 168px)",
                   padding: "clamp(8px, 0.6vw, 14px)",
+                  minHeight: "clamp(108px, 7.8vw, 162px)",
                 }}
                 title={tip.title}
                 aria-label={tip.title}
@@ -1514,7 +1517,13 @@ const anyModalOpen =
                     {TIP_EMOJI_BY_ID[tip.id] ?? "✨"}
                   </span>
                 </div>
-                <p className="mt-2 leading-snug font-medium text-slate-800 line-clamp-2" style={{ fontSize: "clamp(11px, 0.72vw, 14px)" }}>
+                <p
+                  className="mt-2 leading-snug font-medium text-slate-800 line-clamp-2"
+                  style={{
+                    fontSize: "clamp(11px, 0.72vw, 14px)",
+                    minHeight: "2.7em",
+                  }}
+                >
                   {tip.title}
                 </p>
               </button>
@@ -2080,6 +2089,32 @@ const anyModalOpen =
           setShowFeedbackSurvey(false);
         }}
         onSubmit={handleSubmitFeedbackSurvey}
+      />
+
+      <MindRelaxSurface
+        open={relaxOpen}
+        onClose={() => setRelaxOpen(false)}
+        onCapture={() => {
+          setRelaxOpen(false);
+          openCapture("");
+        }}
+        labels={{
+          sound: safeT("status.relaxSound", "Sonido"),
+          soundOff: safeT("status.relaxSoundOff", "Sonido apagado"),
+          pops: safeT("status.relaxPops", "Pops"),
+          modeTitle: safeT("status.relaxModeTitle", "Bubble Pop Zen"),
+          modeCalm: safeT("status.relaxModeCalm", "Calma"),
+          modeEnergy: safeT("status.relaxModeEnergy", "Energia"),
+          resetDoneTitle: safeT("status.relaxDoneTitle", "Reset hecho"),
+          resetDoneSubtitle: safeT(
+            "status.relaxDoneSubtitle",
+            "Descarga tension con toques simples. Sin pensar.",
+          ),
+          capture: safeT("status.relaxCapture", "Capturar"),
+          viewCanvas: safeT("status.relaxViewCanvas", "Ver lienzo"),
+          tapToReturn: safeT("status.relaxTapToReturn", "Toca para volver"),
+          close: safeT("common.close", "Cerrar"),
+        }}
       />
     </div>
   );
