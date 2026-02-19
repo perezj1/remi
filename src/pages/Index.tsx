@@ -125,7 +125,7 @@ const TIP_EMOJI_BY_ID: Record<string, string> = {
   "day-close": "🌙",
   paste: "📋",
   natural: "✍️",
-  "smart-shortcuts": "✨",
+  "remi-language": "🌍",
   "no-date": "🗂️",
   week: "📅",
   mental: "🫶",
@@ -1072,20 +1072,17 @@ const anyModalOpen =
     });
 
     cards.push({
-      id: "smart-shortcuts",
-      title: safeT(
-        "today.tip.smartShortcuts.title",
-        "Atajos inteligentes (ahorran 10s)",
-      ),
+      id: "remi-language",
+      title: safeT("today.tip.language.title", "Remi en tu idioma"),
       body: safeT(
-        "today.tip.smartShortcuts.body",
-        "Agrega palabras con 1 toque. Ej: Idea / Comprar / a las 18:00.",
+        "today.tip.language.body",
+        "Cambia el idioma de Remi en cualquier momento desde tu perfil.",
       ),
-      cta: safeT("today.tip.smartShortcuts.cta", "Probar ahora"),
+      cta: safeT("today.tip.language.cta", "Cambiar idioma"),
       icon: <Sparkles size={18} />,
       bg: "",
-      border: "rgba(125,89,201,0.70)",
-      onClick: () => openCapture(""),
+      border: "rgba(59,130,246,0.65)",
+      onClick: () => navigate("/profile"),
     });
 
     cards.push({

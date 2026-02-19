@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
 
 type Props = {
@@ -42,6 +42,14 @@ export default function FeedbackSurveyModal({
   const canSubmit = score >= 1 && !loading && !submitting;
   const isBusy = loading || submitting;
   const scoreButtons = useMemo(() => [1, 2, 3, 4, 5], []);
+
+  useEffect(() => {
+    if (!open) return;
+    setScore(0);
+    setLiked("");
+    setImprovement("");
+    setSubmitting(false);
+  }, [open]);
 
   if (!open) return null;
 
