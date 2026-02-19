@@ -18,6 +18,7 @@ type FeedbackPayload = {
   user_id: string;
   lang: "es" | "en" | "de";
   score: number;
+  liked: string;
   improvement: string;
   source: FeedbackSource;
   usage_count: number;
@@ -152,6 +153,7 @@ export async function submitFeedbackSurvey(params: {
   userId: string;
   lang: "es" | "en" | "de";
   score: number;
+  liked: string;
   improvement: string;
   source: FeedbackSource;
 }) {
@@ -160,6 +162,7 @@ export async function submitFeedbackSurvey(params: {
     user_id: params.userId,
     lang: params.lang,
     score: params.score,
+    liked: params.liked.trim(),
     improvement: params.improvement.trim(),
     source: params.source,
     usage_count: s.usageCount,

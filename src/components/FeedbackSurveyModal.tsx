@@ -6,6 +6,8 @@ type Props = {
   loading?: boolean;
   title: string;
   questionScore: string;
+  questionLike: string;
+  placeholderLike: string;
   questionImprove: string;
   placeholderImprove: string;
   submitLabel: string;
@@ -13,7 +15,7 @@ type Props = {
   scoreHintLow: string;
   scoreHintHigh: string;
   onClose: () => void;
-  onSubmit: (payload: { score: number; improvement: string }) => Promise<void> | void;
+  onSubmit: (payload: { score: number; improvement: string; liked: string }) => Promise<void> | void;
 };
 
 export default function FeedbackSurveyModal({
@@ -21,6 +23,8 @@ export default function FeedbackSurveyModal({
   loading = false,
   title,
   questionScore,
+  questionLike,
+  placeholderLike,
   questionImprove,
   placeholderImprove,
   submitLabel,
@@ -31,6 +35,7 @@ export default function FeedbackSurveyModal({
   onSubmit,
 }: Props) {
   const [score, setScore] = useState<number>(0);
+  const [liked, setLiked] = useState("");
   const [improvement, setImprovement] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -85,6 +90,17 @@ export default function FeedbackSurveyModal({
           </div>
         </div>
 
+        <div className="mb-3">
+          <p className="mb-2 text-[12px] font-medium text-slate-700">{questionLike}</p>
+          <textarea
+            value={liked}
+            onChange={(e) => setLiked(e.target.value.slice(0, 220))}
+            placeholder={placeholderLike}
+            className="min-h-[72px] w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-[12px] text-slate-700 outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100"
+            disabled={isBusy}
+          />
+        </div>
+
         <div className="mb-4">
           <p className="mb-2 text-[12px] font-medium text-slate-700">{questionImprove}</p>
           <textarea
@@ -103,7 +119,7 @@ export default function FeedbackSurveyModal({
               if (!canSubmit) return;
               setSubmitting(true);
               try {
-                await onSubmit({ score, improvement });
+                await onSubmit({ score, improvement, liked });
               } finally {
                 setSubmitting(false);
               }
@@ -126,4 +142,3 @@ export default function FeedbackSurveyModal({
     </div>
   );
 }
-

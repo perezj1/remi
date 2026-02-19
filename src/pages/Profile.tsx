@@ -558,6 +558,7 @@ export default function ProfilePage() {
   const handleSubmitFeedbackSurvey = async (payload: {
     score: number;
     improvement: string;
+    liked: string;
   }) => {
     if (!user) return;
     setSendingFeedback(true);
@@ -566,6 +567,7 @@ export default function ProfilePage() {
         userId: user.id,
         lang,
         score: payload.score,
+        liked: payload.liked,
         improvement: payload.improvement,
         source: "profile_button",
       });
@@ -940,6 +942,8 @@ export default function ProfilePage() {
         loading={sendingFeedback}
         title={safeT("feedback.title", "Tu opinión sobre Remi")}
         questionScore={safeT("feedback.q1", "¿Te está ayudando Remi?")}
+        questionLike={safeT("feedback.q3", "¿Qué es lo que más te gusta?")}
+        placeholderLike={safeT("feedback.placeholderLike", "Escribe lo que más te gusta...")}
         questionImprove={safeT("feedback.q2", "¿Qué mejorarías?")}
         placeholderImprove={safeT("feedback.placeholder", "Escribe una sugerencia breve...")}
         submitLabel={safeT("feedback.send", "Enviar opinión")}

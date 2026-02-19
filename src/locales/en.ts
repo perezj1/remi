@@ -948,7 +948,9 @@ export const en = {
   feedback: {
     title: "Your opinion about Remi",
     q1: "Is Remi helping you?",
+    q3: "What do you like the most?",
     q2: "What would you improve?",
+    placeholderLike: "Write what you like most...",
     placeholder: "Write a short suggestion...",
     send: "Send feedback",
     later: "Not now",

@@ -457,7 +457,7 @@ export default function StatusPage() {
               setRelaxOpen(true);
             }}
             className="mt-3 inline-flex w-full items-center justify-center rounded-full px-4 py-2.5 text-[12px] font-semibold text-white shadow-md transition-colors active:opacity-90 disabled:opacity-60"
-            style={{ background: "#2f7f8f" }}
+            style={{ background: "#7d59c9" }}
           >
             {t("status.relaxMindButton")}
           </button>
@@ -468,7 +468,41 @@ export default function StatusPage() {
           </h3>
 
           <div className="mt-3 rounded-3xl border border-violet-100 bg-white p-3.5 shadow-[0_12px_28px_rgba(125,89,201,0.10)] md:p-5 lg:p-6">
-            <div className="grid grid-cols-[1.05fr_1fr] gap-3">
+            <div className="grid grid-cols-1 gap-3">
+              <div className="rounded-[18px] border p-3.5" style={{ background: "#f2eefe", borderColor: "#cfbeef" }}>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-violet-800">
+                  {t("status.pieTitle")}
+                </p>
+                <p className="mt-1 text-slate-600" style={{ fontSize: "clamp(12px, 0.8vw, 15px)" }}>
+                  {t("status.pieSubtitle")}
+                </p>
+                <div className="mt-3 flex items-center gap-4 rounded-xl border border-violet-100 bg-white/75 p-3">
+                  <div className="relative h-[96px] w-[96px] shrink-0 rounded-full" style={{ background: pieGradient }}>
+                    <div className="absolute inset-[16px] rounded-full bg-white/95 flex items-center justify-center">
+                      <span className="text-[14px] font-extrabold text-slate-800">{pieTotal}</span>
+                    </div>
+                  </div>
+                  <div className="min-w-0 grow space-y-1.5">
+                    {pieData.map((item) => {
+                      const percent = pieTotal > 0 ? Math.round((item.value / pieTotal) * 100) : 0;
+                      return (
+                        <div key={item.key} className="flex items-center justify-between gap-2 text-[12px]">
+                          <span className="inline-flex min-w-0 items-center gap-1.5 text-slate-700">
+                            <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: item.color }} />
+                            <span className="truncate">{item.label}</span>
+                          </span>
+                          <span className="shrink-0 font-semibold text-slate-900">
+                            {item.value} ({percent}%)
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-[1.05fr_1fr] gap-3">
               <div className="rounded-[24px] border border-emerald-100 bg-[#ecfdf5] p-4 min-h-[170px] flex flex-col md:min-h-[200px] lg:min-h-[230px]">
                 <div className="h-10 w-10 rounded-full bg-emerald-100 text-emerald-700 inline-flex items-center justify-center">
                   <CheckCircle2 className="h-4 w-4" />
@@ -518,16 +552,16 @@ export default function StatusPage() {
               </div>
             </div>
 
-            <div className="mt-3 rounded-[22px] border border-indigo-300/60 bg-gradient-to-r from-[#6f78ef] to-[#5e67de] px-4 py-3.5 shadow-[0_14px_30px_rgba(78,89,210,0.28)]">
+            <div className="mt-3 rounded-[22px] border border-violet-200 bg-gradient-to-r from-[#f1ecff] via-[#e9f0ff] to-[#e2f5f3] px-4 py-3.5 shadow-[0_10px_24px_rgba(125,89,201,0.12)]">
               <div className="flex items-center justify-between gap-4">
-                <div className="text-white min-w-0">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-white/80">
+                <div className="text-slate-800 min-w-0">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-violet-700/80">
                     {t("status.weekSectionTitle")}
                   </p>
                   <p className="mt-1 leading-none font-extrabold" style={{ fontSize: "clamp(28px, 1.7vw, 44px)" }}>
                     {weekActivePercent}%
                   </p>
-                  <p className="mt-1 text-white/85" style={{ fontSize: "clamp(13px, 0.9vw, 18px)" }}>
+                  <p className="mt-1 text-slate-600" style={{ fontSize: "clamp(13px, 0.9vw, 18px)" }}>
                     {t("status.weekActiveLabel")}
                   </p>
                 </div>
@@ -535,11 +569,11 @@ export default function StatusPage() {
                 <div
                   className="relative h-[82px] w-[82px] rounded-full"
                   style={{
-                    background: `conic-gradient(#ffffff ${weekActivePercent * 3.6}deg, rgba(255,255,255,0.32) 0deg)`,
+                    background: `conic-gradient(#7d59c9 ${weekActivePercent * 3.6}deg, rgba(125,89,201,0.20) 0deg)`,
                   }}
                 >
-                  <div className="absolute inset-[8px] rounded-full bg-[#6671e6] flex items-center justify-center">
-                    <span className="text-[18px] font-extrabold text-white">{weekActiveDays}/7</span>
+                  <div className="absolute inset-[8px] rounded-full bg-white/95 border border-violet-200 flex items-center justify-center">
+                    <span className="text-[18px] font-extrabold text-violet-700">{weekActiveDays}/7</span>
                   </div>
                 </div>
               </div>
@@ -552,7 +586,7 @@ export default function StatusPage() {
                   return (
                     <span
                       key={`week-slot-${index}`}
-                      className={filled ? "h-2.5 w-5 rounded-full bg-white" : "h-2.5 w-5 rounded-full bg-white/35"}
+                      className={filled ? "h-2.5 w-5 rounded-full bg-violet-500" : "h-2.5 w-5 rounded-full bg-violet-200"}
                     />
                   );
                 })}
@@ -618,39 +652,6 @@ export default function StatusPage() {
               </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-1 gap-3">
-              <div className="rounded-[18px] border p-3.5" style={{ background: "#f2eefe", borderColor: "#cfbeef" }}>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-violet-800">
-                  {t("status.pieTitle")}
-                </p>
-                <p className="mt-1 text-slate-600" style={{ fontSize: "clamp(12px, 0.8vw, 15px)" }}>
-                  {t("status.pieSubtitle")}
-                </p>
-                <div className="mt-3 flex items-center gap-4 rounded-xl border border-violet-100 bg-white/75 p-3">
-                  <div className="relative h-[96px] w-[96px] shrink-0 rounded-full" style={{ background: pieGradient }}>
-                    <div className="absolute inset-[16px] rounded-full bg-white/95 flex items-center justify-center">
-                      <span className="text-[14px] font-extrabold text-slate-800">{pieTotal}</span>
-                    </div>
-                  </div>
-                  <div className="min-w-0 grow space-y-1.5">
-                    {pieData.map((item) => {
-                      const percent = pieTotal > 0 ? Math.round((item.value / pieTotal) * 100) : 0;
-                      return (
-                        <div key={item.key} className="flex items-center justify-between gap-2 text-[12px]">
-                          <span className="inline-flex min-w-0 items-center gap-1.5 text-slate-700">
-                            <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: item.color }} />
-                            <span className="truncate">{item.label}</span>
-                          </span>
-                          <span className="shrink-0 font-semibold text-slate-900">
-                            {item.value} ({percent}%)
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </section>
 

@@ -961,7 +961,9 @@ export const es = {
   feedback: {
     title: "Tu opinión sobre Remi",
     q1: "¿Te está ayudando Remi?",
+    q3: "¿Qué es lo que más te gusta?",
     q2: "¿Qué mejorarías?",
+    placeholderLike: "Escribe lo que más te gusta...",
     placeholder: "Escribe una sugerencia breve...",
     send: "Enviar opinión",
     later: "Ahora no",
