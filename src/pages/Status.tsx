@@ -514,8 +514,16 @@ export default function StatusPage() {
                   <div className="grid grid-cols-7 gap-1.5">
                     {capturedSeries.map((captured, idx) => {
                       const resolved = resolvedSeries[idx] ?? 0;
-                      const capturedHeight = Math.max(8, Math.round((captured / balanceMax) * 64));
-                      const resolvedHeight = Math.max(8, Math.round((resolved / balanceMax) * 64));
+                      const BAR_MIN_HEIGHT = 6;
+                      const BAR_MAX_HEIGHT = 50;
+                      const capturedHeight = Math.max(
+                        BAR_MIN_HEIGHT,
+                        Math.min(BAR_MAX_HEIGHT, Math.round((captured / balanceMax) * BAR_MAX_HEIGHT)),
+                      );
+                      const resolvedHeight = Math.max(
+                        BAR_MIN_HEIGHT,
+                        Math.min(BAR_MAX_HEIGHT, Math.round((resolved / balanceMax) * BAR_MAX_HEIGHT)),
+                      );
                       return (
                         <div key={`balance-day-${idx}`} className="flex flex-col items-center gap-1">
                           <div className="h-16 w-full rounded-md bg-slate-100/80 px-1 pb-1 pt-1.5 flex items-end justify-center gap-0.5">

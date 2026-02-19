@@ -111,12 +111,14 @@ function modeConfig(mode: ZenMode) {
 
 function createBubble(width: number, height: number, id: number): Bubble {
   const palette = [
-    { h: 204, s: 72, l: 66 },
-    { h: 224, s: 70, l: 68 },
-    { h: 287, s: 64, l: 70 },
-    { h: 332, s: 70, l: 72 },
-    { h: 168, s: 54, l: 68 },
-    { h: 258, s: 62, l: 67 },
+    { h: 2, s: 78, l: 58 },    // red
+    { h: 30, s: 84, l: 58 },   // orange
+    { h: 50, s: 88, l: 60 },   // yellow
+    { h: 122, s: 52, l: 52 },  // green
+    { h: 208, s: 62, l: 54 },  // blue
+    { h: 186, s: 58, l: 54 },  // turquoise
+    { h: 322, s: 62, l: 60 },  // pink
+    { h: 266, s: 46, l: 54 },  // purple
   ] as const;
   const tone = palette[Math.floor(Math.random() * palette.length)];
   const radius = pickRadius();

@@ -2104,11 +2104,11 @@ const anyModalOpen =
           pops: safeT("status.relaxPops", "Pops"),
           modeTitle: safeT("status.relaxModeTitle", "Bubble Pop Zen"),
           modeCalm: safeT("status.relaxModeCalm", "Calma"),
-          modeEnergy: safeT("status.relaxModeEnergy", "Energia"),
+          modeEnergy: safeT("status.relaxModeEnergy", "Energía"),
           resetDoneTitle: safeT("status.relaxDoneTitle", "Reset hecho"),
           resetDoneSubtitle: safeT(
             "status.relaxDoneSubtitle",
-            "Descarga tension con toques simples. Sin pensar.",
+            "Descarga tensión con toques simples. Sin pensar.",
           ),
           capture: safeT("status.relaxCapture", "Capturar"),
           viewCanvas: safeT("status.relaxViewCanvas", "Ver lienzo"),
