@@ -9,6 +9,7 @@ import {
   LayoutTemplate,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import MindRelaxSurface from "@/components/MindRelaxSurface";
 import {
   fetchRemiStatusSummary,
   fetchRemiStatusInsights,
@@ -243,6 +244,7 @@ export default function StatusPage() {
   const [summary, setSummary] = useState<RemiStatusSummary | null>(null);
   const [insights, setInsights] = useState<RemiStatusInsights | null>(null);
   const [loading, setLoading] = useState(true);
+  const [relaxOpen, setRelaxOpen] = useState(false);
 
   // siempre arriba al entrar
   useEffect(() => {
@@ -395,15 +397,12 @@ export default function StatusPage() {
           <button
             type="button"
             onClick={() => {
-              navigate("/");
-              setTimeout(() => {
-                window.dispatchEvent(new CustomEvent("remi-open-mental-dump"));
-              }, 80);
+              setRelaxOpen(true);
             }}
             className="mt-3 inline-flex w-full items-center justify-center rounded-full px-4 py-2.5 text-[12px] font-semibold text-white shadow-md transition-colors active:opacity-90 disabled:opacity-60"
-            style={{ background: "#7d59c9" }}
+            style={{ background: "#2f7f8f" }}
           >
-            {t("mentalDump.title")}
+            {t("status.relaxMindButton")}
           </button>
         </section>
         <section className="mt-8">
@@ -583,6 +582,29 @@ export default function StatusPage() {
         )}
       </main>
 
+      <MindRelaxSurface
+        open={relaxOpen}
+        onClose={() => setRelaxOpen(false)}
+        onCapture={() => {
+          setRelaxOpen(false);
+          navigate("/");
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent("remi-open-mental-dump"));
+          }, 80);
+        }}
+        labels={{
+          sound: t("status.relaxSound"),
+          soundOff: t("status.relaxSoundOff"),
+          pops: t("status.relaxPops"),
+          modeTitle: t("status.relaxModeTitle"),
+          modeCalm: t("status.relaxModeCalm"),
+          modeEnergy: t("status.relaxModeEnergy"),
+          resetDoneTitle: t("status.relaxDoneTitle"),
+          resetDoneSubtitle: t("status.relaxDoneSubtitle"),
+          capture: t("status.relaxCapture"),
+          close: t("common.close"),
+        }}
+      />
     </div>
   );
 }
