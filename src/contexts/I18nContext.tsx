@@ -17,7 +17,23 @@ import {
 
 const LANGUAGE_KEY = "remi_language";
 
-function normalizeIdeaTerms(input: string): string {
+function normalizeIdeaTerms(input: string, lang: RemiLocale): string {
+  if (lang === "en") {
+    return input
+      .replace(/\bIdeas\b/g, "Notes")
+      .replace(/\bIdea\b/g, "Note")
+      .replace(/\bideas\b/g, "notes")
+      .replace(/\bidea\b/g, "note");
+  }
+
+  if (lang === "de") {
+    return input
+      .replace(/\bIdeen\b/g, "Notizen")
+      .replace(/\bIdee\b/g, "Notiz")
+      .replace(/\bideen\b/g, "notizen")
+      .replace(/\bidee\b/g, "notiz");
+  }
+
   return input
     .replace(/\bIdeas\b/g, "Notas")
     .replace(/\bIdea\b/g, "Nota")
@@ -97,7 +113,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
         });
       }
 
-      return normalizeIdeaTerms(text!);
+      return normalizeIdeaTerms(text!, lang);
     },
     [getFromTree, lang]
   );

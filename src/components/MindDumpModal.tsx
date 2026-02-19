@@ -105,7 +105,23 @@ const LOCALES: Record<UiLang, any> = {
   de: deLocale,
 };
 
-function normalizeIdeaTerms(input: string): string {
+function normalizeIdeaTerms(input: string, lang: UiLang): string {
+  if (lang === "en") {
+    return input
+      .replace(/\bIdeas\b/g, "Notes")
+      .replace(/\bIdea\b/g, "Note")
+      .replace(/\bideas\b/g, "notes")
+      .replace(/\bidea\b/g, "note");
+  }
+
+  if (lang === "de") {
+    return input
+      .replace(/\bIdeen\b/g, "Notizen")
+      .replace(/\bIdee\b/g, "Notiz")
+      .replace(/\bideen\b/g, "notizen")
+      .replace(/\bidee\b/g, "notiz");
+  }
+
   return input
     .replace(/\bIdeas\b/g, "Notas")
     .replace(/\bIdea\b/g, "Nota")
@@ -144,11 +160,11 @@ function tFromLocales(
     const dict = LOCALES[lang] ?? LOCALES.es;
     const raw = getDeepValue(dict, key);
     if (typeof raw === "string" && raw.trim().length > 0) {
-      return normalizeIdeaTerms(interpolateVars(raw, vars));
+      return normalizeIdeaTerms(interpolateVars(raw, vars), lang);
     }
-    return normalizeIdeaTerms(interpolateVars(fallback, vars));
+    return normalizeIdeaTerms(interpolateVars(fallback, vars), lang);
   } catch {
-    return normalizeIdeaTerms(interpolateVars(fallback, vars));
+    return normalizeIdeaTerms(interpolateVars(fallback, vars), lang);
   }
 }
 
@@ -455,8 +471,8 @@ function detectReminderSignal(text: string): string | null {
 
 function detectIdeaSignal(text: string): string | null {
   const s = foldForMatch(text);
-  const hit = s.match(/\b(nota|idea|idee)\b/i)?.[0] ?? null;
-  return hit;
+  const explicit = s.match(/\b(nota|note|notiz|idea|idee)\b/i)?.[0] ?? null;
+  return explicit;
 }
 
 type HighlightKind = "date" | "time" | "reminder" | "habit" | "idea";
@@ -497,7 +513,7 @@ const HIGHLIGHT_PATTERNS: Array<{ kind: HighlightKind; regex: RegExp }> = [
 
   {
     kind: "idea",
-    regex: /\b(nota|idea|idee)\b/gi,
+    regex: /\b(nota|note|notiz|idea|idee)\b/gi,
   },
 ];
 
