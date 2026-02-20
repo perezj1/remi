@@ -7,7 +7,7 @@ import { useI18n } from "@/contexts/I18nContext";
 import {
   acceptSharedListInvite,
   createSharedList,
-  createSharedListInvite,
+  createSharedListInviteShare,
   createSharedListItem,
   deleteSharedList,
   deleteSharedListItem,
@@ -197,10 +197,8 @@ export default function SharedListsPage() {
   const handleShare = async () => {
     if (!selected) return;
     try {
-      const invite = await createSharedListInvite(selected.id, "editor");
-      const url = `${window.location.origin}/lists/invite/${invite.token}`;
-      const message = `${safeT("lists.title", "Listas compartidas")}: ${selected.title}\n${url}`;
-      const result = await shareTextOrCopy(message);
+      const invite = await createSharedListInviteShare(selected.id, "editor");
+      const result = await shareTextOrCopy(invite.shareMessage);
       if (result === "shared") {
         toast.success(safeT("shareInvite.sharedOk", "Listo. Enlace copiado/compartido."));
       } else {

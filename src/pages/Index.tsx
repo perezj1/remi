@@ -1307,8 +1307,13 @@ const anyModalOpen =
     return () => window.removeEventListener("resize", updateTipsScrollMetrics);
   }, [tipCards.length, updateTipsScrollMetrics]);
 
-  const tipsThumbWidthPct = Math.max(tipsScrollMetrics.visibleRatio * 100, 20);
-  const tipsThumbLeftPct = tipsScrollMetrics.progress * (100 - tipsThumbWidthPct);
+  const tipsHasOverflow = tipsScrollMetrics.visibleRatio < 0.999;
+  const tipsThumbWidthPct = tipsHasOverflow
+    ? Math.max(tipsScrollMetrics.visibleRatio * 100, 20)
+    : 24;
+  const tipsThumbLeftPct = tipsHasOverflow
+    ? tipsScrollMetrics.progress * (100 - tipsThumbWidthPct)
+    : 38;
   return (
     <div
       className="remi-page"
@@ -1542,25 +1547,28 @@ const anyModalOpen =
                 key={tip.id}
                 type="button"
                 onClick={tip.onClick}
-                className="shrink-0 rounded-2xl border border-slate-200 bg-white shadow-[0_6px_16px_rgba(15,23,42,0.06)] hover:bg-slate-50 flex flex-col"
+                className="shrink-0 rounded-2xl border border-slate-200 bg-white shadow-[0_6px_14px_rgba(15,23,42,0.05)] hover:bg-slate-50 flex flex-col items-center"
                 style={{
-                  width: "clamp(100px, 7.8vw, 168px)",
-                  padding: "clamp(8px, 0.6vw, 14px)",
-                  minHeight: "clamp(108px, 7.8vw, 162px)",
+                  width: "clamp(98px, 22vw, 132px)",
+                  padding: "10px 8px 9px",
+                  minHeight: "110px",
                 }}
                 title={tip.title}
                 aria-label={tip.title}
               >
-                <div className="mx-auto rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center" style={{ width: "clamp(40px, 2.6vw, 58px)", height: "clamp(40px, 2.6vw, 58px)" }}>
+                <div
+                  className="mx-auto rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center"
+                  style={{ width: 38, height: 38 }}
+                >
                   <span className="leading-none" style={{ fontSize: "clamp(20px, 1.2vw, 28px)" }}>
                     {TIP_EMOJI_BY_ID[tip.id] ?? "✨"}
                   </span>
                 </div>
                 <p
-                  className="mt-2 leading-snug font-medium text-slate-800 line-clamp-2"
+                  className="mt-2 leading-snug font-medium text-slate-800 line-clamp-2 text-center"
                   style={{
-                    fontSize: "clamp(11px, 0.72vw, 14px)",
-                    minHeight: "2.7em",
+                    fontSize: "clamp(11px, 0.72vw, 13px)",
+                    minHeight: "2.55em",
                   }}
                 >
                   {tip.title}
@@ -1568,10 +1576,10 @@ const anyModalOpen =
               </button>
             ))}
           </div>
-          <div className="mt-2 px-1">
-            <div className="relative h-1.5 w-full rounded-full bg-slate-200/80 overflow-hidden">
+          <div className="mt-2.5 px-1">
+            <div className="relative h-1.5 w-full rounded-full bg-slate-200/90 overflow-hidden">
               <span
-                className="absolute top-0 h-full rounded-full bg-violet-400/90 transition-all duration-150"
+                className="absolute top-0 h-full rounded-full bg-violet-500 transition-all duration-150"
                 style={{
                   width: `${tipsThumbWidthPct}%`,
                   left: `${tipsThumbLeftPct}%`,

@@ -231,6 +231,31 @@ export async function createSharedListInvite(
   };
 }
 
+export async function createSharedListInviteShare(
+  listId: string,
+  role: "editor" | "viewer" = "editor",
+): Promise<{ token: string; expires_at: string; shareUrl: string; shareMessage: string }> {
+  const { data, error } = await supabase.functions.invoke("create-shared-list-invite", {
+    body: {
+      listId,
+      role,
+      expiresInHours: 24 * 7,
+    },
+  });
+
+  if (error) throw error;
+  if (!data?.token || !data?.shareUrl || !data?.shareMessage) {
+    throw new Error("Invalid shared list invite response");
+  }
+
+  return {
+    token: String(data.token),
+    expires_at: String(data.expires_at ?? new Date().toISOString()),
+    shareUrl: String(data.shareUrl),
+    shareMessage: String(data.shareMessage),
+  };
+}
+
 export async function acceptSharedListInvite(token: string): Promise<string> {
   const { data, error } = await supabase.rpc("accept_shared_list_invite", {
     p_token: token,

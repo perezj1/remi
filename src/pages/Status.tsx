@@ -320,13 +320,12 @@ export default function StatusPage() {
   const capturedByHour = useMemo(() => sumByHour(capturedHeatmap), [capturedHeatmap]);
   const resolvedByHour = useMemo(() => sumByHour(resolvedHeatmap), [resolvedHeatmap]);
   const capturedLast30Count = insights?.capturedLast30Count ?? capturedSeries.reduce((acc, cur) => acc + cur, 0);
-  const ideasLast30Count = insights?.ideasLast30Count ?? 0;
   const closedWithDueCount = insights?.completedWithDueCount ?? 0;
   const overdueCount = insights?.overdueUnfinishedCount ?? 0;
   const balanceMax = Math.max(1, ...capturedSeries, ...resolvedSeries);
   const pieData = [
     { key: "captured", label: t("status.pieCaptured"), value: capturedLast30Count, color: "#7d59c9" },
-    { key: "ideas", label: t("status.pieIdeas"), value: ideasLast30Count, color: "#e8c45a" },
+    { key: "ideas", label: t("status.pieIdeas"), value: totalIdeasStored, color: "#e8c45a" },
     { key: "closed", label: t("status.pieClosed"), value: closedWithDueCount, color: "#59c9b5" },
     { key: "overdue", label: t("status.pieOverdue"), value: overdueCount, color: "#f19aa9" },
   ];
