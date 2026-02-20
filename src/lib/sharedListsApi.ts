@@ -335,11 +335,13 @@ export async function createSharedListInvite(
 export async function createSharedListInviteShare(
   listId: string,
   role: "editor" | "viewer" = "editor",
+  lang: "es" | "en" | "de" = "es",
 ): Promise<{ token: string; expires_at: string; shareUrl: string; shareMessage: string }> {
   const { data, error } = await supabase.functions.invoke("create-shared-list-invite", {
     body: {
       listId,
       role,
+      lang,
       expiresInHours: 24 * 7,
     },
   });
