@@ -127,10 +127,11 @@ Deno.serve(async (req) => {
     const listTitle = String(listRow?.title ?? "Shared list");
     const senderName =
       String(
-        user.user_metadata?.display_name ??
+        user.user_metadata?.username ??
+          user.user_metadata?.user_name ??
+          user.user_metadata?.display_name ??
           user.user_metadata?.full_name ??
           user.user_metadata?.name ??
-          user.email?.split("@")[0] ??
           "Alguien",
       ).trim() || "Alguien";
     const sharedListLabel =
