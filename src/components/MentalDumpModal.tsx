@@ -1,7 +1,7 @@
 // src/components/MentalDumpModal.tsx
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { X, List, Lightbulb, ChevronDown, ChevronUp } from "lucide-react";
+import { X, CalendarClock, StickyNote, ChevronDown, ChevronUp } from "lucide-react";
 import type { ReminderMode, RepeatType } from "@/lib/brainItemsApi";
 import { useI18n } from "@/contexts/I18nContext";
 import { parseDateTimeFromText } from "@/lib/parseDateTimeFromText";
@@ -1033,9 +1033,9 @@ export default function MentalDumpModal({
                           }
                         >
                           {item.kind === "task" ? (
-                            <List className="h-4 w-4" />
+                            <CalendarClock className="h-4 w-4" />
                           ) : (
-                            <Lightbulb className="h-4 w-4" />
+                            <StickyNote className="h-4 w-4" />
                           )}
                         </div>
 

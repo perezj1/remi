@@ -9,7 +9,7 @@ import {
   type CSSProperties,
 } from "react";
 import {
-  List,
+  CalendarClock,
   X,
   ClipboardPaste,
   Mic,
@@ -18,9 +18,8 @@ import {
   Sparkles,
   Calendar,
   Clock,
-  Bell,
   Repeat,
-  Lightbulb,
+  StickyNote,
   // ChevronDown, // ⛔️ (comentado) Solo necesario si reactivas la “píldora” de idioma
 } from "lucide-react";
 import { toast } from "sonner";
@@ -2641,7 +2640,7 @@ export default function MindDumpModal({
                     title={t("pill.type.task", "Recordatorio")}
                     aria-label={t("pill.type.task", "Recordatorio")}
                   >
-                    <List size={13} />
+                    <CalendarClock size={13} />
                   </button>
                   <button
                     type="button"
@@ -2675,7 +2674,7 @@ export default function MindDumpModal({
                     title={t("pill.type.idea", "Idea")}
                     aria-label={t("pill.type.idea", "Idea")}
                   >
-                    <Lightbulb size={13} />
+                    <StickyNote size={13} />
                   </button>
                 </div>
                 
@@ -3041,7 +3040,7 @@ export default function MindDumpModal({
                           setTypeTouched(true);
                           setItemKind("task");
                         }}
-                        icon={<List className="h-3.5 w-3.5" />}
+                        icon={<CalendarClock className="h-3.5 w-3.5" />}
                       >
                         {t("pill.type.task", "Recordatorio")}
                       </PillButton>
@@ -3066,7 +3065,7 @@ export default function MindDumpModal({
                           setReminderMenuOpen(false);
                           setRepeatMenuOpen(false);
                         }}
-                        icon={<Lightbulb className="h-3.5 w-3.5" />}
+                        icon={<StickyNote className="h-3.5 w-3.5" />}
                       >
                         {t("pill.type.idea", "Idea")}
                       </PillButton>
@@ -3143,7 +3142,7 @@ export default function MindDumpModal({
                   <div className="relative">
                     <SettingPill
                       disabled={itemKind !== "task"}
-                      icon={<Bell className="h-4 w-4" style={{ color: REMI_PURPLE }} />}
+                      icon={<CalendarClock className="h-4 w-4" style={{ color: REMI_PURPLE }} />}
                       text={reminderLabel}
                       right={<CaretSquare />}
                       onClick={() => {

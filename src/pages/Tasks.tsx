@@ -9,7 +9,7 @@ import {
   deleteBrainItem,
 } from "@/lib/brainItemsApi";
 import {
-  List,
+  CalendarClock,
   Check,
   Trash2,
   Pencil,
@@ -321,7 +321,7 @@ export default function TasksPage() {
           {!loading && filtered.length === 0 && (
             <div className="rounded-3xl border border-slate-200 bg-slate-50 shadow-[0_10px_22px_rgba(15,23,42,0.06)] px-4 py-4 flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center shrink-0">
-                <List size={18} />
+                <CalendarClock size={18} />
               </div>
               <div className="min-w-0">
                 <p className="text-[14px] font-semibold text-slate-900">
@@ -388,7 +388,7 @@ export default function TasksPage() {
                             {/* Header row */}
                             <div className="flex items-start gap-3">
                               <div className="w-10 h-10 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center shrink-0 relative">
-                                <List size={18} />
+                                <CalendarClock size={18} />
                                 {shouldShowSentIndicator(item) && (
                                   <span
                                     className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm"

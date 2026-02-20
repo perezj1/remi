@@ -1,7 +1,7 @@
 // src/components/TaskEditModal.tsx
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bell, Calendar, Clock, Repeat, X } from "lucide-react";
+import { Calendar, CalendarClock, Clock, Repeat, X } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
 import {
   type BrainItem,
@@ -567,7 +567,7 @@ export default function TaskEditModal({
 
             <div className="relative" ref={reminderMenuRef}>
               <SettingPill
-                icon={<Bell className="h-4 w-4 text-[#7d59c9]" />}
+                icon={<CalendarClock className="h-4 w-4 text-[#7d59c9]" />}
                 text={reminderLabel}
                 disabled={remindersDisabled}
                 onClick={() => {

@@ -8,7 +8,7 @@ import {
   deleteBrainItem,
 } from "@/lib/brainItemsApi";
 import {
-  Lightbulb,
+  StickyNote,
   Check,
   Trash2,
   Pencil,
@@ -290,7 +290,7 @@ export default function IdeasPage() {
           {!loading && filtered.length === 0 && (
             <div className="rounded-3xl border border-slate-200 bg-slate-50 shadow-[0_10px_22px_rgba(15,23,42,0.06)] px-4 py-4 flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
-                <Lightbulb size={18} />
+                <StickyNote size={18} />
               </div>
               <div className="min-w-0">
                 <p className="text-[14px] font-semibold text-slate-900">
@@ -370,7 +370,7 @@ export default function IdeasPage() {
                             {/* Header row */}
                             <div className="flex items-start gap-3">
                               <div className="w-10 h-10 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center shrink-0 relative">
-                                <Lightbulb size={18} />
+                                <StickyNote size={18} />
                                 {shouldShowSentIndicator && (
                                   <span
                                     className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm"

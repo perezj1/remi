@@ -4,8 +4,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
   Brain,
-  List,
-  Lightbulb,
+  CalendarClock,
+  StickyNote,
   Mic,
   Plus,
   type LucideIcon,
@@ -366,14 +366,14 @@ export default function BottomNav() {
         <NavItem
           to="/tasks"
           label={t("bottomNav.tasks")}
-          icon={List}
+          icon={CalendarClock}
           active={isTasksActive}
         />
 
         <NavItem
           to="/ideas"
           label={t("bottomNav.ideas")}
-          icon={Lightbulb}
+          icon={StickyNote}
           active={isIdeasActive}
         />
       </div>

@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import {
   ArrowRight,
-  Bell,
+  CalendarClock,
   Calendar,
   TrendingDown,
   Zap,
@@ -350,7 +350,7 @@ const LandingPage: React.FC = () => {
                         text: x.hero.bullets.b,
                       },
                       {
-                        icon: <Bell className="w-4 h-4" />,
+                        icon: <CalendarClock className="w-4 h-4" />,
                         text: x.hero.bullets.c,
                       },
                       {
@@ -457,7 +457,7 @@ const LandingPage: React.FC = () => {
                         ) : idx === 1 ? (
                           <RefreshCw className="w-3.5 h-3.5 text-[#7d59c9]" />
                         ) : (
-                          <Bell className="w-3.5 h-3.5 text-[#7d59c9]" />
+                          <CalendarClock className="w-3.5 h-3.5 text-[#7d59c9]" />
                         )}
                         {chip}
                       </span>
@@ -527,7 +527,7 @@ const LandingPage: React.FC = () => {
 
               <Card className="landing-card p-6 md:p-8 animate-fade-in">
                 <div className="w-12 h-12 rounded-2xl bg-[#f1eff7] flex items-center justify-center mb-4">
-                  <Bell className="w-6 h-6 text-[#7d59c9]" />
+                  <CalendarClock className="w-6 h-6 text-[#7d59c9]" />
                 </div>
                 <h3 className="text-xl font-semibold text-slate-900 mb-2">
                   {x.how.step3Title}

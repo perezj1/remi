@@ -45,7 +45,7 @@ import {
 } from "@/lib/feedbackSurvey";
 
 import {
-  List,
+  CalendarClock,
   Check,
   User,
   Share2,
@@ -1572,7 +1572,7 @@ const anyModalOpen =
                       >
                         <div className="flex items-start gap-3">
                           <div className="w-10 h-10 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center shrink-0 relative">
-                            <List size={18} />
+                            <CalendarClock size={18} />
                             {shouldShowSentIndicator(task) && (
                               <span
                                 className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm"
@@ -1665,7 +1665,7 @@ const anyModalOpen =
                             >
                               <div className="flex items-start gap-3">
                                 <div className="w-10 h-10 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center shrink-0 relative">
-                                  <List size={18} />
+                                  <CalendarClock size={18} />
                                   {shouldShowSentIndicator(task) && (
                                     <span
                                       className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm"
@@ -2128,7 +2128,7 @@ function EmptyStateCard({ title, subtitle }: { title: string; subtitle: string }
     <div className="mt-4 relative h-[312px] overflow-hidden">
       <div className="absolute left-1/2 -translate-x-1/2 top-[18px] w-[58%] min-w-[210px] max-w-[260px] h-[250px] rounded-[26px] border border-slate-300 bg-slate-100 shadow-[0_10px_24px_rgba(15,23,42,0.08)] px-3.5 py-3 flex flex-col">
         <div className="w-10 h-10 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center">
-          <List size={16} />
+          <CalendarClock size={16} />
         </div>
         <div className="mt-4">
           <p className="text-[20px] font-extrabold leading-snug text-slate-900">{title}</p>
@@ -2174,7 +2174,7 @@ function TaskRowCard({
   return (
     <div className={TASK_CARD_CLASS}>
       <div className={`${ITEM_ICON_CLASS} relative`}>
-        <List size={18} />
+        <CalendarClock size={18} />
         {showSentIndicator && (
           <span
             className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm"
