@@ -550,6 +550,7 @@ export const en = {
     greetingHello: "Hello,",
     captureSectionTitle: "Clear your mind",
     listsTitle: "Lists",
+    listsEmptyTitle: "Create your first list",
     tipsTitle: "Actions",
     openLists: "Open shared lists",
 
@@ -967,16 +968,16 @@ export const en = {
 
   lists: {
     title: "Lists",
-    subtitle: "Coordinate in real time with family and team.",
+    subtitle: "Create lists and share them to coordinate with others.",
     loading: "Loading lists...",
-    empty: "You do not have shared lists yet.",
+    empty: "You don't have any lists yet.",
     selectOne: "Select a list to see its items.",
     newPlaceholder: "New list (ex: Buy)",
     create: "Create",
     created: "List created.",
     updated: "List updated.",
     createError: "Could not create the list.",
-    confirmDelete: "Delete this shared list?",
+    confirmDelete: "Delete this list?",
     delete: "Delete",
     deleted: "List deleted.",
     deleteError: "Could not delete the list.",

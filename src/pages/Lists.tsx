@@ -314,7 +314,7 @@ export default function SharedListsPage() {
       return;
     }
 
-    const ok = window.confirm(safeT("lists.confirmDelete", "¿Eliminar esta lista compartida?"));
+    const ok = window.confirm(safeT("lists.confirmDelete", "Borrar esta lista?"));
     if (!ok) return;
 
     try {
@@ -332,7 +332,7 @@ export default function SharedListsPage() {
     if (!selected || !user) return;
     if (selected.my_role === "owner") return;
 
-    const ok = window.confirm(safeT("lists.confirmLeave", "¿Salir de esta lista compartida?"));
+    const ok = window.confirm(safeT("lists.confirmLeave", "Salir de esta lista?"));
     if (!ok) return;
 
     try {
@@ -567,7 +567,7 @@ export default function SharedListsPage() {
       toast.error(safeT("lists.onlyOwnerDelete", "Solo el owner puede eliminar la lista."));
       return;
     }
-    const ok = window.confirm(safeT("lists.confirmDelete", "¿Eliminar esta lista compartida?"));
+    const ok = window.confirm(safeT("lists.confirmDelete", "Borrar esta lista?"));
     if (!ok) return;
     try {
       await deleteSharedList(list.id);
@@ -729,15 +729,15 @@ export default function SharedListsPage() {
           paddingBottom: 10,
           paddingLeft: "calc(16px + env(safe-area-inset-left))",
           paddingRight: "calc(16px + env(safe-area-inset-right))",
-          minHeight: 96,
-          background: "#f8f7fc",
-          borderBottomLeftRadius: 24,
-          borderBottomRightRadius: 24,
-          borderBottom: "1px solid #e5e1f2",
-          boxShadow: "0 2px 10px rgba(80, 74, 112, 0.06)",
+          minHeight: 100,
+          background: "#ffffff",
+          borderBottomLeftRadius: 22,
+          borderBottomRightRadius: 22,
+          borderBottom: "1px solid #e2e8f0",
+          boxShadow: "0 2px 8px rgba(15,23,42,0.04)",
         }}
       >
-        <div className="mx-auto mt-0.5 w-full" style={{ maxWidth: "1120px" }}>
+        <div className="mx-auto mt-0.5 w-full" style={{ maxWidth: "min(96vw, 1440px)" }}>
           {viewMode === "detail" && selected ? (
             <div className="flex items-center gap-2 pl-3">
               <div
@@ -770,7 +770,7 @@ export default function SharedListsPage() {
                 {safeT("lists.title", "Listas")}
               </h1>
               <p className="mt-0.5 font-semibold text-slate-500" style={{ fontSize: "clamp(13px, 0.9vw, 18px)" }}>
-                {safeT("lists.subtitle", "Coordina en tiempo real con familia y equipo.")}
+                {safeT("lists.subtitle", "Crea listas y compartelas para coordinarte con los demas.")}
               </p>
             </>
           )}
@@ -794,7 +794,7 @@ export default function SharedListsPage() {
                 value={newListTitle}
                 onChange={(e) => setNewListTitle(e.target.value)}
                 placeholder={safeT("lists.newPlaceholder", "Nueva lista (ej: Comprar)")}
-                className="h-11 flex-1 rounded-full border border-[#d9d3ea] bg-[#f4f2fa] px-4 text-sm outline-none transition focus:border-[#59a5c9] focus:shadow-[0_0_0_3px_rgba(89,165,201,0.22)]"
+                className="h-11 flex-1 rounded-full border border-[#d9d3ea] bg-white px-4 text-sm outline-none transition focus:border-[#59a5c9] focus:shadow-[0_0_0_3px_rgba(89,165,201,0.22)]"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") void handleCreateList();
                 }}
@@ -819,7 +819,7 @@ export default function SharedListsPage() {
 
               {!loading && lists.length === 0 && (
                 <div className="rounded-2xl border border-[#dfdbea] bg-[#f4f2fa] px-3 py-2 text-sm text-slate-500 sm:col-span-2">
-                  {safeT("lists.empty", "Aún no tienes listas compartidas.")}
+                  {safeT("lists.empty", "Aun no tienes listas.")}
                 </div>
               )}
               {!loading && pendingLists.length > 0 && (
@@ -1064,6 +1064,7 @@ export default function SharedListsPage() {
     </div>
   );
 }
+
 
 
 

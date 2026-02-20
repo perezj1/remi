@@ -1620,15 +1620,33 @@ const anyModalOpen =
         </div>
       </div>
 
-      {recentLists.length > 0 && (
-        <div className="mx-auto mt-7 mb-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
-          <div>
-            <p className="font-extrabold text-slate-900" style={{ fontSize: "clamp(16px, 1vw, 22px)" }}>
-              {safeT("today.listsTitle", "Listas")}
-            </p>
-          </div>
-          <div className="mt-2 remi-scroll flex gap-2.5 overflow-x-auto pb-1 px-1">
-            {recentLists.map((list) => (
+      <div className="mx-auto mt-7 mb-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
+        <div>
+          <p className="font-extrabold text-slate-900" style={{ fontSize: "clamp(16px, 1vw, 22px)" }}>
+            {safeT("today.listsTitle", "Listas")}
+          </p>
+        </div>
+        <div className="mt-2 remi-scroll flex gap-2.5 overflow-x-auto pb-1 px-1">
+          {recentLists.length === 0 ? (
+            <button
+              type="button"
+              onClick={handleOpenLists}
+              className="relative w-full shrink-0 overflow-hidden rounded-[20px] border border-[#59a5c9] bg-white p-3 text-left transition hover:border-[#4b95b8]"
+              aria-label={safeT("today.listsEmptyTitle", "Crea tu primera lista")}
+            >
+              <div className="flex items-center gap-3">
+                <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-2xl leading-none">
+                  <span role="img" aria-label="lista">
+                    📋
+                  </span>
+                </div>
+                <p className="text-base font-semibold text-[#2f3240]">
+                  {safeT("today.listsEmptyTitle", "Crea tu primera lista")}
+                </p>
+              </div>
+            </button>
+          ) : (
+            recentLists.map((list) => (
               (() => {
                 const stats = recentListsProgress[list.id] ?? { done: 0, total: 0 };
                 const percent = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
@@ -1684,10 +1702,10 @@ const anyModalOpen =
               </button>
                 );
               })()
-            ))}
-          </div>
+            ))
+          )}
         </div>
-      )}
+      </div>
 
       {tipCards.length > 0 && (
         <div className="mx-auto mt-7 mb-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>

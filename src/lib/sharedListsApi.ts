@@ -179,8 +179,54 @@ export async function updateSharedListIcon(listId: string, iconEmoji: string | n
 }
 
 export async function deleteSharedList(listId: string): Promise<void> {
-  const { error } = await supabase.from("shared_lists").delete().eq("id", listId);
-  if (error) throw error;
+  // Preferred path: backend-safe delete (if DB migration/function exists).
+  const rpcRes = await supabase.rpc("delete_shared_list_safe", {
+    p_list_id: listId,
+  });
+
+  if (!rpcRes.error) return;
+
+  // If function is missing, fall back to client-side ordered cleanup to avoid FK conflicts.
+  const rpcMsg = String((rpcRes.error as any)?.message ?? "");
+  const functionMissing =
+    rpcMsg.toLowerCase().includes("function") &&
+    rpcMsg.toLowerCase().includes("delete_shared_list_safe") &&
+    rpcMsg.toLowerCase().includes("does not exist");
+
+  if (!functionMissing) {
+    // Non-missing-function errors should surface immediately.
+    throw rpcRes.error;
+  }
+
+  const { error: eventsErr } = await supabase
+    .from("shared_list_events")
+    .delete()
+    .eq("list_id", listId);
+  if (eventsErr) throw eventsErr;
+
+  const { error: itemsErr } = await supabase
+    .from("shared_list_items")
+    .delete()
+    .eq("list_id", listId);
+  if (itemsErr) throw itemsErr;
+
+  const { error: invitesErr } = await supabase
+    .from("shared_list_invites")
+    .delete()
+    .eq("list_id", listId);
+  if (invitesErr) throw invitesErr;
+
+  const { error: membersErr } = await supabase
+    .from("shared_list_members")
+    .delete()
+    .eq("list_id", listId);
+  if (membersErr) throw membersErr;
+
+  const { error: listErr } = await supabase
+    .from("shared_lists")
+    .delete()
+    .eq("id", listId);
+  if (listErr) throw listErr;
 }
 
 export async function leaveSharedList(listId: string, userId: string): Promise<void> {

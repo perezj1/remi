@@ -565,6 +565,7 @@ export const es = {
     greetingHello: "Hola,",
     captureSectionTitle: "Vacia tu mente",
     listsTitle: "Listas",
+    listsEmptyTitle: "Crea tu primera lista",
     tipsTitle: "Acciones",
     openLists: "Abrir listas compartidas",
 
@@ -980,16 +981,16 @@ export const es = {
 
   lists: {
     title: "Listas",
-    subtitle: "Coordina en tiempo real con familia y equipo.",
+    subtitle: "Crea listas y compartelas para coordinarte con los demas.",
     loading: "Cargando listas...",
-    empty: "Aun no tienes listas compartidas.",
+    empty: "Aún no tienes listas.",
     selectOne: "Selecciona una lista para ver sus puntos.",
     newPlaceholder: "Nueva lista (ej: Comprar)",
     create: "Crear",
     created: "Lista creada.",
     updated: "Lista actualizada.",
     createError: "No se pudo crear la lista.",
-    confirmDelete: "Eliminar esta lista compartida?",
+    confirmDelete: "¿Borrar esta lista?",
     delete: "Eliminar",
     deleted: "Lista eliminada.",
     deleteError: "No se pudo eliminar la lista.",

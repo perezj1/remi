@@ -550,6 +550,7 @@ export const de = {
     greetingHello: "Hallo,",
     captureSectionTitle: "Leere deinen Kopf",
     listsTitle: "Listen",
+    listsEmptyTitle: "Erstelle deine erste Liste",
     tipsTitle: "Aktionen",
     openLists: "Geteilte Listen oeffnen",
 
@@ -961,16 +962,16 @@ export const de = {
 
   lists: {
     title: "Listen",
-    subtitle: "Koordiniere in Echtzeit mit Familie und Team.",
+    subtitle: "Erstelle Listen und teile sie, um dich mit anderen abzustimmen.",
     loading: "Listen werden geladen...",
-    empty: "Du hast noch keine geteilten Listen.",
+    empty: "Du hast noch keine Listen.",
     selectOne: "Waehle eine Liste, um Punkte zu sehen.",
     newPlaceholder: "Neue Liste (z. B. Kaufen)",
     create: "Erstellen",
     created: "Liste erstellt.",
     updated: "Liste aktualisiert.",
     createError: "Liste konnte nicht erstellt werden.",
-    confirmDelete: "Diese geteilte Liste loeschen?",
+    confirmDelete: "Diese Liste loeschen?",
     delete: "Loeschen",
     deleted: "Liste geloescht.",
     deleteError: "Liste konnte nicht geloescht werden.",
