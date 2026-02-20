@@ -1,6 +1,6 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Check, ChevronLeft, Copy, ListPlus, Menu, Pencil, RotateCcw, SendHorizontal, Share2, Trash2, UserRoundCheck, Users } from "lucide-react";
+import { Check, ChevronLeft, ListPlus, Menu, Pencil, RotateCcw, SendHorizontal, Share2, Trash2, UserRoundCheck, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
@@ -16,7 +16,6 @@ import {
   fetchSharedLists,
   leaveSharedList,
   subscribeToSharedList,
-  toggleSharedListNotifications,
   updateSharedListIcon,
   updateSharedListItem,
   updateSharedListTitle,
@@ -362,22 +361,6 @@ export default function SharedListsPage() {
     }
   };
 
-  const handleToggleMyNotifications = async () => {
-    if (!selected || !user) return;
-    try {
-      await toggleSharedListNotifications(selected.id, user.id, !selected.my_notification_enabled);
-      await loadLists();
-      toast.success(
-        selected.my_notification_enabled
-          ? safeT("lists.notificationsOff", "Notificaciones desactivadas para esta lista.")
-          : safeT("lists.notificationsOn", "Notificaciones activadas para esta lista."),
-      );
-    } catch (err) {
-      console.error(err);
-      toast.error(safeT("lists.notificationsError", "No se pudo actualizar notificaciones."));
-    }
-  };
-
   const handleCreateItem = async () => {
     if (!selected || !user) return;
     const text = newItemText.trim();
@@ -680,19 +663,6 @@ export default function SharedListsPage() {
               className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-slate-700 hover:bg-[#f4f2fa]"
             >
               <Share2 className="h-4 w-4" /> {safeT("lists.share", "Compartir")}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMenuOpen(false);
-                void handleToggleMyNotifications();
-              }}
-              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-slate-700 hover:bg-[#f4f2fa]"
-            >
-              <Copy className="h-4 w-4" />
-              {selected.my_notification_enabled
-                ? safeT("lists.notificationsOnShort", "Noti ON")
-                : safeT("lists.notificationsOffShort", "Noti OFF")}
             </button>
             <button
               type="button"
@@ -1038,7 +1008,7 @@ export default function SharedListsPage() {
                       placeholder={safeT("lists.newItemPlaceholder", "Añadir punto...")}
                       disabled={!canEdit}
                       rows={1}
-                      className="max-h-28 min-h-[42px] flex-1 resize-none rounded-[14px] border border-[#d9d3ea] bg-[#f4f2fa] px-4 py-2 text-sm outline-none transition focus:border-[#7d59c9] focus:shadow-[0_0_0_3px_rgba(125,89,201,0.18)] disabled:bg-slate-50"
+                      className="max-h-28 min-h-[42px] flex-1 resize-none rounded-[14px] border border-[#d9d3ea] bg-[#f4f2fa] px-4 py-2 text-sm outline-none transition focus:border-[#59a5c9] focus:shadow-[0_0_0_3px_rgba(89,165,201,0.22)] disabled:bg-slate-50"
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
                           e.preventDefault();

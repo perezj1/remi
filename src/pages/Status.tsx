@@ -16,6 +16,7 @@ import {
   type RemiStatusSummary,
   type RemiStatusInsights,
 } from "@/lib/brainItemsApi";
+import { fetchSharedLists } from "@/lib/sharedListsApi";
 import { useI18n } from "@/contexts/I18nContext";
 
 type RemiMood = "celebrate" | "happy" | "calm" | "waiting" | "concerned";
@@ -272,6 +273,7 @@ export default function StatusPage() {
 
   const [summary, setSummary] = useState<RemiStatusSummary | null>(null);
   const [insights, setInsights] = useState<RemiStatusInsights | null>(null);
+  const [sharedListsCount, setSharedListsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [relaxOpen, setRelaxOpen] = useState(false);
 
@@ -287,12 +289,17 @@ export default function StatusPage() {
 
     const load = async () => {
       try {
-        const [summaryData, insightsData] = await Promise.all([
+        const [summaryData, insightsData, listsData] = await Promise.all([
           fetchRemiStatusSummary(user.id),
           fetchRemiStatusInsights(user.id),
+          fetchSharedLists(user.id).catch((err) => {
+            console.error("Error fetching shared lists for status", err);
+            return [];
+          }),
         ]);
         setSummary(summaryData);
         setInsights(insightsData);
+        setSharedListsCount(listsData.length);
       } catch (error) {
         console.error("Error fetching Remi status summary", error);
       } finally {
@@ -326,6 +333,7 @@ export default function StatusPage() {
   const pieData = [
     { key: "captured", label: t("status.pieCaptured"), value: capturedLast30Count, color: "#7d59c9" },
     { key: "ideas", label: t("status.pieIdeas"), value: totalIdeasStored, color: "#e8c45a" },
+    { key: "lists", label: t("status.pieLists"), value: sharedListsCount, color: "#59a5c9" },
     { key: "closed", label: t("status.pieClosed"), value: closedWithDueCount, color: "#59c9b5" },
     { key: "overdue", label: t("status.pieOverdue"), value: overdueCount, color: "#f19aa9" },
   ];
