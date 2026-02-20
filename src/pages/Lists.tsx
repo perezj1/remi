@@ -764,7 +764,7 @@ export default function SharedListsPage() {
                 value={newListTitle}
                 onChange={(e) => setNewListTitle(e.target.value)}
                 placeholder={safeT("lists.newPlaceholder", "Nueva lista (ej: Comprar)")}
-                className="h-11 flex-1 rounded-full border border-[#d9d3ea] bg-white px-4 text-sm outline-none transition focus:border-[#59a5c9] focus:shadow-[0_0_0_3px_rgba(89,165,201,0.22)]"
+                className="h-11 min-w-0 flex-[1_1_auto] rounded-full border border-[#d9d3ea] bg-white px-4 text-sm outline-none transition focus:border-[#59a5c9] focus:shadow-[0_0_0_3px_rgba(89,165,201,0.22)]"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") void handleCreateList();
                 }}
@@ -773,7 +773,7 @@ export default function SharedListsPage() {
                 type="button"
                 onClick={handleCreateList}
                 disabled={saving}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#59a5c9] text-white transition hover:bg-[#4b95b8] disabled:opacity-60"
+                className="inline-flex h-11 w-11 min-w-11 shrink-0 items-center justify-center rounded-full bg-[#59a5c9] text-white transition hover:bg-[#4b95b8] disabled:opacity-60"
                 title={safeT("lists.create", "Crear")}
               >
                 <ListPlus className="h-5 w-5" />
