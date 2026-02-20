@@ -1585,16 +1585,6 @@ const anyModalOpen =
             />
           </div>
 
-          <div className="mt-2">
-            <button
-              type="button"
-              onClick={handleOpenLists}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              <Users size={14} />
-              {safeT("today.openLists", "Abrir listas compartidas")}
-            </button>
-          </div>
         </div>
         </div>
       </div>
