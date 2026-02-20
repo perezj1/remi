@@ -139,6 +139,8 @@ export const de = {
   common: {
     appName: "REMI",
     save: "Speichern",
+    back: "Zurueck",
+    menu: "Menue",
     cancel: "Abbrechen",
     delete: "Löschen",
     edit: "Bearbeiten",
@@ -164,6 +166,7 @@ export const de = {
   bottomNav: {
     today: "Heute",
     inbox: "Posteingang",
+    lists: "Listen",
     status: "Status",
     add: "Neu",
     holdToTalk: "Gedrückt halten",
@@ -452,6 +455,7 @@ export const de = {
       label: "Typ",
       task: "Erinnerung",
       idea: "Idee",
+      list: "Liste",
     },
 
     more: "Details",
@@ -541,6 +545,7 @@ export const de = {
   today: {
     greetingHello: "Hallo,",
     captureSectionTitle: "Leere deinen Kopf",
+    listsTitle: "Listen",
     tipsTitle: "Aktionen",
     openLists: "Geteilte Listen oeffnen",
 
@@ -951,14 +956,15 @@ export const de = {
   },
 
   lists: {
-    title: "Geteilte Listen",
+    title: "Listen",
     subtitle: "Koordiniere in Echtzeit mit Familie und Team.",
     loading: "Listen werden geladen...",
     empty: "Du hast noch keine geteilten Listen.",
     selectOne: "Waehle eine Liste, um Punkte zu sehen.",
-    newPlaceholder: "Neue Liste (z. B. Geburtstag planen)",
+    newPlaceholder: "Neue Liste (z. B. Kaufen)",
     create: "Erstellen",
     created: "Liste erstellt.",
+    updated: "Liste aktualisiert.",
     createError: "Liste konnte nicht erstellt werden.",
     confirmDelete: "Diese geteilte Liste loeschen?",
     delete: "Loeschen",
@@ -983,9 +989,27 @@ export const de = {
     itemsLoadError: "Punkte konnten nicht geladen werden.",
     loadError: "Listen konnten nicht geladen werden.",
     renameError: "Titel konnte nicht geaendert werden.",
+    renamePrompt: "Neuer Listenname:",
+    iconPrompt: "Waehle ein Emoji fuer diese Liste (leer = entfernen):",
+    iconAction: "Icon aendern",
+    iconUpdated: "Icon aktualisiert.",
+    iconUpdateError: "Icon konnte nicht aktualisiert werden.",
+    doneOfTotal: "Erledigt",
+    opened: "Ausstehend",
+    completed: "Erledigt",
+    learnedTo: "Erledigt",
+    roleOwner: "Owner",
+    roleEditor: "Editor",
+    roleViewer: "Viewer",
     assignMe: "Mir zuweisen",
     assignedMe: "Uebernehme ich",
+    assignedOther: "Zugewiesen",
     assignError: "Zuweisung konnte nicht aktualisiert werden.",
+    searchPlaceholder: "Liste suchen...",
+    searchEmpty: "Keine Listen gefunden.",
+    reuse: "Wiederverwenden",
+    reused: "Liste wiederverwendet.",
+    reuseError: "Liste konnte nicht wiederverwendet werden.",
   },
 
   feedback: {

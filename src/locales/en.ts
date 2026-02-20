@@ -137,6 +137,8 @@ export const en = {
   common: {
     appName: "REMI",
     save: "Save",
+    back: "Back",
+    menu: "Menu",
     cancel: "Cancel",
     delete: "Delete",
     edit: "Edit",
@@ -162,6 +164,7 @@ export const en = {
   bottomNav: {
     today: "Today",
     inbox: "Inbox",
+    lists: "Lists",
     status: "Status",
     add: "New",
     holdToTalk: "Press and hold",
@@ -453,6 +456,7 @@ export const en = {
       label: "Type",
       task: "Reminder",
       idea: "Idea",
+      list: "List",
     },
 
     more: "Details",
@@ -541,6 +545,7 @@ export const en = {
   today: {
     greetingHello: "Hello,",
     captureSectionTitle: "Clear your mind",
+    listsTitle: "Lists",
     tipsTitle: "Actions",
     openLists: "Open shared lists",
 
@@ -957,14 +962,15 @@ export const en = {
   },
 
   lists: {
-    title: "Shared lists",
+    title: "Lists",
     subtitle: "Coordinate in real time with family and team.",
     loading: "Loading lists...",
     empty: "You do not have shared lists yet.",
     selectOne: "Select a list to see its items.",
-    newPlaceholder: "New list (ex: Birthday prep)",
+    newPlaceholder: "New list (ex: Buy)",
     create: "Create",
     created: "List created.",
+    updated: "List updated.",
     createError: "Could not create the list.",
     confirmDelete: "Delete this shared list?",
     delete: "Delete",
@@ -989,9 +995,27 @@ export const en = {
     itemsLoadError: "Could not load items.",
     loadError: "Could not load lists.",
     renameError: "Could not rename list.",
+    renamePrompt: "New list name:",
+    iconPrompt: "Choose an emoji for this list (leave empty to remove):",
+    iconAction: "Change icon",
+    iconUpdated: "Icon updated.",
+    iconUpdateError: "Could not update icon.",
+    doneOfTotal: "Completed",
+    opened: "Pending",
+    completed: "Completed",
+    learnedTo: "Completed",
+    roleOwner: "Owner",
+    roleEditor: "Editor",
+    roleViewer: "Viewer",
     assignMe: "Assign to me",
     assignedMe: "Assigned to me",
+    assignedOther: "Assigned",
     assignError: "Could not update assignment.",
+    searchPlaceholder: "Search list...",
+    searchEmpty: "No lists found.",
+    reuse: "Reuse",
+    reused: "List reused.",
+    reuseError: "Could not reuse the list.",
   },
 
   feedback: {

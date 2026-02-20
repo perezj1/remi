@@ -4,8 +4,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
   Brain,
-  CalendarClock,
-  StickyNote,
+  Inbox,
+  List,
   Mic,
   Plus,
   type LucideIcon,
@@ -259,7 +259,7 @@ export default function BottomNav() {
   };
 
   const isTasksActive = pathname === "/tasks";
-  const isIdeasActive = pathname === "/ideas";
+  const isListsActive = pathname === "/lists";
 
   /* ─────────────────────────────────────────────
      ✅ OCULTAR NAVBAR CUANDO HAY TECLADO + CAMPO ENFOCADO (INDEX)
@@ -365,16 +365,16 @@ export default function BottomNav() {
 
         <NavItem
           to="/tasks"
-          label={t("bottomNav.tasks")}
-          icon={CalendarClock}
+          label={t("bottomNav.inbox")}
+          icon={Inbox}
           active={isTasksActive}
         />
 
         <NavItem
-          to="/ideas"
-          label={t("bottomNav.ideas")}
-          icon={StickyNote}
-          active={isIdeasActive}
+          to="/lists"
+          label={t("bottomNav.lists")}
+          icon={List}
+          active={isListsActive}
         />
       </div>
 

@@ -1,5 +1,6 @@
 ﻿// src/pages/Ideas.tsx
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   BrainItem,
@@ -55,6 +56,7 @@ function formatDue(due: string, fallbackLocale?: string) {
 export default function IdeasPage() {
   const { user } = useAuth();
   const { t } = useI18n();
+  const navigate = useNavigate();
 
   const [items, setItems] = useState<BrainItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -224,8 +226,6 @@ export default function IdeasPage() {
     }
   };
 
-  const filterLabel = t("inbox.ideasTab");
-
   return (
     <div
       className="remi-page text-slate-900"
@@ -272,8 +272,22 @@ export default function IdeasPage() {
         }}
       >
         <div className="mb-2 flex items-center justify-between">
-          <div className="rounded-full border border-violet-200 bg-white px-4 py-1.5 font-semibold text-yellow-600" style={{ fontSize: "clamp(13px, 0.9vw, 18px)" }}>
-            {filterLabel}
+          <div className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-white p-1">
+            <button
+              type="button"
+              onClick={() => navigate("/tasks")}
+              className="rounded-full px-4 py-1.5 font-semibold text-slate-500 transition hover:text-slate-700"
+              style={{ fontSize: "clamp(13px, 0.9vw, 18px)" }}
+            >
+              {t("inbox.tasksTab")}
+            </button>
+            <button
+              type="button"
+              className="rounded-full bg-amber-50 px-4 py-1.5 font-semibold text-yellow-600"
+              style={{ fontSize: "clamp(13px, 0.9vw, 18px)" }}
+            >
+              {t("inbox.ideasTab")}
+            </button>
           </div>
           <span className="text-slate-500" style={{ fontSize: "clamp(12px, 0.82vw, 16px)" }}>
             {t("inbox.itemsCount", { count: filtered.length })}

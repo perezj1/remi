@@ -1,5 +1,6 @@
 ﻿// src/pages/Tasks.tsx
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -16,9 +17,11 @@ import {
   ChevronDown,
   Calendar,
   Share2,
+  StickyNote,
 } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
 import TaskEditModal from "@/components/TaskEditModal";
+import IdeaEditModal from "@/components/IdeaEditModal";
 import {
   createShareInviteCached,
   prefetchShareInvite,
@@ -29,6 +32,17 @@ type DateGroup = {
   key: string;
   label: string;
   items: BrainItem[];
+};
+
+type SharedItemMeta = {
+  shared_count?: number | null;
+  received_from_share?: boolean | null;
+};
+
+type IdeaBodyFields = {
+  body?: string | null;
+  content?: string | null;
+  text?: string | null;
 };
 
 function isSameDay(a: Date, b: Date): boolean {
@@ -56,6 +70,7 @@ function formatDue(due: string, fallbackLocale?: string) {
 export default function TasksPage() {
   const { user } = useAuth();
   const { t, lang } = useI18n();
+  const navigate = useNavigate();
 
   const uiLocale = useMemo(() => {
     if (lang === "de") return "de-DE";
@@ -68,15 +83,19 @@ export default function TasksPage() {
 
   const [editingTask, setEditingTask] = useState<BrainItem | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [editingIdea, setEditingIdea] = useState<BrainItem | null>(null);
+  const [editIdeaOpen, setEditIdeaOpen] = useState(false);
 
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(
     {},
   );
+  const [activeTypeTab, setActiveTypeTab] = useState<"tasks" | "ideas">("tasks");
 
   // ✅ indicador: solo lo que tú has compartido
   const shouldShowSentIndicator = useCallback((item: BrainItem) => {
-    const sharedCount = (item as any)?.shared_count ?? 0;
-    const receivedFromShare = !!(item as any)?.received_from_share;
+    const meta = item as BrainItem & SharedItemMeta;
+    const sharedCount = meta.shared_count ?? 0;
+    const receivedFromShare = !!meta.received_from_share;
     return !receivedFromShare && Number(sharedCount) > 0;
   }, []);
 
@@ -231,9 +250,15 @@ export default function TasksPage() {
   };
 
   const openEditModal = (item: BrainItem) => {
-    if (item.type !== "task") return;
-    setEditingTask(item);
-    setEditOpen(true);
+    if (item.type === "task") {
+      setEditingTask(item);
+      setEditOpen(true);
+      return;
+    }
+    if (item.type === "idea") {
+      setEditingIdea(item);
+      setEditIdeaOpen(true);
+    }
   };
 
   const handleShare = async (item: BrainItem) => {
@@ -247,8 +272,6 @@ export default function TasksPage() {
       alert(t("shareInvite.sharedError"));
     }
   };
-
-  const filterLabel = t("inbox.tasksTab");
 
   // ✅ Evita el error TS: tu t() no acepta fallback string como 2º parámetro.
   // Usa estas keys existentes o crea las que quieras en i18n:
@@ -303,8 +326,31 @@ export default function TasksPage() {
         }}
       >
         <div className="mb-2 flex items-center justify-between">
-          <div className="rounded-full border border-violet-200 bg-white px-4 py-1.5 font-semibold text-violet-700" style={{ fontSize: "clamp(13px, 0.9vw, 18px)" }}>
-            {filterLabel}
+          <div className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-white p-1">
+            <button
+              type="button"
+              onClick={() => setActiveTypeTab("tasks")}
+              className={`rounded-full px-4 py-1.5 font-semibold transition ${
+                activeTypeTab === "tasks"
+                  ? "bg-violet-50 text-violet-700"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+              style={{ fontSize: "clamp(13px, 0.9vw, 18px)" }}
+            >
+              {t("inbox.tasksTab")}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/ideas")}
+              className={`rounded-full px-4 py-1.5 font-semibold transition ${
+                activeTypeTab === "ideas"
+                  ? "bg-amber-50 text-yellow-600"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+              style={{ fontSize: "clamp(13px, 0.9vw, 18px)" }}
+            >
+              {t("inbox.ideasTab")}
+            </button>
           </div>
           <span className="text-slate-500" style={{ fontSize: "clamp(12px, 0.82vw, 16px)" }}>
             {t("inbox.itemsCount", { count: filtered.length })}
@@ -320,8 +366,12 @@ export default function TasksPage() {
 
           {!loading && filtered.length === 0 && (
             <div className="rounded-3xl border border-slate-200 bg-slate-50 shadow-[0_10px_22px_rgba(15,23,42,0.06)] px-4 py-4 flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center shrink-0">
-                <CalendarClock size={18} />
+              <div
+                className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                  activeTypeTab === "tasks" ? "bg-violet-100 text-violet-600" : "bg-amber-100 text-amber-600"
+                }`}
+              >
+                {activeTypeTab === "tasks" ? <CalendarClock size={18} /> : <StickyNote size={18} />}
               </div>
               <div className="min-w-0">
                 <p className="text-[14px] font-semibold text-slate-900">
@@ -367,8 +417,23 @@ export default function TasksPage() {
                     <div className="space-y-2">
                       {group.items.map((item) => {
                         const isDone = item.status === "DONE";
+                        const isIdeasTab = activeTypeTab === "ideas";
+                        const dueText = item.due_date
+                          ? formatDue(item.due_date as string, uiLocale) ??
+                            new Date(item.due_date as string).toLocaleString()
+                          : "";
 
-                        const mainText = String(item.title ?? "");
+                        const ideaPayload = item as BrainItem & IdeaBodyFields;
+                        const ideaBody =
+                          ideaPayload.body ??
+                          ideaPayload.content ??
+                          ideaPayload.text ??
+                          "";
+                        const titleText = String(item.title ?? "");
+                        const bodyText = String(ideaBody ?? "").trim();
+                        const mainText = isIdeasTab
+                          ? (bodyText.length > 0 ? bodyText : titleText)
+                          : titleText;
 
                         // ✅ Botones más pequeños
                         const btnBase =
@@ -383,12 +448,18 @@ export default function TasksPage() {
                         return (
                           <div
                             key={item.id}
-                            className="rounded-3xl bg-white border border-[#7d59c9] shadow-[0_6px_14px_rgba(15,23,42,0.05)] px-4 py-3 md:px-5 md:py-4 lg:px-6 lg:py-5"
+                            className={`rounded-3xl bg-white shadow-[0_6px_14px_rgba(15,23,42,0.05)] px-4 py-3 md:px-5 md:py-4 lg:px-6 lg:py-5 ${
+                              isIdeasTab ? "border border-[#e7db58]" : "border border-[#7d59c9]"
+                            }`}
                           >
                             {/* Header row */}
                             <div className="flex items-start gap-3">
-                              <div className="w-10 h-10 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center shrink-0 relative">
-                                <CalendarClock size={18} />
+                              <div
+                                className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 relative ${
+                                  isIdeasTab ? "bg-yellow-100 text-yellow-600" : "bg-violet-100 text-violet-600"
+                                }`}
+                              >
+                                {isIdeasTab ? <StickyNote size={18} /> : <CalendarClock size={18} />}
                                 {shouldShowSentIndicator(item) && (
                                   <span
                                     className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm"
@@ -407,7 +478,7 @@ export default function TasksPage() {
                                     fontSize: "clamp(16px, 1.1vw, 26px)",
                                   }}
                                 >
-                                  {t("pill.type.task")}
+                                  {activeTypeTab === "tasks" ? t("pill.type.task") : t("pill.type.idea")}
                                 </p>
                                 <p
                                   className="mt-1 text-slate-700"
@@ -422,6 +493,13 @@ export default function TasksPage() {
                                 >
                                   {mainText}
                                 </p>
+
+                                {isIdeasTab && item.due_date && (
+                                  <div className="mt-2 flex items-center gap-1 text-slate-500" style={{ fontSize: "clamp(13px, 0.85vw, 17px)" }}>
+                                    <Calendar size={14} className="text-slate-400" />
+                                    <span className="truncate">{dueText}</span>
+                                  </div>
+                                )}
                               </div>
 
                               {/* ✅ Lápiz sin círculo */}
@@ -431,7 +509,7 @@ export default function TasksPage() {
                                   e.stopPropagation();
                                   openEditModal(item);
                                 }}
-                                className="p-1.5 hover:bg-slate-50 rounded-md shrink-0"
+                                className={`p-1.5 hover:bg-slate-50 shrink-0 ${isIdeasTab ? "rounded-lg inline-flex items-center justify-center" : "rounded-md"}`}
                                 aria-label={editLabel}
                                 title={editLabel}
                               >
@@ -499,6 +577,26 @@ export default function TasksPage() {
           setItems((prev) =>
             prev.map((i) => (i.id === updated.id ? updated : i)),
           );
+        }}
+      />
+      <IdeaEditModal
+        open={editIdeaOpen}
+        idea={editingIdea}
+        onClose={() => setEditIdeaOpen(false)}
+        onUpdated={(updated) => {
+          setItems((prev) =>
+            prev.map((i) => (i.id === updated.id ? updated : i)),
+          );
+        }}
+        onConverted={(convertedTask) => {
+          setItems((prev) => {
+            const editingIdeaId = editingIdea?.id;
+            const withoutOld = prev.filter(
+              (i) => i.id !== convertedTask.id && i.id !== editingIdeaId,
+            );
+            return [convertedTask, ...withoutOld];
+          });
+          setActiveTypeTab("tasks");
         }}
       />
     </div>

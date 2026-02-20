@@ -2,15 +2,24 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type SharedListRole = "owner" | "editor" | "viewer";
 
+export type SharedListMemberPreview = {
+  user_id: string;
+  avatar_url: string | null;
+  display_name: string | null;
+};
+
 export type SharedList = {
   id: string;
   title: string;
+  icon_emoji: string | null;
   owner_user_id: string;
   created_at: string;
   updated_at: string;
   my_role: SharedListRole;
   my_notification_enabled: boolean;
   members_count: number;
+  member_profiles: SharedListMemberPreview[];
+  member_previews: SharedListMemberPreview[];
 };
 
 export type SharedListItem = {
@@ -51,22 +60,45 @@ export async function fetchSharedLists(userId: string): Promise<SharedList[]> {
 
   const { data: listsRaw, error: listErr } = await supabase
     .from("shared_lists")
-    .select("id, title, owner_user_id, created_at, updated_at")
+    .select("id, title, icon_emoji, owner_user_id, created_at, updated_at")
     .in("id", listIds)
     .order("updated_at", { ascending: false });
 
   if (listErr) throw listErr;
 
-  const { data: countsRaw, error: countErr } = await supabase
+  const { data: membersRaw, error: countErr } = await supabase
     .from("shared_list_members")
-    .select("list_id")
+    .select("list_id, user_id")
     .in("list_id", listIds);
 
   if (countErr) throw countErr;
 
   const countMap = new Map<string, number>();
-  for (const row of (countsRaw ?? []) as Array<{ list_id: string }>) {
+  const userIds = new Set<string>();
+  const membersByList = new Map<string, string[]>();
+  for (const row of (membersRaw ?? []) as Array<{ list_id: string; user_id: string }>) {
     countMap.set(row.list_id, (countMap.get(row.list_id) ?? 0) + 1);
+    if (row.user_id) userIds.add(row.user_id);
+    const prev = membersByList.get(row.list_id) ?? [];
+    prev.push(row.user_id);
+    membersByList.set(row.list_id, prev);
+  }
+
+  const profileMap = new Map<string, { avatar_url: string | null; display_name: string | null }>();
+  if (userIds.size > 0) {
+    const { data: profilesRaw, error: profilesErr } = await supabase
+      .from("profiles")
+      .select("id, avatar_url, display_name")
+      .in("id", Array.from(userIds));
+
+    if (!profilesErr) {
+      for (const row of (profilesRaw ?? []) as Array<{ id: string; avatar_url: string | null; display_name: string | null }>) {
+        profileMap.set(row.id, {
+          avatar_url: row.avatar_url ?? null,
+          display_name: row.display_name ?? null,
+        });
+      }
+    }
   }
 
   return ((listsRaw ?? []) as Array<Record<string, unknown>>)
@@ -78,12 +110,23 @@ export async function fetchSharedLists(userId: string): Promise<SharedList[]> {
       return {
         id,
         title: ensure(row.title, ""),
+        icon_emoji: typeof row.icon_emoji === "string" ? row.icon_emoji : null,
         owner_user_id: ensure(row.owner_user_id, ""),
         created_at: ensure(row.created_at, new Date().toISOString()),
         updated_at: ensure(row.updated_at, new Date().toISOString()),
         my_role: member.role,
         my_notification_enabled: !!member.notification_enabled,
         members_count: countMap.get(id) ?? 1,
+        member_profiles: (membersByList.get(id) ?? []).map((memberId) => ({
+          user_id: memberId,
+          avatar_url: profileMap.get(memberId)?.avatar_url ?? null,
+          display_name: profileMap.get(memberId)?.display_name ?? null,
+        })),
+        member_previews: (membersByList.get(id) ?? []).slice(0, 5).map((memberId) => ({
+          user_id: memberId,
+          avatar_url: profileMap.get(memberId)?.avatar_url ?? null,
+          display_name: profileMap.get(memberId)?.display_name ?? null,
+        })),
       } as SharedList;
     })
     .filter((v): v is SharedList => !!v)
@@ -106,12 +149,15 @@ export async function createSharedList(_userId: string, title: string): Promise<
   return {
     id: ensure(row.id, ""),
     title: ensure(row.title, clean),
+    icon_emoji: typeof row.icon_emoji === "string" ? row.icon_emoji : null,
     owner_user_id: ownerUserId,
     created_at: ensure(row.created_at, new Date().toISOString()),
     updated_at: ensure(row.updated_at, new Date().toISOString()),
     my_role: "owner",
     my_notification_enabled: true,
     members_count: 1,
+    member_profiles: [],
+    member_previews: [],
   };
 }
 
@@ -119,6 +165,15 @@ export async function updateSharedListTitle(listId: string, title: string): Prom
   const { error } = await supabase
     .from("shared_lists")
     .update({ title: title.trim() })
+    .eq("id", listId);
+  if (error) throw error;
+}
+
+export async function updateSharedListIcon(listId: string, iconEmoji: string | null): Promise<void> {
+  const clean = iconEmoji ? iconEmoji.trim() : null;
+  const { error } = await supabase
+    .from("shared_lists")
+    .update({ icon_emoji: clean && clean.length > 0 ? clean : null })
     .eq("id", listId);
   if (error) throw error;
 }

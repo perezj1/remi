@@ -147,6 +147,8 @@ export const es = {
   common: {
     appName: "REMI",
     save: "Guardar",
+    back: "Volver",
+    menu: "Menu",
     cancel: "Cancelar",
     delete: "Eliminar",
     edit: "Editar",
@@ -172,6 +174,7 @@ export const es = {
   bottomNav: {
     today: "Hoy",
     inbox: "Bandeja",
+    lists: "Listas",
     status: "Estado",
     add: "Nuevo",
     holdToTalk: "Mantén pulsado",
@@ -468,6 +471,7 @@ export const es = {
       label: "Tipo",
       task: "Recordatorio",
       idea: "Idea",
+      list: "Lista",
     },
 
     more: "Detalles",
@@ -556,6 +560,7 @@ export const es = {
   today: {
     greetingHello: "Hola,",
     captureSectionTitle: "Vacia tu mente",
+    listsTitle: "Listas",
     tipsTitle: "Acciones",
     openLists: "Abrir listas compartidas",
 
@@ -970,14 +975,15 @@ export const es = {
   },
 
   lists: {
-    title: "Listas compartidas",
+    title: "Listas",
     subtitle: "Coordina en tiempo real con familia y equipo.",
     loading: "Cargando listas...",
     empty: "Aun no tienes listas compartidas.",
     selectOne: "Selecciona una lista para ver sus puntos.",
-    newPlaceholder: "Nueva lista (ej: Preparar cumpleanos)",
+    newPlaceholder: "Nueva lista (ej: Comprar)",
     create: "Crear",
     created: "Lista creada.",
+    updated: "Lista actualizada.",
     createError: "No se pudo crear la lista.",
     confirmDelete: "Eliminar esta lista compartida?",
     delete: "Eliminar",
@@ -1002,9 +1008,27 @@ export const es = {
     itemsLoadError: "No se pudieron cargar los puntos.",
     loadError: "No se pudieron cargar las listas.",
     renameError: "No se pudo cambiar el titulo.",
+    renamePrompt: "Nuevo nombre de la lista:",
+    iconPrompt: "Elige un emoji para esta lista (vacío para quitarlo):",
+    iconAction: "Cambiar icono",
+    iconUpdated: "Icono actualizado.",
+    iconUpdateError: "No se pudo actualizar el icono.",
+    doneOfTotal: "Completados",
+    opened: "Pendientes",
+    completed: "Completado",
+    learnedTo: "Completado",
+    roleOwner: "Owner",
+    roleEditor: "Editor",
+    roleViewer: "Viewer",
     assignMe: "Asignarme",
     assignedMe: "Me encargo",
+    assignedOther: "Asignado",
     assignError: "No se pudo actualizar asignacion.",
+    searchPlaceholder: "Buscar lista...",
+    searchEmpty: "No se encontraron listas.",
+    reuse: "Reutilizar",
+    reused: "Lista reutilizada.",
+    reuseError: "No se pudo reutilizar la lista.",
   },
 
   feedback: {

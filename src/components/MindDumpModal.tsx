@@ -187,6 +187,8 @@ type Props = {
 
   // ✅ NUEVO (opcional): crear idea
   onCreateIdea?: (title: string, body: string) => Promise<void>;
+  // compat: usado por Index para crear listas desde captura
+  onCreateList?: (title: string, items: string[]) => Promise<void>;
 
   initialText?: string;
   initialTextNonce?: number;

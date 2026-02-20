@@ -33,6 +33,14 @@ import {
   prefetchShareInvite,
   shareTextOrCopy,
 } from "@/lib/shareInvitesApi";
+import {
+  createSharedList,
+  createSharedListItem,
+  fetchSharedListItems,
+  type SharedList,
+  type SharedListMemberPreview,
+  fetchSharedLists,
+} from "@/lib/sharedListsApi";
 import { useSnapTipDeck } from "@/hooks/useSnapTipDeck";
 import FeedbackSurveyModal from "@/components/FeedbackSurveyModal";
 import {
@@ -225,6 +233,8 @@ export default function TodayPage() {
   const [savingFeedback, setSavingFeedback] = useState(false);
   const [mindDumpResetNonce, setMindDumpResetNonce] = useState(0);
   const [relaxOpen, setRelaxOpen] = useState(false);
+  const [recentLists, setRecentLists] = useState<SharedList[]>([]);
+  const [recentListsProgress, setRecentListsProgress] = useState<Record<string, { done: number; total: number }>>({});
 
   const [nowTick, setNowTick] = useState(0);
 
@@ -315,14 +325,42 @@ const anyModalOpen =
     setLoading(true);
 
     try {
-      const [tks, ids, summaryData] = await Promise.all([
+      const [tks, ids, summaryData, sharedLists] = await Promise.all([
         fetchActiveTasks(user.id),
         fetchActiveIdeas(user.id),
         fetchRemiStatusSummary(user.id),
+        fetchSharedLists(user.id),
       ]);
       setTasks(tks);
       setIdeas(ids);
       setStatusSummary(summaryData);
+      const listRows = await Promise.all(
+        sharedLists.map(async (list) => {
+          const listItems = await fetchSharedListItems(list.id);
+          const total = listItems.length;
+          const done = listItems.reduce((acc, item) => acc + (item.done ? 1 : 0), 0);
+          const listMs = Math.max(
+            Number.isFinite(Date.parse(list.updated_at || "")) ? Date.parse(list.updated_at || "") : 0,
+            Number.isFinite(Date.parse(list.created_at || "")) ? Date.parse(list.created_at || "") : 0,
+          );
+          const itemsMs = listItems.reduce((max, item) => {
+            const created = Number.isFinite(Date.parse(item.created_at || "")) ? Date.parse(item.created_at || "") : 0;
+            const updated = Number.isFinite(Date.parse(item.updated_at || "")) ? Date.parse(item.updated_at || "") : 0;
+            return Math.max(max, created, updated);
+          }, 0);
+          const activityMs = Math.max(listMs, itemsMs);
+          return { list, progress: { done, total }, activityMs };
+        }),
+      );
+
+      const latestRows = listRows
+        .sort((a, b) => b.activityMs - a.activityMs)
+        .slice(0, 5);
+
+      setRecentLists(latestRows.map((row) => row.list));
+      setRecentListsProgress(
+        Object.fromEntries(latestRows.map((row) => [row.list.id, row.progress] as const)),
+      );
     } catch (err) {
       console.error(err);
       alert(safeT("today.errorLoadingTasks", "Error cargando tareas"));
@@ -709,6 +747,36 @@ const anyModalOpen =
     [loadData, statusSummary, user],
   );
 
+  const handleCreateListFromMindDump = useCallback(
+    async (title: string, items: string[]) => {
+      if (!user) return;
+      const cleanTitle = title.trim();
+      if (!cleanTitle) return;
+
+      const lists = await fetchSharedLists(user.id);
+      const existing = lists.find(
+        (list) => list.title.trim().toLocaleLowerCase() === cleanTitle.toLocaleLowerCase(),
+      );
+      const targetList = existing ?? (await createSharedList(user.id, cleanTitle));
+
+      const existingCount = existing
+        ? (await fetchSharedListItems(existing.id)).length
+        : 0;
+
+      let nextPosition = existingCount;
+      for (let i = 0; i < items.length; i += 1) {
+        const text = items[i]?.trim();
+        if (!text) continue;
+        nextPosition += 1;
+        await createSharedListItem(targetList.id, text, user.id, nextPosition);
+      }
+      toast.success(
+        existing ? safeT("lists.updated", "Lista actualizada.") : safeT("lists.created", "Lista creada."),
+      );
+    },
+    [safeT, user],
+  );
+
   const handleSubmitFeedbackSurvey = useCallback(
     async (payload: { score: number; improvement: string; liked: string }) => {
       if (!user) return;
@@ -781,6 +849,34 @@ const anyModalOpen =
     setProfileOpen(false);
     navigate("/lists");
   };
+
+  const handleOpenListById = useCallback(
+    (listId: string) => {
+      setProfileOpen(false);
+      navigate(`/lists?list=${encodeURIComponent(listId)}`);
+    },
+    [navigate],
+  );
+
+  const renderMemberAvatar = useCallback((member: SharedListMemberPreview) => {
+    const label =
+      member.display_name?.trim()?.slice(0, 1)?.toUpperCase() ||
+      member.user_id?.slice(0, 1)?.toUpperCase() ||
+      "U";
+    return (
+      <span
+        key={member.user_id}
+        className="inline-flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border border-white bg-[#ece9f6] text-[10px] font-semibold text-[#4f4a69]"
+        title={member.display_name ?? undefined}
+      >
+        {member.avatar_url ? (
+          <img src={member.avatar_url} alt="" className="h-full w-full object-cover" />
+        ) : (
+          label
+        )}
+      </span>
+    );
+  }, []);
 
   const handleShareApp = async () => {
     setProfileOpen(false);
@@ -1525,10 +1621,82 @@ const anyModalOpen =
             onCreateIdea={async (title) => {
               await handleCreateIdeaFromMindDump(title);
             }}
+            onCreateList={async (title, items) => {
+              await handleCreateListFromMindDump(title, items);
+            }}
             initialTextNonce={mindDumpResetNonce}
           />
         </div>
       </div>
+
+      {recentLists.length > 0 && (
+        <div className="mx-auto mt-7 mb-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
+          <div>
+            <p className="font-extrabold text-slate-900" style={{ fontSize: "clamp(16px, 1vw, 22px)" }}>
+              {safeT("today.listsTitle", "Listas")}
+            </p>
+          </div>
+          <div className="mt-2 remi-scroll flex gap-2.5 overflow-x-auto pb-1 px-1">
+            {recentLists.map((list) => (
+              (() => {
+                const stats = recentListsProgress[list.id] ?? { done: 0, total: 0 };
+                const percent = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
+                return (
+              <button
+                key={list.id}
+                type="button"
+                onClick={() => handleOpenListById(list.id)}
+                className="group relative shrink-0 overflow-hidden rounded-[20px] border border-[#59a5c9] bg-white p-3 text-left transition hover:border-[#4b95b8]"
+                style={{
+                  width: "clamp(280px, 36vw, 360px)",
+                }}
+                title={list.title}
+                aria-label={list.title}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-sm font-semibold uppercase text-[#3f7f99]">
+                    {list.icon_emoji ? (
+                      <span className="text-2xl leading-none">{list.icon_emoji}</span>
+                    ) : (
+                      list.title.slice(0, 1)
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-base font-semibold text-[#2f3240]">{list.title}</p>
+                    <p className="mt-0.5 text-xs font-medium text-[#8b8fa6]">
+                      {list.my_role === "owner"
+                        ? safeT("lists.roleOwner", "Owner")
+                        : list.my_role === "editor"
+                          ? safeT("lists.roleEditor", "Editor")
+                          : safeT("lists.roleViewer", "Viewer")}
+                    </p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <div className="flex -space-x-2">
+                        {(list.member_previews ?? []).slice(0, 3).map((member) => renderMemberAvatar(member))}
+                      </div>
+                      <p className="inline-flex items-center gap-1 text-xs text-[#8b8fa6]">
+                        <Users className="h-3.5 w-3.5" />
+                        {list.members_count}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <p className="mt-2 text-sm font-medium text-[#5c6073]">
+                  {safeT("lists.learnedTo", "Completado")} <span className="text-[#59a5c9]">{percent}%</span>
+                </p>
+                <div className="mt-1.5 h-1.5 w-full rounded-full bg-[#dbeef6]">
+                  <div
+                    className="h-1.5 rounded-full transition-all"
+                    style={{ width: `${percent}%`, background: "#59a5c9" }}
+                  />
+                </div>
+              </button>
+                );
+              })()
+            ))}
+          </div>
+        </div>
+      )}
 
       {tipCards.length > 0 && (
         <div className="mx-auto mt-7 mb-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
