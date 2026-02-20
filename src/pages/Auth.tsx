@@ -59,11 +59,11 @@ const Auth = () => {
             accent: "#59c9b5",
           },
           {
-            title: "Zur richtigen Zeit",
-            subtitle: "Erinnerungen, die helfen",
+            title: "Geteilte Erinnerung",
+            subtitle: "Teile Listen, Notizen und Erinnerungen",
             description:
-              "Weniger vergessen, mehr Fokus auf das, was wirklich zaehlt.",
-            emoji: "⏰",
+              "Hilf anderen, den Kopf frei zu machen und das gemeinsame Erinnern zu geniessen, ohne alles allein zu tragen.",
+            emoji: "\uD83E\uDD1D",
             accent: "#c959a5",
           },
         ]
@@ -95,11 +95,11 @@ const Auth = () => {
               accent: "#59c9b5",
             },
             {
-              title: "Right moment reminders",
-              subtitle: "So you can focus",
+              title: "Shared memory",
+              subtitle: "Share lists, notes, and reminders",
               description:
-                "Forget less and focus more on what truly matters in your day.",
-              emoji: "⏰",
+                "Help others clear their minds and enjoy remembering together, without carrying everything alone.",
+              emoji: "\uD83E\uDD1D",
               accent: "#c959a5",
             },
           ]
@@ -130,11 +130,11 @@ const Auth = () => {
               accent: "#59c9b5",
             },
             {
-              title: "Avisos en el momento justo",
-              subtitle: "Para no olvidar lo importante",
+              title: "Memoria compartida",
+              subtitle: "Comparte listas, notas y recordatorios",
               description:
-                "Olvida menos y enfocate en lo que de verdad importa en tu dia.",
-              emoji: "⏰",
+                "Ayuda a los demas a despejar su mente y a disfrutar recordando juntos, sin tener que cargar solos con todo.",
+              emoji: "\uD83E\uDD1D",
               accent: "#c959a5",
             },
           ];
