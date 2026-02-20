@@ -9,17 +9,17 @@ import {
   type CSSProperties,
 } from "react";
 import {
-  List,
+  CalendarClock,
   X,
   ClipboardPaste,
   Mic,
   Check,
+  SlidersHorizontal,
   Sparkles,
   Calendar,
   Clock,
-  Bell,
   Repeat,
-  Lightbulb,
+  StickyNote,
   // ChevronDown, // ⛔️ (comentado) Solo necesario si reactivas la “píldora” de idioma
 } from "lucide-react";
 import { toast } from "sonner";
@@ -36,8 +36,9 @@ import { de as deLocale } from "@/locales/de";
 const REMI_PURPLE = "#7d59c9";
 const REMI_PURPLE_BORDER = "rgba(143,49,243,0.30)";
 const REMI_PURPLE_BG = "rgba(143,49,243,0.10)";
-const REMI_TEXT = "rgba(15,23,42,0.92)";
+const REMI_TEXT = "#334155";
 const REMI_SUB = "rgba(15,23,42,0.55)";
+const APP_PAGE_BG = "linear-gradient(180deg, #f1eff7 0%, #fafafe 42%, #fafafe 100%)";
 
 /*
   ⛔️ (comentado) Persistencia independiente del modal:
@@ -106,6 +107,30 @@ const LOCALES: Record<UiLang, any> = {
   de: deLocale,
 };
 
+function normalizeIdeaTerms(input: string, lang: UiLang): string {
+  if (lang === "en") {
+    return input
+      .replace(/\bIdeas\b/g, "Notes")
+      .replace(/\bIdea\b/g, "Note")
+      .replace(/\bideas\b/g, "notes")
+      .replace(/\bidea\b/g, "note");
+  }
+
+  if (lang === "de") {
+    return input
+      .replace(/\bIdeen\b/g, "Notizen")
+      .replace(/\bIdee\b/g, "Notiz")
+      .replace(/\bideen\b/g, "notizen")
+      .replace(/\bidee\b/g, "notiz");
+  }
+
+  return input
+    .replace(/\bIdeas\b/g, "Notas")
+    .replace(/\bIdea\b/g, "Nota")
+    .replace(/\bideas\b/g, "notas")
+    .replace(/\bidea\b/g, "nota");
+}
+
 function getDeepValue(obj: any, path: string): any {
   if (!obj || !path) return undefined;
   if (Object.prototype.hasOwnProperty.call(obj, path)) return obj[path]; // flat keys
@@ -137,11 +162,11 @@ function tFromLocales(
     const dict = LOCALES[lang] ?? LOCALES.es;
     const raw = getDeepValue(dict, key);
     if (typeof raw === "string" && raw.trim().length > 0) {
-      return interpolateVars(raw, vars);
+      return normalizeIdeaTerms(interpolateVars(raw, vars), lang);
     }
-    return interpolateVars(fallback, vars);
+    return normalizeIdeaTerms(interpolateVars(fallback, vars), lang);
   } catch {
-    return interpolateVars(fallback, vars);
+    return normalizeIdeaTerms(interpolateVars(fallback, vars), lang);
   }
 }
 
@@ -150,6 +175,7 @@ type ItemKind = "task" | "idea";
 type Props = {
   open: boolean;
   onClose: () => void;
+  embedded?: boolean;
 
   // compat si todavía lo usas en otro flujo
   onOpenReview?: (text: string) => void;
@@ -164,6 +190,8 @@ type Props = {
 
   // ✅ NUEVO (opcional): crear idea
   onCreateIdea?: (title: string, body: string) => Promise<void>;
+  // compat: usado por Index para crear listas desde captura
+  onCreateList?: (title: string, items: string[]) => Promise<void>;
 
   initialText?: string;
   initialTextNonce?: number;
@@ -245,13 +273,13 @@ function detectDateSignal(text: string): string | null {
 
   const kw =
     s.match(
-      /\b(hoy|manana|pasado\s+manana|este\s+finde|este\s+fin\s+de\s+semana|today|tomorrow|this\s+weekend|heute|morgen|dieses\s+wochenende)\b/i
+      /\b(hoy|manana|pasado\s+manana|este\s+finde|este\s+fin\s+de\s+semana|today|tomorrow|day\s+after\s+tomorrow|this\s+weekend|heute|morgen|ubermorgen|dieses\s+wochenende)\b/i
     )?.[0] ?? null;
   if (kw) return kw;
 
   const weekday =
     s.match(
-      /\b(lunes|martes|miercoles|jueves|viernes|sabado|domingo|monday|tuesday|wednesday|thursday|friday|saturday|sunday|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)\b/i
+      /\b(lunes|martes|miercoles|jueves|viernes|sabado|domingo|lun|mar|mie|jue|vie|sab|dom|monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag|mo|di|mi|do|fr|sa|so)\b/i
     )?.[0] ?? null;
   if (weekday) return weekday;
 
@@ -263,13 +291,16 @@ function detectDateSignal(text: string): string | null {
 
   const monthName =
     s.match(
-      /\b(\d{1,2}\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre))\b/i
+      /\b(\d{1,2}\s+de\s+(enero|ene|febrero|feb|marzo|mar|abril|abr|mayo|may|junio|jun|julio|jul|agosto|ago|septiembre|setiembre|sep|octubre|oct|noviembre|nov|diciembre|dic))\b/i
     )?.[0] ??
     s.match(
-      /\b((january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2})\b/i
+      /\b(\d{1,2}\s+(january|jan|february|feb|march|mar|april|apr|may|june|jun|july|jul|august|aug|september|sep|sept|october|oct|november|nov|december|dec))\b/i
     )?.[0] ??
     s.match(
-      /\b(\d{1,2}\.?\s+(januar|februar|marz|maerz|april|mai|juni|juli|august|september|oktober|november|dezember))\b/i
+      /\b((january|jan|february|feb|march|mar|april|apr|may|june|jun|july|jul|august|aug|september|sep|sept|october|oct|november|nov|december|dec)\s+\d{1,2})\b/i
+    )?.[0] ??
+    s.match(
+      /\b(\d{1,2}\.?\s+(januar|jan|februar|feb|marz|maerz|mar|april|apr|mai|juni|jun|juli|jul|august|aug|september|sep|oktober|okt|oct|november|nov|dezember|dez|dec))\b/i
     )?.[0] ??
     null;
 
@@ -281,13 +312,28 @@ function detectDateSignal(text: string): string | null {
 function detectTimeSignal(text: string): string | null {
   const s = foldForMatch(text);
 
-  const hhmm = s.match(/\b\d{1,2}:\d{2}\b/)?.[0] ?? null;
+  const esContextAfter =
+    s.match(
+      /\b(a\s+las|a\s+la|alas)\s+\d{1,2}([:.,]\d{2})?\s*(de\s+la|por\s+la)\s*(manana|tarde|noche)\b/i
+    )?.[0] ?? null;
+  if (esContextAfter) return esContextAfter;
+
+  const esContextBefore =
+    s.match(
+      /\b(de\s+la|por\s+la)\s*(manana|tarde|noche)\s*(a\s+las|a\s+la|alas)\s+\d{1,2}([:.,]\d{2})?\b/i
+    )?.[0] ?? null;
+  if (esContextBefore) return esContextBefore;
+
+  const hhmm = s.match(/\b\d{1,2}[:.]\d{2}\b/)?.[0] ?? null;
   if (hhmm) return hhmm;
 
-  const spoken = s.match(/\b(a\s+las|um|at)\s+\d{1,2}(:\d{2})?\b/i)?.[0] ?? null;
+  const named = s.match(/\b(mediodia|medianoche|noon|midnight|mittag|mitternacht)\b/i)?.[0] ?? null;
+  if (named) return named;
+
+  const spoken = s.match(/\b(a\s+las|a\s+la|alas|um|at)\s+\d{1,2}([:.,]\d{2})?(\s*(am|pm|uhr))?\b/i)?.[0] ?? null;
   if (spoken) return spoken;
 
-  const h = s.match(/\b\d{1,2}\s*h\b/i)?.[0] ?? null;
+  const h = s.match(/\b\d{1,2}\s*(h|uhr)\b/i)?.[0] ?? null;
   if (h) return h;
 
   const ampm = s.match(/\b\d{1,2}(:\d{2})?\s*(am|pm)\b/i)?.[0] ?? null;
@@ -301,13 +347,13 @@ function detectHabitSignal(text: string): string | null {
 
   const daily =
     s.match(
-      /\b(cada\s+dia|todos\s+los\s+dias|a\s+diario|daily|every\s+day|taglich|jeden\s+tag)\b/i
+      /\b(cada\s+dia|todos\s+los\s+dias|a\s+diario|daily|every\s+day|each\s+day|taglich|jeden\s+tag)\b/i
     )?.[0] ?? null;
   if (daily) return daily;
 
   const weekly =
     s.match(
-      /\b(cada\s+semana|semanal(mente)?|weekly|every\s+week|wochentlich|jede\s+woche)\b/i
+      /\b(cada\s+semana|semanal(mente)?|weekly|every\s+week|each\s+week|wochentlich|jede\s+woche)\b/i
     )?.[0] ?? null;
   if (weekly) return weekly;
 
@@ -316,25 +362,96 @@ function detectHabitSignal(text: string): string | null {
 
   const monthly =
     s.match(
-      /\b(cada\s+mes|mensual(mente)?|monthly|every\s+month|monatlich|jeden\s+monat)\b/i
+      /\b(cada\s+mes|mensual(mente)?|monthly|every\s+month|each\s+month|monatlich|jeden\s+monat)\b/i
     )?.[0] ?? null;
   if (monthly) return monthly;
 
   const yearly =
     s.match(
-      /\b(cada\s+ano|anual(mente)?|yearly|every\s+year|jahrlich|jedes\s+jahr)\b/i
+      /\b(cada\s+ano|anual(mente)?|yearly|every\s+year|each\s+year|jahrlich|jedes\s+jahr)\b/i
     )?.[0] ?? null;
   if (yearly) return yearly;
 
   return null;
 }
 
+function detectDailyReminderPhrase(foldedText: string): string | null {
+  const patterns = [
+    /\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|acuerdate|remember\s+me|remind\s+me|erinnere\s+mich)\b[\s\S]{0,40}\b(cada\s+dia|todos?\s+los\s+dias|diariamente|a\s+diario|daily|every\s+day|each\s+day|jeden\s+tag|taglich)\b/i,
+    /\b(cada\s+dia|todos?\s+los\s+dias|diariamente|a\s+diario|daily|every\s+day|each\s+day|jeden\s+tag|taglich)\b[\s\S]{0,40}\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|acuerdate|remember\s+me|remind\s+me|erinnere\s+mich)\b/i,
+  ];
+
+  for (const re of patterns) {
+    const hit = foldedText.match(re)?.[0] ?? null;
+    if (hit) return hit;
+  }
+  return null;
+}
+
+function isDailyReminderIntent(foldedText: string): boolean {
+  return detectDailyReminderPhrase(foldedText) !== null;
+}
+
+function hasScheduleRightAfterDailyReminderPhrase(text: string): boolean {
+  const folded = foldForMatch(text);
+  const patterns = [
+    /\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|acuerdate|remember\s+me|remind\s+me|erinnere\s+mich)\b[\s\S]{0,40}\b(cada\s+dia|todos?\s+los\s+dias|diariamente|a\s+diario|daily|every\s+day|each\s+day|jeden\s+tag|taglich)\b/gi,
+    /\b(cada\s+dia|todos?\s+los\s+dias|diariamente|a\s+diario|daily|every\s+day|each\s+day|jeden\s+tag|taglich)\b[\s\S]{0,40}\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|acuerdate|remember\s+me|remind\s+me|erinnere\s+mich)\b/gi,
+  ];
+
+  const hasScheduleInSameSentence = (tailRaw: string) => {
+    const tail = tailRaw.replace(/^[\s,;:.-]+/, "");
+    const stopAt = tail.search(/[.!?\n]/);
+    const segment = (stopAt === -1 ? tail : tail.slice(0, stopAt)).slice(0, 140);
+    return /\b(a\s+las|a\s+la|at|um)\s*\d{1,2}(?:[:.]\d{2})?\b/i.test(segment)
+      || /\b\d{1,2}(?:[:.]\d{2})\s*(am|pm|uhr)?\b/i.test(segment)
+      || /\b(hoy|manana|pasado\s+manana|today|tomorrow|day\s+after\s+tomorrow|heute|morgen|ubermorgen)\b/i.test(segment)
+      || /\b(\d{1,2}[/.:-]\d{1,2}(?:[/.:-]\d{2,4})?|\d{4}[/.:-]\d{1,2}[/.:-]\d{1,2})\b/i.test(segment)
+      || /\b\d{1,2}\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\b/i.test(segment)
+      || /\b\d{1,2}\s+(january|jan|february|feb|march|mar|april|apr|may|june|jun|july|jul|august|aug|september|sep|sept|october|oct|november|nov|december|dec)\b/i.test(segment)
+      || /\b\d{1,2}\.?\s+(januar|jan|februar|feb|marz|maerz|mar|april|apr|mai|juni|jun|juli|jul|august|aug|september|sep|oktober|okt|oct|november|nov|dezember|dez|dec)\b/i.test(segment);
+  };
+
+  for (const re of patterns) {
+    let match: RegExpExecArray | null = null;
+    while ((match = re.exec(folded)) !== null) {
+      const end = match.index + match[0].length;
+      const tail = folded.slice(end, end + 120);
+      if (hasScheduleInSameSentence(tail)) return true;
+    }
+  }
+  return false;
+}
+
+function hasUntilQualifierAfterDailyReminderPhrase(text: string): boolean {
+  const folded = foldForMatch(text);
+  const patterns = [
+    /\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|acuerdate|remember\s+me|remind\s+me|erinnere\s+mich)\b[\s\S]{0,40}\b(cada\s+dia|todos?\s+los\s+dias|diariamente|a\s+diario|daily|every\s+day|each\s+day|jeden\s+tag|taglich)\b/gi,
+    /\b(cada\s+dia|todos?\s+los\s+dias|diariamente|a\s+diario|daily|every\s+day|each\s+day|jeden\s+tag|taglich)\b[\s\S]{0,40}\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|acuerdate|remember\s+me|remind\s+me|erinnere\s+mich)\b/gi,
+  ];
+
+  for (const re of patterns) {
+    let match: RegExpExecArray | null = null;
+    while ((match = re.exec(folded)) !== null) {
+      const end = match.index + match[0].length;
+      const tail = folded.slice(end).replace(/^[\s,;:.-]+/, "");
+      const stopAt = tail.search(/[.!?\n]/);
+      const segment = (stopAt === -1 ? tail : tail.slice(0, stopAt)).slice(0, 180);
+      if (/\b(hasta|until|bis)\b/i.test(segment)) return true;
+    }
+  }
+  return false;
+}
+
 function detectReminderSignal(text: string): string | null {
   const s = foldForMatch(text);
 
+  const dailyReminderPhrase = detectDailyReminderPhrase(s);
+  if (dailyReminderPhrase) return dailyReminderPhrase;
+
   const dayBefore =
     s.match(
-      /\b(dia\s+de\s+antes|dia\s+antes|un\s+dia\s+antes|1\s*dia\s+antes|day\s+before|the\s+day\s+before|einen\s+tag\s+vorher|am\s+vortag)\b/i
+      /\b(dia\s+de\s+antes|dia\s+antes|un\s+dia\s+antes|1\s*dia\s+antes|el\s+dia\s+anterior|day\s+before|the\s+day\s+before|one\s+day\s+before|einen\s+tag\s+vorher|am\s+vortag)\b/i
     )?.[0] ?? null;
   if (dayBefore) return dayBefore;
 
@@ -351,6 +468,243 @@ function detectReminderSignal(text: string): string | null {
   if (daily) return daily;
 
   return null;
+}
+
+function detectIdeaSignal(text: string): string | null {
+  const s = foldForMatch(text);
+  const explicit = s.match(/\b(nota|note|notiz|idea|idee)\b/i)?.[0] ?? null;
+  return explicit;
+}
+
+type HighlightKind = "date" | "time" | "reminder" | "habit" | "idea";
+type HighlightToken = {
+  start: number;
+  end: number;
+  kind: HighlightKind;
+};
+
+const HIGHLIGHT_PRIORITY: Record<HighlightKind, number> = {
+  idea: 5,
+  reminder: 4,
+  time: 3,
+  date: 2,
+  habit: 1,
+};
+
+const HIGHLIGHT_PATTERNS: Array<{ kind: HighlightKind; regex: RegExp }> = [
+  {
+    kind: "reminder",
+    regex:
+      /\b(d[ií]a\s+de\s+antes|d[ií]a\s+antes|un\s+d[ií]a\s+antes|1\s*d[ií]a\s+antes|day\s+before|the\s+day\s+before|einen\s+tag\s+vorher|am\s+vortag|una\s+semana\s+antes|1\s+semana\s+antes|week\s+before|one\s+week\s+before|eine\s+woche\s+vorher|eine\s+woche\s+davor|todos\s+los\s+d[ií]as\s+hasta|cada\s+d[ií]a\s+hasta|every\s+day\s+until|daily\s+until|jeden\s+tag\s+bis)\b/gi,
+  },
+  {
+    kind: "time",
+    regex: /\b(\d{1,2}:\d{2}|\d{1,2}\s*h|(?:a\s+las|at|um)\s+\d{1,2}(?::\d{2})?|\d{1,2}(?::\d{2})?\s*(?:am|pm))\b/gi,
+  },
+  {
+    kind: "date",
+    regex:
+      /\b(hoy|mañana|manana|pasado\s+mañana|pasado\s+manana|este\s+finde|este\s+fin\s+de\s+semana|today|tomorrow|this\s+weekend|heute|morgen|dieses\s+wochenende|lunes|martes|mi[eé]rcoles|jueves|viernes|s[áa]bado|domingo|monday|tuesday|wednesday|thursday|friday|saturday|sunday|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag|\d{1,2}\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)|\d{1,2}[\/.\-]\d{1,2}(?:[\/.\-]\d{2,4})?|\d{4}[\/.\-]\d{1,2}[\/.\-]\d{1,2})\b/gi,
+  },
+  {
+    kind: "habit",
+    regex:
+      /\b(cada\s+d[ií]a|todos\s+los\s+d[ií]as|a\s+diario|daily|every\s+day|t[aä]glich|jeden\s+tag|cada\s+semana|semanal(?:mente)?|weekly|every\s+week|w[öo]chentlich|jede\s+woche|cada\s+mes|mensual(?:mente)?|monthly|every\s+month|monatlich|jeden\s+monat|cada\s+año|cada\s+ano|anual(?:mente)?|yearly|every\s+year|j[aä]hrlich|jedes\s+jahr)\b/gi,
+  },
+
+  {
+    kind: "idea",
+    regex: /\b(nota|note|notiz|idea|idee)\b/gi,
+  },
+];
+
+function collectHighlightTokens(text: string): HighlightToken[] {
+  if (!text) return [];
+
+  const raw: HighlightToken[] = [];
+  for (const { kind, regex } of HIGHLIGHT_PATTERNS) {
+    regex.lastIndex = 0;
+    let match: RegExpExecArray | null = null;
+    while ((match = regex.exec(text)) !== null) {
+      const value = match[0] ?? "";
+      if (!value) {
+        regex.lastIndex += 1;
+        continue;
+      }
+      raw.push({
+        start: match.index,
+        end: match.index + value.length,
+        kind,
+      });
+    }
+  }
+
+  raw.sort((a, b) => {
+    if (a.start !== b.start) return a.start - b.start;
+    const pr = HIGHLIGHT_PRIORITY[b.kind] - HIGHLIGHT_PRIORITY[a.kind];
+    if (pr !== 0) return pr;
+    return b.end - b.start - (a.end - a.start);
+  });
+
+  const selected: HighlightToken[] = [];
+  for (const token of raw) {
+    const overlaps = selected.some(
+      (taken) => token.start < taken.end && token.end > taken.start
+    );
+    if (!overlaps) selected.push(token);
+  }
+
+  return selected.sort((a, b) => a.start - b.start);
+}
+
+function foldWithMap(input: string): { folded: string; map: number[] } {
+  let folded = "";
+  const map: number[] = [];
+
+  for (let i = 0; i < input.length; i += 1) {
+    const ch = input[i];
+    const normalized = ch
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+    for (let j = 0; j < normalized.length; j += 1) {
+      folded += normalized[j];
+      map.push(i);
+    }
+  }
+  return { folded, map };
+}
+
+function collectSignalTokens(
+  text: string,
+  signals: Array<{ kind: HighlightKind; value: string | null }>
+): HighlightToken[] {
+  if (!text) return [];
+  const { folded, map } = foldWithMap(text);
+  const out: HighlightToken[] = [];
+
+  for (const signal of signals) {
+    if (!signal.value) continue;
+    const needle = foldForMatch(signal.value);
+    if (!needle) continue;
+
+    let idx = folded.indexOf(needle);
+    while (idx !== -1) {
+      const start = map[idx];
+      const endFoldIdx = idx + needle.length - 1;
+      const endOriginal = map[endFoldIdx];
+      if (typeof start === "number" && typeof endOriginal === "number") {
+        out.push({
+          start,
+          end: endOriginal + 1,
+          kind: signal.kind,
+        });
+      }
+      idx = folded.indexOf(needle, idx + needle.length);
+    }
+  }
+  return out;
+}
+
+function escapeHtml(input: string): string {
+  return input
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function buildHighlightedHtml(text: string, tokens: HighlightToken[]): string {
+  if (!text) return "";
+  if (!tokens.length) return escapeHtml(text).replace(/\n/g, "<br>");
+
+  const styleFor = (kind: HighlightKind) =>
+    kind === "idea"
+      ? "color:#b48617;font-weight:600;"
+      : `color:${REMI_PURPLE};font-weight:600;`;
+
+  let out = "";
+  let cursor = 0;
+  for (const token of tokens) {
+    if (token.start > cursor) {
+      out += escapeHtml(text.slice(cursor, token.start));
+    }
+    const piece = escapeHtml(text.slice(token.start, token.end));
+    out += `<span style="${styleFor(token.kind)}">${piece}</span>`;
+    cursor = token.end;
+  }
+  if (cursor < text.length) out += escapeHtml(text.slice(cursor));
+  return out.replace(/\n/g, "<br>");
+}
+
+function getSelectionOffsetsInElement(root: HTMLElement): { start: number; end: number } | null {
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return null;
+  const range = sel.getRangeAt(0);
+  if (!root.contains(range.startContainer) || !root.contains(range.endContainer)) return null;
+
+  const preStart = range.cloneRange();
+  preStart.selectNodeContents(root);
+  preStart.setEnd(range.startContainer, range.startOffset);
+  const start = preStart.toString().length;
+
+  const preEnd = range.cloneRange();
+  preEnd.selectNodeContents(root);
+  preEnd.setEnd(range.endContainer, range.endOffset);
+  const end = preEnd.toString().length;
+
+  return { start, end };
+}
+
+function setSelectionOffsetsInElement(root: HTMLElement, start: number, end = start) {
+  const safeStart = Math.max(0, start);
+  const safeEnd = Math.max(safeStart, end);
+
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let charCount = 0;
+  let startNode: Text | null = null;
+  let endNode: Text | null = null;
+  let startOffset = 0;
+  let endOffset = 0;
+
+  while (walker.nextNode()) {
+    const node = walker.currentNode as Text;
+    const len = node.data.length;
+    const nextCount = charCount + len;
+
+    if (!startNode && safeStart <= nextCount) {
+      startNode = node;
+      startOffset = Math.max(0, safeStart - charCount);
+    }
+    if (!endNode && safeEnd <= nextCount) {
+      endNode = node;
+      endOffset = Math.max(0, safeEnd - charCount);
+      break;
+    }
+    charCount = nextCount;
+  }
+
+  if (!startNode) {
+    const last = root.lastChild;
+    if (last && last.nodeType === Node.TEXT_NODE) {
+      startNode = last as Text;
+      startOffset = (last as Text).data.length;
+    }
+  }
+  if (!endNode) {
+    endNode = startNode;
+    endOffset = startOffset;
+  }
+  if (!startNode || !endNode) return;
+
+  const sel = window.getSelection();
+  if (!sel) return;
+  const range = document.createRange();
+  range.setStart(startNode, startOffset);
+  range.setEnd(endNode, endOffset);
+  sel.removeAllRanges();
+  sel.addRange(range);
 }
 
 /* ───────────────────────────────
@@ -390,8 +744,39 @@ function parseTimeToHHMM(signal: string | null): string | null {
   if (!signal) return null;
   const s = foldForMatch(signal);
 
+  if (/\b(medianoche|midnight|mitternacht)\b/i.test(s)) return "00:00";
+  if (/\b(mediodia|noon|mittag)\b/i.test(s)) return "12:00";
+
+  // Spanish conversational time context:
+  // "a las 5 de la tarde" => 17:00, "9 de la noche" => 21:00
+  // "por la tarde a las 5" => 17:00
+  const esAfter = s.match(
+    /\b(?:a\s+las|a\s+la|alas)?\s*(\d{1,2})(?:[:.](\d{2}))?\s*(?:de\s+la|por\s+la)\s*(manana|tarde|noche)\b/i
+  );
+  const esBefore = s.match(
+    /\b(?:de\s+la|por\s+la)\s*(manana|tarde|noche)\s*(?:a\s+las|a\s+la|alas)?\s*(\d{1,2})(?:[:.](\d{2}))?\b/i
+  );
+  const period = esAfter?.[3] ?? esBefore?.[1] ?? null;
+  const hourRaw = esAfter?.[1] ?? esBefore?.[2] ?? null;
+  const minuteRaw = esAfter?.[2] ?? esBefore?.[3] ?? null;
+  if (period && hourRaw) {
+    let h = Number(hourRaw);
+    const m = minuteRaw ? Number(minuteRaw) : 0;
+    if (Number.isFinite(h) && h >= 0 && h <= 23) {
+      if (period === "tarde") {
+        if (h >= 1 && h <= 11) h += 12;
+      } else if (period === "noche") {
+        if (h === 12) h = 0;
+        else if (h >= 1 && h <= 11) h += 12;
+      } else if (period === "manana") {
+        if (h === 12) h = 0;
+      }
+      return `${pad2(h)}:${pad2(Math.min(59, Math.max(0, m)))}`;
+    }
+  }
+
   // 14:00
-  const hhmm = s.match(/\b(\d{1,2}):(\d{2})\b/);
+  const hhmm = s.match(/\b(\d{1,2})[:.](\d{2})\b/);
   if (hhmm) {
     const h = Math.min(23, Math.max(0, Number(hhmm[1])));
     const m = Math.min(59, Math.max(0, Number(hhmm[2])));
@@ -411,14 +796,14 @@ function parseTimeToHHMM(signal: string | null): string | null {
   }
 
   // "a las 14" / "um 14" / "at 2"
-  const hOnly = s.match(/\b(\d{1,2})\b/);
+  const hOnly = s.match(/\b(?:a\s+las|a\s+la|alas|um|at)\s+(\d{1,2})\b/i);
   if (hOnly) {
     const h = Number(hOnly[1]);
     if (Number.isFinite(h) && h >= 0 && h <= 23) return `${pad2(h)}:00`;
   }
 
-  // "14h"
-  const hH = s.match(/\b(\d{1,2})\s*h\b/);
+  // "14h" / "14 uhr"
+  const hH = s.match(/\b(\d{1,2})\s*(h|uhr)\b/i);
   if (hH) {
     const h = Number(hH[1]);
     if (Number.isFinite(h) && h >= 0 && h <= 23) return `${pad2(h)}:00`;
@@ -454,6 +839,11 @@ function parseDateToISO(signal: string | null, uiLang: UiLang): string | null {
     d.setDate(d.getDate() + 2);
     return toISODate(d);
   }
+  if (/\b(day\s+after\s+tomorrow|ubermorgen)\b/i.test(s)) {
+    const d = startOfTodayLocal();
+    d.setDate(d.getDate() + 2);
+    return toISODate(d);
+  }
   if (
     /\b(this\s+weekend|este\s+finde|este\s+fin\s+de\s+semana|dieses\s+wochenende)\b/i.test(s)
   ) {
@@ -468,6 +858,13 @@ function parseDateToISO(signal: string | null, uiLang: UiLang): string | null {
     viernes: 5,
     sabado: 6,
     domingo: 0,
+    lun: 1,
+    mar: 2,
+    mie: 3,
+    jue: 4,
+    vie: 5,
+    sab: 6,
+    dom: 0,
     monday: 1,
     tuesday: 2,
     wednesday: 3,
@@ -475,6 +872,16 @@ function parseDateToISO(signal: string | null, uiLang: UiLang): string | null {
     friday: 5,
     saturday: 6,
     sunday: 0,
+    mon: 1,
+    tue: 2,
+    tues: 2,
+    wed: 3,
+    thu: 4,
+    thur: 4,
+    thurs: 4,
+    fri: 5,
+    sat: 6,
+    sun: 0,
     montag: 1,
     dienstag: 2,
     mittwoch: 3,
@@ -482,9 +889,16 @@ function parseDateToISO(signal: string | null, uiLang: UiLang): string | null {
     freitag: 5,
     samstag: 6,
     sonntag: 0,
+    mo: 1,
+    di: 2,
+    mi: 3,
+    do: 4,
+    fr: 5,
+    sa: 6,
+    so: 0,
   };
   const wd = s.match(
-    /\b(lunes|martes|miercoles|jueves|viernes|sabado|domingo|monday|tuesday|wednesday|thursday|friday|saturday|sunday|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)\b/i
+    /\b(lunes|martes|miercoles|jueves|viernes|sabado|domingo|lun|mar|mie|jue|vie|sab|dom|monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag|mo|di|mi|do|fr|sa|so)\b/i
   )?.[0];
   if (wd) {
     const key = wd.toLowerCase();
@@ -525,6 +939,83 @@ function parseDateToISO(signal: string | null, uiLang: UiLang): string | null {
     if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
       const cand = new Date(y, m - 1, d);
       const fixed = bumpToNextYearIfPast(cand, yearWasExplicit);
+      return toISODate(fixed);
+    }
+  }
+
+  // Month names in any supported language/order (more robust with mixed-language input).
+  const monthMap: Record<string, number> = {
+    enero: 1,
+    ene: 1,
+    febrero: 2,
+    feb: 2,
+    marzo: 3,
+    mar: 3,
+    abril: 4,
+    abr: 4,
+    mayo: 5,
+    may: 5,
+    junio: 6,
+    jun: 6,
+    julio: 7,
+    jul: 7,
+    agosto: 8,
+    ago: 8,
+    septiembre: 9,
+    setiembre: 9,
+    sep: 9,
+    octubre: 10,
+    oct: 10,
+    noviembre: 11,
+    nov: 11,
+    diciembre: 12,
+    dic: 12,
+    january: 1,
+    jan: 1,
+    february: 2,
+    march: 3,
+    april: 4,
+    june: 6,
+    july: 7,
+    august: 8,
+    september: 9,
+    sept: 9,
+    october: 10,
+    november: 11,
+    december: 12,
+    januar: 1,
+    februar: 2,
+    marz: 3,
+    maerz: 3,
+    apr: 4,
+    mai: 5,
+    juni: 6,
+    juli: 7,
+    oktober: 10,
+    okt: 10,
+    dezember: 12,
+    dez: 12,
+    dec: 12,
+  };
+  const monthToken =
+    "(enero|ene|febrero|feb|marzo|mar|abril|abr|mayo|may|junio|jun|julio|jul|agosto|ago|septiembre|setiembre|sep|octubre|oct|noviembre|nov|diciembre|dic|january|jan|february|march|april|apr|june|july|august|aug|september|sept|october|november|december|dec|januar|februar|marz|maerz|mai|juni|juli|oktober|okt|dezember|dez)";
+  const dMon = s.match(new RegExp(`\\b(\\d{1,2})\\.?\\s+(?:de\\s+)?${monthToken}\\b`, "i"));
+  if (dMon) {
+    const d = Number(dMon[1]);
+    const mo = monthMap[dMon[2]];
+    if (mo && d >= 1 && d <= 31) {
+      const cand = new Date(new Date().getFullYear(), mo - 1, d);
+      const fixed = bumpToNextYearIfPast(cand, false);
+      return toISODate(fixed);
+    }
+  }
+  const monD = s.match(new RegExp(`\\b${monthToken}\\s+(\\d{1,2})\\b`, "i"));
+  if (monD) {
+    const mo = monthMap[monD[1]];
+    const d = Number(monD[2]);
+    if (mo && d >= 1 && d <= 31) {
+      const cand = new Date(new Date().getFullYear(), mo - 1, d);
+      const fixed = bumpToNextYearIfPast(cand, false);
       return toISODate(fixed);
     }
   }
@@ -627,27 +1118,24 @@ function parseDateToISO(signal: string | null, uiLang: UiLang): string | null {
   return null;
 }
 
-function mapReminderSignalToMode(signal: string | null): ReminderMode | null {
+function mapReminderSignalToMode(signal: string | null, hasDetectedTime: boolean): ReminderMode | null {
   if (!signal) return null;
   const s = foldForMatch(signal);
 
-  if (
-    s.includes("dia") ||
-    s.includes("day") ||
-    s.includes("vortag") ||
-    s.includes("tag vorher")
-  ) {
+  // Rule:
+  // - "recuérdamelo cada día / every day" WITHOUT time => daily reminder
+  // - same phrase WITH time => daily repeat (handled by habit), not reminder
+  if (isDailyReminderIntent(s)) {
+    return hasDetectedTime ? null : "DAILY_UNTIL_DUE";
+  }
+
+  if (/\b(dia\s+de\s+antes|dia\s+antes|un\s+dia\s+antes|1\s*dia\s+antes|el\s+dia\s+anterior|day\s+before|the\s+day\s+before|one\s+day\s+before|vortag|tag\s+vorher)\b/i.test(s)) {
     return "DAY_BEFORE_AND_DUE";
   }
-  if (s.includes("semana") || s.includes("week") || s.includes("woche")) {
+  if (/\b(una\s+semana\s+antes|1\s+semana\s+antes|week\s+before|one\s+week\s+before|eine\s+woche\s+vorher|eine\s+woche\s+davor)\b/i.test(s)) {
     return "WEEK_BEFORE_AND_DUE";
   }
-  if (
-    s.includes("every day until") ||
-    s.includes("cada dia hasta") ||
-    s.includes("jeden tag bis") ||
-    s.includes("daily until")
-  ) {
+  if (/\b(todos?\s+los\s+dias\s+hasta|cada\s+dia\s+hasta|every\s+day\s+until|daily\s+until|jeden\s+tag\s+bis)\b/i.test(s)) {
     return "DAILY_UNTIL_DUE";
   }
   return null;
@@ -659,7 +1147,9 @@ function mapHabitSignalToRepeat(signal: string | null): RepeatType | null {
 
   if (
     s.includes("cada dia") ||
+    s.includes("todos los dias") ||
     s.includes("every day") ||
+    s.includes("each day") ||
     s.includes("taglich") ||
     s.includes("jeden tag") ||
     s.includes("a diario")
@@ -668,6 +1158,7 @@ function mapHabitSignalToRepeat(signal: string | null): RepeatType | null {
   if (
     s.includes("cada semana") ||
     s.includes("every week") ||
+    s.includes("each week") ||
     s.includes("wochentlich") ||
     s.includes("jede woche") ||
     s.includes("semanal")
@@ -676,8 +1167,15 @@ function mapHabitSignalToRepeat(signal: string | null): RepeatType | null {
   if (WEEKDAY_REPEAT_PATTERN.test(s))
     return "weekly";
   if (
+    /\b((todos?\s+los|todas?\s+las|cada)\s+(lunes|martes|miercoles|jueves|viernes|sabado|domingo)|((cada|todas?\s+las)\s+semana(s)?\s+(los?\s+)?(lunes|martes|miercoles|jueves|viernes|sabado|domingo))|every\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)|every\s+week\s+on\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)|on\s+(mondays|tuesdays|wednesdays|thursdays|fridays|saturdays|sundays)|jeden\s+(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)|jede\s+woche\s+am\s+(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)|am\s+(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag))\b/i.test(
+      s
+    )
+  )
+    return "weekly";
+  if (
     s.includes("cada mes") ||
     s.includes("every month") ||
+    s.includes("each month") ||
     s.includes("monatlich") ||
     s.includes("jeden monat") ||
     s.includes("mensual")
@@ -686,6 +1184,7 @@ function mapHabitSignalToRepeat(signal: string | null): RepeatType | null {
   if (
     s.includes("cada ano") ||
     s.includes("every year") ||
+    s.includes("each year") ||
     s.includes("jahrlich") ||
     s.includes("jedes jahr") ||
     s.includes("anual")
@@ -943,6 +1442,7 @@ function CaretSquare() {
 export default function MindDumpModal({
   open,
   onClose,
+  embedded = false,
   onOpenReview,
   onCreateTask,
   onCreateIdea,
@@ -972,7 +1472,7 @@ export default function MindDumpModal({
   const [text, setText] = useState(normalizeIncomingText(initialText ?? ""));
   const [interim, setInterim] = useState("");
 
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const textareaRef = useRef<HTMLDivElement | null>(null);
 
   const dateInputRef = useRef<HTMLInputElement | null>(null);
   const timeInputRef = useRef<HTMLInputElement | null>(null);
@@ -1027,9 +1527,11 @@ export default function MindDumpModal({
   const [repeatMenuOpen, setRepeatMenuOpen] = useState(false);
   const reminderMenuRef = useRef<HTMLDivElement>(null);
   const repeatMenuRef = useRef<HTMLDivElement>(null);
+  const [settingsPanelOpen, setSettingsPanelOpen] = useState(false);
 
   const ios = useMemo(() => isIOS(), []);
   const android = useMemo(() => isAndroid(), []);
+  const showSettingsPanel = embedded ? settingsPanelOpen : true;
 
   const withGap = (s: string) => `${String(s ?? "").trim()}${GAP}`;
 
@@ -1084,10 +1586,10 @@ export default function MindDumpModal({
 
   const { setModalOpen } = useModalUi();
   useEffect(() => {
-    if (!open) return;
+    if (!open || embedded) return;
     setModalOpen(true);
     return () => setModalOpen(false);
-  }, [open, setModalOpen]);
+  }, [open, embedded, setModalOpen]);
 
   const lastErrorRef = useRef<string | null>(null);
   useEffect(() => {
@@ -1211,30 +1713,35 @@ export default function MindDumpModal({
 
     const body = stripVisualBullets(trimmed);
 
-    try {
-      if (itemKind === "idea") {
-        if (onCreateIdea) {
-          await onCreateIdea(title, body);
-        } else {
-          await onCreateTask(title, null, "NONE", "none");
+    const hasDate = !!pickedDate;
+    const time = pickedTime || "12:00";
+    const dueDateISO = hasDate ? buildISOFromLocalParts(pickedDate, time) : null;
+    const finalReminderMode: ReminderMode =
+      dueDateISO || reminderMode === "DAILY_UNTIL_DUE" ? reminderMode : "NONE";
+    const finalRepeatType: RepeatType = habitRepeat;
+
+    // Cierre instantáneo para evitar sensación de bloqueo.
+    onClose();
+
+    // Guardado en segundo plano para que la UI pinte primero.
+    setTimeout(() => {
+      void (async () => {
+        try {
+          if (itemKind === "idea") {
+            if (onCreateIdea) {
+              await onCreateIdea(title, body);
+            } else {
+              await onCreateTask(title, null, "NONE", "none");
+            }
+            return;
+          }
+
+          await onCreateTask(title, dueDateISO, finalReminderMode, finalRepeatType);
+        } catch {
+          toast.error(t("capture.toast.saveError", "No se pudo guardar."));
         }
-        onClose();
-        return;
-      }
-
-      const hasDate = !!pickedDate;
-      const time = pickedTime || "12:00";
-      const dueDateISO = hasDate ? buildISOFromLocalParts(pickedDate, time) : null;
-
-      const finalReminderMode: ReminderMode = dueDateISO ? reminderMode : "NONE";
-      const finalRepeatType: RepeatType = habitRepeat;
-
-      await onCreateTask(title, dueDateISO, finalReminderMode, finalRepeatType);
-      onClose();
-    } catch {
-      toast.error(t("capture.toast.saveError", "No se pudo guardar."));
-      if (onOpenReview) onOpenReview(trimmed);
-    }
+      })();
+    }, 0);
   };
 
   const handleClose = () => {
@@ -1248,7 +1755,8 @@ export default function MindDumpModal({
     const node = textareaRef.current;
     if (!node) return;
     try {
-      caretRef.current = node.selectionStart ?? node.value.length;
+      const offs = getSelectionOffsetsInElement(node);
+      caretRef.current = offs?.start ?? node.innerText.length;
       setCaretTick((n) => n + 1);
     } catch {
       // ignore
@@ -1361,8 +1869,9 @@ export default function MindDumpModal({
       return;
     }
 
-    const start = node.selectionStart ?? node.value.length;
-    const end = node.selectionEnd ?? node.value.length;
+    const offs = getSelectionOffsetsInElement(node);
+    const start = offs?.start ?? node.innerText.length;
+    const end = offs?.end ?? node.innerText.length;
 
     setText((prev) => {
       const current = String(prev ?? "");
@@ -1374,8 +1883,8 @@ export default function MindDumpModal({
         const el = textareaRef.current;
         if (!el) return;
         try {
-          const pos = Math.min(safeStart + s.length, el.value.length);
-          el.selectionStart = el.selectionEnd = pos;
+          const pos = Math.min(safeStart + s.length, el.innerText.length);
+          setSelectionOffsetsInElement(el, pos, pos);
           caretRef.current = pos;
           setCaretTick((n) => n + 1);
           el.focus();
@@ -1407,7 +1916,7 @@ export default function MindDumpModal({
         { id: "pay" as const, re: /^(paga|pagar|pago)\b/i },
         { id: "birthday" as const, re: /^(cumple|cumpleanos)\b/i },
         { id: "appointment" as const, re: /^(cita|reunion)\b/i },
-        { id: "idea" as const, re: /^(idea)\b/i },
+        { id: "idea" as const, re: /^(nota|idea)\b/i },
       ],
       scheduleTokens: [
         /\bel\b/i,
@@ -1431,7 +1940,7 @@ export default function MindDumpModal({
         { id: "pay" as const, re: /^(pay)\b/i },
         { id: "birthday" as const, re: /^(birthday)\b/i },
         { id: "appointment" as const, re: /^(meeting|appointment)\b/i },
-        { id: "idea" as const, re: /^(idea)\b/i },
+        { id: "idea" as const, re: /^(note|idea)\b/i },
       ],
       scheduleTokens: [/\bon\b/i, /\bevery\b/i, /\bbefore\b/i, /\btoday\b/i, /\btomorrow\b/i],
       timeTokens: [/\bat\b/i, /\b\d{1,2}:\d{2}\b/, /\b\d{1,2}\s?(am|pm)\b/i],
@@ -1445,7 +1954,7 @@ export default function MindDumpModal({
         { id: "pay" as const, re: /^(zahlen|bezahlen)\b/i },
         { id: "birthday" as const, re: /^(geburtstag)\b/i },
         { id: "appointment" as const, re: /^(termin|meeting)\b/i },
-        { id: "idea" as const, re: /^(idee)\b/i },
+        { id: "idea" as const, re: /^(notiz|idee)\b/i },
       ],
       scheduleTokens: [/\bam\b/i, /\bjeden\b/i, /\bvor\b/i, /\bheute\b/i, /\bmorgen\b/i],
       timeTokens: [/\bum\b/i, /\b\d{1,2}:\d{2}\b/],
@@ -1639,13 +2148,10 @@ export default function MindDumpModal({
 
   useEffect(() => {
     if (!open) return;
-    if (typeTouched) return;
-
-    const next: ItemKind = activeRootChip === "idea" ? "idea" : "task";
-    if (next !== itemKind) {
-      setItemKind(next);
-
-      if (next === "idea") {
+    // Si el texto detecta explícitamente "idea", priorizamos siempre ese tipo.
+    if (activeRootChip === "idea") {
+      if (itemKind !== "idea") {
+        setItemKind("idea");
         setPickedDate("");
         setPickedTime("");
         setReminderMode("NONE");
@@ -1655,6 +2161,14 @@ export default function MindDumpModal({
         setReminderTouched(false);
         setHabitTouched(false);
       }
+      return;
+    }
+
+    if (typeTouched) return;
+
+    const next: ItemKind = "task";
+    if (next !== itemKind) {
+      setItemKind(next);
     }
   }, [open, activeRootChip, typeTouched, itemKind]);
 
@@ -1709,6 +2223,51 @@ export default function MindDumpModal({
   const detectedTime = detectTimeSignal(currentLine) ?? detectTimeSignal(allTextForSignals);
   const detectedReminder = detectReminderSignal(currentLine) ?? detectReminderSignal(allTextForSignals);
   const detectedHabit = detectHabitSignal(currentLine) ?? detectHabitSignal(allTextForSignals);
+  const detectedIdea = detectIdeaSignal(currentLine) ?? detectIdeaSignal(allTextForSignals);
+  const highlightTokens = useMemo(() => {
+    const base = collectHighlightTokens(text);
+    const fromSignals = collectSignalTokens(text, [
+      { kind: "date", value: detectedDate },
+      { kind: "time", value: detectedTime },
+      { kind: "reminder", value: detectedReminder },
+      { kind: "habit", value: detectedHabit },
+      { kind: "idea", value: detectedIdea },
+    ]);
+    const merged = [...base, ...fromSignals];
+    if (merged.length === 0) return merged;
+
+    merged.sort((a, b) => {
+      if (a.start !== b.start) return a.start - b.start;
+      const pr = HIGHLIGHT_PRIORITY[b.kind] - HIGHLIGHT_PRIORITY[a.kind];
+      if (pr !== 0) return pr;
+      return b.end - b.start - (a.end - a.start);
+    });
+
+    const selected: HighlightToken[] = [];
+    for (const token of merged) {
+      const overlaps = selected.some(
+        (taken) => token.start < taken.end && token.end > taken.start
+      );
+      if (!overlaps) selected.push(token);
+    }
+    return selected.sort((a, b) => a.start - b.start);
+  }, [text, detectedDate, detectedTime, detectedReminder, detectedHabit, detectedIdea]);
+  const highlightedHtml = useMemo(() => buildHighlightedHtml(text, highlightTokens), [text, highlightTokens]);
+
+  useEffect(() => {
+    const node = textareaRef.current;
+    if (!node) return;
+
+    const currentText = node.innerText.replace(/\r/g, "");
+    const selection = getSelectionOffsetsInElement(node);
+    const desiredStart = selection?.start ?? Math.min(caretRef.current, text.length);
+    const desiredEnd = selection?.end ?? desiredStart;
+
+    if (currentText !== text || node.innerHTML !== highlightedHtml) {
+      node.innerHTML = highlightedHtml;
+      setSelectionOffsetsInElement(node, desiredStart, desiredEnd);
+    }
+  }, [text, highlightedHtml]);
 
   useEffect(() => {
     if (itemKind !== "task") return;
@@ -1726,13 +2285,42 @@ export default function MindDumpModal({
     }
 
     if (!reminderTouched) {
-      const mode = mapReminderSignalToMode(detectedReminder);
+      const hasDetectedTime = !!parseTimeToHHMM(detectedTime);
+      const isDailyReminder =
+        !!detectedReminder && isDailyReminderIntent(detectedReminder);
+      const dailyReminderHasUntil =
+        !!detectedReminder &&
+        isDailyReminderIntent(detectedReminder) &&
+        hasUntilQualifierAfterDailyReminderPhrase(currentLine || allTextForSignals);
+      const dailyReminderNeedsTrailingSchedule =
+        !!detectedReminder &&
+        isDailyReminderIntent(detectedReminder) &&
+        hasScheduleRightAfterDailyReminderPhrase(currentLine || allTextForSignals);
+      const mode =
+        isDailyReminder && dailyReminderHasUntil
+          ? "DAILY_UNTIL_DUE"
+          : mapReminderSignalToMode(
+              detectedReminder,
+              isDailyReminder ? dailyReminderNeedsTrailingSchedule : hasDetectedTime
+            );
       if (mode && mode !== reminderMode) setReminderMode(mode);
       if (!mode && reminderMode !== "NONE") setReminderMode("NONE");
     }
 
     if (!habitTouched) {
-      const rt = mapHabitSignalToRepeat(detectedHabit);
+      const dailyReminderHasUntil =
+        !!detectedReminder &&
+        isDailyReminderIntent(detectedReminder) &&
+        hasUntilQualifierAfterDailyReminderPhrase(currentLine || allTextForSignals);
+      const dailyReminderHasTrailingSchedule =
+        !!detectedReminder &&
+        isDailyReminderIntent(detectedReminder) &&
+        hasScheduleRightAfterDailyReminderPhrase(currentLine || allTextForSignals);
+      const shouldForceReminderOnly =
+        !!detectedReminder &&
+        isDailyReminderIntent(detectedReminder) &&
+        (dailyReminderHasUntil || !dailyReminderHasTrailingSchedule);
+      const rt = shouldForceReminderOnly ? null : mapHabitSignalToRepeat(detectedHabit);
       if (rt && rt !== habitRepeat) setHabitRepeat(rt);
       if (!rt && habitRepeat !== "none") setHabitRepeat("none");
     }
@@ -1742,6 +2330,8 @@ export default function MindDumpModal({
     detectedTime,
     detectedReminder,
     detectedHabit,
+    currentLine,
+    allTextForSignals,
     uiLang,
     dateTouched,
     timeTouched,
@@ -1796,26 +2386,30 @@ export default function MindDumpModal({
   })();
 
   const reminderLabel = (() => {
-    if (itemKind !== "task") return t("pill.reminder.none", "Sin recordatorio");
-    if (!hasSomeDate || reminderMode === "NONE") return t("pill.reminder.none", "Sin recordatorio");
+    if (itemKind !== "task") return t("pill.reminderNone", "Sin recordatorio");
+    if (reminderMode === "NONE") return t("pill.reminderNone", "Sin recordatorio");
+    if (!hasSomeDate && reminderMode !== "DAILY_UNTIL_DUE") return t("pill.reminderNone", "Sin recordatorio");
     if (reminderMode === "DAILY_UNTIL_DUE") return t("pill.remDaily", "Diaria");
     if (reminderMode === "DAY_BEFORE_AND_DUE") return t("pill.remDayBefore", "1 día antes");
     if (reminderMode === "WEEK_BEFORE_AND_DUE") return t("pill.remWeekBefore", "1 semana antes");
-    return t("pill.reminder.none", "Sin recordatorio");
+    return t("pill.reminderNone", "Sin recordatorio");
   })();
 
   const repeatLabel = (() => {
-    if (itemKind !== "task") return t("pill.repeat.none", "Sin repetición");
-    if (habitRepeat === "none") return t("pill.repeat.none", "Sin repetición");
+    if (itemKind !== "task") return t("pill.repeatNone", "Sin repetición");
+    if (habitRepeat === "none") return t("pill.repeatNone", "Sin repetición");
     if (habitRepeat === "daily") return t("pill.habitDaily", "Diaria");
     if (habitRepeat === "weekly") return t("pill.habitWeekly", "Semanal");
     if (habitRepeat === "monthly") return t("pill.habitMonthly", "Mensual");
     if (habitRepeat === "yearly") return t("pill.habitYearly", "Anual");
-    return t("pill.repeat.none", "Sin repetición");
+    return t("pill.repeatNone", "Sin repetición");
   })();
 
   return (
-    <div className="fixed inset-0 z-[1000]" onContextMenu={(e) => e.preventDefault()}>
+    <div
+      className={embedded ? "relative w-full" : "fixed inset-0 z-[1000]"}
+      onContextMenu={(e) => e.preventDefault()}
+    >
       <style>{`
         @keyframes remiRipple {
           from { transform: scale(0); opacity: .35; }
@@ -1850,70 +2444,158 @@ export default function MindDumpModal({
           display: none;
           width: 0; height: 0;
         }
+        .remi-editor:empty:before {
+          content: attr(data-placeholder);
+          color: rgba(15,23,42,0.35);
+        }
       `}</style>
 
-      <div className="absolute inset-0" style={{ background: "#ffffff" }} />
+      {!embedded && <div className="absolute inset-0" style={{ background: APP_PAGE_BG }} />}
 
-      <div className="absolute inset-0 flex flex-col">
+      <div
+        className={embedded ? "relative flex flex-col w-full" : "absolute inset-0 flex flex-col"}
+        style={
+          embedded
+            ? {
+                background: "transparent",
+                borderRadius: 0,
+                overflow: "visible",
+                border: "none",
+                boxShadow: "none",
+              }
+            : undefined
+        }
+      >
         {/* Header */}
         <div
           className="sticky top-0 z-10"
           style={{
-            background: REMI_PURPLE,
-            color: "#fff",
-            borderBottomLeftRadius: 24,
-            borderBottomRightRadius: 24,
-            boxShadow: "0 10px 30px rgba(0,0,0,0.10)",
+            background: embedded ? "transparent" : "#ffffff",
+            color: embedded ? "#0f172a" : "#0f172a",
+            borderBottomLeftRadius: embedded ? 0 : 24,
+            borderBottomRightRadius: embedded ? 0 : 24,
+            border: embedded ? "none" : "1px solid #ebe7f8",
+            boxShadow: embedded ? "none" : "0 8px 22px rgba(125,89,201,0.10)",
+            backdropFilter: "none",
           }}
         >
-          <div
+          {!embedded && <div
+            aria-hidden
+            style={{
+              position: "absolute",
+              width: 160,
+              height: 160,
+              borderRadius: "999px",
+              background: "#7d59c91c",
+              top: -94,
+              left: -72,
+              filter: "blur(1px)",
+              zIndex: 0,
+              pointerEvents: "none",
+            }}
+          />}
+          {!embedded && <div
+            aria-hidden
+            style={{
+              position: "absolute",
+              width: 138,
+              height: 138,
+              borderRadius: "999px",
+              background: "#59a5c920",
+              top: -46,
+              right: -62,
+              filter: "blur(1px)",
+              zIndex: 0,
+              pointerEvents: "none",
+            }}
+          />}
+          {!embedded && (
+            <>
+              <div
+                aria-hidden
+                style={{
+                  position: "absolute",
+                  width: 9,
+                  height: 9,
+                  borderRadius: "999px",
+                  background: "#7d59c9",
+                  top: 24,
+                  right: "18%",
+                  zIndex: 0,
+                  pointerEvents: "none",
+                }}
+              />
+              <div
+                aria-hidden
+                style={{
+                  position: "absolute",
+                  width: 6,
+                  height: 6,
+                  borderRadius: "999px",
+                  background: "#59c9b5",
+                  top: 68,
+                  right: "8%",
+                  zIndex: 0,
+                  pointerEvents: "none",
+                }}
+              />
+            </>
+          )}
+          {!embedded && <div
             className="pb-4 flex items-start justify-between"
             style={{
+              position: "relative",
+              zIndex: 1,
               paddingTop: "calc(16px + env(safe-area-inset-top))",
               paddingLeft: "calc(20px + env(safe-area-inset-left))",
               paddingRight: "calc(20px + env(safe-area-inset-right))",
             }}
           >
             <div className="min-w-0 pr-3">
-              <div className="text-[16px] font-semibold leading-tight" style={{ color: "#ffffff" }}>
+              <div className="text-[20px] font-extrabold leading-tight" style={{ color: "#111827" }}>
                 {t("capture.title", "Vacía tu mente")}
               </div>
 
-              <div className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.88)" }}>
+              <div className="text-[14px] mt-0.5 font-semibold" style={{ color: "#5f6c85" }}>
                 {t("capture.subtitle", "Habla, escribe o pega texto. Remi se encarga.")}
               </div>
 
               {showTalkButton && listening && (
-                <div className="text-[11px] mt-2" style={{ color: "rgba(255,255,255,0.92)" }}>
+                <div className="text-[11px] mt-2" style={{ color: "#475569" }}>
                   {t("capture.listening", "Escuchando…")}{" "}
                   {interim ? (
-                    <span style={{ color: "rgba(255,255,255,0.70)" }}>{interim}</span>
+                    <span style={{ color: "#64748b" }}>{interim}</span>
                   ) : null}
                 </div>
               )}
             </div>
 
-            <button
-              data-no-focus
-              onClick={handleClose}
-              aria-label={t("common.close", "Cerrar")}
-              className="h-10 w-10 rounded-full flex items-center justify-center"
-              style={{
-                background: "rgba(255,255,255,0.85)",
-                border: "1px solid rgba(15,23,42,0.10)",
-                cursor: "pointer",
-              }}
-            >
-              <X className="h-5 w-5" style={{ color: "rgba(15,23,42,0.65)" }} />
-            </button>
-          </div>
+            {!embedded && (
+              <button
+                data-no-focus
+                onClick={handleClose}
+                aria-label={t("common.close", "Cerrar")}
+                className="h-10 w-10 rounded-full flex items-center justify-center"
+                style={{
+                  background: "#f5f2ff",
+                  border: "1px solid #d8cdf8",
+                  cursor: "pointer",
+                }}
+              >
+                <X className="h-5 w-5" style={{ color: "#7d59c9" }} />
+              </button>
+            )} 
+          </div>}
 
           {/* ✅ Smart chips bar (AUTO) */}
           <div
             style={{
+              position: "relative",
+              zIndex: 1,
+              paddingTop: embedded ? 12 : 0,
               paddingBottom: 14,
-              paddingLeft: "calc(20px + env(safe-area-inset-left))",
-              paddingRight: "calc(20px + env(safe-area-inset-right))",
+              paddingLeft: embedded ? 0 : "calc(20px + env(safe-area-inset-left))",
+              paddingRight: embedded ? 0 : "calc(20px + env(safe-area-inset-right))",
             }}
           >
             <div
@@ -1924,33 +2606,82 @@ export default function MindDumpModal({
                 gap: 10,
               }}
             >
-              <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.92)" }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: embedded ? "rgba(15,23,42,0.72)" : "#5f6c85" }}>
                 {chipTitle}
               </div>
 
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                {chipStage !== "ROOT" && (
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    padding: 3,
+                    borderRadius: 999,
+                    border: "1px solid #e2e8f0",
+                    background: "#ffffff",
+                  }}
+                >
                   <button
                     type="button"
-                    onClick={resetChips}
-                    style={{
-                      height: 26,
-                      padding: "0 10px",
-                      borderRadius: 999,
-                      border: "1px solid rgba(255,255,255,0.28)",
-                      background: "rgba(255,255,255,0.10)",
-                      color: "rgba(255,255,255,0.95)",
-                      fontSize: 11,
-                      fontWeight: 900,
-                      cursor: "pointer",
+                    onClick={() => {
+                      setTypeTouched(true);
+                      setItemKind("task");
                     }}
-                    title={t("capture.chips.backHint", "Volver a atajos")}
-                    aria-label={t("capture.chips.backHint", "Volver a atajos")}
+                    style={{
+                      height: 22,
+                      padding: "0 8px",
+                      borderRadius: 999,
+                      border: "none",
+                      background: itemKind === "task" ? "#ede9fe" : "transparent",
+                      color: itemKind === "task" ? "#7d59c9" : "#64748b",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                    }}
+                    title={t("pill.type.task", "Recordatorio")}
+                    aria-label={t("pill.type.task", "Recordatorio")}
                   >
-                    <Sparkles size={14} style={{ display: "inline-block", marginRight: 6 }} />
-                    {t("capture.chips.back", "Atajos")}
+                    <CalendarClock size={13} />
                   </button>
-                )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTypeTouched(true);
+                      setItemKind("idea");
+                      setPickedDate("");
+                      setPickedTime("");
+                      setReminderMode("NONE");
+                      setHabitRepeat("none");
+                      setDateTouched(false);
+                      setTimeTouched(false);
+                      setReminderTouched(false);
+                      setHabitTouched(false);
+                      setReminderMenuOpen(false);
+                      setRepeatMenuOpen(false);
+                    }}
+                    style={{
+                      height: 22,
+                      padding: "0 8px",
+                      borderRadius: 999,
+                      border: "none",
+                      background: itemKind === "idea" ? "#fef3c7" : "transparent",
+                      color: itemKind === "idea" ? "#a16207" : "#64748b",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                    }}
+                    title={t("pill.type.idea", "Idea")}
+                    aria-label={t("pill.type.idea", "Idea")}
+                  >
+                    <StickyNote size={13} />
+                  </button>
+                </div>
+                
               </div>
             </div>
 
@@ -1969,56 +2700,113 @@ export default function MindDumpModal({
               {chipStage === "ROOT" && (
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   {rootChips.map((c) => (
-                    <Chip key={c.id} label={c.label} onClick={() => handleRootChip(c.id)} />
+                    <Chip key={c.id} label={c.label} embedded={embedded} onClick={() => handleRootChip(c.id)} />
                   ))}
                 </div>
               )}
 
               {chipStage === "SCHEDULE" &&
                 scheduleChips.map((c) => (
-                  <Chip key={c.id} label={c.label} onClick={() => handleScheduleChip(c.insert)} />
+                  <Chip key={c.id} label={c.label} embedded={embedded} onClick={() => handleScheduleChip(c.insert)} />
                 ))}
 
               {chipStage === "TIME" &&
                 timeChips.map((c) => (
-                  <Chip key={c.id} label={c.label} onClick={() => handleTimeChip(c.insert)} />
+                  <Chip key={c.id} label={c.label} embedded={embedded} onClick={() => handleTimeChip(c.insert)} />
                 ))}
 
               {chipStage === "REMINDER" &&
                 reminderChips.map((c) => (
-                  <Chip key={c.id} label={c.label} onClick={() => handleReminderChip(c.insert)} />
+                  <Chip key={c.id} label={c.label} embedded={embedded} onClick={() => handleReminderChip(c.insert)} />
                 ))}
 
-              <Chip label="↵" onClick={() => insertAtCursor("\n")} />
+              <Chip label="↵" embedded={embedded} onClick={() => insertAtCursor("\n")} />
             </div>
           </div>
         </div>
 
         {/* Body (ocupa el espacio restante entre header y barra inferior) */}
-        <div className="flex-1 overflow-hidden px-5 pt-5 pb-4">
+        <div
+          className={
+            embedded
+              ? "relative overflow-hidden px-2 pt-0 pb-0"
+              : "relative flex-1 overflow-hidden px-5 pt-5 pb-4"
+          }
+        >
           <div
-            className="w-full h-full rounded-2xl overflow-hidden"
+            className="relative w-full h-full rounded-2xl overflow-hidden"
+            onPointerDown={(e) => {
+              const target = e.target as HTMLElement | null;
+              if (!target) return;
+
+              // Do not steal interactions from actionable controls.
+              if (
+                target.closest(
+                  "button,[data-no-focus],input,select,textarea,[role='button']",
+                )
+              ) {
+                return;
+              }
+
+              const node = textareaRef.current;
+              if (!node) return;
+
+              // If the tap is outside the contentEditable node but inside the textarea shell,
+              // focus editor and place caret at end.
+              if (!node.contains(target)) {
+                node.focus();
+                try {
+                  const pos = node.innerText.length;
+                  setSelectionOffsetsInElement(node, pos, pos);
+                  caretRef.current = pos;
+                  setCaretTick((n) => n + 1);
+                } catch {}
+                return;
+              }
+
+              // Ensure the editor gets focus on any touch/click inside it.
+              if (document.activeElement !== node) {
+                node.focus();
+              }
+            }}
             style={{
               background: "#fff",
               border: "1px solid rgba(15,23,42,0.15)",
-              boxShadow: "0 10px 30px rgba(15,23,42,0.06)",
+              boxShadow: embedded ? "none" : "0 10px 30px rgba(15,23,42,0.06)",
+              minHeight: embedded ? (showSettingsPanel ? 200 : 260) : undefined,
+              transition: "min-height 240ms ease",
             }}
           >
-            <textarea
+            <div
               ref={textareaRef}
-              value={text}
-              onChange={(e) => {
-                setText(e.target.value);
+              contentEditable
+              suppressContentEditableWarning
+              role="textbox"
+              aria-multiline="true"
+              onInput={(e) => {
+                const node = e.currentTarget as HTMLDivElement;
+                setText(node.innerText.replace(/\r/g, ""));
                 requestAnimationFrame(updateCaret);
               }}
               onKeyUp={() => updateCaret()}
               onClick={() => updateCaret()}
-              onSelect={() => updateCaret()}
+              onMouseUp={() => updateCaret()}
               onFocus={() => {
                 setIsFocused(true);
                 requestAnimationFrame(updateCaret);
               }}
-              onBlur={() => setIsFocused(false)}
+              onBlur={() => {
+                setIsFocused(false);
+                const node = textareaRef.current;
+                if (!node) return;
+                const plain = node.innerText.replace(/\r/g, "").trim();
+                if (!plain) {
+                  node.innerHTML = "";
+                  setText("");
+                  caretRef.current = 0;
+                  setCaretTick((n) => n + 1);
+                }
+              }}
               onPaste={(e) => {
                 const pasted = e.clipboardData?.getData("text") ?? "";
                 const normalized = normalizeIncomingText(pasted);
@@ -2026,9 +2814,10 @@ export default function MindDumpModal({
 
                 e.preventDefault();
 
-                const el = e.currentTarget as HTMLTextAreaElement | null;
-                const startRaw = el?.selectionStart;
-                const endRaw = el?.selectionEnd;
+                const el = e.currentTarget as HTMLDivElement | null;
+                const offs = el ? getSelectionOffsetsInElement(el) : null;
+                const startRaw = offs?.start;
+                const endRaw = offs?.end;
 
                 setText((prev) => {
                   const current = String(prev ?? "");
@@ -2043,8 +2832,8 @@ export default function MindDumpModal({
                     const node = textareaRef.current;
                     if (!node) return;
                     try {
-                      const pos = Math.min(start + normalized.length, node.value.length);
-                      node.selectionStart = node.selectionEnd = pos;
+                      const pos = Math.min(start + normalized.length, node.innerText.length);
+                      setSelectionOffsetsInElement(node, pos, pos);
                       caretRef.current = pos;
                       setCaretTick((n) => n + 1);
                     } catch {}
@@ -2053,29 +2842,159 @@ export default function MindDumpModal({
                   return next;
                 });
               }}
-              placeholder={t("capture.placeholder", "Toca para escribir")}
-              className="w-full h-full resize-none bg-transparent outline-none text-[18px] leading-7"
+              className="remi-editor w-full h-full overflow-auto bg-transparent outline-none text-[18px] leading-7"
               style={{
+                position: "relative",
+                zIndex: 2,
                 color: REMI_TEXT,
+                caretColor: REMI_TEXT,
                 padding: 16,
+                paddingBottom: embedded ? 88 : 16,
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+                overflowWrap: "anywhere",
               }}
-              inputMode="text"
+              data-placeholder={t("capture.placeholder", "Toca para escribir")}
             />
+
+            {embedded && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: 14,
+                  right: 14,
+                  bottom: 12,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  pointerEvents: "none",
+                  zIndex: showSettingsPanel ? 2 : 6,
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setSettingsPanelOpen((v) => !v)}
+                  aria-label={t("common.settings", "Ajustes")}
+                  title={t("common.settings", "Ajustes")}
+                  aria-pressed={settingsPanelOpen}
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 999,
+                    border: "1px solid #c7b5f6",
+                    background: "#f3f4f6",
+                    color: "#7d59c9",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    pointerEvents: "auto",
+                  }}
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                </button>
+
+                {showTalkButton ? (
+                  <button
+                    data-no-focus
+                    type="button"
+                    onPointerDown={handleTalkDown}
+                    onPointerUp={handleTalkUp}
+                    onPointerCancel={handleTalkUp}
+                    onPointerLeave={handleTalkUp}
+                    onContextMenu={(e) => e.preventDefault()}
+                    style={{
+                      width: 46,
+                      height: 46,
+                      borderRadius: 999,
+                      border: "1px solid #c7b5f6",
+                      background: listening ? "#e9e5f3" : "#f3f4f6",
+                      color: REMI_PURPLE,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      userSelect: "none",
+                      WebkitTouchCallout: "none",
+                      WebkitUserSelect: "none",
+                      touchAction: "none",
+                      cursor: "pointer",
+                      position: "relative",
+                      overflow: "hidden",
+                      pointerEvents: "auto",
+                    }}
+                    aria-pressed={listening}
+                    title={t("capture.speakHold", "Mantén pulsado para hablar")}
+                    aria-label={t("capture.speakHold", "Mantén pulsado para hablar")}
+                  >
+                    {showTalkActiveRing && <span className="remi-ring" />}
+                    {showTalkRipple && <span key={rippleTick} className="remi-ripple" />}
+                    <span style={{ position: "relative", zIndex: 2, display: "flex" }}>
+                      <Mic className="h-5 w-5" />
+                    </span>
+                  </button>
+                ) : (
+                  <div style={{ width: 46, height: 46 }} />
+                )}
+
+                <button
+                  data-no-focus
+                  type="button"
+                  onClick={handleSave}
+                  onContextMenu={(e) => e.preventDefault()}
+                  aria-label={t("common.save", "Guardar")}
+                  title={t("common.save", "Guardar")}
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 999,
+                    border: "1px solid rgba(125,89,201,0.35)",
+                    background: REMI_PURPLE,
+                    color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    pointerEvents: "auto",
+                  }}
+                >
+                  <Check className="h-4 w-4" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Barra inferior (ya NO es fixed: ocupa espacio real y no pisa el textarea) */}
-        <div
-          className="shrink-0"
-          style={{
-            paddingBottom: "max(env(safe-area-inset-bottom), 14px)",
-          }}
-        >
+        {embedded && ios && (
           <div
-            className="mx-auto"
             style={{
-              width: "calc(100% - 32px)",
-              maxWidth: 420,
+              textAlign: "center",
+              fontSize: 12,
+              lineHeight: "16px",
+              color: REMI_SUB,
+              padding: "0 12px",
+              marginTop: 6,
+              marginBottom: showSettingsPanel ? 6 : 0,
+            }}
+          >
+            {t("capture.iosKeyboardMicHint", "Usa el micrófono del teclado para hablar.")}
+          </div>
+        )}
+
+        {/* Barra inferior (solo modal completo) */}
+        {(!embedded || showSettingsPanel) && (
+          <div
+            className="shrink-0"
+            style={{
+              paddingBottom: embedded ? 0 : "max(env(safe-area-inset-bottom), 14px)",
+              position: "relative",
+              zIndex: 20,
+            }}
+          >
+            <div
+              className="mx-auto"
+              style={{
+              width: embedded ? "calc(100% - 16px)" : "calc(100% - 32px)",
+              maxWidth: embedded ? undefined : 420,
               pointerEvents: "auto",
               position: "relative",
             }}
@@ -2088,38 +3007,28 @@ export default function MindDumpModal({
             */}
             {/* ... (bloque comentado de idioma intacto) ... */}
 
-            {ios && (
-              <div
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  right: 0,
-                  bottom: "calc(100% + 1px)",
-                  textAlign: "center",
-                  fontSize: 12,
-                  lineHeight: "16px",
-                  color: REMI_SUB,
-                  padding: "0 12px",
-                  pointerEvents: "none",
-                }}
-              >
-                {t("capture.iosKeyboardMicHint", "En iPhone: usa el micrófono del teclado para dictar.")}
-              </div>
-            )}
-
             {/* pill */}
             <div
               style={{
                 background: "rgba(255,255,255,0.92)",
-                border: "1px solid rgba(15,23,42,0.08)",
-                borderRadius: 24,
+                border: "1px solid rgba(15,23,42,0.15)",
+                borderRadius: 16,
                 padding: "10px 12px",
-                boxShadow: "0 18px 50px rgba(15,23,42,0.16)",
+                boxShadow: "none",
                 backdropFilter: "blur(12px)",
               }}
             >
-              {/* ✅ panel SIEMPRE visible y compacto */}
-              <div className="mt-1 space-y-2">
+              <div
+                className="mt-1 space-y-2"
+                style={{
+                  overflow: showSettingsPanel ? "visible" : "hidden",
+                  maxHeight: showSettingsPanel ? 520 : 0,
+                  opacity: showSettingsPanel ? 1 : 0,
+                  transform: showSettingsPanel ? "translateY(0)" : "translateY(-8px)",
+                  transition: "max-height 240ms ease, opacity 220ms ease, transform 220ms ease",
+                  pointerEvents: showSettingsPanel ? "auto" : "none",
+                }}
+              >
                 {/* ✅ Tipo (task/idea) */}
                 <div className="rounded-2xl border border-slate-100 bg-slate-50 p-2">
                   <div className="flex items-center justify-between gap-2">
@@ -2135,9 +3044,9 @@ export default function MindDumpModal({
                           setTypeTouched(true);
                           setItemKind("task");
                         }}
-                        icon={<List className="h-3.5 w-3.5" />}
+                        icon={<CalendarClock className="h-3.5 w-3.5" />}
                       >
-                        {t("pill.type.task", "Tarea")}
+                        {t("pill.type.task", "Recordatorio")}
                       </PillButton>
 
                       <PillButton
@@ -2160,12 +3069,12 @@ export default function MindDumpModal({
                           setReminderMenuOpen(false);
                           setRepeatMenuOpen(false);
                         }}
-                        icon={<Lightbulb className="h-3.5 w-3.5" />}
+                        icon={<StickyNote className="h-3.5 w-3.5" />}
                       >
                         {t("pill.type.idea", "Idea")}
                       </PillButton>
-                    </div>
-                  </div>
+            </div>
+          </div>
                 </div>
 
                 {/* ✅ NUEVO: 2x2 pills (Fecha / Hora / Recordatorio / Repetición) */}
@@ -2237,7 +3146,7 @@ export default function MindDumpModal({
                   <div className="relative">
                     <SettingPill
                       disabled={itemKind !== "task"}
-                      icon={<Bell className="h-4 w-4" style={{ color: REMI_PURPLE }} />}
+                      icon={<CalendarClock className="h-4 w-4" style={{ color: REMI_PURPLE }} />}
                       text={reminderLabel}
                       right={<CaretSquare />}
                       onClick={() => {
@@ -2257,17 +3166,12 @@ export default function MindDumpModal({
                           setReminderMenuOpen(false);
                         }}
                       >
-                        {t("pill.reminder.none", "Sin recordatorio")}
+                        {t("pill.reminderNone", "Sin recordatorio")}
                       </MenuItem>
 
                       <MenuItem
                         active={reminderMode === "DAILY_UNTIL_DUE"}
-                        disabled={!hasSomeDate}
                         onClick={() => {
-                          if (!hasSomeDate) {
-                            toast.message(t("capture.toast.pickDateFirst", "Elige una fecha primero."));
-                            return;
-                          }
                           setReminderTouched(true);
                           setTypeTouched(true);
                           setReminderMode("DAILY_UNTIL_DUE");
@@ -2337,7 +3241,7 @@ export default function MindDumpModal({
                           setRepeatMenuOpen(false);
                         }}
                       >
-                        {t("pill.repeat.none", "Sin repetición")}
+                        {t("pill.repeatNone", "Sin repetición")}
                       </MenuItem>
 
                       <MenuItem
@@ -2393,14 +3297,15 @@ export default function MindDumpModal({
               </div>
 
               {/* ✅ Botones debajo */}
-              <div
-                className="mt-3"
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr 1fr",
-                  alignItems: "center",
-                }}
-              >
+              {!embedded && (
+                <div
+                  className="mt-3"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr 1fr",
+                    alignItems: "center",
+                  }}
+                >
                 {/* Pegar */}
                 <div className="flex flex-col items-center justify-center gap-1.5">
                   <button
@@ -2408,13 +3313,13 @@ export default function MindDumpModal({
                     type="button"
                     onClick={handlePaste}
                     onContextMenu={(e) => e.preventDefault()}
-                    style={{
-                      width: 52,
-                      height: 52,
-                      borderRadius: 999,
-                      border: `1px solid ${REMI_PURPLE_BORDER}`,
-                      background: REMI_PURPLE_BG,
-                      color: REMI_PURPLE,
+                        style={{
+                          width: 52,
+                          height: 52,
+                          borderRadius: 999,
+                          border: "1px solid #c7b5f6",
+                          background: "#f3f4f6",
+                          color: REMI_PURPLE,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -2447,8 +3352,8 @@ export default function MindDumpModal({
                           width: 52,
                           height: 52,
                           borderRadius: 999,
-                          border: `1px solid ${REMI_PURPLE_BORDER}`,
-                          background: listening ? "rgba(125,89,201,0.18)" : REMI_PURPLE_BG,
+                          border: "1px solid #c7b5f6",
+                          background: listening ? "#e9e5f3" : "#f3f4f6",
                           color: REMI_PURPLE,
                           display: "flex",
                           alignItems: "center",
@@ -2515,12 +3420,14 @@ export default function MindDumpModal({
                     <div />
                   )}
                 </div>
-              </div>
+                </div>
+              )}
             </div>
 
             <div style={{ height: 6 }} />
           </div>
         </div>
+      )}
 
         {/* FAB Guardar encima del teclado */}
         {false && isFocused && kbdOffset > 80 && (
@@ -2556,7 +3463,15 @@ export default function MindDumpModal({
   );
 }
 
-function Chip({ label, onClick }: { label: string; onClick: () => void }) {
+function Chip({
+  label,
+  onClick,
+  embedded = false,
+}: {
+  label: string;
+  onClick: () => void;
+  embedded?: boolean;
+}) {
   return (
     <button
       type="button"
@@ -2566,11 +3481,11 @@ function Chip({ label, onClick }: { label: string; onClick: () => void }) {
         height: 30,
         padding: "0 12px",
         borderRadius: 999,
-        border: "1px solid rgba(255,255,255,0.30)",
-        background: "rgba(255,255,255,0.16)",
-        color: "rgba(255,255,255,0.95)",
+        border: embedded ? "1px solid #c7b5f6" : "1px solid #d8cdf8",
+        background: embedded ? "#ffffff" : "#ffffff",
+        color: embedded ? "#7d59c9" : "#7d59c9",
         fontSize: 11,
-        fontWeight: 900,
+        fontWeight: 500,
         cursor: "pointer",
         userSelect: "none",
         WebkitTouchCallout: "none",
@@ -2592,7 +3507,7 @@ function ChipSeparator() {
         display: "inline-flex",
         alignItems: "center",
         padding: "0 6px",
-        color: "rgba(255,255,255,0.55)",
+        color: "#9aa4b8",
         fontSize: 12,
         fontWeight: 900,
         userSelect: "none",

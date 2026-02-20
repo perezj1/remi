@@ -17,12 +17,20 @@ import {
   Globe2,
   Camera,
   Bell,
+  MessageSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { registerPushSubscription } from "@/lib/registerPush";
 import { useI18n } from "@/contexts/I18nContext";
+import FeedbackSurveyModal from "@/components/FeedbackSurveyModal";
+import {
+  flushPendingFeedback,
+  initFeedbackTracker,
+  markFeedbackSubmitted,
+  submitFeedbackSurvey,
+} from "@/lib/feedbackSurvey";
 import type { RemiLocale } from "@/locales";
 
 type DevicePushStatus =
@@ -105,6 +113,8 @@ export default function ProfilePage() {
   // ---- contraseña / guardado ----
   const [newPassword, setNewPassword] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showFeedbackSurvey, setShowFeedbackSurvey] = useState(false);
+  const [sendingFeedback, setSendingFeedback] = useState(false);
 
   // ---- avatar ----
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -397,6 +407,12 @@ export default function ProfilePage() {
     })();
   }, [user, profile, setLang]);
 
+  useEffect(() => {
+    if (!user) return;
+    initFeedbackTracker();
+    void flushPendingFeedback();
+  }, [user?.id]);
+
   const handleLanguageChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value as RemiLocale;
     setPreferredLanguage(value);
@@ -539,6 +555,32 @@ export default function ProfilePage() {
     }
   };
 
+  const handleSubmitFeedbackSurvey = async (payload: {
+    score: number;
+    improvement: string;
+    liked: string;
+  }) => {
+    if (!user) return;
+    setSendingFeedback(true);
+    try {
+      await submitFeedbackSurvey({
+        userId: user.id,
+        lang,
+        score: payload.score,
+        liked: payload.liked,
+        improvement: payload.improvement,
+        source: "profile_button",
+      });
+      markFeedbackSubmitted();
+      setShowFeedbackSurvey(false);
+      toast.success(
+        safeT("feedback.thanks", "Gracias por tu opinión sobre Remi."),
+      );
+    } finally {
+      setSendingFeedback(false);
+    }
+  };
+
   const displayName = username || (user?.email ?? t("profile.defaultUserName"));
   const initial =
     !avatarUrl && displayName ? displayName.charAt(0).toUpperCase() : "R";
@@ -570,39 +612,82 @@ export default function ProfilePage() {
     devicePushStatus === "needs_permission";
 
   return (
-    <div className="remi-page flex flex-col">
-      {/* HEADER */}
+    <div
+      className="remi-page text-slate-900"
+      style={{
+        minHeight: "100dvh",
+        background: "linear-gradient(180deg, #f1eff7 0%, #fafafe 42%, #fafafe 100%)",
+        paddingBottom: "calc(96px + env(safe-area-inset-bottom))",
+      }}
+    >
       <div
+        className="relative overflow-hidden"
         style={{
-          padding: `calc(16px + env(safe-area-inset-top)) 20px 40px`,
-          background: "#7d59c9",
-          color: "white",
-          borderBottomLeftRadius: "28px",
-          borderBottomRightRadius: "28px",
+          paddingTop: "calc(10px + env(safe-area-inset-top))",
+          paddingBottom: 10,
+          paddingLeft: "calc(16px + env(safe-area-inset-left))",
+          paddingRight: "calc(16px + env(safe-area-inset-right))",
+          background: "#ffffff",
+          borderBottomLeftRadius: 22,
+          borderBottomRightRadius: 22,
+          border: "1px solid #ebe7f8",
+          boxShadow: "0 8px 22px rgba(125,89,201,0.10)",
         }}
       >
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-1 mb-3 text-[13px]"
+        <div
+          aria-hidden
           style={{
-            background: "transparent",
-            border: "none",
-            cursor: "pointer",
+            position: "absolute",
+            width: 180,
+            height: 180,
+            borderRadius: "999px",
+            background: "#7d59c91c",
+            top: -90,
+            left: -60,
+            filter: "blur(1px)",
+            pointerEvents: "none",
           }}
-        >
-          <ArrowLeft size={16} />
-          <span>{t("profile.back")}</span>
-        </button>
+        />
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            width: 220,
+            height: 220,
+            borderRadius: "999px",
+            background: "#59a5c920",
+            top: -110,
+            right: -70,
+            filter: "blur(1px)",
+            pointerEvents: "none",
+          }}
+        />
+        <div className="mx-auto w-full" style={{ maxWidth: "min(96vw, 1440px)" }}>
+          <button
+            type="button"
+            onClick={() => {
+              if (window.history.length > 1) navigate(-1);
+              else navigate("/");
+            }}
+            className="flex items-center gap-1 mb-2 text-[13px] text-slate-700"
+            style={{
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              position: "relative",
+              zIndex: 1,
+            }}
+          >
+            <ArrowLeft size={16} />
+          </button>
 
-        <div className="flex flex-col items-center gap-3">
+        <div className="flex flex-col items-center gap-3 mt-1">
           {/* AVATAR */}
           <div className="relative">
             <button
               type="button"
               onClick={handleAvatarClick}
-              className="w-[90px] h-[90px] rounded-full border-4 border-white/80 bg-white/10 shadow-xl flex items-center justify-center overflow-hidden"
-              style={{ backdropFilter: "blur(8px)" }}
+              className="w-[90px] h-[90px] rounded-full border-4 border-[#d8cdf8] bg-white shadow-[0_10px_24px_rgba(125,89,201,0.16)] flex items-center justify-center overflow-hidden"
             >
               {avatarUrl ? (
                 <img
@@ -618,7 +703,7 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={handleAvatarClick}
-              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-white shadow-md flex items-center justify-center"
+              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#f5f2ff] shadow-md flex items-center justify-center"
             >
               <Camera size={14} className="text-violet-500" />
             </button>
@@ -633,33 +718,43 @@ export default function ProfilePage() {
           </div>
 
           {avatarError && (
-            <p className="text-[11px] text-red-100 mt-1">{avatarError}</p>
+            <p className="text-[11px] text-red-500 mt-1">{avatarError}</p>
           )}
 
           <div className="text-center">
-            <div className="text-[17px] font-semibold leading-tight">
+            <div className="font-extrabold leading-tight text-slate-900" style={{ fontSize: "clamp(28px, 2vw, 42px)" }}>
               {displayName}
             </div>
             {memberSince && (
-              <div className="text-[11px] opacity-90">
+              <div className="text-slate-500 mt-0.5" style={{ fontSize: "clamp(13px, 0.9vw, 18px)" }}>
                 {t("profile.memberSince", { date: memberSince })}
               </div>
             )}
           </div>
         </div>
+        </div>
       </div>
 
       {/* CONTENIDO */}
-      <div className="px-5 pb-24" style={{ marginTop: -20 }}>
+      <div
+        style={{
+          padding: "0 16px",
+          marginTop: 14,
+          marginBottom: 10,
+          marginLeft: "auto",
+          marginRight: "auto",
+          maxWidth: "min(96vw, 1440px)",
+        }}
+      >
         <div className="space-y-4">
           <section
-            className="bg-white rounded-2xl shadow-md"
-            style={{ padding: "14px 14px 14px" }}
+            className="rounded-3xl border border-slate-200 bg-slate-50/80"
+            style={{ padding: "clamp(14px, 1vw, 24px)" }}
           >
-            <h2 className="text-sm font-semibold mb-1">
+            <h2 className="font-semibold mb-1" style={{ fontSize: "clamp(17px, 1.1vw, 24px)" }}>
               {t("profile.sectionUserTitle")}
             </h2>
-            <p className="text-[11px] text-slate-500 mb-3">
+            <p className="text-slate-500 mb-3" style={{ fontSize: "clamp(13px, 0.85vw, 17px)" }}>
               {t("profile.sectionUserDescription")}
             </p>
 
@@ -676,7 +771,7 @@ export default function ProfilePage() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder={t("profile.usernamePlaceholder")}
-                    className="w-full rounded-full border border-slate-200 bg-white/80 px-4 py-2.5 text-xs outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition"
+                    className="w-full rounded-full border border-slate-200 bg-white/80 px-4 py-2.5 text-xs outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition md:py-3 md:text-sm"
                   />
                 </div>
               </div>
@@ -693,7 +788,7 @@ export default function ProfilePage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder={t("profile.emailPlaceholder")}
-                    className="w-full rounded-full border border-slate-200 bg-white/80 px-4 py-2.5 text-xs outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition"
+                    className="w-full rounded-full border border-slate-200 bg-white/80 px-4 py-2.5 text-xs outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition md:py-3 md:text-sm"
                   />
                 </div>
               </div>
@@ -710,7 +805,7 @@ export default function ProfilePage() {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder={t("profile.passwordPlaceholder")}
-                    className="w-full rounded-full border border-slate-200 bg-white/80 px-4 py-2.5 text-xs outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition"
+                    className="w-full rounded-full border border-slate-200 bg-white/80 px-4 py-2.5 text-xs outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition md:py-3 md:text-sm"
                   />
                 </div>
               </div>
@@ -725,7 +820,7 @@ export default function ProfilePage() {
                   <select
                     value={preferredLanguage}
                     onChange={handleLanguageChange}
-                    className="w-full rounded-full border border-slate-200 bg-white/80 px-4 py-2.5 text-xs outline-none appearance-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition"
+                    className="w-full rounded-full border border-slate-200 bg-white/80 px-4 py-2.5 text-xs outline-none appearance-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition md:py-3 md:text-sm"
                   >
                     <option value="es">{t("profile.languageSpanish")}</option>
                     <option value="en">{t("profile.languageEnglish")}</option>
@@ -791,7 +886,7 @@ export default function ProfilePage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="mt-3 w-full rounded-full bg-[#7d59c9] text-white text-xs font-semibold py-2.5 shadow-md active:translate-y-[1px] disabled:opacity-70"
+                className="mt-3 w-full rounded-full bg-[#7d59c9] text-white text-xs font-semibold py-2.5 shadow-md active:translate-y-[1px] disabled:opacity-70 md:py-3 md:text-sm"
               >
                 {saving ? t("profile.saving") : t("profile.saveChanges")}
               </button>
@@ -800,20 +895,31 @@ export default function ProfilePage() {
 
           {/* TARJETA: ACCIONES DE CUENTA */}
           <section
-            className="bg-white rounded-2xl shadow-md"
-            style={{ padding: "14px 14px 10px" }}
+            className="rounded-3xl border border-slate-200 bg-slate-50/80"
+            style={{ padding: "clamp(14px, 1vw, 24px)" }}
           >
-            <h2 className="text-sm font-semibold mb-1">
+            <h2 className="font-semibold mb-1" style={{ fontSize: "clamp(17px, 1.1vw, 24px)" }}>
               {t("profile.sectionAccountTitle")}
             </h2>
-            <p className="text-[11px] text-slate-500 mb-3">
+            <p className="text-slate-500 mb-3" style={{ fontSize: "clamp(13px, 0.85vw, 17px)" }}>
               {t("profile.sectionAccountDescription")}
             </p>
 
             <button
               type="button"
+              onClick={() => setShowFeedbackSurvey(true)}
+              className="w-full flex items-center justify-center gap-2 rounded-full border border-violet-200 text-violet-600 text-xs py-2.5 mb-2 shadow-sm hover:bg-violet-50 transition md:py-3 md:text-sm"
+            >
+              <MessageSquare size={14} />
+              <span>
+                {safeT("profile.feedbackButton", "Dejar opinión")}
+              </span>
+            </button>
+
+            <button
+              type="button"
               onClick={handleShareApp}
-              className="w-full flex items-center justify-center gap-2 rounded-full border border-violet-200 text-violet-600 text-xs py-2.5 mb-2 shadow-sm hover:bg-violet-50 transition"
+              className="w-full flex items-center justify-center gap-2 rounded-full border border-violet-200 text-violet-600 text-xs py-2.5 mb-2 shadow-sm hover:bg-violet-50 transition md:py-3 md:text-sm"
             >
               <Share2 size={14} />
               <span>{t("profile.shareButton")}</span>
@@ -822,7 +928,7 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 rounded-full bg-red-500 text-white text-xs py-2.5 shadow-md hover:bg-red-600 transition active:translate-y-[1px]"
+              className="w-full flex items-center justify-center gap-2 rounded-full bg-red-500 text-white text-xs py-2.5 shadow-md hover:bg-red-600 transition active:translate-y-[1px] md:py-3 md:text-sm"
             >
               <LogOut size={14} />
               <span>{t("profile.logoutButton")}</span>
@@ -830,6 +936,23 @@ export default function ProfilePage() {
           </section>
         </div>
       </div>
+
+      <FeedbackSurveyModal
+        open={showFeedbackSurvey}
+        loading={sendingFeedback}
+        title={safeT("feedback.title", "Tu opinión sobre Remi")}
+        questionScore={safeT("feedback.q1", "¿Te está ayudando Remi?")}
+        questionLike={safeT("feedback.q3", "¿Qué es lo que más te gusta?")}
+        placeholderLike={safeT("feedback.placeholderLike", "Escribe lo que más te gusta...")}
+        questionImprove={safeT("feedback.q2", "¿Qué mejorarías?")}
+        placeholderImprove={safeT("feedback.placeholder", "Escribe una sugerencia breve...")}
+        submitLabel={safeT("feedback.send", "Enviar opinión")}
+        laterLabel={safeT("feedback.later", "Ahora no")}
+        scoreHintLow={safeT("feedback.low", "Nada")}
+        scoreHintHigh={safeT("feedback.high", "Mucho")}
+        onClose={() => setShowFeedbackSurvey(false)}
+        onSubmit={handleSubmitFeedbackSurvey}
+      />
     </div>
   );
 }

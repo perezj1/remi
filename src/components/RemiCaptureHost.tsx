@@ -1,8 +1,10 @@
 // src/components/RemiCaptureHost.tsx
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { celebrateCreation } from "@/lib/creationCelebration";
+import { computeMindClearPercent } from "@/lib/mindClear";
 import { useModalUi } from "@/contexts/ModalUiContext";
 
 import MindDumpModal from "@/components/MindDumpModal";
@@ -13,13 +15,12 @@ import {
   RepeatType,
   createIdea,
   createTask,
+  fetchRemiStatusSummary,
 } from "@/lib/brainItemsApi";
 
 import { SHARE_DRAFT_KEY } from "@/pages/ShareTarget";
 
 const NAV_DICTATION_KEY = "remi_nav_dictation_pending_v1";
-const AUTO_OPEN_LAST_TS_KEY = "remi_auto_open_last_ts_v1";
-const AUTO_OPEN_COOLDOWN_MS = 1500;
 
 // ✅ Ajusta aquí si tu “index” real es "/index" en lugar de "/"
 const INDEX_PATHNAME = "/";
@@ -107,18 +108,6 @@ function clearHistoryToken(search: string): string {
   }
 }
 
-function isStandalonePwa(): boolean {
-  try {
-    // iOS (navigator.standalone) + estándar (display-mode)
-    const anyNav = navigator as any;
-    const iosStandalone = !!anyNav?.standalone;
-    const displayStandalone = window.matchMedia?.("(display-mode: standalone)")?.matches;
-    return !!(iosStandalone || displayStandalone);
-  } catch {
-    return false;
-  }
-}
-
 export default function RemiCaptureHost() {
   const { user } = useAuth();
   const { setModalOpen } = useModalUi();
@@ -135,9 +124,6 @@ export default function RemiCaptureHost() {
   const [mentalDumpOpen, setMentalDumpOpen] = useState(false);
   const [mentalDumpInitialText, setMentalDumpInitialText] = useState<string>("");
   const [mentalDumpInitialNonce, setMentalDumpInitialNonce] = useState(0);
-
-  const skipNextAutoOpenRef = useRef(false);
-  const autoOpenScheduledRef = useRef(false);
 
   // ✅ 1 solo indicador global para UI (BottomNav etc.)
   useEffect(() => {
@@ -166,7 +152,7 @@ export default function RemiCaptureHost() {
    * y que el push del modal ocurra un tick después (setTimeout).
    */
   const openCapture = useCallback(
-    (prefill?: string, source: "auto" | "user" = "user") => {
+    (prefill?: string) => {
       setMindDumpInitialText(prefill ?? "");
       setMindDumpInitialNonce((n) => n + 1);
 
@@ -182,10 +168,9 @@ export default function RemiCaptureHost() {
       navigate({ pathname: INDEX_PATHNAME, search: baseSearch }, { replace: true });
 
       // 2) push del modal
-      const delay = source === "auto" && isStandalonePwa() ? 60 : 0;
       window.setTimeout(() => {
         navigate({ pathname: INDEX_PATHNAME, search: modalSearch }, { replace: false });
-      }, delay);
+      }, 0);
     },
     [location.search, navigate]
   );
@@ -209,102 +194,6 @@ export default function RemiCaptureHost() {
 
   const shouldAutoPreview = mentalDumpInitialText.trim().length > 0;
 
-  // ✅ Auto-open “central” (cold start + resume)
-  const openMindDumpAuto = useCallback(() => {
-    if (typeof window === "undefined") return;
-    if (!user) return;
-
-    // si ya hay modal en la URL, no auto-abrir
-    if (getModalParam(location.search)) return;
-
-    // si venimos de share, lo gestiona el efecto de SHARE_DRAFT
-    if (isShareEntry(location.search)) return;
-
-    // si el flujo de share pidió saltarse un auto-open, respetarlo
-    if (skipNextAutoOpenRef.current) {
-      skipNextAutoOpenRef.current = false;
-      return;
-    }
-
-    // cooldown anti doble disparo
-    try {
-      const now = Date.now();
-      const last = Number(sessionStorage.getItem(AUTO_OPEN_LAST_TS_KEY) || "0");
-      if (now - last < AUTO_OPEN_COOLDOWN_MS) return;
-      sessionStorage.setItem(AUTO_OPEN_LAST_TS_KEY, String(now));
-    } catch {
-      // ignore
-    }
-
-    // si hay draft de share pendiente, no abras vacío aquí
-    try {
-      const hasShareDraft = !!sessionStorage.getItem(SHARE_DRAFT_KEY);
-      if (hasShareDraft) return;
-    } catch {
-      // ignore
-    }
-
-    // si hay dictado pendiente, úsalo como prefill
-    try {
-      const pending = sessionStorage.getItem(NAV_DICTATION_KEY);
-      if (pending && pending.trim().length > 0) {
-        sessionStorage.removeItem(NAV_DICTATION_KEY);
-        openCapture(pending.trim(), "auto");
-        return;
-      }
-    } catch {
-      // ignore
-    }
-
-    openCapture("", "auto");
-  }, [location.search, openCapture, user]);
-
-  // ✅ Auto-open en cold start (pero NO en refresh)
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!user) return;
-
-    // Evitar doble disparo en PWA: cold start puede lanzar varios eventos (pageshow + visibility)
-    if (autoOpenScheduledRef.current) return;
-    autoOpenScheduledRef.current = true;
-
-    try {
-      const nav = performance
-        .getEntriesByType?.("navigation")
-        ?.at(0) as PerformanceNavigationTiming | undefined;
-      if (nav?.type === "reload") return;
-    } catch {
-      // ignore
-    }
-
-    // Pequeño delay para que BrowserRouter esté totalmente listo en PWA instalada
-    window.setTimeout(() => {
-      openMindDumpAuto();
-    }, isStandalonePwa() ? 80 : 0);
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
-
-  // ✅ Auto-open al volver desde segundo plano / restauración (resume)
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!user) return;
-
-    const onVisibility = () => {
-      if (document.visibilityState === "visible") openMindDumpAuto();
-    };
-
-    const onPageShow = () => openMindDumpAuto();
-
-    document.addEventListener("visibilitychange", onVisibility);
-    window.addEventListener("pageshow", onPageShow);
-
-    return () => {
-      document.removeEventListener("visibilitychange", onVisibility);
-      window.removeEventListener("pageshow", onPageShow);
-    };
-  }, [openMindDumpAuto, user]);
-
   // ✅ Leer draft compartido (desde /share-target)
   useEffect(() => {
     if (!user || typeof window === "undefined") return;
@@ -315,7 +204,6 @@ export default function RemiCaptureHost() {
     const raw = sessionStorage.getItem(SHARE_DRAFT_KEY);
     if (!raw) {
       if (hasSharedFlag) {
-        skipNextAutoOpenRef.current = true;
         const latestSearch = window.location.search || location.search;
         navigate(
           { pathname: INDEX_PATHNAME, search: removeSharedParam(latestSearch) },
@@ -333,7 +221,6 @@ export default function RemiCaptureHost() {
 
       if (!text) {
         if (hasSharedFlag) {
-          skipNextAutoOpenRef.current = true;
           const latestSearch = window.location.search || location.search;
           navigate(
             { pathname: INDEX_PATHNAME, search: removeSharedParam(latestSearch) },
@@ -343,10 +230,9 @@ export default function RemiCaptureHost() {
         return;
       }
 
-      openCapture(text, "auto");
+      sessionStorage.setItem(NAV_DICTATION_KEY, text);
 
       if (hasSharedFlag) {
-        skipNextAutoOpenRef.current = true;
         const latestSearch = window.location.search || location.search;
         navigate(
           { pathname: INDEX_PATHNAME, search: removeSharedParam(latestSearch) },
@@ -361,7 +247,6 @@ export default function RemiCaptureHost() {
         // ignore
       }
       if (hasSharedFlag) {
-        skipNextAutoOpenRef.current = true;
         const latestSearch = window.location.search || location.search;
         navigate(
           { pathname: INDEX_PATHNAME, search: removeSharedParam(latestSearch) },
@@ -375,12 +260,24 @@ export default function RemiCaptureHost() {
   useEffect(() => {
     const onOpenCapture = (ev: Event) => {
       const ce = ev as CustomEvent<any>;
-      const incomingText =
+      let incomingText =
         typeof ce?.detail?.initialText === "string" ? ce.detail.initialText : "";
-      openCapture(incomingText?.trim?.() ?? "", "user");
+      if (!incomingText?.trim?.()) {
+        try {
+          const pending = sessionStorage.getItem(NAV_DICTATION_KEY);
+          if (pending && pending.trim().length > 0) {
+            incomingText = pending.trim();
+            sessionStorage.removeItem(NAV_DICTATION_KEY);
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      openCapture(incomingText?.trim?.() ?? "");
     };
 
-    const onOpenMentalDump = () => openCapture("", "user");
+    const onOpenMentalDump = () => openCapture("");
 
     window.addEventListener("remi-open-capture", onOpenCapture as EventListener);
     window.addEventListener("remi-open-mental-dump", onOpenMentalDump);
@@ -408,7 +305,12 @@ export default function RemiCaptureHost() {
       repeatType: RepeatType
     ) => {
       if (!user) return;
+      const beforeSummary = await fetchRemiStatusSummary(user.id);
+      const before = computeMindClearPercent(beforeSummary);
       await createTask(user.id, title, dueDate, reminderMode, repeatType);
+      const afterSummary = await fetchRemiStatusSummary(user.id);
+      const after = computeMindClearPercent(afterSummary);
+      celebrateCreation(after - before);
       emitItemsChanged();
     },
     [emitItemsChanged, user]
@@ -417,7 +319,12 @@ export default function RemiCaptureHost() {
   const handleCreateIdea = useCallback(
     async (title: string) => {
       if (!user) return;
+      const beforeSummary = await fetchRemiStatusSummary(user.id);
+      const before = computeMindClearPercent(beforeSummary);
       await createIdea(user.id, title);
+      const afterSummary = await fetchRemiStatusSummary(user.id);
+      const after = computeMindClearPercent(afterSummary);
+      celebrateCreation(after - before);
       emitItemsChanged();
     },
     [emitItemsChanged, user]

@@ -653,6 +653,80 @@ function normalizeSpokenDe(raw: string): string {
    2) HINTS (repeat/reminder)
    ========================================================= */
 
+function hasDailyCadenceAny(raw: string): boolean {
+  const text = normalize(raw);
+  return /\b(cada dia|todos los dias|a diario|diariamente|diario|every day|each day|daily|everyday|once a day|jeden tag|taglich|täglich|taeglich)\b/.test(
+    text
+  );
+}
+
+function hasReminderVerbAny(raw: string): boolean {
+  const text = normalize(raw);
+  return /\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|recordarme|acuerdate|remember|remember me|remind(?: me)?|erinnere mich|erinner mich)\b/.test(
+    text
+  );
+}
+
+function hasDailyReminderPhraseAny(raw: string): boolean {
+  const text = normalize(raw);
+  const patterns = [
+    /\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|acuerdate|remember\s+me|remind\s+me|erinnere\s+mich)\b[\s\S]{0,40}\b(cada\s+dia|todos?\s+los\s+dias|diariamente|a\s+diario|daily|every\s+day|each\s+day|jeden\s+tag|taglich)\b/i,
+    /\b(cada\s+dia|todos?\s+los\s+dias|diariamente|a\s+diario|daily|every\s+day|each\s+day|jeden\s+tag|taglich)\b[\s\S]{0,40}\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|acuerdate|remember\s+me|remind\s+me|erinnere\s+mich)\b/i,
+  ];
+  return patterns.some((re) => re.test(text));
+}
+
+function hasScheduleRightAfterDailyReminderPhraseAny(raw: string): boolean {
+  const text = normalize(raw);
+  const patterns = [
+    /\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|acuerdate|remember\s+me|remind\s+me|erinnere\s+mich)\b[\s\S]{0,40}\b(cada\s+dia|todos?\s+los\s+dias|diariamente|a\s+diario|daily|every\s+day|each\s+day|jeden\s+tag|taglich)\b/gi,
+    /\b(cada\s+dia|todos?\s+los\s+dias|diariamente|a\s+diario|daily|every\s+day|each\s+day|jeden\s+tag|taglich)\b[\s\S]{0,40}\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|acuerdate|remember\s+me|remind\s+me|erinnere\s+mich)\b/gi,
+  ];
+
+  const hasScheduleInSameSentence = (tailRaw: string) => {
+    const tail = tailRaw.replace(/^[\s,;:.-]+/, "");
+    const stopAt = tail.search(/[.!?\n]/);
+    const segment = (stopAt === -1 ? tail : tail.slice(0, stopAt)).slice(0, 140);
+    return /\b(a\s+las|a\s+la|at|um)\s*\d{1,2}(?:[:.]\d{2})?\b/i.test(segment)
+      || /\b\d{1,2}(?:[:.]\d{2})\s*(am|pm|uhr)?\b/i.test(segment)
+      || /\b(hoy|manana|pasado\s+manana|today|tomorrow|day\s+after\s+tomorrow|heute|morgen|ubermorgen)\b/i.test(segment)
+      || /\b(\d{1,2}[/.:-]\d{1,2}(?:[/.:-]\d{2,4})?|\d{4}[/.:-]\d{1,2}[/.:-]\d{1,2})\b/i.test(segment)
+      || /\b\d{1,2}\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\b/i.test(segment)
+      || /\b\d{1,2}\s+(january|jan|february|feb|march|mar|april|apr|may|june|jun|july|jul|august|aug|september|sep|sept|october|oct|november|nov|december|dec)\b/i.test(segment)
+      || /\b\d{1,2}\.?\s+(januar|jan|februar|feb|marz|maerz|mar|april|apr|mai|juni|jun|juli|jul|august|aug|september|sep|oktober|okt|oct|november|nov|dezember|dez|dec)\b/i.test(segment);
+  };
+
+  for (const re of patterns) {
+    let match: RegExpExecArray | null = null;
+    while ((match = re.exec(text)) !== null) {
+      const end = match.index + match[0].length;
+      const tail = text.slice(end, end + 120);
+      if (hasScheduleInSameSentence(tail)) return true;
+    }
+  }
+  return false;
+}
+
+function hasUntilQualifierAfterDailyReminderPhraseAny(raw: string): boolean {
+  const text = normalize(raw);
+  const patterns = [
+    /\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|acuerdate|remember\s+me|remind\s+me|erinnere\s+mich)\b[\s\S]{0,40}\b(cada\s+dia|todos?\s+los\s+dias|diariamente|a\s+diario|daily|every\s+day|each\s+day|jeden\s+tag|taglich)\b/gi,
+    /\b(cada\s+dia|todos?\s+los\s+dias|diariamente|a\s+diario|daily|every\s+day|each\s+day|jeden\s+tag|taglich)\b[\s\S]{0,40}\b(recuerda(?:me|melo|nos)?|recorda(?:me|melo)?|acuerdate|remember\s+me|remind\s+me|erinnere\s+mich)\b/gi,
+  ];
+
+  for (const re of patterns) {
+    let match: RegExpExecArray | null = null;
+    while ((match = re.exec(text)) !== null) {
+      const end = match.index + match[0].length;
+      const tail = text.slice(end).replace(/^[\s,;:.-]+/, "");
+      const stopAt = tail.search(/[.!?\n]/);
+      const segment = (stopAt === -1 ? tail : tail.slice(0, stopAt)).slice(0, 180);
+      if (/\b(hasta|until|bis)\b/i.test(segment)) return true;
+    }
+  }
+  return false;
+}
+
 // Detectar si el texto sugiere un hábito recurrente
 function detectRepeatHint(
   raw: string,
@@ -766,6 +840,14 @@ function detectRepeatHint(
 }
 
 function detectRepeatHintAny(raw: string): ParsedResult["repeatHint"] {
+  // Regla UX:
+  // - "recuérdame cada día" => recordatorio diario
+  // - Solo pasa a repetición diaria si justo después de esa frase viene fecha/hora.
+  if (hasDailyReminderPhraseAny(raw) || (hasDailyCadenceAny(raw) && hasReminderVerbAny(raw))) {
+    if (hasUntilQualifierAfterDailyReminderPhraseAny(raw)) return null;
+    if (!hasScheduleRightAfterDailyReminderPhraseAny(raw)) return null;
+  }
+
   for (const l of ALL_LOCALES) {
     const r = detectRepeatHint(raw, l);
     if (r) return r;
@@ -1036,6 +1118,15 @@ function normalizeRelativeWeeksAny(raw: string): string {
 }
 
 function detectReminderHintAny(raw: string): ParsedResult["reminderHint"] {
+  // Regla UX:
+  // - "recuérdame cada día" => DAILY_UNTIL_DUE.
+  // - Si justo después de esa frase hay fecha/hora, se tratará como repetición diaria.
+  if (hasDailyReminderPhraseAny(raw) || (hasDailyCadenceAny(raw) && hasReminderVerbAny(raw))) {
+    if (hasUntilQualifierAfterDailyReminderPhraseAny(raw)) return "DAILY_UNTIL_DUE";
+    if (!hasScheduleRightAfterDailyReminderPhraseAny(raw)) return "DAILY_UNTIL_DUE";
+    return null;
+  }
+
   for (const l of ALL_LOCALES) {
     const r = detectReminderHint(raw, l);
     if (r) return r;
@@ -1093,7 +1184,7 @@ function parseTimeOverrideAny(text: string): TimeOverride | null {
   // 2) ES: "a las 4 de la tarde" / "a als 4 de la tarde" / "4 de la mañana"
   {
     const m = s.match(
-      /\b(?:a\s+(?:las|la|als)\s*)?(\d{1,2})(?:[:\.](\d{2}))?\s*(?:de|por)\s+la\s+(manana|tarde|noche)\b/i
+      /\b(?:a\s+(?:las|la|als)\s*)?(\d{1,2})(?:[:\.](\d{2}))?\s*(?:de|por)\s+la\s+(ma(?:n|ñ)ana|tarde|noche)\b/i
     );
     if (m) {
       const h = parseInt(m[1], 10);
@@ -1346,7 +1437,7 @@ export function parseDateTimeFromText(
   // 2) Si no hay nada, devolvemos solo hints multi-idioma
   if (candidates.length === 0) {
     return {
-      cleanTitle: normalizedText.trim(),
+      cleanTitle: text.trim(),
       dueDateISO: null,
       repeatHint: detectRepeatHintAny(normalizedText),
       reminderHint: detectReminderHintAny(normalizedText),
@@ -1378,10 +1469,14 @@ export function parseDateTimeFromText(
 
   const dueDateISO = date.toISOString();
 
-  // 5) Limpiar título: quitar fragmento de fecha/hora detectado por chrono
-  const before = normalizedText.slice(0, best.index);
-  const after = normalizedText.slice(best.index + best.text.length);
-  let cleanTitle = (before + " " + after).replace(/\s+/g, " ").trim();
+  // 5) Limpiar título conservando el texto original (acentos/umlauts)
+  // Nota: usamos índices de chrono sobre texto normalizado; en la mayoría de casos
+  // coinciden con el original para caracteres como á/é/ü.
+  const rawStart = Math.max(0, Math.min(best.index, text.length));
+  const rawEnd = Math.max(rawStart, Math.min(rawStart + best.text.length, text.length));
+  const beforeRaw = text.slice(0, rawStart);
+  const afterRaw = text.slice(rawEnd);
+  let cleanTitle = (beforeRaw + " " + afterRaw).replace(/\s+/g, " ").trim();
 
   // 5.1) (Opcional recomendado) quitar también el fragmento de hora (si existía)
   if (tOver?.matchedText) {
@@ -1394,13 +1489,13 @@ export function parseDateTimeFromText(
   // 6) Quitar verbos típicos de "recordar" (multilingüe)
   cleanTitle = cleanTitle
     .replace(
-      /\b(remind(?: me)?|remember|recordarme|recuerdame|recuérdame|recordar|erinnere mich|erinner mich)\b/gi,
+      /\b(remind(?: me)?|remember|recordarme|recuerdame|recuérdame|recordar|erinnere mich|erinner mich)\b/giu,
       ""
     )
     .replace(/\s+/g, " ")
     .trim();
 
-  if (!cleanTitle) cleanTitle = normalizedText.trim();
+  if (!cleanTitle) cleanTitle = text.trim();
 
   // 7) Hints multi-idioma (independiente de la UI)
   const repeatHint = detectRepeatHintAny(normalizedText);
@@ -1408,3 +1503,5 @@ export function parseDateTimeFromText(
 
   return { cleanTitle, dueDateISO, repeatHint, reminderHint };
 }
+
+

@@ -1,5 +1,6 @@
-// src/pages/Tasks.tsx
+﻿// src/pages/Tasks.tsx
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -9,16 +10,18 @@ import {
   deleteBrainItem,
 } from "@/lib/brainItemsApi";
 import {
-  List,
+  CalendarClock,
   Check,
   Trash2,
   Pencil,
   ChevronDown,
   Calendar,
   Share2,
+  StickyNote,
 } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
 import TaskEditModal from "@/components/TaskEditModal";
+import IdeaEditModal from "@/components/IdeaEditModal";
 import {
   createShareInviteCached,
   prefetchShareInvite,
@@ -29,6 +32,17 @@ type DateGroup = {
   key: string;
   label: string;
   items: BrainItem[];
+};
+
+type SharedItemMeta = {
+  shared_count?: number | null;
+  received_from_share?: boolean | null;
+};
+
+type IdeaBodyFields = {
+  body?: string | null;
+  content?: string | null;
+  text?: string | null;
 };
 
 function isSameDay(a: Date, b: Date): boolean {
@@ -55,22 +69,33 @@ function formatDue(due: string, fallbackLocale?: string) {
 
 export default function TasksPage() {
   const { user } = useAuth();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const navigate = useNavigate();
+
+  const uiLocale = useMemo(() => {
+    if (lang === "de") return "de-DE";
+    if (lang === "en") return "en-US";
+    return "es-ES";
+  }, [lang]);
 
   const [items, setItems] = useState<BrainItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [editingTask, setEditingTask] = useState<BrainItem | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [editingIdea, setEditingIdea] = useState<BrainItem | null>(null);
+  const [editIdeaOpen, setEditIdeaOpen] = useState(false);
 
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(
     {},
   );
+  const [activeTypeTab, setActiveTypeTab] = useState<"tasks" | "ideas">("tasks");
 
   // ✅ indicador: solo lo que tú has compartido
   const shouldShowSentIndicator = useCallback((item: BrainItem) => {
-    const sharedCount = (item as any)?.shared_count ?? 0;
-    const receivedFromShare = !!(item as any)?.received_from_share;
+    const meta = item as BrainItem & SharedItemMeta;
+    const sharedCount = meta.shared_count ?? 0;
+    const receivedFromShare = !!meta.received_from_share;
     return !receivedFromShare && Number(sharedCount) > 0;
   }, []);
 
@@ -150,7 +175,7 @@ export default function TasksPage() {
           const key = dMid.toISOString().slice(0, 10);
           let stored = otherDateGroupsMap.get(key);
           if (!stored) {
-            const label = d.toLocaleDateString(undefined, {
+            const label = d.toLocaleDateString(uiLocale, {
               weekday: "short",
               day: "numeric",
               month: "short",
@@ -180,7 +205,7 @@ export default function TasksPage() {
     if (noDateGroup.items.length > 0) groups.push(noDateGroup);
 
     return groups;
-  }, [filtered, t]);
+  }, [filtered, t, uiLocale]);
 
   const groupKeysSignature = useMemo(() => {
     return dateGroups.map((g) => g.key).join("|");
@@ -225,9 +250,15 @@ export default function TasksPage() {
   };
 
   const openEditModal = (item: BrainItem) => {
-    if (item.type !== "task") return;
-    setEditingTask(item);
-    setEditOpen(true);
+    if (item.type === "task") {
+      setEditingTask(item);
+      setEditOpen(true);
+      return;
+    }
+    if (item.type === "idea") {
+      setEditingIdea(item);
+      setEditIdeaOpen(true);
+    }
   };
 
   const handleShare = async (item: BrainItem) => {
@@ -242,8 +273,6 @@ export default function TasksPage() {
     }
   };
 
-  const filterLabel = t("inbox.tasksTab");
-
   // ✅ Evita el error TS: tu t() no acepta fallback string como 2º parámetro.
   // Usa estas keys existentes o crea las que quieras en i18n:
   const editLabel = t("common.edit"); // añade si no existe
@@ -252,41 +281,97 @@ export default function TasksPage() {
   const shareLabel = t("shareInvite.share"); // ya existe
 
   return (
-    <div className="remi-page min-h-dvh bg-[#F6F7FB] text-slate-900 flex flex-col">
-      <header
-        className="bg-[#7d59c9] text-white px-4 pb-8 rounded-b-3xl shadow-md"
-        style={{ paddingTop: "calc(2rem + env(safe-area-inset-top))" }}
+    <div
+      className="remi-page text-slate-900"
+      style={{
+        minHeight: "100dvh",
+        background: "linear-gradient(180deg, #f1eff7 0%, #fafafe 42%, #fafafe 100%)",
+        paddingBottom: "calc(96px + env(safe-area-inset-bottom))",
+      }}
+    >
+      <div
+        className="relative overflow-hidden"
+        style={{
+          paddingTop: "calc(14px + env(safe-area-inset-top))",
+          paddingBottom: 10,
+          paddingLeft: "calc(16px + env(safe-area-inset-left))",
+          paddingRight: "calc(16px + env(safe-area-inset-right))",
+          minHeight: 100,
+          background: "#ffffff",
+          borderBottomLeftRadius: 22,
+          borderBottomRightRadius: 22,
+          borderBottom: "1px solid #e2e8f0",
+          boxShadow: "0 2px 8px rgba(15,23,42,0.04)",
+        }}
       >
-        <h1 className="text-lg font-semibold">{t("inbox.title")}</h1>
-        <p className="text-xs text-white/80">{t("inbox.subtitle")}</p>
-      </header>
+        <div className="mx-auto mt-0.5 w-full" style={{ maxWidth: "min(96vw, 1440px)" }}>
+          <h1 className="leading-tight font-extrabold text-slate-900" style={{ fontSize: "clamp(19px, 1.3vw, 28px)" }}>
+            {t("inbox.title")}
+          </h1>
+          <p className="mt-0.5 font-semibold text-slate-500" style={{ fontSize: "clamp(13px, 0.9vw, 18px)" }}>
+            {t("inbox.subtitle")}
+          </p>
+        </div>
+      </div>
 
       <main
-        className="flex-1 px-4 pt-2 bg-[#F6F7FB] remi-scroll"
-        style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom))" }}
+        className="remi-scroll"
+        style={{
+          padding: "0 16px",
+          marginTop: 14,
+          marginBottom: 10,
+          marginLeft: "auto",
+          marginRight: "auto",
+          maxWidth: "min(96vw, 1440px)",
+        }}
       >
         <div className="mb-2 flex items-center justify-between">
-          <div className="remi-tabs">
-            <div className="remi-tab remi-tab--active cursor-default select-none">
-              {filterLabel}
-            </div>
+          <div className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-white p-1">
+            <button
+              type="button"
+              onClick={() => setActiveTypeTab("tasks")}
+              className={`rounded-full px-4 py-1.5 font-semibold transition ${
+                activeTypeTab === "tasks"
+                  ? "bg-violet-50 text-violet-700"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+              style={{ fontSize: "clamp(13px, 0.9vw, 18px)" }}
+            >
+              {t("inbox.tasksTab")}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/ideas")}
+              className={`rounded-full px-4 py-1.5 font-semibold transition ${
+                activeTypeTab === "ideas"
+                  ? "bg-amber-50 text-yellow-600"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+              style={{ fontSize: "clamp(13px, 0.9vw, 18px)" }}
+            >
+              {t("inbox.ideasTab")}
+            </button>
           </div>
-          <span className="text-[11px] text-[#b2b6d1]">
+          <span className="text-slate-500" style={{ fontSize: "clamp(12px, 0.82vw, 16px)" }}>
             {t("inbox.itemsCount", { count: filtered.length })}
           </span>
         </div>
 
         <div className="space-y-3">
           {loading && (
-            <div className="rounded-2xl bg-white/70 border border-slate-100 px-4 py-3 text-[13px] text-slate-500">
+            <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-[13px] text-slate-500">
               {t("inbox.loading")}
             </div>
           )}
 
           {!loading && filtered.length === 0 && (
-            <div className="rounded-2xl bg-white border border-slate-100 shadow-[0_14px_34px_rgba(15,23,42,0.06)] px-4 py-4 flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-[rgba(143,49,243,0.10)] text-[#7d59c9] flex items-center justify-center shrink-0">
-                <List size={18} />
+            <div className="rounded-3xl border border-slate-200 bg-slate-50 shadow-[0_10px_22px_rgba(15,23,42,0.06)] px-4 py-4 flex items-start gap-3">
+              <div
+                className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                  activeTypeTab === "tasks" ? "bg-violet-100 text-violet-600" : "bg-amber-100 text-amber-600"
+                }`}
+              >
+                {activeTypeTab === "tasks" ? <CalendarClock size={18} /> : <StickyNote size={18} />}
               </div>
               <div className="min-w-0">
                 <p className="text-[14px] font-semibold text-slate-900">
@@ -322,25 +407,37 @@ export default function TasksPage() {
                         isCollapsed ? "-rotate-90" : "rotate-0"
                       }`}
                     />
-                    <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+                    <p className="font-semibold uppercase tracking-widest text-slate-600" style={{ fontSize: "clamp(12px, 0.82vw, 16px)" }}>
                       {group.label}
                     </p>
-                    <div className="flex-1 h-px bg-slate-300/70" />
+                    <div className="flex-1 h-px bg-slate-200" />
                   </button>
 
                   {!isCollapsed && (
                     <div className="space-y-2">
                       {group.items.map((item) => {
                         const isDone = item.status === "DONE";
-
+                        const isIdeasTab = activeTypeTab === "ideas";
                         const dueText = item.due_date
-                          ? formatDue(item.due_date as string) ??
+                          ? formatDue(item.due_date as string, uiLocale) ??
                             new Date(item.due_date as string).toLocaleString()
-                          : t("today.dueNoDate");
+                          : "";
+
+                        const ideaPayload = item as BrainItem & IdeaBodyFields;
+                        const ideaBody =
+                          ideaPayload.body ??
+                          ideaPayload.content ??
+                          ideaPayload.text ??
+                          "";
+                        const titleText = String(item.title ?? "");
+                        const bodyText = String(ideaBody ?? "").trim();
+                        const mainText = isIdeasTab
+                          ? (bodyText.length > 0 ? bodyText : titleText)
+                          : titleText;
 
                         // ✅ Botones más pequeños
                         const btnBase =
-                          "flex-1 h-9 rounded-full border inline-flex items-center justify-center gap-2 text-[12px] font-semibold";
+                          "flex-1 h-9 rounded-full border inline-flex items-center justify-center gap-2 text-[12px] font-semibold md:h-10 md:text-[13px] lg:h-11 lg:text-[15px]";
 
                         const shareBtnClass = `${btnBase} border-slate-200 bg-white hover:bg-slate-50 text-slate-700`;
 
@@ -351,13 +448,18 @@ export default function TasksPage() {
                         return (
                           <div
                             key={item.id}
-                            className="rounded-2xl bg-white border border-slate-100 shadow-[0_14px_34px_rgba(15,23,42,0.06)] px-4 py-3"
+                            className={`rounded-3xl bg-white shadow-[0_6px_14px_rgba(15,23,42,0.05)] px-4 py-3 md:px-5 md:py-4 lg:px-6 lg:py-5 ${
+                              isIdeasTab ? "border border-[#e7db58]" : "border border-[#7d59c9]"
+                            }`}
                           >
                             {/* Header row */}
                             <div className="flex items-start gap-3">
-                              {/* icono + indicador */}
-                              <div className="w-10 h-10 rounded-full bg-[rgba(143,49,243,0.10)] text-[#7d59c9] flex items-center justify-center shrink-0 relative">
-                                <List size={18} />
+                              <div
+                                className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 relative ${
+                                  isIdeasTab ? "bg-yellow-100 text-yellow-600" : "bg-violet-100 text-violet-600"
+                                }`}
+                              >
+                                {isIdeasTab ? <StickyNote size={18} /> : <CalendarClock size={18} />}
                                 {shouldShowSentIndicator(item) && (
                                   <span
                                     className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm"
@@ -371,21 +473,33 @@ export default function TasksPage() {
 
                               <div className="flex-1 min-w-0">
                                 <p
-                                  className="text-[14px] font-semibold text-slate-900 leading-snug"
+                                  className="font-semibold text-slate-900 leading-snug"
                                   style={{
-                                    // ✅ clave: respetar saltos de línea en title
+                                    fontSize: "clamp(16px, 1.1vw, 26px)",
+                                  }}
+                                >
+                                  {activeTypeTab === "tasks" ? t("pill.type.task") : t("pill.type.idea")}
+                                </p>
+                                <p
+                                  className="mt-1 text-slate-700"
+                                  style={{
+                                    fontSize: "clamp(13px, 0.86vw, 17px)",
                                     whiteSpace: "pre-wrap",
                                     wordBreak: "break-word",
                                     overflowWrap: "anywhere",
+                                    maxHeight: 96,
+                                    overflow: "hidden",
                                   }}
                                 >
-                                  {item.title}
+                                  {mainText}
                                 </p>
 
-                                <div className="mt-1 flex items-center gap-1 text-[12px] text-slate-500">
-                                  <Calendar size={14} className="text-slate-400" />
-                                  <span className="truncate">{dueText}</span>
-                                </div>
+                                {isIdeasTab && item.due_date && (
+                                  <div className="mt-2 flex items-center gap-1 text-slate-500" style={{ fontSize: "clamp(13px, 0.85vw, 17px)" }}>
+                                    <Calendar size={14} className="text-slate-400" />
+                                    <span className="truncate">{dueText}</span>
+                                  </div>
+                                )}
                               </div>
 
                               {/* ✅ Lápiz sin círculo */}
@@ -395,13 +509,15 @@ export default function TasksPage() {
                                   e.stopPropagation();
                                   openEditModal(item);
                                 }}
-                                className="p-1.5 hover:bg-slate-50 rounded-md shrink-0"
+                                className={`p-1.5 hover:bg-slate-50 shrink-0 ${isIdeasTab ? "rounded-lg inline-flex items-center justify-center" : "rounded-md"}`}
                                 aria-label={editLabel}
                                 title={editLabel}
                               >
                                 <Pencil size={14} color="#94A3B8" />
                               </button>
                             </div>
+
+                            <div className="mt-2 h-px bg-slate-100" />
 
                             {/* Footer row */}
                             <div className="mt-3 flex items-center gap-3">
@@ -419,7 +535,6 @@ export default function TasksPage() {
                                 <Share2 size={15} color="#94A3B8" />
                                 <span>{shareLabel}</span>
                               </button>
-
                               <button
                                 type="button"
                                 onClick={(e) => {
@@ -462,6 +577,26 @@ export default function TasksPage() {
           setItems((prev) =>
             prev.map((i) => (i.id === updated.id ? updated : i)),
           );
+        }}
+      />
+      <IdeaEditModal
+        open={editIdeaOpen}
+        idea={editingIdea}
+        onClose={() => setEditIdeaOpen(false)}
+        onUpdated={(updated) => {
+          setItems((prev) =>
+            prev.map((i) => (i.id === updated.id ? updated : i)),
+          );
+        }}
+        onConverted={(convertedTask) => {
+          setItems((prev) => {
+            const editingIdeaId = editingIdea?.id;
+            const withoutOld = prev.filter(
+              (i) => i.id !== convertedTask.id && i.id !== editingIdeaId,
+            );
+            return [convertedTask, ...withoutOld];
+          });
+          setActiveTypeTab("tasks");
         }}
       />
     </div>

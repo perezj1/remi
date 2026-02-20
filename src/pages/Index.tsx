@@ -1,5 +1,4 @@
-// src/pages/Index.tsx
-import {
+﻿import {
   useEffect,
   useMemo,
   useState,
@@ -10,11 +9,16 @@ import {
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { celebrateCreation } from "@/lib/creationCelebration";
+import { computeMindClearPercent } from "@/lib/mindClear";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
 import {
   BrainItem,
   ReminderMode,
+  RepeatType,
+  createTask,
+  createIdea,
   fetchActiveIdeas,
   fetchActiveTasks,
   setTaskStatus,
@@ -29,15 +33,30 @@ import {
   prefetchShareInvite,
   shareTextOrCopy,
 } from "@/lib/shareInvitesApi";
-
-
-// ✅ HOOK deck (snap 1 tarjeta por gesto)
+import {
+  createSharedList,
+  createSharedListItem,
+  fetchSharedListItems,
+  type SharedList,
+  type SharedListMemberPreview,
+  fetchSharedLists,
+} from "@/lib/sharedListsApi";
 import { useSnapTipDeck } from "@/hooks/useSnapTipDeck";
+import FeedbackSurveyModal from "@/components/FeedbackSurveyModal";
+import {
+  flushPendingFeedback,
+  initFeedbackTracker,
+  markFeedbackDismissed,
+  markFeedbackSubmitted,
+  shouldShowAutoFeedbackSurvey,
+  submitFeedbackSurvey,
+} from "@/lib/feedbackSurvey";
 
 import {
-  List,
+  CalendarClock,
   Check,
   User,
+  Users,
   Share2,
   Smartphone,
   CalendarPlus,
@@ -45,29 +64,29 @@ import {
   ClipboardPaste,
   CalendarDays,
   HeartPulse,
+  Flame,
+  LayoutGrid,
   Bell,
-  ArrowRight,
   ChevronDown,
   Keyboard,
   Download,
+  Search,
+  Plus,
 } from "lucide-react";
 
-// ✅ NUEVO: para ocultar BottomNav cuando hay modales abiertos (App.tsx lo usa)
 import { useModalUi } from "@/contexts/ModalUiContext";
+import MindDumpModal from "@/components/MindDumpModal";
+import MindRelaxSurface from "@/components/MindRelaxSurface";
 
 const AVATAR_KEY = "remi_avatar";
 
-// ✅ persistir “no mostrar más” para tips
 const TIP_DISMISS_KEY = "remi_tip_dismissed_v1";
 
-// ✅ key NUEVA para que vuelva a aparecer el tip “Compartir → Remi”
 const SHARE_TO_REMI_DISMISS_KEY = "share-to-remi-help";
 
-// ✅ Añade esto arriba con las otras keys (Index.tsx)
 const SHARE_REMINDERS_TIP_KEY = "share-reminders";
 
 
-// ✅ NUEVO: key tip multi-dispositivo
 const MULTI_DEVICE_TIP_KEY = "multi-device";
 
 type DateGroup = {
@@ -77,7 +96,6 @@ type DateGroup = {
   dateMs?: number;
 };
 
-// ✅ Quitado ALL
 type FilterMode = "TODAY" | "WEEK" | "NO_DATE";
 
 function isSameDay(a: Date, b: Date): boolean {
@@ -88,30 +106,78 @@ function isSameDay(a: Date, b: Date): boolean {
   );
 }
 
+function toDateKeyLocal(date: Date): string {
+  const y = date.getFullYear();
+  const m = `${date.getMonth() + 1}`.padStart(2, "0");
+  const d = `${date.getDate()}`.padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 type TipCardItem = {
   id: string;
   title: string;
   body: string;
   cta?: string;
   icon: ReactNode;
-  bg: string; // compatibilidad
-  border: string; // compatibilidad
+  bg: string;
+  border: string;
   onClick?: () => void;
 };
+const TIP_EMOJI_BY_ID: Record<string, string> = {
+  install: "📲",
+  push: "🔔",
+  "ios-dictation": "🎙️",
+  "multi-device": "💻",
+  "share-app": "📣",
+  "share-reminders": "🔗",
+  shortcuts: "⚡",
+  "day-close": "🌙",
+  paste: "📥",
+  natural: "✍️",
+  "remi-language": "🌍",
+  "no-date": "🗂️",
+  week: "📅",
+  mental: "🫶",
+  birthday: "🎂",
+  "clean-no-date": "✅",
+  "improve-remi": "💬",
+  "shared-lists": "📋",
+};
 
-const DECK_CARD_W = 260;
-const DECK_CARD_H = 300;
-const DECK_OVERLAP = -30;
-
-// ✅ key fija para "Sin fecha"
 const NO_DATE_GROUP_KEY = "__NO_DATE__";
+const EMPTY_CARD_CLASS =
+  "rounded-3xl bg-slate-50 border border-slate-200 shadow-[0_8px_18px_rgba(15,23,42,0.06)] px-4 py-4 flex items-start gap-3";
+const TASK_CARD_CLASS =
+  "rounded-3xl bg-[#fcfbff] border border-violet-100 shadow-[0_10px_22px_rgba(125,89,201,0.08)] px-4 py-3.5 flex items-center gap-3";
+const ITEM_ICON_CLASS =
+  "w-10 h-10 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center shrink-0";
+const ACTION_BTN_CLASS =
+  "w-9 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center";
+const DONE_BTN_CLASS =
+  "w-9 h-9 rounded-full border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 inline-flex items-center justify-center";
+const RIGHT_RAIL_WIDTH_PX = 0;
+const NOTE_PAGE_BG =
+  "linear-gradient(180deg, #f1eff7 0%, #fafafe 42%, #fafafe 100%)";
+const MODAL_OVERLAY_STYLE: CSSProperties = {
+  paddingLeft: "calc(8px + env(safe-area-inset-left))",
+  paddingRight: `calc(${RIGHT_RAIL_WIDTH_PX + 8}px + env(safe-area-inset-right))`,
+  paddingTop: "max(8px, env(safe-area-inset-top))",
+  paddingBottom: "max(8px, env(safe-area-inset-bottom))",
+};
+const REMINDER_DECK_CARD_WIDTH = "clamp(280px, 54vw, 640px)";
+const REMINDER_DECK_SIDE_PADDING = "calc(50% - clamp(140px, 27vw, 320px))";
+const REMINDER_DECK_OVERLAP = 14;
 
 export default function TodayPage() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const uiLocale = useMemo(() => {
+    if (lang === "de") return "de-DE";
+    if (lang === "en") return "en-US";
+    return "es-ES";
+  }, [lang]);
 
-  // ✅ registrar modales para ocultar BottomNav
   const { setModalOpen } = useModalUi();
 
   const safeT = useCallback(
@@ -127,7 +193,6 @@ export default function TodayPage() {
   const sharedCount = (task as any)?.shared_count ?? 0;
   const receivedFromShare = !!(task as any)?.received_from_share;
 
-  // Solo lo que tú has compartido (no lo recibido)
   return !receivedFromShare && Number(sharedCount) > 0;
 }, []);
 
@@ -144,36 +209,33 @@ export default function TodayPage() {
   const [showPushModal, setShowPushModal] = useState(false);
   const [registeringPush, setRegisteringPush] = useState(false);
 
-  // ✅ estado de push real (para ocultar la tarjeta si ya está activado)
   const [hasPushSubscription, setHasPushSubscription] = useState<
     boolean | null
   >(null);
 
-  // ✅ dismiss de tips
   const [dismissedTips, setDismissedTips] = useState<Record<string, boolean>>(
     {},
   );
 
-  // ✅ detectar PWA/standalone e iOS (para tips)
   const [isStandalone, setIsStandalone] = useState(false);
   const [isIOSDevice, setIsIOSDevice] = useState(false);
 
-  // ✅ modal ayuda dictado iOS
   const [showIosDictationHelp, setShowIosDictationHelp] = useState(false);
 
-  // ✅ modal: ejemplos “Atajos”
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
 
-  // ✅ modal ayuda: “Compartir → Remi” (iOS/Android)
   const [showShareToRemiHelp, setShowShareToRemiHelp] = useState(false);
 
-  // ✅ modal ayuda: multi-dispositivo
   const [showMultiDeviceHelp, setShowMultiDeviceHelp] = useState(false);
 
-  // ✅ modal ayuda: compartir recordatorios (entre usuarios)
   const [showShareRemindersHelp, setShowShareRemindersHelp] = useState(false);
+  const [showFeedbackSurvey, setShowFeedbackSurvey] = useState(false);
+  const [savingFeedback, setSavingFeedback] = useState(false);
+  const [mindDumpResetNonce, setMindDumpResetNonce] = useState(0);
+  const [relaxOpen, setRelaxOpen] = useState(false);
+  const [recentLists, setRecentLists] = useState<SharedList[]>([]);
+  const [recentListsProgress, setRecentListsProgress] = useState<Record<string, { done: number; total: number }>>({});
 
-  // ✅ tick para re-evaluar “Cierre del día” sin recargar
   const [nowTick, setNowTick] = useState(0);
 
 const anyModalOpen =
@@ -182,7 +244,8 @@ const anyModalOpen =
   showIosDictationHelp ||
   showShareToRemiHelp ||
   showMultiDeviceHelp ||
-  showShareRemindersHelp;
+  showShareRemindersHelp ||
+  showFeedbackSurvey;
 
  useEffect(() => {
     setModalOpen(anyModalOpen);
@@ -192,10 +255,8 @@ const anyModalOpen =
 
   
 
-  // ✅ Ahora: Hoy (default), Semana, Sin fecha
   const [filter, setFilter] = useState<FilterMode>("TODAY");
 
-  // ✅ plegar/desplegar por grupo (por defecto TODO abierto)
   const [collapsedGroups, setCollapsedGroups] = useState<
     Record<string, boolean>
   >({});
@@ -205,8 +266,6 @@ const anyModalOpen =
   };
 
   const activeTasksCount = tasks.length;
-
-  // ✅ helper: ocultar tips
   const dismissTip = (id: string) => {
     setDismissedTips((prev) => {
       const next = { ...prev, [id]: true };
@@ -217,7 +276,6 @@ const anyModalOpen =
     });
   };
 
-  // ✅ cargar dismiss de tips
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
@@ -230,7 +288,6 @@ const anyModalOpen =
     } catch {}
   }, []);
 
-  // ✅ detectar iOS + standalone
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -248,14 +305,12 @@ const anyModalOpen =
     setIsStandalone(!!standalone);
   }, []);
 
-  // ✅ tick (cada minuto) para condiciones temporales (p.ej. “Cierre del día”)
   useEffect(() => {
     if (typeof window === "undefined") return;
     const id = window.setInterval(() => setNowTick((x) => x + 1), 60_000);
     return () => window.clearInterval(id);
   }, []);
 
-  // ✅ Abrir el capture global desde cualquier página
   const openCapture = useCallback((prefill?: string) => {
     if (typeof window === "undefined") return;
     window.dispatchEvent(
@@ -265,20 +320,47 @@ const anyModalOpen =
     );
   }, []);
 
-  // ---------- Cargar tareas, ideas y resumen ----------
   const loadData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
 
     try {
-      const [tks, ids, summaryData] = await Promise.all([
+      const [tks, ids, summaryData, sharedLists] = await Promise.all([
         fetchActiveTasks(user.id),
         fetchActiveIdeas(user.id),
         fetchRemiStatusSummary(user.id),
+        fetchSharedLists(user.id),
       ]);
       setTasks(tks);
       setIdeas(ids);
       setStatusSummary(summaryData);
+      const listRows = await Promise.all(
+        sharedLists.map(async (list) => {
+          const listItems = await fetchSharedListItems(list.id);
+          const total = listItems.length;
+          const done = listItems.reduce((acc, item) => acc + (item.done ? 1 : 0), 0);
+          const listMs = Math.max(
+            Number.isFinite(Date.parse(list.updated_at || "")) ? Date.parse(list.updated_at || "") : 0,
+            Number.isFinite(Date.parse(list.created_at || "")) ? Date.parse(list.created_at || "") : 0,
+          );
+          const itemsMs = listItems.reduce((max, item) => {
+            const created = Number.isFinite(Date.parse(item.created_at || "")) ? Date.parse(item.created_at || "") : 0;
+            const updated = Number.isFinite(Date.parse(item.updated_at || "")) ? Date.parse(item.updated_at || "") : 0;
+            return Math.max(max, created, updated);
+          }, 0);
+          const activityMs = Math.max(listMs, itemsMs);
+          return { list, progress: { done, total }, activityMs };
+        }),
+      );
+
+      const latestRows = listRows
+        .sort((a, b) => b.activityMs - a.activityMs)
+        .slice(0, 5);
+
+      setRecentLists(latestRows.map((row) => row.list));
+      setRecentListsProgress(
+        Object.fromEntries(latestRows.map((row) => [row.list.id, row.progress] as const)),
+      );
     } catch (err) {
       console.error(err);
       alert(safeT("today.errorLoadingTasks", "Error cargando tareas"));
@@ -291,7 +373,6 @@ const anyModalOpen =
     void loadData();
   }, [loadData]);
 
-  // ✅ cuando se crea algo desde el modal global, recargamos
   useEffect(() => {
     if (!user) return;
     const onChanged = () => void loadData();
@@ -299,52 +380,35 @@ const anyModalOpen =
     return () => window.removeEventListener("remi-items-changed", onChanged);
   }, [loadData, user]);
 
-  // ---------- mente despejada ----------
+  useEffect(() => {
+    if (!user) return;
+    initFeedbackTracker();
+    void flushPendingFeedback();
+    if (shouldShowAutoFeedbackSurvey()) {
+      setShowFeedbackSurvey(true);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user) return;
+    const onFeedbackUpdated = () => {
+      if (shouldShowAutoFeedbackSurvey()) setShowFeedbackSurvey(true);
+    };
+    window.addEventListener("remi-feedback-updated", onFeedbackUpdated);
+    return () => {
+      window.removeEventListener("remi-feedback-updated", onFeedbackUpdated);
+    };
+  }, [user?.id]);
+
   const mindClearPercent = useMemo(() => {
-    if (!statusSummary) return 10;
-
-    const totalItems =
-      statusSummary.totalItemsStored ??
-      statusSummary.totalTasksStored + statusSummary.totalIdeasStored;
-
-    const items = totalItems;
-    const daysSince =
-      statusSummary.daysSinceLastActivity !== undefined
-        ? statusSummary.daysSinceLastActivity
-        : null;
-
-    const baseClear = (() => {
-      if (items <= 0) return 10;
-
-      if (items === 1) return 18;
-      if (items === 2) return 26;
-      if (items === 3) return 32;
-      if (items === 4) return 38;
-      if (items === 5) return 43;
-
-      return Math.min(100, 30 + Math.round(Math.log10(items + 1) * 35));
-    })();
-
-    let multiplier: number;
-
-    if (daysSince == null) multiplier = 0.5;
-    else if (daysSince <= 0) multiplier = 1;
-    else if (daysSince === 1) multiplier = 0.8;
-    else if (daysSince === 2) multiplier = 0.7;
-    else if (daysSince === 3) multiplier = 0.6;
-    else multiplier = 0.5;
-
-    const value = Math.round(baseClear * multiplier);
-    return Math.max(10, Math.min(100, value));
+    return computeMindClearPercent(statusSummary);
   }, [statusSummary]);
 
-  // ---------- comprobar push (MULTI-DISPOSITIVO) ----------
   useEffect(() => {
     if (!user || typeof window === "undefined" || !("Notification" in window)) {
       return;
     }
 
-    // si está denegado, no podemos pedir permiso -> ocultamos “activar” para no molestar
     if (Notification.permission === "denied") {
       setHasPushSubscription(true);
       setShowPushModal(false);
@@ -353,21 +417,18 @@ const anyModalOpen =
 
     const checkThisDeviceSubscription = async () => {
       try {
-        // Si el navegador no soporta push, no enseñamos el tip
         if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
           setHasPushSubscription(true);
           setShowPushModal(false);
           return;
         }
 
-        // Si todavía no está concedido, este dispositivo no puede tener sub activa
         if (Notification.permission !== "granted") {
           setHasPushSubscription(false);
           setShowPushModal(true);
           return;
         }
 
-        // 1) Miramos si ESTE dispositivo tiene suscripción local
         const registration = await navigator.serviceWorker.ready;
         const sub = await registration.pushManager.getSubscription();
 
@@ -377,7 +438,6 @@ const anyModalOpen =
           return;
         }
 
-        // 2) Verificamos si esa sub (endpoint) está guardada en DB para este usuario
         const endpoint = sub.endpoint;
 
         const { data, error } = await supabase
@@ -401,7 +461,6 @@ const anyModalOpen =
           return;
         }
 
-        // 3) Permiso granted + hay sub local, pero falta en DB => registramos silenciosamente
         try {
           await registerPushSubscription(user.id);
           setHasPushSubscription(true);
@@ -419,7 +478,6 @@ const anyModalOpen =
     void checkThisDeviceSubscription();
   }, [user?.id]);
 
-  // ---------- Avatar ----------
   useEffect(() => {
     if (!user) {
       setAvatarUrl(null);
@@ -443,7 +501,6 @@ const anyModalOpen =
     setAvatarUrl(finalUrl ?? null);
   }, [user, profile]);
 
-  // cerrar menú perfil al click fuera
   useEffect(() => {
     if (!profileOpen) return;
 
@@ -462,7 +519,6 @@ const anyModalOpen =
     };
   }, [profileOpen]);
 
-  // ---------- Agrupar tareas ----------
   const {
     dateGroups,
     noDateTasks,
@@ -483,7 +539,7 @@ const anyModalOpen =
       today.getDate() + 1,
     );
 
-    const todayIso = todayMid.toISOString().slice(0, 10);
+    const todayIso = toDateKeyLocal(todayMid);
 
     const groupsMap = new Map<string, DateGroup>();
     const noDate: BrainItem[] = [];
@@ -494,7 +550,7 @@ const anyModalOpen =
         dateMid.getMonth(),
         dateMid.getDate(),
       );
-      const iso = dMid.toISOString().slice(0, 10);
+      const iso = toDateKeyLocal(dMid);
 
       let group = groupsMap.get(iso);
       if (!group) {
@@ -503,7 +559,7 @@ const anyModalOpen =
         else if (isSameDay(dMid, tomorrowMid))
           label = safeT("inbox.sectionTomorrow", "Mañana");
         else {
-          label = dMid.toLocaleDateString(undefined, {
+          label = dMid.toLocaleDateString(uiLocale, {
             weekday: "short",
             day: "numeric",
             month: "short",
@@ -516,6 +572,30 @@ const anyModalOpen =
 
       if (!group.items.includes(task)) {
         group.items.push(task);
+      }
+    };
+    const addTaskRangeInclusive = (
+      startDateMid: Date,
+      endDateMid: Date,
+      task: BrainItem,
+    ) => {
+      let cursor = new Date(
+        startDateMid.getFullYear(),
+        startDateMid.getMonth(),
+        startDateMid.getDate(),
+      );
+      const end = new Date(
+        endDateMid.getFullYear(),
+        endDateMid.getMonth(),
+        endDateMid.getDate(),
+      );
+      while (cursor.getTime() <= end.getTime()) {
+        addTaskToDate(cursor, task);
+        cursor = new Date(
+          cursor.getFullYear(),
+          cursor.getMonth(),
+          cursor.getDate() + 1,
+        );
       }
     };
 
@@ -556,10 +636,10 @@ const anyModalOpen =
       }
 
       if (mode === "WEEK_BEFORE_AND_DUE") {
-  const weekBefore = new Date(dueMid);
-  weekBefore.setDate(weekBefore.getDate() - 7);
-  addTaskToDate(weekBefore, task);
-}
+        const weekBefore = new Date(dueMid);
+        weekBefore.setDate(weekBefore.getDate() - 7);
+        addTaskRangeInclusive(weekBefore, dueMid, task);
+      }
 
     }
 
@@ -569,7 +649,7 @@ const anyModalOpen =
 
     return { dateGroups: dateGroupsArr, noDateTasks: noDate };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tasks, safeT]);
+  }, [tasks, safeT, uiLocale]);
 
   const filteredDateGroups = useMemo(() => {
     if (filter === "NO_DATE") return [];
@@ -597,19 +677,31 @@ const anyModalOpen =
     });
   }, [dateGroups, filter]);
 
-  const hasVisibleDatedTasks = filteredDateGroups.some(
-    (g) => g.items.length > 0,
-  );
-  const hasNoDateTasks = filter === "NO_DATE" && noDateTasks.length > 0;
-
   const handleDone = async (task: BrainItem) => {
     const updated = await setTaskStatus(task.id, "DONE");
     setTasks((prev) => prev.filter((tt) => tt.id !== updated.id));
   };
 
-    const handleShareTask = async (task: BrainItem) => {
+  const formatDueLabel = useCallback(
+    (dueDate?: string | null) => {
+      if (!dueDate) return safeT("today.dueNoDate", "Sin fecha");
+      const d = new Date(dueDate);
+      const datePart = d.toLocaleDateString(uiLocale, {
+        day: "numeric",
+        month: "short",
+      });
+      const timePart = d.toLocaleTimeString(uiLocale, {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+      return `${datePart} ${timePart}`;
+    },
+    [safeT, uiLocale],
+  );
+
+  const handleShareTask = async (task: BrainItem) => {
   try {
-    // ✅ usa la promesa cacheada (si ya empezó en pointerdown, aquí casi “vuela”)
     const res = await createShareInviteCached(task.id);
     await shareTextOrCopy(res.shareMessage);
     alert(safeT("shareInvite.sharedOk", "Listo. Enlace copiado/compartido."));
@@ -624,8 +716,89 @@ const anyModalOpen =
   }
 };
 
+  const handleCreateTaskFromMindDump = useCallback(
+    async (
+      title: string,
+      dueDateISO: string | null,
+      reminderMode: ReminderMode,
+      repeatType: RepeatType,
+    ) => {
+      if (!user) return;
+      const before = computeMindClearPercent(statusSummary);
+      await createTask(user.id, title, dueDateISO, reminderMode, repeatType);
+      const updatedSummary = await fetchRemiStatusSummary(user.id);
+      const after = computeMindClearPercent(updatedSummary);
+      celebrateCreation(after - before);
+      await loadData();
+    },
+    [loadData, statusSummary, user],
+  );
 
+  const handleCreateIdeaFromMindDump = useCallback(
+    async (title: string) => {
+      if (!user) return;
+      const before = computeMindClearPercent(statusSummary);
+      await createIdea(user.id, title);
+      const updatedSummary = await fetchRemiStatusSummary(user.id);
+      const after = computeMindClearPercent(updatedSummary);
+      celebrateCreation(after - before);
+      await loadData();
+    },
+    [loadData, statusSummary, user],
+  );
 
+  const handleCreateListFromMindDump = useCallback(
+    async (title: string, items: string[]) => {
+      if (!user) return;
+      const cleanTitle = title.trim();
+      if (!cleanTitle) return;
+
+      const lists = await fetchSharedLists(user.id);
+      const existing = lists.find(
+        (list) => list.title.trim().toLocaleLowerCase() === cleanTitle.toLocaleLowerCase(),
+      );
+      const targetList = existing ?? (await createSharedList(user.id, cleanTitle));
+
+      const existingCount = existing
+        ? (await fetchSharedListItems(existing.id)).length
+        : 0;
+
+      let nextPosition = existingCount;
+      for (let i = 0; i < items.length; i += 1) {
+        const text = items[i]?.trim();
+        if (!text) continue;
+        nextPosition += 1;
+        await createSharedListItem(targetList.id, text, user.id, nextPosition);
+      }
+      toast.success(
+        existing ? safeT("lists.updated", "Lista actualizada.") : safeT("lists.created", "Lista creada."),
+      );
+    },
+    [safeT, user],
+  );
+
+  const handleSubmitFeedbackSurvey = useCallback(
+    async (payload: { score: number; improvement: string; liked: string }) => {
+      if (!user) return;
+      setSavingFeedback(true);
+      try {
+        await submitFeedbackSurvey({
+          userId: user.id,
+          lang,
+          score: payload.score,
+          liked: payload.liked,
+          improvement: payload.improvement,
+          source: "auto",
+        });
+        markFeedbackSubmitted();
+        setShowFeedbackSurvey(false);
+        toast.success(safeT("feedback.thanks", "Gracias por tu opinión sobre Remi."));
+      } finally {
+        setSavingFeedback(false);
+      }
+    },
+    [lang, safeT, user],
+  );
 
   const handlePostpone = async (task: BrainItem, option: "DAY" | "WEEK") => {
     const base = task.due_date ? new Date(task.due_date) : new Date();
@@ -640,7 +813,6 @@ const anyModalOpen =
     toast.success(safeT("today.postponeDayToast", "Aplazado"));
   };
 
-  // ---------- push ----------
   const handleEnablePush = async () => {
     if (!user) return;
 
@@ -673,6 +845,39 @@ const anyModalOpen =
     navigate("/profile");
   };
 
+  const handleOpenLists = () => {
+    setProfileOpen(false);
+    navigate("/lists");
+  };
+
+  const handleOpenListById = useCallback(
+    (listId: string) => {
+      setProfileOpen(false);
+      navigate(`/lists?list=${encodeURIComponent(listId)}`);
+    },
+    [navigate],
+  );
+
+  const renderMemberAvatar = useCallback((member: SharedListMemberPreview) => {
+    const label =
+      member.display_name?.trim()?.slice(0, 1)?.toUpperCase() ||
+      member.user_id?.slice(0, 1)?.toUpperCase() ||
+      "U";
+    return (
+      <span
+        key={member.user_id}
+        className="inline-flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border border-white bg-[#ece9f6] text-[10px] font-semibold text-[#4f4a69]"
+        title={member.display_name ?? undefined}
+      >
+        {member.avatar_url ? (
+          <img src={member.avatar_url} alt="" className="h-full w-full object-cover" />
+        ) : (
+          label
+        )}
+      </span>
+    );
+  }, []);
+
   const handleShareApp = async () => {
     setProfileOpen(false);
     const url = `${window.location.origin}/landing`;
@@ -700,6 +905,23 @@ const anyModalOpen =
 
   const renderFilterButton = (mode: FilterMode, label: string) => {
     const active = filter === mode;
+    const isTodayActive = active && mode === "TODAY";
+    const isWeekActive = active && mode === "WEEK";
+    const isNoDateActive = active && mode === "NO_DATE";
+    const activeBg = isTodayActive
+      ? "rgba(201,89,109,0.18)"
+      : isWeekActive
+        ? "rgba(89,165,201,0.18)"
+        : isNoDateActive
+          ? "rgba(201,125,89,0.18)"
+          : "rgba(125,89,201,0.16)";
+    const activeColor = isTodayActive
+      ? "#c9596d"
+      : isWeekActive
+        ? "#59a5c9"
+        : isNoDateActive
+          ? "#c97d59"
+          : "#7d59c9";
 
     return (
       <button
@@ -711,14 +933,14 @@ const anyModalOpen =
           cursor: "pointer",
           border: "none",
           outline: "none",
-          padding: "10px 16px",
+          padding: "8px 16px",
           borderRadius: 999,
-          background: active ? "rgba(125,89,201,0.14)" : "transparent",
-          color: active ? "#7d59c9" : "rgba(100,116,139,0.95)",
+          background: active ? activeBg : "transparent",
+          color: active ? activeColor : "#64748b",
           fontSize: 13,
           fontWeight: active ? 700 : 600,
           lineHeight: 1,
-          transition: "background 0.18s ease, color 0.18s ease",
+          transition: "all 0.2s ease",
         }}
       >
         {label}
@@ -729,7 +951,7 @@ const anyModalOpen =
   const handlePasteFromClipboard = async () => {
     try {
       if (!("clipboard" in navigator) || !navigator.clipboard?.readText) {
-        toast.error("El portapapeles no está disponible aquí");
+        toast.error("El portapapeles no está disponible aquí.");
         openCapture("");
         return;
       }
@@ -737,7 +959,7 @@ const anyModalOpen =
       const txt = (await navigator.clipboard.readText())?.trim?.() ?? "";
       if (!txt) {
         toast.message(
-          "Portapapeles vacío (o sin permiso). Abro Remi igualmente 🙂",
+          "Portapapeles vacío (o sin permiso). Abro Remi igualmente.",
         );
         openCapture("");
         return;
@@ -746,25 +968,22 @@ const anyModalOpen =
     } catch (e) {
       console.error(e);
       toast.error(
-        "No pude leer el portapapeles (permiso). Abro Remi igualmente 🙂",
+        "No pude leer el portapapeles (permiso). Abro Remi igualmente.",
       );
       openCapture("");
     }
   };
 
-  // ✅ Condición: “Cierre del día”
   const shouldShowDayCloseTip = useMemo(() => {
-    const hour = new Date().getHours(); // hora local
-    const isEvening = hour >= 17; // tarde/noche
+    const hour = new Date().getHours(); // local hour
+    const isEvening = hour >= 17; // evening/night
     const daysSince = statusSummary?.daysSinceLastActivity;
 
-    // “daysSinceLastActivity > 0” (o desconocido)
     const inactive = daysSince == null ? true : daysSince > 0;
 
     return isEvening && inactive;
   }, [statusSummary?.daysSinceLastActivity, nowTick]);
 
-  // ✅ Condición: tip push (solo si permission !== granted y ESTE DISPOSITIVO no está registrado)
   const shouldShowPushTip = useMemo(() => {
     if (typeof window === "undefined") return false;
     if (!("Notification" in window)) return false;
@@ -772,12 +991,10 @@ const anyModalOpen =
     return Notification.permission !== "granted" && hasPushSubscription === false;
   }, [hasPushSubscription]);
 
-  // ✅ Carrusel de tips (ordenado por importancia)
   const tipCards: TipCardItem[] = useMemo(() => {
     const noDateCount = noDateTasks.length;
     const cards: TipCardItem[] = [];
 
-    // 1) Instalar como app
     if (!isStandalone) {
       cards.push({
         id: "install",
@@ -794,7 +1011,6 @@ const anyModalOpen =
       });
     }
 
-    // 2) Activar notificaciones
     if (shouldShowPushTip) {
       cards.push({
         id: "push",
@@ -811,13 +1027,12 @@ const anyModalOpen =
       });
     }
 
-    // 3) Activar micrófono (iOS dictado)
     if (isIOSDevice && !dismissedTips["ios-dictation"]) {
       cards.push({
         id: "ios-dictation",
         title: safeT(
           "today.tip.iosDict.title",
-          "Activa el micrófono del teclado",
+          "Habla con Remi",
         ),
         body: safeT(
           "today.tip.iosDict.body",
@@ -831,13 +1046,12 @@ const anyModalOpen =
       });
     }
 
-    // ✅ Multi-dispositivo
     if (!dismissedTips[MULTI_DEVICE_TIP_KEY]) {
       cards.push({
         id: MULTI_DEVICE_TIP_KEY,
         title: safeT(
           "today.tip.multidevice.title",
-          "Remi contigo en móvil, iPad y PC",
+          "Remi siempre contigo",
         ),
         body: safeT(
           "today.tip.multidevice.body",
@@ -851,13 +1065,12 @@ const anyModalOpen =
       });
     }
 
-    // 5) Palabras que ahorran tiempo (abre modal ejemplos)
     cards.push({
       id: "shortcuts",
       title: safeT("today.tip.shortcuts.title", "Palabras que ahorran tiempo"),
       body: safeT(
         "today.tip.shortcuts.body",
-        "Una idea = empieza con ‘Idea: …’. Una tarea = empieza con un verbo.",
+        "Una idea empieza con \"Idea: ...\". Una tarea empieza con un verbo.",
       ),
       cta: safeT("today.tip.shortcuts.cta", "Ver ejemplos"),
       icon: <Sparkles size={18} />,
@@ -866,7 +1079,6 @@ const anyModalOpen =
       onClick: () => setShowShortcutsModal(true),
     });
 
-    // 6) Cierre del día
     if (shouldShowDayCloseTip) {
       cards.push({
         id: "day-close",
@@ -883,25 +1095,23 @@ const anyModalOpen =
       });
     }
 
-    // 7) Pegar texto
     cards.push({
-      id: "paste",
-      title: safeT("today.tip.paste.title", "¿Has probado a pegar texto?"),
+      id: "improve-remi",
+      title: safeT("today.tip.feedback.title", "Mejora Remi"),
       body: safeT(
-        "today.tip.paste.body",
-        "Copia cualquier cosa (WhatsApp, Mail, Notas) y deja que Remi lo ordene.",
+        "today.tip.feedback.body",
+        "Cuéntanos en 20 segundos qué te está ayudando y qué mejorarías.",
       ),
-      cta: safeT("today.tip.paste.cta", "Pegar ahora"),
-      icon: <ClipboardPaste size={18} />,
+      cta: safeT("today.tip.feedback.cta", "Dar opinión"),
+      icon: <Sparkles size={18} />,
       bg: "",
-      border: "rgba(59,130,246,0.65)",
-      onClick: () => void handlePasteFromClipboard(),
+      border: "rgba(125,89,201,0.70)",
+      onClick: () => setShowFeedbackSurvey(true),
     });
 
-      // ✅ 8) “Compartir recordatorios con otras personas” (entre usuarios)
-      if (!dismissedTips[SHARE_REMINDERS_TIP_KEY]) {
-        cards.push({
-          id: SHARE_REMINDERS_TIP_KEY,
+    if (!dismissedTips[SHARE_REMINDERS_TIP_KEY]) {
+      cards.push({
+        id: SHARE_REMINDERS_TIP_KEY,
           title: safeT(
             "today.tip.shareReminders.title",
             "Comparte recordatorios con alguien",
@@ -915,17 +1125,44 @@ const anyModalOpen =
           bg: "",
           border: "rgba(125,89,201,0.70)",
           onClick: () => setShowShareRemindersHelp(true),
-        });
-      }
+      });
+    }
+
+    cards.push({
+      id: "shared-lists",
+      title: safeT("today.tip.sharedLists.title", "Listas compartidas"),
+      body: safeT(
+        "today.tip.sharedLists.body",
+        "Crea una lista con otra persona y actualizad puntos en tiempo real.",
+      ),
+      cta: safeT("today.tip.sharedLists.cta", "Abrir listas"),
+      icon: <Share2 size={18} />,
+      bg: "",
+      border: "rgba(14,165,164,0.65)",
+      onClick: () => navigate("/lists"),
+    });
+
+    cards.push({
+      id: "share-app",
+      title: safeT("today.tip.shareApp.title", "Compartir Remi"),
+      body: safeT(
+        "today.tip.shareApp.body",
+        "Invita a alguien a probar Remi en un toque.",
+      ),
+      cta: safeT("today.tip.shareApp.cta", "Compartir"),
+      icon: <Share2 size={18} />,
+      bg: "",
+      border: "rgba(125,89,201,0.70)",
+      onClick: () => void handleShareApp(),
+    });
 
 
-    // 9) Escribir como hablas
     cards.push({
       id: "natural",
       title: safeT("today.tip.natural.title", "Escribe como hablas"),
       body: safeT(
         "today.tip.natural.body",
-        "Ej: “Pagar la luz mañana a las 6 de la tarde”. Remi lo ordena y tú te olvidas.",
+        "Ej: \"Pagar la luz mañana a las 18:00\". Remi lo ordena y tú te olvidas.",
       ),
       cta: safeT("today.tip.natural.cta", "Probar ejemplo"),
       icon: <Sparkles size={18} />,
@@ -937,66 +1174,34 @@ const anyModalOpen =
         ),
     });
 
-    // 10) ✅ Atajos inteligentes
     cards.push({
-      id: "smart-shortcuts",
-      title: safeT(
-        "today.tip.smartShortcuts.title",
-        "Atajos inteligentes (ahorran 10s)",
-      ),
+      id: "paste",
+      title: safeT("today.tip.paste.title", "Pegar texto"),
       body: safeT(
-        "today.tip.smartShortcuts.body",
-        "Agrega palabras con 1 toque. Ej: Idea / Comprar / a las 18:00.",
+        "today.tip.paste.body",
+        "Copia cualquier cosa (WhatsApp, Mail, Notas) y deja que Remi lo ordene.",
       ),
-      cta: safeT("today.tip.smartShortcuts.cta", "Probar ahora"),
+      cta: safeT("today.tip.paste.cta", "Pegar ahora"),
+      icon: <ClipboardPaste size={18} />,
+      bg: "",
+      border: "rgba(59,130,246,0.65)",
+      onClick: () => void handlePasteFromClipboard(),
+    });
+
+    cards.push({
+      id: "remi-language",
+      title: safeT("today.tip.language.title", "Remi en tu idioma"),
+      body: safeT(
+        "today.tip.language.body",
+        "Cambia el idioma de Remi en cualquier momento desde tu perfil.",
+      ),
+      cta: safeT("today.tip.language.cta", "Cambiar idioma"),
       icon: <Sparkles size={18} />,
       bg: "",
-      border: "rgba(125,89,201,0.70)",
-      onClick: () => openCapture(""),
+      border: "rgba(59,130,246,0.65)",
+      onClick: () => navigate("/profile"),
     });
 
-    // 4) ✅ Tareas sin fecha (si existen)
-    if (noDateCount > 0) {
-      const key =
-        noDateCount === 1
-          ? "today.tip.noDate.title_one"
-          : "today.tip.noDate.title_other";
-
-      cards.push({
-        id: "no-date",
-        title: safeT(
-          key,
-          `Tienes ${noDateCount} tarea${noDateCount === 1 ? "" : "s"} sin fecha`,
-          { count: noDateCount },
-        ),
-        body: safeT(
-          "today.tip.noDate.body",
-          "¿Las ordenamos? En 30s te dejo la lista limpia.",
-        ),
-        cta: safeT("today.tip.noDate.cta", "Ver sin fecha"),
-        icon: <CalendarDays size={18} />,
-        bg: "",
-        border: "rgba(16,185,129,0.65)",
-        onClick: () => setFilter("NO_DATE"),
-      });
-    }
-
-    // 11) Semana
-    cards.push({
-      id: "week",
-      title: safeT("today.tip.week.title", "Plan rápido"),
-      body: safeT(
-        "today.tip.week.body",
-        "Mira tu semana en 1 gesto. Lo urgente primero, lo demás fuera de la cabeza.",
-      ),
-      cta: safeT("today.tip.week.cta", "Ver semana"),
-      icon: <CalendarDays size={18} />,
-      bg: "",
-      border: "rgba(14,165,233,0.65)",
-      onClick: () => setFilter("WEEK"),
-    });
-
-    // 12) Mini pausa
     cards.push({
       id: "mental",
       title: safeT("today.tip.mental.title", "Mini pausa"),
@@ -1008,10 +1213,9 @@ const anyModalOpen =
       icon: <HeartPulse size={18} />,
       bg: "",
       border: "rgba(244,63,94,0.60)",
-      onClick: () => openCapture(""),
+      onClick: () => setRelaxOpen(true),
     });
 
-    // 13) Cumpleaños
     cards.push({
       id: "birthday",
       title: safeT("today.tip.birthday.title", "¿Cumpleaños cerca?"),
@@ -1029,11 +1233,10 @@ const anyModalOpen =
         ),
     });
 
-    // ✅ “sin tareas sin fecha”
     if (noDateCount === 0) {
       cards.push({
         id: "clean-no-date",
-        title: safeT("today.tip.cleanNoDate.title", "✅ Sin tareas sin fecha"),
+        title: safeT("today.tip.cleanNoDate.title", "Sin tareas sin fecha"),
         body: safeT(
           "today.tip.cleanNoDate.body",
           "Perfecto. Ahora es fácil priorizar.",
@@ -1058,94 +1261,226 @@ const anyModalOpen =
     shouldShowDayCloseTip,
     openCapture,
   ]);
+  const [searchValue, setSearchValue] = useState("");
+  const normalizedSearch = useMemo(
+    () => searchValue.trim().toLowerCase(),
+    [searchValue],
+  );
+  const matchesTask = useCallback(
+    (task: BrainItem) => {
+      if (!normalizedSearch) return true;
+      const title = (task.title ?? "").toLowerCase();
+      const due = formatDueLabel(task.due_date as string | null).toLowerCase();
+      return title.includes(normalizedSearch) || due.includes(normalizedSearch);
+    },
+    [formatDueLabel, normalizedSearch],
+  );
+  const visibleDateGroups = useMemo(() => {
+    if (!normalizedSearch) return filteredDateGroups;
+    return filteredDateGroups
+      .map((group) => ({ ...group, items: group.items.filter(matchesTask) }))
+      .filter((group) => group.items.length > 0);
+  }, [filteredDateGroups, matchesTask, normalizedSearch]);
+  const visibleNoDateTasks = useMemo(
+    () => noDateTasks.filter(matchesTask),
+    [noDateTasks, matchesTask],
+  );
+  const todayDateKey = useMemo(() => {
+    const now = new Date();
+    return toDateKeyLocal(new Date(now.getFullYear(), now.getMonth(), now.getDate()));
+  }, []);
+  const tipsScrollRef = useRef<HTMLDivElement | null>(null);
+  const reminderDeckRef = useRef<HTMLDivElement | null>(null);
+  const [tipsScrollMetrics, setTipsScrollMetrics] = useState({
+    progress: 0,
+    visibleRatio: 1,
+  });
+  const selectedDayTasks = useMemo(
+    () => dateGroups.find((group) => group.key === todayDateKey)?.items ?? [],
+    [dateGroups, todayDateKey],
+  );
+  const nextWeekGroups = useMemo(() => {
+    const now = new Date();
+    const todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekEndMid = new Date(
+      todayMid.getFullYear(),
+      todayMid.getMonth(),
+      todayMid.getDate() + 7,
+    );
 
-  // ✅ Deck: ahora con hook
-  const deckRef = useRef<HTMLDivElement | null>(null);
+    const out: Array<{ key: string; label: string; items: BrainItem[] }> = [];
+    for (const group of dateGroups) {
+      if (!group.dateMs) continue;
+      const time = group.dateMs;
+      if (time <= todayMid.getTime() || time > weekEndMid.getTime()) continue;
+      out.push({
+        key: group.key,
+        label: group.label,
+        items: group.items,
+      });
+    }
+    return out;
+  }, [dateGroups]);
   const {
-    activeIndex: activeTipIndex,
-    scrollToIndex: scrollToTip,
-    bind: deckBind,
-  } = useSnapTipDeck(deckRef, tipCards.length, {
+    activeIndex: activeSlideIndex,
+    scrollToIndex: scrollToReminderSlide,
+    bind: reminderDeckBind,
+  } = useSnapTipDeck(reminderDeckRef, selectedDayTasks.length, {
     maxStep: 1,
     settleMs: 120,
   });
+  const sliderThemes = useMemo(() => {
+    const themes = [
+      {
+        bg: "#EDE4FB",
+        border: "#DECCF7",
+        shadow: "0 10px 20px rgba(100, 41, 218, 0.10)",
+      },
+      {
+        bg: "#F8E6DC",
+        border: "#F0D5C7",
+        shadow: "0 10px 20px rgba(212, 114, 64, 0.10)",
+      },
+      {
+        bg: "#DDF6E6",
+        border: "#CBEED9",
+        shadow: "0 10px 20px rgba(60, 199, 97, 0.10)",
+      },
+      {
+        bg: "#F4DEEE",
+        border: "#EBCFE1",
+        shadow: "0 10px 20px rgba(190, 116, 176, 0.10)",
+      },
+      {
+        bg: "#DFF0F8",
+        border: "#CEE5F1",
+        shadow: "0 10px 20px rgba(65, 140, 179, 0.10)",
+      },
+    ] as const;
 
+    if (selectedDayTasks.length === 0) return [];
+    const out: Array<(typeof themes)[number]> = [];
+    let prevThemeIndex = -1;
+
+    for (let i = 0; i < selectedDayTasks.length; i += 1) {
+      const task = selectedDayTasks[i];
+      const hash = task.id.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+      let themeIndex = hash % themes.length;
+      if (themeIndex === prevThemeIndex) {
+        themeIndex = (themeIndex + 1) % themes.length;
+      }
+      out.push(themes[themeIndex]);
+      prevThemeIndex = themeIndex;
+    }
+    return out;
+  }, [selectedDayTasks]);
+  const searchVisibleTasksCount = useMemo(() => {
+    if (filter === "NO_DATE") return visibleNoDateTasks.length;
+    return visibleDateGroups.reduce((acc, group) => acc + group.items.length, 0);
+  }, [filter, visibleDateGroups, visibleNoDateTasks.length]);
+  const hasSearchVisibleDatedTasks = visibleDateGroups.some(
+    (group) => group.items.length > 0,
+  );
+  const hasSearchNoDateTasks =
+    filter === "NO_DATE" && visibleNoDateTasks.length > 0;
+  const updateTipsScrollMetrics = useCallback(() => {
+    const el = tipsScrollRef.current;
+    if (!el) return;
+
+    const maxScrollLeft = Math.max(el.scrollWidth - el.clientWidth, 0);
+    const progress = maxScrollLeft > 0 ? el.scrollLeft / maxScrollLeft : 0;
+    const visibleRatio = el.scrollWidth > 0 ? el.clientWidth / el.scrollWidth : 1;
+
+    setTipsScrollMetrics({
+      progress: Math.max(0, Math.min(1, progress)),
+      visibleRatio: Math.max(0, Math.min(1, visibleRatio)),
+    });
+  }, []);
+
+  useEffect(() => {
+    updateTipsScrollMetrics();
+    window.addEventListener("resize", updateTipsScrollMetrics);
+    return () => window.removeEventListener("resize", updateTipsScrollMetrics);
+  }, [tipCards.length, updateTipsScrollMetrics]);
+
+  const tipsHasOverflow = tipsScrollMetrics.visibleRatio < 0.999;
+  const tipsThumbWidthPct = tipsHasOverflow
+    ? Math.max(tipsScrollMetrics.visibleRatio * 100, 20)
+    : 24;
+  const tipsThumbLeftPct = tipsHasOverflow
+    ? tipsScrollMetrics.progress * (100 - tipsThumbWidthPct)
+    : 38;
   return (
-    <div className="remi-page">
-      {/* ✅ CSS local para ocultar scrollbars del deck */}
-      <style>
-        {`
-          .remi-tipDeck {
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-          }
-          .remi-tipDeck::-webkit-scrollbar {
-            display: none;
-            width: 0;
-            height: 0;
-          }
-            // ⬇️ deja espacio para la BottomNav + safe area iPhone
-      paddingBottom: "calc(96px + env(safe-area-inset-bottom))",
-        `}
-      </style>
-
-      {/* CABECERA */}
+    <div
+      className="remi-page"
+      style={{
+        minHeight: "100dvh",
+        background: NOTE_PAGE_BG,
+        paddingBottom: "calc(96px + env(safe-area-inset-bottom))",
+        paddingLeft: 0,
+        paddingRight: RIGHT_RAIL_WIDTH_PX,
+      }}
+    >
       <div
-  style={{
-    // ⬇️ antes: padding: "16px 20px 18px",
-    paddingTop: "calc(16px + env(safe-area-inset-top))",
-    paddingBottom: 18,
-    paddingLeft: "calc(20px + env(safe-area-inset-left))",
-    paddingRight: "calc(20px + env(safe-area-inset-right))",
-
-    background: "linear-gradient(#7d59c9, #7d59c9)",
-    color: "white",
-    borderBottomLeftRadius: "24px",
-    borderBottomRightRadius: "24px",
-    position: "relative",
-  }}
->
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-          }}
-        >
-          <div>
-            <p style={{ fontSize: 12, opacity: 0.8 }}>
-              {safeT("today.greeting", `Hola, ${displayName}`, {
-                name: displayName,
-              })}
+        style={{
+          width: "100%",
+          margin: 0,
+          minHeight: "100dvh",
+          background: NOTE_PAGE_BG,
+          border: "none",
+          borderRadius: 0,
+          boxShadow: "none",
+          overflow: "hidden",
+        }}
+      >
+      <div
+        className="relative overflow-visible"
+        style={{
+          zIndex: anyModalOpen ? 20 : 60,
+          paddingTop: "calc(20px + env(safe-area-inset-top))",
+          paddingBottom: 10,
+          paddingLeft: "calc(16px + env(safe-area-inset-left))",
+          paddingRight: "calc(16px + env(safe-area-inset-right))",
+          background: "#ffffff",
+          borderBottomLeftRadius: 22,
+          borderBottomRightRadius: 22,
+          borderBottom: "1px solid #e2e8f0",
+          boxShadow: "0 2px 8px rgba(15,23,42,0.04)",
+        }}
+      >
+        <div className="mx-auto w-full relative z-[1]" style={{ maxWidth: "min(96vw, 1440px)" }}>
+        <div className="mt-0.5 flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p
+              className="leading-tight font-semibold text-slate-500"
+              style={{ fontSize: "clamp(14px, 0.9vw, 18px)" }}
+            >
+              {safeT("today.greetingHello", "Hello,")}
             </p>
-            <h1 style={{ fontSize: 20, margin: "4px 0 2px", fontWeight: 600 }}>
-              {safeT("today.tasksToday", `Tienes ${activeTasksCount} tareas`, {
-                count: activeTasksCount,
-              })}
-            </h1>
-            <p style={{ fontSize: 11, opacity: 0.85 }}>
-              {safeT("today.prioritize", "Prioriza lo importante")}
+            <p
+              className="leading-tight font-extrabold text-slate-900"
+              style={{ fontSize: "clamp(21px, 1.45vw, 31px)", marginTop: 4 }}
+            >
+              {displayName} <span aria-hidden="true">👋</span>
             </p>
           </div>
 
-          {/* PERFIL */}
           <div style={{ position: "relative" }} ref={profileMenuRef}>
             <button
               onClick={() => setProfileOpen((open) => !open)}
               style={{
-                width: 40,
-                height: 40,
+                width: 42,
+                height: 42,
                 borderRadius: "999px",
-                border: "none",
-                background: "rgba(255,255,255,0.2)",
-                color: "#ffffff",
+                border: "1px solid #e2e8f0",
+                background: "#ffffff",
+                color: "#334155",
                 fontSize: 16,
                 fontWeight: 600,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 10px 25px rgba(0,0,0,0.25)",
-                backdropFilter: "blur(6px)",
+                boxShadow: "0 4px 14px rgba(15,23,42,0.08)",
                 cursor: "pointer",
                 overflow: "hidden",
                 padding: 0,
@@ -1175,21 +1510,22 @@ const anyModalOpen =
                   top: 48,
                   right: 0,
                   background: "#ffffff",
-                  color: "#2d3142",
+                  color: "#1e293b",
                   borderRadius: 16,
-                  boxShadow: "0 18px 40px rgba(35,18,90,0.35)",
+                  boxShadow: "0 18px 40px rgba(15,23,42,0.2)",
                   padding: "8px 10px",
                   minWidth: 170,
-                  zIndex: 1000,
+                  maxWidth: "min(280px, calc(100vw - 24px))",
+                  zIndex: 5000,
                 }}
               >
                 <div
                   style={{
                     padding: "6px 8px 8px",
-                    borderBottom: "1px solid rgba(236,235,253,0.9)",
+                    borderBottom: "1px solid rgba(226,232,240,0.9)",
                     marginBottom: 4,
                     fontSize: 11,
-                    color: "#8b8fa6",
+                    color: "#64748b",
                   }}
                 >
                   {safeT(
@@ -1229,413 +1565,423 @@ const anyModalOpen =
             )}
           </div>
         </div>
-
-        {/* Barra "Mente despejada" */}
-        <div style={{ marginTop: 14 }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              fontSize: 11,
-              opacity: 0.9,
-            }}
-          >
-            <span>{safeT("index.clearMind", "Mente despejada")}</span>
-            <span>{mindClearPercent}%</span>
+        <div className="mt-2" style={{ width: "calc(100% - 56px)" }}>
+          <div className="mb-1.5 flex items-center justify-between">
+            <p className="font-semibold text-slate-600" style={{ fontSize: "clamp(13px, 0.9vw, 19px)" }}>
+              {safeT("index.clearMind", "Mente despejada")}
+            </p>
+            <p className="font-extrabold text-slate-800" style={{ fontSize: "clamp(13px, 0.9vw, 19px)" }}>
+              {mindClearPercent}%
+            </p>
           </div>
-          <div
-            style={{
-              marginTop: 6,
-              height: 6,
-              borderRadius: 999,
-              background: "rgba(255,255,255,0.28)",
-              overflow: "hidden",
-            }}
-          >
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
             <div
+              className="h-full rounded-full transition-all duration-500 ease-out"
               style={{
-                height: "100%",
                 width: `${mindClearPercent}%`,
-                borderRadius: 999,
-                background: "linear-gradient(90deg, #ffffff, #FDE68A, #FDBA74)",
-                transition: "width 0.4s ease",
+                background:
+                  "linear-gradient(90deg, #59a5c9 0%, #5989c9 12.5%, #596dc9 25%, #6b63c9 37.5%, #7d59c9 50%, #9959c9 62.5%, #b559c9 75%, #bf59b7 87.5%, #c959a5 100%)",
               }}
             />
           </div>
-        </div>
-      </div>
 
-      {/* ✅ DECK DE TIPS */}
-      <div style={{ padding: "0 18px", marginTop: 14, marginBottom: 10 }}>
-        <div
-          ref={deckRef}
-          {...deckBind}
-          className="remi-tipDeck"
-          style={{
-            display: "flex",
-            alignItems: "stretch",
-            overflowX: "auto",
-            WebkitOverflowScrolling: "touch",
-            scrollSnapType: "x mandatory",
-            scrollBehavior: "smooth",
-            overscrollBehaviorX: "contain",
-            paddingLeft: `calc(50% - ${DECK_CARD_W / 2}px)`,
-            paddingRight: `calc(50% - ${DECK_CARD_W / 2}px)`,
-            paddingTop: 6,
-            paddingBottom: 8,
-            gap: 0,
-          }}
-        >
-          {tipCards.map((card, idx) => (
-            <TipCard
-              key={card.id}
-              item={card}
-              index={idx}
-              active={idx === activeTipIndex}
-              style={{ marginLeft: idx === 0 ? 0 : -DECK_OVERLAP }}
-              dataTipIndex={idx}
-            />
-          ))}
-        </div>
-
-        {/* puntitos */}
-        <div
-          style={{
-            marginTop: 6,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: 7,
-          }}
-        >
-          {tipCards.map((_, i) => {
-            const isActive = i === activeTipIndex;
-            return (
-              <button
-                key={i}
-                type="button"
-                onClick={() => scrollToTip(i)}
-                aria-label={`Ir a la tarjeta ${i + 1}`}
-                style={{
-                  width: isActive ? 18 : 7,
-                  height: 7,
-                  borderRadius: 999,
-                  border: "none",
-                  cursor: "pointer",
-                  background: isActive
-                    ? "rgba(125,89,201,0.95)"
-                    : "rgba(148,163,184,0.55)",
-                  transition: "width 0.18s ease, background 0.18s ease",
-                }}
-              />
-            );
-          })}
-        </div>
-      </div>
-
-      {/* CONTENIDO */}
-      <div style={{ padding: "0 18px 18px" }}>
-        {/* Filtros */}
-        <div
-          style={{
-            marginTop: 8,
-            marginBottom: 8,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <div
-            className="remi-tabs"
-            style={{
-              display: "inline-flex",
-              gap: 6,
-              padding: 6,
-              borderRadius: 999,
-              background: "#ffffff",
-              border: "1px solid rgba(226,232,240,0.95)",
-              boxShadow: "0 12px 30px rgba(15,23,42,0.06)",
-            }}
-          >
-            {renderFilterButton("TODAY", safeT("today.tabsToday", "Hoy"))}
-            {renderFilterButton("WEEK", safeT("today.tabsWeek", "Semana"))}
-            {renderFilterButton(
-              "NO_DATE",
-              safeT("today.tabsNoDate", "Sin fecha"),
-            )}
+          <div className="mt-2">
+            <button
+              type="button"
+              onClick={handleOpenLists}
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              <Users size={14} />
+              {safeT("today.openLists", "Abrir listas compartidas")}
+            </button>
           </div>
         </div>
+        </div>
+      </div>
 
-        {/* ✅ lista */}
-        <div className="space-y-3">
-          {loading && (
-            <div className="rounded-2xl bg-white/70 border border-slate-100 px-4 py-3 text-[13px] text-slate-500">
-              {safeT("today.loadingTasks", "Cargando…")}
-            </div>
-          )}
+      <div className="mx-auto mt-6 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
+        <p className="leading-none font-extrabold text-slate-900" style={{ fontSize: "clamp(18px, 1.1vw, 24px)" }}>
+          {safeT("today.captureSectionTitle", "Vacia tu mente")}
+        </p>
+        <div className="mt-3 px-1">
+          <MindDumpModal
+            open={true}
+            embedded
+            onClose={() => setMindDumpResetNonce((n) => n + 1)}
+            onCreateTask={handleCreateTaskFromMindDump}
+            onCreateIdea={async (title) => {
+              await handleCreateIdeaFromMindDump(title);
+            }}
+            onCreateList={async (title, items) => {
+              await handleCreateListFromMindDump(title, items);
+            }}
+            initialTextNonce={mindDumpResetNonce}
+          />
+        </div>
+      </div>
 
-          {!loading && filter !== "NO_DATE" && !hasVisibleDatedTasks && (
-            <div className="rounded-2xl bg-white border border-slate-100 shadow-[0_14px_34px_rgba(15,23,42,0.06)] px-4 py-4 flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-[rgba(143,49,243,0.10)] text-[#7d59c9] flex items-center justify-center shrink-0">
-                <List size={18} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[14px] font-semibold text-slate-900">
-                  {safeT("today.noUrgentTitle", "Todo bajo control")}
-                </p>
-                <p className="text-[12px] text-slate-500">
-                  {safeT(
-                    "today.noUrgentSubtitle",
-                    "No hay nada urgente ahora mismo",
-                  )}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {!loading && filter === "NO_DATE" && !hasNoDateTasks && (
-            <div className="rounded-2xl bg-white border border-slate-100 shadow-[0_14px_34px_rgba(15,23,42,0.06)] px-4 py-4 flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-[rgba(143,49,243,0.10)] text-[#7d59c9] flex items-center justify-center shrink-0">
-                <List size={18} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[14px] font-semibold text-slate-900">
-                  {safeT("today.noUrgentTitle", "Todo bajo control")}
-                </p>
-                <p className="text-[12px] text-slate-500">
-                  {safeT(
-                    "today.noUrgentSubtitle",
-                    "No hay nada urgente ahora mismo",
-                  )}
+      <div className="mx-auto mt-7 mb-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
+        <div>
+          <p className="font-extrabold text-slate-900" style={{ fontSize: "clamp(16px, 1vw, 22px)" }}>
+            {safeT("today.listsTitle", "Listas")}
+          </p>
+        </div>
+        <div className="mt-2 remi-scroll flex gap-2.5 overflow-x-auto pb-1 px-1">
+          {recentLists.length === 0 ? (
+            <button
+              type="button"
+              onClick={handleOpenLists}
+              className="relative w-full shrink-0 overflow-hidden rounded-[20px] border border-[#59a5c9] bg-white p-3 text-left transition hover:border-[#4b95b8]"
+              aria-label={safeT("today.listsEmptyTitle", "Crea tu primera lista")}
+            >
+              <div className="flex items-center gap-3">
+                <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-2xl leading-none">
+                  <span role="img" aria-label="lista">
+                    📋
+                  </span>
+                </div>
+                <p className="text-base font-semibold text-[#2f3240]">
+                  {safeT("today.listsEmptyTitle", "Crea tu primera lista")}
                 </p>
               </div>
-            </div>
-          )}
-
-          {/* Grupos con fecha */}
-          {!loading &&
-            filteredDateGroups.map((group) => (
-              <div key={group.key} className="pt-2">
-                {/* ✅ Separador plegable */}
-                <button
-                  type="button"
-                  onClick={() => toggleGroup(group.key)}
-                  aria-expanded={!isCollapsed(group.key)}
-                  className="w-full flex items-center gap-2 mb-2 select-none"
-                  style={{ cursor: "pointer" }}
-                >
-                  <ChevronDown
-                    size={16}
-                    className="text-slate-500 transition-transform"
-                    style={{
-                      transform: isCollapsed(group.key)
-                        ? "rotate(-90deg)"
-                        : "rotate(0deg)",
-                    }}
+            </button>
+          ) : (
+            recentLists.map((list) => (
+              (() => {
+                const stats = recentListsProgress[list.id] ?? { done: 0, total: 0 };
+                const percent = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
+                return (
+              <button
+                key={list.id}
+                type="button"
+                onClick={() => handleOpenListById(list.id)}
+                className="group relative shrink-0 overflow-hidden rounded-[20px] border border-[#59a5c9] bg-white p-3 text-left transition hover:border-[#4b95b8]"
+                style={{
+                  width: "clamp(280px, 36vw, 360px)",
+                }}
+                title={list.title}
+                aria-label={list.title}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-sm font-semibold uppercase text-[#3f7f99]">
+                    {list.icon_emoji ? (
+                      <span className="text-2xl leading-none">{list.icon_emoji}</span>
+                    ) : (
+                      list.title.slice(0, 1)
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-base font-semibold text-[#2f3240]">{list.title}</p>
+                    <p className="mt-0.5 text-xs font-medium text-[#8b8fa6]">
+                      {list.my_role === "owner"
+                        ? safeT("lists.roleOwner", "Owner")
+                        : list.my_role === "editor"
+                          ? safeT("lists.roleEditor", "Editor")
+                          : safeT("lists.roleViewer", "Viewer")}
+                    </p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <div className="flex -space-x-2">
+                        {(list.member_previews ?? []).slice(0, 3).map((member) => renderMemberAvatar(member))}
+                      </div>
+                      <p className="inline-flex items-center gap-1 text-xs text-[#8b8fa6]">
+                        <Users className="h-3.5 w-3.5" />
+                        {list.members_count}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <p className="mt-2 text-sm font-medium text-[#5c6073]">
+                  {safeT("lists.learnedTo", "Completado")} <span className="text-[#59a5c9]">{percent}%</span>
+                </p>
+                <div className="mt-1.5 h-1.5 w-full rounded-full bg-[#dbeef6]">
+                  <div
+                    className="h-1.5 rounded-full transition-all"
+                    style={{ width: `${percent}%`, background: "#59a5c9" }}
                   />
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
-                    {group.label}
-                  </p>
-                  <div className="flex-1 h-px bg-slate-300/70" />
-                </button>
+                </div>
+              </button>
+                );
+              })()
+            ))
+          )}
+        </div>
+      </div>
 
-                {/* ✅ Contenido plegable */}
-                {!isCollapsed(group.key) && (
-                  <div className="space-y-2">
-                    {group.items.map((task) => {
-                      const hasDue = !!task.due_date;
-                      const dueStr = hasDue
-                        ? new Date(task.due_date as string).toLocaleString()
-                        : safeT("today.dueNoDate", "Sin fecha");
+      {tipCards.length > 0 && (
+        <div className="mx-auto mt-7 mb-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
+          <div>
+            <p className="font-extrabold text-slate-900" style={{ fontSize: "clamp(16px, 1vw, 22px)" }}>
+              {safeT("today.tipsTitle", "Acciones")}
+            </p>
+          </div>
+          <div
+            ref={tipsScrollRef}
+            onScroll={updateTipsScrollMetrics}
+            className="mt-2 remi-scroll flex gap-2.5 overflow-x-auto pb-1 px-1"
+          >
+            {tipCards.map((tip) => (
+              <button
+                key={tip.id}
+                type="button"
+                onClick={tip.onClick}
+                className="shrink-0 rounded-2xl border border-slate-200 bg-white shadow-[0_6px_14px_rgba(15,23,42,0.05)] hover:bg-slate-50 flex flex-col items-center"
+                style={{
+                  width: "clamp(98px, 22vw, 132px)",
+                  padding: "10px 8px 9px",
+                  minHeight: "110px",
+                }}
+                title={tip.title}
+                aria-label={tip.title}
+              >
+                <div
+                  className="mx-auto rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center"
+                  style={{ width: 38, height: 38 }}
+                >
+                  <span className="leading-none" style={{ fontSize: "clamp(20px, 1.2vw, 28px)" }}>
+                    {TIP_EMOJI_BY_ID[tip.id] ?? "✨"}
+                  </span>
+                </div>
+                <p
+                  className="mt-2 leading-snug font-medium text-slate-800 line-clamp-2 text-center"
+                  style={{
+                    fontSize: "clamp(11px, 0.72vw, 13px)",
+                    minHeight: "2.55em",
+                  }}
+                >
+                  {tip.title}
+                </p>
+              </button>
+            ))}
+          </div>
+          <div className="mt-2.5 px-1">
+            <div className="relative h-1.5 w-full rounded-full bg-slate-200/90 overflow-hidden">
+              <span
+                className="absolute top-0 h-full rounded-full bg-violet-500 transition-all duration-150"
+                style={{
+                  width: `${tipsThumbWidthPct}%`,
+                  left: `${tipsThumbLeftPct}%`,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
-                      return (
-                        <div
-                          key={task.id}
-                          className="rounded-2xl bg-white border border-slate-100 shadow-[0_14px_34px_rgba(15,23,42,0.06)] px-4 py-3 flex items-center gap-3"
-                        >
-                          <div className="w-10 h-10 rounded-full bg-[rgba(143,49,243,0.10)] text-[#7d59c9] flex items-center justify-center shrink-0 relative">
-                            <List size={18} />
+      <div className="mx-auto mt-7 mb-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
+        <div className="mt-2">
+          <div>
+            <p className="font-extrabold text-slate-900" style={{ fontSize: "clamp(15px, 0.9vw, 20px)" }}>
+              {safeT("inbox.tasksTab", "Recordatorios")}
+            </p>
+          </div>
 
+          <div className="mt-2.5 px-1 flex justify-center">
+            <div
+              className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white p-1.5"
+              style={{ minHeight: 46 }}
+            >
+              {renderFilterButton("TODAY", safeT("inbox.sectionToday", "Hoy"))}
+              {renderFilterButton("WEEK", safeT("inbox.sectionWeek", "Semana"))}
+              {renderFilterButton("NO_DATE", safeT("inbox.sectionNoDate", "Sin fecha"))}
+            </div>
+          </div>
+
+          {searchVisibleTasksCount > 0 ? (
+            <div className="mt-2.5 rounded-3xl border border-transparent bg-transparent p-1.5">
+              <div className="max-h-[460px] overflow-y-auto remi-scroll pr-1">
+                {filter === "NO_DATE" ? (
+                  <div className="space-y-2 pt-2">
+                    {visibleNoDateTasks.map((task) => (
+                      <div
+                        key={`today-nodate-${task.id}`}
+                        className="rounded-3xl bg-white border border-[#7d59c9] shadow-[0_6px_14px_rgba(15,23,42,0.05)] px-4 py-3 md:px-5 md:py-4 lg:px-6 lg:py-5"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center shrink-0 relative">
+                            <CalendarClock size={18} />
                             {shouldShowSentIndicator(task) && (
                               <span
                                 className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm"
-                                title={safeT("shareInvite.sentIndicator", "Compartida por ti")}
-                                aria-label={safeT("shareInvite.sentIndicator", "Compartida por ti")}
+                                aria-label={safeT("shareInvite.sentIndicator", "Compartido por ti")}
+                                title={safeT("shareInvite.sentIndicator", "Compartido por ti")}
                               >
                                 <Share2 size={10} className="text-slate-500" />
                               </span>
                             )}
                           </div>
 
-
                           <div className="flex-1 min-w-0">
                             <p
-                              className="text-[14px] font-semibold text-slate-900 leading-snug"
+                              className="font-semibold text-slate-900 leading-snug"
+                              style={{ fontSize: "clamp(16px, 1.1vw, 26px)" }}
+                            >
+                              {safeT("pill.type.task", "Recordatorio")}
+                            </p>
+                            <p
+                              className="mt-1 text-slate-700"
                               style={{
+                                fontSize: "clamp(13px, 0.86vw, 17px)",
+                                whiteSpace: "pre-wrap",
                                 wordBreak: "break-word",
                                 overflowWrap: "anywhere",
-                                whiteSpace: "pre-wrap",
+                                maxHeight: 96,
+                                overflow: "hidden",
                               }}
                             >
                               {task.title}
                             </p>
-
-
-                            <div className="mt-1 flex items-center gap-1 text-[12px] text-slate-500">
-                              <CalendarDays
-                                size={14}
-                                className="text-slate-400"
-                              />
-                              <span className="truncate">{dueStr}</span>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                           <button
-                              type="button"
-                              onPointerDown={() => prefetchShareInvite(task.id)}
-                              onClick={() => handleShareTask(task)}
-                              title={safeT("shareInvite.share", "Compartir")}
-                              aria-label={safeT("shareInvite.share", "Compartir")}
-                              className="w-9 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center"
-                            >
-                              <Share2 size={16} color="#94A3B8" />
-                            </button>
-
-
-
-                            <button
-                              type="button"
-                              onClick={() => handleDone(task)}
-                              title={safeT(
-                                "today.actionDoneTitle",
-                                "Marcar como completada",
-                              )}
-                              aria-label={safeT(
-                                "today.actionDoneTitle",
-                                "Marcar como completada",
-                              )}
-                              className="w-9 h-9 rounded-full border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 inline-flex items-center justify-center"
-                            >
-                              <Check size={16} color="#10B981" />
-                            </button>
                           </div>
                         </div>
-                      );
-                    })}
+
+                        <div className="mt-3 h-px bg-slate-100" />
+
+                        <div className="mt-3 flex items-center gap-3">
+                          <div
+                            className="inline-flex items-center gap-1 text-slate-500"
+                            style={{ fontSize: "clamp(12px, 0.8vw, 15px)" }}
+                          >
+                            <CalendarDays size={13} className="text-slate-400" />
+                            <span className="truncate max-w-[120px]">
+                              {safeT("today.dueNoDate", "Sin fecha")}
+                            </span>
+                          </div>
+                          <div className="ml-auto flex items-center gap-2">
+                          <button
+                            type="button"
+                            onPointerDown={() => prefetchShareInvite(task.id)}
+                            onClick={() => handleShareTask(task)}
+                            className="h-9 w-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center md:h-10 md:w-10 lg:h-11 lg:w-11"
+                            aria-label={safeT("shareInvite.share", "Compartir")}
+                            title={safeT("shareInvite.share", "Compartir")}
+                          >
+                            <Share2 size={15} color="#94A3B8" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDone(task)}
+                            className="h-9 w-9 rounded-full border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 inline-flex items-center justify-center md:h-10 md:w-10 lg:h-11 lg:w-11"
+                            aria-label={safeT("today.done", "Hecho")}
+                            title={safeT("today.done", "Hecho")}
+                          >
+                            <Check size={15} color="#10B981" />
+                          </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {visibleDateGroups.map((group) => (
+                      <div key={`today-${group.key}`} className="pt-2">
+                        <div className="w-full flex items-center gap-2 mb-2 text-left">
+                          <ChevronDown size={16} className="text-slate-500" />
+                          <p className="font-semibold uppercase tracking-widest text-slate-600" style={{ fontSize: "clamp(12px, 0.82vw, 16px)" }}>
+                            {group.label}
+                          </p>
+                          <div className="flex-1 h-px bg-slate-200" />
+                        </div>
+
+                        <div className="space-y-2">
+                          {group.items.map((task) => (
+                            <div
+                              key={`today-${task.id}-${group.key}`}
+                              className="rounded-3xl bg-white border border-[#7d59c9] shadow-[0_6px_14px_rgba(15,23,42,0.05)] px-4 py-3 md:px-5 md:py-4 lg:px-6 lg:py-5"
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className="w-10 h-10 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center shrink-0 relative">
+                                  <CalendarClock size={18} />
+                                  {shouldShowSentIndicator(task) && (
+                                    <span
+                                      className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm"
+                                      aria-label={safeT("shareInvite.sentIndicator", "Compartido por ti")}
+                                      title={safeT("shareInvite.sentIndicator", "Compartido por ti")}
+                                    >
+                                      <Share2 size={10} className="text-slate-500" />
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="flex-1 min-w-0">
+                                  <p
+                                    className="font-semibold text-slate-900 leading-snug"
+                                    style={{ fontSize: "clamp(16px, 1.1vw, 26px)" }}
+                                  >
+                                    {safeT("pill.type.task", "Recordatorio")}
+                                  </p>
+                                  <p
+                                    className="mt-1 text-slate-700"
+                                    style={{
+                                      fontSize: "clamp(13px, 0.86vw, 17px)",
+                                      whiteSpace: "pre-wrap",
+                                      wordBreak: "break-word",
+                                      overflowWrap: "anywhere",
+                                      maxHeight: 96,
+                                      overflow: "hidden",
+                                    }}
+                                  >
+                                    {task.title}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="mt-3 h-px bg-slate-100" />
+
+                              <div className="mt-3 flex items-center gap-3">
+                                <div
+                                  className="inline-flex items-center gap-1 text-slate-500"
+                                  style={{ fontSize: "clamp(12px, 0.8vw, 15px)" }}
+                                >
+                                  <CalendarDays size={13} className="text-slate-400" />
+                                  <span className="truncate max-w-[120px]">
+                                    {formatDueLabel(task.due_date as string | null)}
+                                  </span>
+                                </div>
+                                <div className="ml-auto flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onPointerDown={() => prefetchShareInvite(task.id)}
+                                  onClick={() => handleShareTask(task)}
+                                  className="h-9 w-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center md:h-10 md:w-10 lg:h-11 lg:w-11"
+                                  aria-label={safeT("shareInvite.share", "Compartir")}
+                                  title={safeT("shareInvite.share", "Compartir")}
+                                >
+                                  <Share2 size={15} color="#94A3B8" />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleDone(task)}
+                                  className="h-9 w-9 rounded-full border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 inline-flex items-center justify-center md:h-10 md:w-10 lg:h-11 lg:w-11"
+                                  aria-label={safeT("today.done", "Hecho")}
+                                  title={safeT("today.done", "Hecho")}
+                                >
+                                  <Check size={15} color="#10B981" />
+                                </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
-            ))}
-
-          {/* ✅ SIN FECHA: solo en NO_DATE */}
-          {!loading && filter === "NO_DATE" && noDateTasks.length > 0 && (
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => toggleGroup(NO_DATE_GROUP_KEY)}
-                aria-expanded={!isCollapsed(NO_DATE_GROUP_KEY)}
-                className="w-full flex items-center gap-2 mb-2 select-none"
-                style={{ cursor: "pointer" }}
-              >
-                <ChevronDown
-                  size={16}
-                  className="text-slate-500 transition-transform"
-                  style={{
-                    transform: isCollapsed(NO_DATE_GROUP_KEY)
-                      ? "rotate(-90deg)"
-                      : "rotate(0deg)",
-                  }}
-                />
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
-                  {safeT("inbox.sectionNoDate", "Sin fecha")}
-                </p>
-                <div className="flex-1 h-px bg-slate-300/70" />
-              </button>
-
-              {!isCollapsed(NO_DATE_GROUP_KEY) && (
-                <div className="space-y-2">
-                  {noDateTasks.map((task) => (
-                    <div
-                      key={task.id}
-                      className="rounded-2xl bg-white border border-slate-100 shadow-[0_14px_34px_rgba(15,23,42,0.06)] px-4 py-3 flex items-center gap-3"
-                    >
-                      <div className="w-10 h-10 rounded-full bg-[rgba(143,49,243,0.10)] text-[#7d59c9] flex items-center justify-center shrink-0 relative">
-                        <List size={18} />
-
-                        {shouldShowSentIndicator(task) && (
-                          <span
-                            className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm"
-                            title={safeT("shareInvite.sentIndicator", "Compartida por ti")}
-                            aria-label={safeT("shareInvite.sentIndicator", "Compartida por ti")}
-                          >
-                            <Share2 size={10} className="text-slate-500" />
-                          </span>
-                        )}
-                      </div>
-
-
-                      <div className="flex-1 min-w-0">
-                        <p
-                          className="text-[14px] font-semibold text-slate-900 leading-snug"
-                          style={{
-                            wordBreak: "break-word",
-                            overflowWrap: "anywhere",
-                            whiteSpace: "pre-wrap",
-                          }}
-                        >
-                          {task.title}
-                        </p>
-
-
-                        <div className="mt-1 flex items-center gap-1 text-[12px] text-slate-500">
-                          <CalendarDays
-                            size={14}
-                            className="text-slate-400"
-                          />
-                          <span className="truncate">
-                            {safeT("today.dueNoDate", "Sin fecha")}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onPointerDown={() => prefetchShareInvite(task.id)}
-                          onClick={() => handleShareTask(task)}
-                          title={safeT("shareInvite.share", "Compartir")}
-                          aria-label={safeT("shareInvite.share", "Compartir")}
-                          className="w-9 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center"
-                        >
-                          <Share2 size={16} color="#94A3B8" />
-                        </button>
-
-
-                        <button
-                          type="button"
-                          onClick={() => handleDone(task)}
-                          title={safeT("today.actionDoneTitle", "Marcar como completada")}
-                          aria-label={safeT("today.actionDoneTitle", "Marcar como completada")}
-                          className="w-9 h-9 rounded-full border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 inline-flex items-center justify-center"
-                        >
-                          <Check size={16} color="#10B981" />
-                        </button>
-                      </div>
-
-                    </div>
-                  ))}
-                </div>
-              )}
+            </div>
+          ) : (
+            <div className="mt-3 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-[13px] text-slate-500">
+              {safeT("today.noUrgentTitle", "Todo bajo control")}
             </div>
           )}
         </div>
-      </div>
 
-      {/* ✅ MODAL: ejemplos “Atajos que ahorran 10s” */}
+      </div>
+      </div>
+      {/* MODAL: shortcuts examples */}
       {showShortcutsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" style={MODAL_OVERLAY_STYLE}>
           <div className="bg-white rounded-2xl p-5 w-[90%] max-w-sm shadow-xl">
             <h2 className="text-base font-semibold mb-1">
               {safeT("today.shortcutsModal.title", "Ver ejemplos")}
@@ -1693,9 +2039,9 @@ const anyModalOpen =
         </div>
       )}
 
-      {/* ✅ AYUDA iOS: activar dictado del teclado */}
+      {/* HELP iOS: enable keyboard dictation */}
       {showIosDictationHelp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" style={MODAL_OVERLAY_STYLE}>
           <div className="bg-white rounded-2xl p-5 w-[90%] max-w-sm shadow-xl">
             <h2 className="text-base font-semibold mb-1">
               {safeT("today.iosDict.helpTitle", "Activa Dictado en iPhone")}
@@ -1704,18 +2050,19 @@ const anyModalOpen =
             <p className="text-xs text-slate-600 mb-3">
               {safeT(
                 "today.iosDict.helpBody",
-                "En iOS suele estar en: Ajustes → General → Teclado → Activar Dictado.",
+                "En iOS suele estar en: Ajustes -> General -> Teclado -> Activar Dictado.",
               )}
             </p>
 
             <div className="rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-[12px] text-slate-700 mb-4">
               <div className="font-semibold mb-1">
                 {safeT("today.iosDict.helpStepsTitle", "Pasos rápidos")}
+
               </div>
               <ul className="list-disc pl-4 space-y-1">
                 <li>{safeT("today.iosDict.step1", "Abre Ajustes")}</li>
-                <li>{safeT("today.iosDict.step2", "General → Teclado")}</li>
-                <li>{safeT("today.iosDict.step3", "Activa “Activar Dictado”")}</li>
+                <li>{safeT("today.iosDict.step2", "General -> Teclado")}</li>
+                <li>{safeT("today.iosDict.step3", "Activa \"Activar Dictado\"")}</li>
               </ul>
             </div>
 
@@ -1743,9 +2090,9 @@ const anyModalOpen =
         </div>
       )}
 
-      {/* ✅ AYUDA Multi-dispositivo */}
+      {/* HELP: multi-device */}
       {showMultiDeviceHelp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" style={MODAL_OVERLAY_STYLE}>
           <div className="bg-white rounded-2xl p-5 w-[90%] max-w-sm shadow-xl">
             <h2 className="text-base font-semibold mb-1">
               {safeT(
@@ -1757,7 +2104,7 @@ const anyModalOpen =
             <p className="text-xs text-slate-600 mb-3">
               {safeT(
                 "today.multideviceHelp.p1",
-                "Remi está pensado para que puedas soltar cosas en 5 segundos, desde cualquier dispositivo.",
+                "Remi está en móvil, iPad y PC. Captura en cualquier sitio y todo se sincroniza.",
               )}
             </p>
 
@@ -1769,7 +2116,7 @@ const anyModalOpen =
                 <li>
                   {safeT(
                     "today.multideviceHelp.step1",
-                    "Captura donde te pille: móvil, iPad/tablet o PC. Escribe, habla o pega texto.",
+                    "Captura donde te pille: móvil, tablet o PC.",
                   )}
                 </li>
                 <li>
@@ -1781,7 +2128,7 @@ const anyModalOpen =
                 <li>
                   {safeT(
                     "today.multideviceHelp.step3",
-                    "Notificaciones por dispositivo: activa avisos solo en los que quieras (ej: móvil ON, PC OFF).",
+                    "Notificaciones por dispositivo: activa avisos solo en los que quieras (ej: móvil).",
                   )}
                 </li>
               </ul>
@@ -1794,7 +2141,7 @@ const anyModalOpen =
               <div style={{ whiteSpace: "pre-line" }}>
                 {safeT(
                   "today.multideviceHelp.examplesBody",
-                  "• Móvil ON → recordatorios cuando estás fuera\n• PC OFF → cero interrupciones trabajando\n• iPad ON → revisión tranquila al final del día",
+                  "Idea: comprar regalo\\nTarea: cita del médico\\nTarea: traer cargador",
                 )}
               </div>
             </div>
@@ -1830,9 +2177,9 @@ const anyModalOpen =
         </div>
       )}
 
-      {/* ✅ AYUDA: “Compartir → Remi” */}
+      {/* AYUDA: "Compartir -> Remi" */}
       {showShareToRemiHelp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" style={MODAL_OVERLAY_STYLE}>
           <div className="bg-white rounded-2xl p-5 w-[90%] max-w-sm shadow-xl">
             <h2 className="text-base font-semibold mb-1">
               {safeT("today.shareToRemiModal.title", "Compartir a Remi")}
@@ -1843,9 +2190,9 @@ const anyModalOpen =
         </div>
       )}
 
-      {/* ✅ AYUDA: “Compartir recordatorios” */}
+      {/* HELP: share reminders */}
       {showShareRemindersHelp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" style={MODAL_OVERLAY_STYLE}>
           <div className="bg-white rounded-2xl p-5 w-[90%] max-w-sm shadow-xl">
             <h2 className="text-base font-semibold mb-1">
               {safeT(
@@ -1868,7 +2215,7 @@ const anyModalOpen =
               <ul className="list-disc pl-4 space-y-1">
                 <li>{safeT("today.shareRemindersModal.step1", "Abre una tarea/idea y toca el icono de Compartir.")}</li>
                 <li>{safeT("today.shareRemindersModal.step2", "Se genera un enlace. Envíalo por WhatsApp, Mail, etc.")}</li>
-                <li>{safeT("today.shareRemindersModal.step3", "La otra persona abre el enlace y toca “Añadir a Remi”.")}</li>
+                <li>{safeT("today.shareRemindersModal.step3", "La otra persona abre el enlace y toca \"Añadir a Remi\".")}</li>
               </ul>
             </div>
 
@@ -1879,7 +2226,7 @@ const anyModalOpen =
               <div style={{ whiteSpace: "pre-line" }}>
                 {safeT(
                   "today.shareRemindersModal.examplesBody",
-                  "• “Compra pan mañana” → se lo envío a mi pareja\n• “Cita del médico” → se lo envío a mi madre\n• “Traer cargador” → se lo envío al compañero",
+                  "Ej: \"Traer cargador\" y se lo envías a un familiar o compañero para que lo añada en un toque.",
                 )}
               </div>
             </div>
@@ -1887,7 +2234,7 @@ const anyModalOpen =
             <p className="text-xs text-slate-600 mb-4">
               {safeT(
                 "today.shareRemindersModal.footer",
-                "Esto es para compartir con otras personas. “Enviar a Remi” es para guardar cosas desde otras apps en tu propio Remi.",
+                "Esto es para compartir con otras personas. \"Enviar a Remi\" es para guardar cosas desde otras apps en tu propio Remi.",
               )}
             </p>
 
@@ -1917,7 +2264,7 @@ const anyModalOpen =
 
       {/* POPUP push */}
       {showPushModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" style={MODAL_OVERLAY_STYLE}>
           <div className="bg-white rounded-2xl p-5 w-[90%] max-w-sm shadow-xl">
             <h2 className="text-base font-semibold mb-1">
               {safeT("today.pushTitle", "Activa notificaciones")}
@@ -1934,7 +2281,7 @@ const anyModalOpen =
                 className="w-full rounded-full bg-[#7d59c9] text-white text-xs font-semibold py-2.5 shadow-md disabled:opacity-70"
               >
                 {registeringPush
-                  ? safeT("today.pushEnabling", "Activando…")
+                  ? safeT("today.pushEnabling", "Activando...")
                   : safeT("today.pushEnable", "Activar")}
               </button>
 
@@ -1949,129 +2296,163 @@ const anyModalOpen =
           </div>
         </div>
       )}
+
+      <FeedbackSurveyModal
+        open={showFeedbackSurvey}
+        loading={savingFeedback}
+        title={safeT("feedback.title", "Tu opinión sobre Remi")}
+        questionScore={safeT("feedback.q1", "¿Te está ayudando Remi?")}
+        questionLike={safeT("feedback.q3", "¿Qué es lo que más te gusta?")}
+        placeholderLike={safeT("feedback.placeholderLike", "Escribe lo que más te gusta...")}
+        questionImprove={safeT("feedback.q2", "¿Qué mejorarías?")}
+        placeholderImprove={safeT("feedback.placeholder", "Escribe una sugerencia breve...")}
+        submitLabel={safeT("feedback.send", "Enviar opinión")}
+        laterLabel={safeT("feedback.later", "Ahora no")}
+        scoreHintLow={safeT("feedback.low", "Nada")}
+        scoreHintHigh={safeT("feedback.high", "Mucho")}
+        onClose={() => {
+          markFeedbackDismissed();
+          setShowFeedbackSurvey(false);
+        }}
+        onSubmit={handleSubmitFeedbackSurvey}
+      />
+
+      <MindRelaxSurface
+        open={relaxOpen}
+        onClose={() => setRelaxOpen(false)}
+        onCapture={() => {
+          setRelaxOpen(false);
+          openCapture("");
+        }}
+        labels={{
+          sound: safeT("status.relaxSound", "Sonido"),
+          soundOff: safeT("status.relaxSoundOff", "Sonido apagado"),
+          pops: safeT("status.relaxPops", "Pops"),
+          modeTitle: safeT("status.relaxModeTitle", "Bubble Pop Zen"),
+          modeCalm: safeT("status.relaxModeCalm", "Calma"),
+          modeEnergy: safeT("status.relaxModeEnergy", "Energía"),
+          resetDoneTitle: safeT("status.relaxDoneTitle", "Reset hecho"),
+          resetDoneSubtitle: safeT(
+            "status.relaxDoneSubtitle",
+            "Descarga tensión con toques simples. Sin pensar.",
+          ),
+          capture: safeT("status.relaxCapture", "Capturar"),
+          viewCanvas: safeT("status.relaxViewCanvas", "Ver lienzo"),
+          tapToReturn: safeT("status.relaxTapToReturn", "Toca para volver"),
+          close: safeT("common.close", "Cerrar"),
+        }}
+      />
     </div>
   );
 }
 
-function TipCard({
-  item,
-  index,
-  active,
-  style,
-  dataTipIndex,
+function EmptyStateCard({ title, subtitle }: { title: string; subtitle: string }) {
+  const subtitleParts = subtitle.split("+");
+  const hasInlinePlus = subtitleParts.length > 1;
+
+  return (
+    <div className="mt-4 relative h-[312px] overflow-hidden">
+      <div className="absolute left-1/2 -translate-x-1/2 top-[18px] w-[58%] min-w-[210px] max-w-[260px] h-[250px] rounded-[26px] border border-slate-300 bg-slate-100 shadow-[0_10px_24px_rgba(15,23,42,0.08)] px-3.5 py-3 flex flex-col">
+        <div className="w-10 h-10 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center">
+          <CalendarClock size={16} />
+        </div>
+        <div className="mt-4">
+          <p className="text-[20px] font-extrabold leading-snug text-slate-900">{title}</p>
+          <p className="mt-2 text-[13px] leading-snug text-slate-600">
+            {hasInlinePlus
+              ? subtitleParts.map((part, idx) => (
+                  <span key={`subtitle-part-${idx}`}>
+                    {idx > 0 && (
+                      <span className="mx-1.5 inline-flex h-5 w-5 translate-y-[3px] items-center justify-center rounded-full border border-white bg-violet-600 text-white shadow-[0_8px_20px_rgba(124,58,237,0.22)]">
+                        <Plus size={12} strokeWidth={2.2} />
+                      </span>
+                    )}
+                    {part}
+                  </span>
+                ))
+              : subtitle}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TaskRowCard({
+  task,
+  dueLabel,
+  showSentIndicator,
+  sentIndicatorLabel,
+  shareLabel,
+  doneLabel,
+  onShare,
+  onDone,
 }: {
-  item: TipCardItem;
-  index: number;
-  active: boolean;
-  style?: CSSProperties;
-  dataTipIndex: number;
+  task: BrainItem;
+  dueLabel: string;
+  showSentIndicator: boolean;
+  sentIndicatorLabel: string;
+  shareLabel: string;
+  doneLabel: string;
+  onShare: (task: BrainItem) => void;
+  onDone: (task: BrainItem) => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={item.onClick}
-      data-tip-index={dataTipIndex}
-      style={{
-        scrollSnapAlign: "center",
-        scrollSnapStop: "always",
-        flex: `0 0 ${DECK_CARD_W}px`,
-        width: DECK_CARD_W,
-        height: DECK_CARD_H,
-        borderRadius: 36,
-        background: "#ffffff",
-        border: "1px solid rgba(226,232,240,0.95)",
-        boxShadow: "0 10px 10px rgba(15,23,42,0.10)",
-        padding: 26,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 14,
-        textAlign: "center",
-        cursor: item.onClick ? "pointer" : "default",
-        position: "relative",
-        zIndex: active ? 50 : 10 + index,
-        transform: active ? "translateY(-2px)" : "translateY(0)",
-        transition: "transform 0.18s ease",
-        ...style,
-      }}
-    >
-      <div
-        style={{
-          width: 74,
-          height: 74,
-          borderRadius: 22,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "rgba(125,89,201,0.10)",
-          border: "1px solid rgba(125,89,201,0.18)",
-          boxShadow: "0 14px 30px rgba(15,23,42,0.08)",
-        }}
-      >
-        <div style={{ transform: "scale(1.7)", color: "#7d59c9" }}>
-          {item.icon}
-        </div>
-      </div>
-
-      <div style={{ padding: "6px 6px 0" }}>
-        <div
-          style={{
-            fontSize: 12.5,
-            lineHeight: 1.35,
-            color: "rgba(15,23,42,0.78)",
-            fontWeight: 700,
-          }}
-        >
-          {item.title}
-        </div>
-
-        <div
-          style={{
-            marginTop: 10,
-            fontSize: 11.5,
-            lineHeight: 1.35,
-            color: "rgba(15,23,42,0.55)",
-            fontWeight: 500,
-            whiteSpace: "pre-line",
-          }}
-        >
-          {item.body}
-        </div>
-      </div>
-
-      {item.cta ? (
-        <div
-          style={{
-            width: "100%",
-            display: "flex",
-            justifyContent: "center",
-            paddingBottom: 2,
-          }}
-        >
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 10,
-              padding: "14px 26px",
-              borderRadius: 999,
-              background: "#ffffff",
-              border: "1px solid rgba(125,89,201,0.25)",
-              color: "#7d59c9",
-              fontSize: 16,
-              fontWeight: 700,
-              boxShadow: "0 14px 26px rgba(125,89,201,0.10)",
-            }}
+    <div className={TASK_CARD_CLASS}>
+      <div className={`${ITEM_ICON_CLASS} relative`}>
+        <CalendarClock size={18} />
+        {showSentIndicator && (
+          <span
+            className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm"
+            title={sentIndicatorLabel}
+            aria-label={sentIndicatorLabel}
           >
-            <span>{item.cta}</span>
-            <ArrowRight size={16} />
-          </div>
+            <Share2 size={10} className="text-slate-500" />
+          </span>
+        )}
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <p
+          className="text-[13px] font-normal text-slate-900 leading-snug"
+          style={{
+            wordBreak: "break-word",
+            overflowWrap: "anywhere",
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          {task.title}
+        </p>
+
+        <div className="mt-1 flex items-center gap-1 text-[12px] text-slate-500">
+          <CalendarDays size={14} className="text-slate-400" />
+          <span className="truncate">{dueLabel}</span>
         </div>
-      ) : (
-        <div style={{ height: 36 }} />
-      )}
-    </button>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onPointerDown={() => prefetchShareInvite(task.id)}
+          onClick={() => onShare(task)}
+          title={shareLabel}
+          aria-label={shareLabel}
+          className={ACTION_BTN_CLASS}
+        >
+          <Share2 size={16} color="#94A3B8" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onDone(task)}
+          title={doneLabel}
+          aria-label={doneLabel}
+          className={DONE_BTN_CLASS}
+        >
+          <Check size={16} color="#10B981" />
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -2080,10 +2461,16 @@ const menuButtonStyle: CSSProperties = {
   textAlign: "left",
   border: "none",
   background: "transparent",
-  padding: "6px 8px",
+  padding: "7px 9px",
   fontSize: 13,
   cursor: "pointer",
-  borderRadius: 10,
+  borderRadius: 12,
   display: "flex",
   alignItems: "center",
+  color: "#0f172a",
 };
+
+
+
+
+

@@ -40,14 +40,26 @@ export async function registerPushSubscription(userId: string) {
     return;
   }
 
+  if (!VAPID_PUBLIC_KEY || VAPID_PUBLIC_KEY.trim().length < 32) {
+    throw new Error("Missing or invalid VITE_VAPID_PUBLIC_KEY");
+  }
+
   // Esperamos a que el SW esté listo
   const registration = await navigator.serviceWorker.ready;
 
   try {
-    // Si ya hay suscripción, la reutilizamos
+    const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY.trim());
+
+    // Si ya hay suscripción, la reutilizamos.
+    // Si está rota o asociada a otra configuración, la rehacemos.
     let sub = await registration.pushManager.getSubscription();
     if (!sub) {
-      const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+      sub = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey,
+      });
+    } else if (!sub.endpoint) {
+      await sub.unsubscribe().catch(() => undefined);
       sub = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey,
@@ -81,7 +93,35 @@ export async function registerPushSubscription(userId: string) {
       throw error;
     }
   } catch (err) {
-    console.error("Error registering push subscription", err);
-    throw err;
+    // Recuperación ante suscripción inválida/obsoleta: limpiar y reintentar 1 vez.
+    try {
+      const stale = await registration.pushManager.getSubscription();
+      if (stale) {
+        await stale.unsubscribe().catch(() => undefined);
+      }
+      const retryKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY.trim());
+      const retried = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: retryKey,
+      });
+
+      const raw = retried.toJSON();
+      const { error } = await supabase.from("remi_push_subscriptions").upsert(
+        {
+          user_id: userId,
+          endpoint: retried.endpoint,
+          p256dh: raw.keys?.p256dh ?? null,
+          auth: raw.keys?.auth ?? null,
+          user_agent: navigator.userAgent,
+          status: "ACTIVE",
+        },
+        { onConflict: "user_id,endpoint" },
+      );
+      if (error) throw error;
+      return;
+    } catch (retryErr) {
+      console.error("Error registering push subscription", retryErr);
+      throw retryErr;
+    }
   }
 }

@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { useI18n } from "@/contexts/I18nContext";
+import { useAuth } from "@/contexts/AuthContext";
+
+const INSTALL_PROMPT_FIRST_OPENED_KEY = "remi.installPrompt.firstOpened.v1";
 
 declare global {
   interface BeforeInstallPromptEvent extends Event {
@@ -30,21 +33,52 @@ function detectIsStandalone(): boolean {
 
 export default function InstallPrompt() {
   const { t } = useI18n();
+  const { user } = useAuth();
 
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [showPwaPrompt, setShowPwaPrompt] = useState(false);
   const [showIosInstructions, setShowIosInstructions] = useState(false);
   const [isIos, setIsIos] = useState(false);
+  const [autoOpenOnPrompt, setAutoOpenOnPrompt] = useState(false);
 
   useEffect(() => {
     const ios = detectIsIos();
     setIsIos(ios);
-
-    if (ios && !detectIsStandalone()) {
-      setShowIosInstructions(true);
-    }
   }, []);
+
+  // Mostrar automáticamente solo una vez por usuario (primera sesión).
+  useEffect(() => {
+    if (!user?.id) return;
+    if (detectIsStandalone()) return;
+
+    const key = `${INSTALL_PROMPT_FIRST_OPENED_KEY}:${user.id}`;
+    let alreadyOpened = false;
+    try {
+      alreadyOpened = window.localStorage.getItem(key) === "1";
+    } catch {
+      alreadyOpened = false;
+    }
+    if (alreadyOpened) return;
+
+    try {
+      window.localStorage.setItem(key, "1");
+    } catch {
+      // ignore storage errors
+    }
+
+    if (isIos) {
+      setShowIosInstructions(true);
+      return;
+    }
+
+    // En Android/desktop, abrimos cuando exista beforeinstallprompt.
+    if (deferredPrompt) {
+      setShowPwaPrompt(true);
+    } else {
+      setAutoOpenOnPrompt(true);
+    }
+  }, [user?.id, isIos, deferredPrompt]);
 
   useEffect(() => {
     if (isIos) return;
@@ -52,25 +86,28 @@ export default function InstallPrompt() {
     const handler = (e: BeforeInstallPromptEvent) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      setShowPwaPrompt(true);
+      if (autoOpenOnPrompt) {
+        setShowPwaPrompt(true);
+        setAutoOpenOnPrompt(false);
+      }
     };
 
     window.addEventListener("beforeinstallprompt", handler);
     return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, [isIos]);
+  }, [isIos, autoOpenOnPrompt]);
 
   useEffect(() => {
     const openHandler = () => {
       if (isIos) {
         if (!detectIsStandalone()) setShowIosInstructions(true);
-      } else if (deferredPrompt) {
+      } else {
         setShowPwaPrompt(true);
       }
     };
 
     window.addEventListener("remi-open-install", openHandler);
     return () => window.removeEventListener("remi-open-install", openHandler);
-  }, [isIos, deferredPrompt]);
+  }, [isIos]);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
@@ -163,7 +200,7 @@ export default function InstallPrompt() {
         </button>
 
         {/* ✅ Instalar: un poco más abajo para no pegarse a la X */}
-        {showPwaPrompt && !showIosInstructions && (
+        {showPwaPrompt && !showIosInstructions && !!deferredPrompt && (
           <button
             onClick={handleInstallClick}
             className="mt-5 px-3 py-1.5 rounded-full bg-[#7d59c9] text-white text-xs font-semibold"

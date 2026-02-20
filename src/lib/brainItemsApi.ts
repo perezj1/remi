@@ -9,6 +9,7 @@ import {
   loadCachedInbox,
   saveCachedInbox,
 } from "@/lib/localBrainCache";
+import { registerFeedbackUse } from "@/lib/feedbackSurvey";
 
 export type BrainItemType = "task" | "idea";
 export type BrainItemStatus = "ACTIVE" | "DONE" | "ARCHIVED";
@@ -112,6 +113,10 @@ function computeHabitNotificationTime(
 
   base.setMinutes(base.getMinutes() - offsetMinutes);
   return base.toISOString();
+}
+
+function normalizeItemTitleKey(title: string | null | undefined): string {
+  return (title ?? "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
 export async function fetchActiveTasks(userId: string): Promise<BrainItem[]> {
@@ -241,6 +246,7 @@ export async function createTask(
 
     const created = data as BrainItem;
     cacheUpsertTask(userId, created);
+    registerFeedbackUse();
     return created;
   } catch (e) {
     // ✅ OFFLINE: optimistic create + cola
@@ -272,6 +278,7 @@ export async function createTask(
     };
 
     cacheUpsertTask(userId, localItem);
+    registerFeedbackUse();
 
     queueAdd({
       id: makeOpId(),
@@ -318,6 +325,7 @@ export async function createIdea(userId: string, title: string): Promise<BrainIt
 
     const created = data as BrainItem;
     cacheUpsertIdea(userId, created);
+    registerFeedbackUse();
     return created;
   } catch (e) {
     const nowIso = new Date().toISOString();
@@ -348,6 +356,7 @@ export async function createIdea(userId: string, title: string): Promise<BrainIt
     };
 
     cacheUpsertIdea(userId, localItem);
+    registerFeedbackUse();
 
     queueAdd({
       id: makeOpId(),
@@ -485,6 +494,40 @@ export async function convertIdeaToTask(
   return converted;
 }
 
+/**
+ * ConvertTaskToIdea se mantiene online por ahora.
+ */
+export async function convertTaskToIdea(
+  id: string,
+  title: string
+): Promise<BrainItem> {
+  const { data, error } = await supabase
+    .from("brain_items")
+    .update({
+      type: "idea",
+      title,
+      due_date: null,
+      reminder_mode: "NONE",
+      repeat_type: "none",
+      next_reminder_at: null,
+      is_habit: false,
+      habit_offset_minutes: 0,
+      next_notification_at: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("type", "task")
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  const converted = data as BrainItem;
+  cacheRemoveTask(converted.user_id, converted.id);
+  cacheUpsertIdea(converted.user_id, converted);
+  return converted;
+}
+
 export async function setTaskStatus(
   id: string,
   status: BrainItemStatus
@@ -562,6 +605,32 @@ export type RemiStatusSummary = {
   daysSinceLastActivity: number | null;
 };
 
+export type RemiStatusInsights = {
+  weekDateLabels: string[];
+  capturedSeries: number[];
+  resolvedSeries: number[];
+  capturedHeatmap: number[][];
+  resolvedHeatmap: number[][];
+  capturedLast30Count: number;
+  ideasLast30Count: number;
+  activeDueTasksCount: number;
+  overdueUnfinishedCount: number;
+  completedWithDueCount: number;
+};
+
+export async function fetchRemiUsersCount(): Promise<number | null> {
+  const { count, error } = await supabase
+    .from("remi_user_settings")
+    .select("user_id", { count: "exact", head: true });
+
+  if (error) {
+    console.warn("Could not fetch Remi users count", error);
+    return null;
+  }
+
+  return typeof count === "number" ? count : null;
+}
+
 export async function fetchRemiStatusSummary(userId: string): Promise<RemiStatusSummary> {
   const now = new Date();
 
@@ -605,28 +674,57 @@ export async function fetchRemiStatusSummary(userId: string): Promise<RemiStatus
   const todayTasks = (todayTasksRaw ?? []) as Pick<BrainItem, "id" | "status">[];
 
   const todayTotal = todayTasks.length;
-  const todayDone = todayTasks.filter((t) => t.status === "DONE").length;
-
-  const { count: totalTasksStored, error: totalTasksError } = await supabase
+  const { data: completedTodayRaw, error: completedTodayError } = await supabase
     .from("brain_items")
-    .select("*", { count: "exact", head: true })
+    .select("id")
     .eq("user_id", userId)
     .eq("type", "task")
-    .neq("status", "ARCHIVED");
+    .eq("status", "DONE")
+    .gte("updated_at", todayStart.toISOString())
+    .lte("updated_at", todayEnd.toISOString());
 
-  if (totalTasksError) throw totalTasksError;
+  if (completedTodayError) throw completedTodayError;
 
-  const { count: totalIdeasStored, error: totalIdeasError } = await supabase
+  const todayDone = (completedTodayRaw ?? []).length;
+
+  const { data: activeTasksRaw, error: activeTasksError } = await supabase
     .from("brain_items")
-    .select("*", { count: "exact", head: true })
+    .select("title")
+    .eq("user_id", userId)
+    .eq("status", "ACTIVE")
+    .eq("type", "task")
+    .or(`due_date.is.null,due_date.gte.${todayStart.toISOString()}`);
+
+  if (activeTasksError) throw activeTasksError;
+
+  const { data: activeIdeasRaw, error: activeIdeasError } = await supabase
+    .from("brain_items")
+    .select("title")
     .eq("user_id", userId)
     .eq("type", "idea")
     .neq("status", "ARCHIVED");
 
-  if (totalIdeasError) throw totalIdeasError;
+  if (activeIdeasError) throw activeIdeasError;
 
-  const totalTasks = totalTasksStored ?? 0;
-  const totalIdeas = totalIdeasStored ?? 0;
+  const taskKeys = new Set<string>();
+  const ideaKeys = new Set<string>();
+  const activeTasks = (activeTasksRaw ?? []) as Array<{ title: string | null }>;
+  const activeIdeas = (activeIdeasRaw ?? []) as Array<{ title: string | null }>;
+
+  for (const item of activeTasks) {
+    const key = normalizeItemTitleKey(item.title);
+    if (!key) continue;
+    taskKeys.add(key);
+  }
+
+  for (const item of activeIdeas) {
+    const key = normalizeItemTitleKey(item.title);
+    if (!key) continue;
+    ideaKeys.add(key);
+  }
+
+  const totalTasks = taskKeys.size;
+  const totalIdeas = ideaKeys.size;
   const totalItemsStored = totalTasks + totalIdeas;
 
   const startDateKey = formatLocalDateKey(streakWindowStart);
@@ -703,5 +801,205 @@ export async function fetchRemiStatusSummary(userId: string): Promise<RemiStatus
     totalItemsStored,
     streakDays,
     daysSinceLastActivity,
+  };
+}
+
+export async function fetchRemiStatusInsights(userId: string): Promise<RemiStatusInsights> {
+  const now = new Date();
+
+  const startOfDay = (d: Date) => {
+    const copy = new Date(d);
+    copy.setHours(0, 0, 0, 0);
+    return copy;
+  };
+
+  const endOfDay = (d: Date) => {
+    const copy = new Date(d);
+    copy.setHours(23, 59, 59, 999);
+    return copy;
+  };
+
+  const formatLocalDateKey = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const todayStart = startOfDay(now);
+  const todayEnd = endOfDay(now);
+  const lookbackStart = new Date(todayStart);
+  lookbackStart.setDate(lookbackStart.getDate() - 29);
+  const weekStart = new Date(todayStart);
+  weekStart.setDate(weekStart.getDate() - 6);
+
+  const weekDays: Date[] = Array.from({ length: 7 }).map((_, index) => {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + index);
+    return d;
+  });
+
+  const dayLabels = ["L", "M", "X", "J", "V", "S", "D"];
+  const weekDateLabels = weekDays.map((d) => dayLabels[(d.getDay() + 6) % 7] ?? "");
+  const weekDateKeys = weekDays.map(formatLocalDateKey);
+  const keyToIndex = new Map<string, number>();
+  weekDateKeys.forEach((key, idx) => keyToIndex.set(key, idx));
+  const last30Days: Date[] = Array.from({ length: 30 }).map((_, index) => {
+    const d = new Date(lookbackStart);
+    d.setDate(lookbackStart.getDate() + index);
+    return d;
+  });
+  const last30DateKeys = last30Days.map(formatLocalDateKey);
+  const keyToLast30Index = new Map<string, number>();
+  last30DateKeys.forEach((key, idx) => keyToLast30Index.set(key, idx));
+
+  const { data: capturedRows, error: capturedError } = await supabase
+    .from("brain_items")
+    .select("created_at")
+    .eq("user_id", userId)
+    .neq("status", "ARCHIVED")
+    .gte("created_at", lookbackStart.toISOString())
+    .lte("created_at", todayEnd.toISOString());
+
+  if (capturedError) throw capturedError;
+
+  const { data: resolvedRows, error: resolvedError } = await supabase
+    .from("brain_items")
+    .select("updated_at")
+    .eq("user_id", userId)
+    .eq("type", "task")
+    .eq("status", "DONE")
+    .gte("updated_at", lookbackStart.toISOString())
+    .lte("updated_at", todayEnd.toISOString());
+
+  if (resolvedError) throw resolvedError;
+
+  const { data: capturedTaskRows, error: capturedTaskError } = await supabase
+    .from("brain_items")
+    .select("created_at")
+    .eq("user_id", userId)
+    .eq("type", "task")
+    .neq("status", "ARCHIVED")
+    .gte("created_at", lookbackStart.toISOString())
+    .lte("created_at", todayEnd.toISOString());
+
+  if (capturedTaskError) throw capturedTaskError;
+
+  const { data: capturedIdeaRows, error: capturedIdeaError } = await supabase
+    .from("brain_items")
+    .select("created_at")
+    .eq("user_id", userId)
+    .eq("type", "idea")
+    .neq("status", "ARCHIVED")
+    .gte("created_at", lookbackStart.toISOString())
+    .lte("created_at", todayEnd.toISOString());
+
+  if (capturedIdeaError) throw capturedIdeaError;
+
+  const capturedSeries = new Array<number>(7).fill(0);
+  const resolvedSeries = new Array<number>(7).fill(0);
+  const capturedHeatmap = Array.from({ length: 30 }).map(() => new Array<number>(24).fill(0));
+  const resolvedHeatmap = Array.from({ length: 30 }).map(() => new Array<number>(24).fill(0));
+
+  for (const row of (capturedRows ?? []) as Array<{ created_at: string }>) {
+    const idx = keyToIndex.get(formatLocalDateKey(new Date(row.created_at)));
+    if (idx != null) capturedSeries[idx] += 1;
+  }
+
+  for (const row of (capturedTaskRows ?? []) as Array<{ created_at: string }>) {
+    const createdAt = new Date(row.created_at);
+    const rowIdx = keyToLast30Index.get(formatLocalDateKey(createdAt));
+    const hour = createdAt.getHours();
+    if (rowIdx != null && hour >= 0 && hour <= 23) {
+      capturedHeatmap[rowIdx][hour] += 1;
+    }
+  }
+
+  for (const row of (resolvedRows ?? []) as Array<{ updated_at: string }>) {
+    const updatedAt = new Date(row.updated_at);
+    const idx = keyToIndex.get(formatLocalDateKey(updatedAt));
+    if (idx != null) resolvedSeries[idx] += 1;
+    const rowIdx = keyToLast30Index.get(formatLocalDateKey(updatedAt));
+    const hour = updatedAt.getHours();
+    if (rowIdx != null && hour >= 0 && hour <= 23) {
+      resolvedHeatmap[rowIdx][hour] += 1;
+    }
+  }
+
+  const { data: activeDueRows, error: activeDueError } = await supabase
+    .from("brain_items")
+    .select("due_date")
+    .eq("user_id", userId)
+    .eq("type", "task")
+    .eq("status", "ACTIVE")
+    .not("due_date", "is", null);
+
+  if (activeDueError) throw activeDueError;
+
+  let activeDueTasksCount = 0;
+  let overdueUnfinishedCount = 0;
+
+  for (const row of (activeDueRows ?? []) as Array<{ due_date: string | null }>) {
+    if (!row.due_date) continue;
+    const due = new Date(row.due_date);
+    if (Number.isNaN(due.getTime())) continue;
+    activeDueTasksCount += 1;
+    if (due.getTime() < now.getTime()) {
+      overdueUnfinishedCount += 1;
+    }
+  }
+
+  const { data: overdueRows, error: overdueRowsError } = await supabase
+    .from("brain_items")
+    .select("due_date")
+    .eq("user_id", userId)
+    .eq("type", "task")
+    .eq("status", "ACTIVE")
+    .not("due_date", "is", null)
+    .gte("due_date", lookbackStart.toISOString())
+    .lte("due_date", todayEnd.toISOString());
+
+  if (overdueRowsError) throw overdueRowsError;
+
+  let overdueInLast30Count = 0;
+  for (const row of (overdueRows ?? []) as Array<{ due_date: string | null }>) {
+    if (!row.due_date) continue;
+    const due = new Date(row.due_date);
+    if (Number.isNaN(due.getTime())) continue;
+    if (due.getTime() < now.getTime()) overdueInLast30Count += 1;
+  }
+
+  const { data: doneRows, error: doneError } = await supabase
+    .from("brain_items")
+    .select("due_date, updated_at")
+    .eq("user_id", userId)
+    .eq("type", "task")
+    .eq("status", "DONE")
+    .not("due_date", "is", null)
+    .gte("updated_at", lookbackStart.toISOString())
+    .lte("updated_at", todayEnd.toISOString());
+
+  if (doneError) throw doneError;
+
+  let doneWithDueCount = 0;
+
+  for (const row of (doneRows ?? []) as Array<{ due_date: string | null; updated_at: string }>) {
+    if (!row.due_date) continue;
+    const doneAt = new Date(row.updated_at);
+    if (Number.isNaN(doneAt.getTime())) continue;
+    doneWithDueCount += 1;
+  }
+
+  return {
+    weekDateLabels,
+    capturedSeries,
+    resolvedSeries,
+    capturedHeatmap,
+    resolvedHeatmap,
+    capturedLast30Count: (capturedRows ?? []).length,
+    ideasLast30Count: (capturedIdeaRows ?? []).length,
+    activeDueTasksCount,
+    overdueUnfinishedCount: overdueInLast30Count,
+    completedWithDueCount: doneWithDueCount,
   };
 }

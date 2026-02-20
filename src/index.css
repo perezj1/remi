@@ -126,7 +126,7 @@
   body {
     margin: 0;
     padding: 0;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    font-family: "Poppins", system-ui, -apple-system, BlinkMacSystemFont,
       "Segoe UI", sans-serif;
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
@@ -140,6 +140,20 @@
   #root {
     min-height: 100dvh;
     min-height: -webkit-fill-available; /* fallback iOS */
+  }
+
+  /* Oculta barras de scroll globalmente sin desactivar el scroll */
+  html,
+  body,
+  #root {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge legacy */
+  }
+
+  *::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none; /* Chrome/Safari/Edge */
   }
 
   button,
@@ -611,7 +625,7 @@
 @layer components {
   .landing-shell {
     @apply min-h-screen flex justify-center;
-    background-color: #f5f4ff;
+    background-color: #f1eff7;
     padding: 16px;
 
     /* ✅ FIX iOS adicional (no rompe Tailwind): */
@@ -676,5 +690,13 @@
     @apply rounded-3xl bg-white;
     border: 1px solid hsl(var(--border));
     box-shadow: var(--shadow-soft);
+  }
+
+  .legal-doc-content h2 {
+    @apply text-sm font-bold text-slate-900 mt-4;
+  }
+
+  .legal-doc-content p {
+    @apply mt-1 text-sm text-slate-700;
   }
 }

@@ -1,5 +1,6 @@
-// src/pages/Ideas.tsx
-import { useEffect, useMemo, useState, useCallback } from "react";
+﻿// src/pages/Ideas.tsx
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   BrainItem,
@@ -8,7 +9,7 @@ import {
   deleteBrainItem,
 } from "@/lib/brainItemsApi";
 import {
-  Lightbulb,
+  StickyNote,
   Check,
   Trash2,
   Pencil,
@@ -55,6 +56,7 @@ function formatDue(due: string, fallbackLocale?: string) {
 export default function IdeasPage() {
   const { user } = useAuth();
   const { t } = useI18n();
+  const navigate = useNavigate();
 
   const [items, setItems] = useState<BrainItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,12 +68,6 @@ export default function IdeasPage() {
     {},
   );
 
-  // ✅ indicador: solo lo que tú has compartido (no lo recibido)
-  const shouldShowSentIndicator = useCallback((item: BrainItem) => {
-    const sharedCount = (item as any)?.shared_count ?? 0;
-    const receivedFromShare = !!(item as any)?.received_from_share;
-    return !receivedFromShare && Number(sharedCount) > 0;
-  }, []);
 
   // siempre arriba al entrar / recargar
   useEffect(() => {
@@ -80,7 +76,7 @@ export default function IdeasPage() {
     }
   }, []);
 
-  // cargar todos los ítems de bandeja y luego filtrar ideas
+  // cargar todos los Ã­tems de bandeja y luego filtrar ideas
   useEffect(() => {
     if (!user) return;
     setLoading(true);
@@ -98,12 +94,12 @@ export default function IdeasPage() {
     })();
   }, [user, t]);
 
-  // ✅ Memo para que no cambie por referencia en cada render
+  // âœ… Memo para que no cambie por referencia en cada render
   const filtered = useMemo(() => {
     return items.filter((item) => item.type === "idea");
   }, [items]);
 
-  // ✅ Agrupar por fecha igual que Tasks (si tienen due_date)
+  // âœ… Agrupar por fecha igual que Tasks (si tienen due_date)
   const dateGroups: DateGroup[] = useMemo(() => {
     if (filtered.length === 0) return [];
 
@@ -219,8 +215,8 @@ export default function IdeasPage() {
       if (!item?.id) return;
       const res = await createShareInviteCached(item.id);
 
-      // IMPORTANTE: si el shareTextOrCopy internamente "normaliza" saltos de línea,
-      // aquí ya no lo tocamos. La UI de Ideas (debajo) sí mostrará saltos de línea.
+      // IMPORTANTE: si el shareTextOrCopy internamente "normaliza" saltos de lÃ­nea,
+      // aquÃ­ ya no lo tocamos. La UI de Ideas (debajo) sÃ­ mostrarÃ¡ saltos de lÃ­nea.
       await shareTextOrCopy(res.shareMessage);
 
       alert(t("shareInvite.sharedOk"));
@@ -230,44 +226,85 @@ export default function IdeasPage() {
     }
   };
 
-  const filterLabel = t("inbox.ideasTab");
-
   return (
-    <div className="remi-page min-h-dvh bg-[#F6F7FB] text-slate-900 flex flex-col">
-      <header
-        className="bg-[#7d59c9] text-white px-4 pb-8 rounded-b-3xl shadow-md"
-        style={{ paddingTop: "calc(2rem + env(safe-area-inset-top))" }}
+    <div
+      className="remi-page text-slate-900"
+      style={{
+        minHeight: "100dvh",
+        background: "linear-gradient(180deg, #f1eff7 0%, #fafafe 42%, #fafafe 100%)",
+        paddingBottom: "calc(96px + env(safe-area-inset-bottom))",
+      }}
+    >
+      <div
+        className="relative overflow-hidden"
+        style={{
+          paddingTop: "calc(14px + env(safe-area-inset-top))",
+          paddingBottom: 10,
+          paddingLeft: "calc(16px + env(safe-area-inset-left))",
+          paddingRight: "calc(16px + env(safe-area-inset-right))",
+          minHeight: 100,
+          background: "#ffffff",
+          borderBottomLeftRadius: 22,
+          borderBottomRightRadius: 22,
+          borderBottom: "1px solid #e2e8f0",
+          boxShadow: "0 2px 8px rgba(15,23,42,0.04)",
+        }}
       >
-        <h1 className="text-lg font-semibold">{t("inbox.title")}</h1>
-        <p className="text-xs text-white/80">{t("inbox.subtitle")}</p>
-      </header>
+        <div className="mx-auto mt-0.5 w-full" style={{ maxWidth: "min(96vw, 1440px)" }}>
+          <h1 className="leading-tight font-extrabold text-slate-900" style={{ fontSize: "clamp(19px, 1.3vw, 28px)" }}>
+            {t("inbox.title")}
+          </h1>
+          <p className="mt-0.5 font-semibold text-slate-500" style={{ fontSize: "clamp(13px, 0.9vw, 18px)" }}>
+            {t("inbox.subtitle")}
+          </p>
+        </div>
+      </div>
 
       <main
-        className="flex-1 px-4 pt-2 bg-[#F6F7FB] remi-scroll"
-        style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom))" }}
+        className="remi-scroll"
+        style={{
+          padding: "0 16px",
+          marginTop: 14,
+          marginBottom: 10,
+          marginLeft: "auto",
+          marginRight: "auto",
+          maxWidth: "min(96vw, 1440px)",
+        }}
       >
         <div className="mb-2 flex items-center justify-between">
-          <div className="remi-tabs">
-            <div className="remi-tab remi-tab--active cursor-default select-none">
-              {filterLabel}
-            </div>
+          <div className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-white p-1">
+            <button
+              type="button"
+              onClick={() => navigate("/tasks")}
+              className="rounded-full px-4 py-1.5 font-semibold text-slate-500 transition hover:text-slate-700"
+              style={{ fontSize: "clamp(13px, 0.9vw, 18px)" }}
+            >
+              {t("inbox.tasksTab")}
+            </button>
+            <button
+              type="button"
+              className="rounded-full bg-amber-50 px-4 py-1.5 font-semibold text-yellow-600"
+              style={{ fontSize: "clamp(13px, 0.9vw, 18px)" }}
+            >
+              {t("inbox.ideasTab")}
+            </button>
           </div>
-          <span className="text-[11px] text-[#b2b6d1]">
+          <span className="text-slate-500" style={{ fontSize: "clamp(12px, 0.82vw, 16px)" }}>
             {t("inbox.itemsCount", { count: filtered.length })}
           </span>
         </div>
 
         <div className="space-y-3">
           {loading && (
-            <div className="rounded-2xl bg-white/70 border border-slate-100 px-4 py-3 text-[13px] text-slate-500">
+            <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-[13px] text-slate-500">
               {t("inbox.loading")}
             </div>
           )}
 
           {!loading && filtered.length === 0 && (
-            <div className="rounded-2xl bg-white border border-slate-100 shadow-[0_14px_34px_rgba(15,23,42,0.06)] px-4 py-4 flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-[rgba(251,191,36,0.18)] text-[#F59E0B] flex items-center justify-center shrink-0">
-                <Lightbulb size={18} />
+            <div className="rounded-3xl border border-slate-200 bg-slate-50 shadow-[0_10px_22px_rgba(15,23,42,0.06)] px-4 py-4 flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                <StickyNote size={18} />
               </div>
               <div className="min-w-0">
                 <p className="text-[14px] font-semibold text-slate-900">
@@ -301,10 +338,10 @@ export default function IdeasPage() {
                         isCollapsed ? "-rotate-90" : "rotate-0"
                       }`}
                     />
-                    <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+                    <p className="font-semibold uppercase tracking-widest text-slate-600" style={{ fontSize: "clamp(12px, 0.82vw, 16px)" }}>
                       {group.label}
                     </p>
-                    <div className="flex-1 h-px bg-slate-300/70" />
+                    <div className="flex-1 h-px bg-slate-200" />
                   </button>
 
                   {!isCollapsed && (
@@ -315,9 +352,9 @@ export default function IdeasPage() {
                         const dueText = item.due_date
                           ? formatDue(item.due_date as string) ??
                             new Date(item.due_date as string).toLocaleString()
-                          : t("today.dueNoDate");
+                          : "";
 
-                        // ✅ si existe body/content en el BrainItem, lo mostraremos respetando saltos de línea
+                        // âœ… si existe body/content en el BrainItem, lo mostraremos respetando saltos de lÃ­nea
                         const ideaBody =
                           (item as any)?.body ??
                           (item as any)?.content ??
@@ -325,10 +362,16 @@ export default function IdeasPage() {
                           "";
 
                         const titleText = String(item.title ?? "");
+                        const bodyText = String(ideaBody ?? "").trim();
+                        const mainText = bodyText.length > 0 ? bodyText : titleText;
+                        const sharedCount = (item as any)?.shared_count ?? 0;
+                        const receivedFromShare = !!(item as any)?.received_from_share;
+                        const shouldShowSentIndicator =
+                          !receivedFromShare && Number(sharedCount) > 0;
 
-                        // Botón derecho: Completado / Eliminar (si está DONE) — pill + pequeño
+                        // BotÃ³n derecho: Completado / Eliminar (si estÃ¡ DONE) â€” pill + pequeÃ±o
                         const rightBtnBase =
-                          "flex-1 h-9 rounded-full border inline-flex items-center justify-center gap-2 text-[12px] font-semibold";
+                          "flex-1 h-9 rounded-full border inline-flex items-center justify-center gap-2 text-[12px] font-semibold md:h-10 md:text-[13px] lg:h-11 lg:text-[15px]";
                         const rightBtnClass = isDone
                           ? `${rightBtnBase} bg-red-50 border-red-200 hover:bg-red-100 text-red-600`
                           : `${rightBtnBase} bg-emerald-50 border-emerald-200 hover:bg-emerald-100 text-emerald-700`;
@@ -336,15 +379,13 @@ export default function IdeasPage() {
                         return (
                           <div
                             key={item.id}
-                            className="rounded-2xl bg-white border border-slate-100 shadow-[0_14px_34px_rgba(15,23,42,0.06)] px-4 py-3"
+                            className="rounded-3xl bg-white border border-[#e7db58] shadow-[0_6px_14px_rgba(15,23,42,0.05)] px-4 py-3 md:px-5 md:py-4 lg:px-6 lg:py-5"
                           >
                             {/* Header row */}
                             <div className="flex items-start gap-3">
-                              {/* icono + indicador share */}
-                              <div className="w-10 h-10 rounded-full bg-[rgba(251,191,36,0.18)] text-[#F59E0B] flex items-center justify-center shrink-0 relative">
-                                <Lightbulb size={18} />
-
-                                {shouldShowSentIndicator(item) && (
+                              <div className="w-10 h-10 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center shrink-0 relative">
+                                <StickyNote size={18} />
+                                {shouldShowSentIndicator && (
                                   <span
                                     className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm"
                                     aria-label={t("shareInvite.sentIndicator")}
@@ -356,38 +397,35 @@ export default function IdeasPage() {
                               </div>
 
                               <div className="flex-1 min-w-0">
-                                {/* ✅ IMPORTANTE: pre-wrap para respetar saltos de línea */}
+                                {/* âœ… IMPORTANTE: pre-wrap para respetar saltos de lÃ­nea */}
                                 <p
-                                  className="text-[14px] font-semibold text-slate-900 leading-snug"
+                                  className="font-semibold text-slate-900 leading-snug"
                                   style={{
+                                    fontSize: "clamp(16px, 1.1vw, 26px)",
+                                  }}
+                                >
+                                  {t("pill.type.idea")}
+                                </p>
+                                <p
+                                  className="mt-1 text-slate-700"
+                                  style={{
+                                    fontSize: "clamp(13px, 0.86vw, 17px)",
                                     whiteSpace: "pre-wrap",
                                     wordBreak: "break-word",
                                     overflowWrap: "anywhere",
+                                    maxHeight: 96,
+                                    overflow: "hidden",
                                   }}
                                 >
-                                  {titleText}
+                                  {mainText}
                                 </p>
 
-                                {/* ✅ opcional: mostrar body respetando saltos de línea (si existe) */}
-                                {ideaBody && String(ideaBody).trim().length > 0 && (
-                                  <p
-                                    className="mt-1 text-[12px] text-slate-600"
-                                    style={{
-                                      whiteSpace: "pre-wrap",
-                                      wordBreak: "break-word",
-                                      overflowWrap: "anywhere",
-                                      maxHeight: 96, // limita visualmente sin destruir \n
-                                      overflow: "hidden",
-                                    }}
-                                  >
-                                    {String(ideaBody)}
-                                  </p>
+                                {item.due_date && (
+                                  <div className="mt-2 flex items-center gap-1 text-slate-500" style={{ fontSize: "clamp(13px, 0.85vw, 17px)" }}>
+                                    <Calendar size={14} className="text-slate-400" />
+                                    <span className="truncate">{dueText}</span>
+                                  </div>
                                 )}
-
-                                <div className="mt-2 flex items-center gap-1 text-[12px] text-slate-500">
-                                  <Calendar size={14} className="text-slate-400" />
-                                  <span className="truncate">{dueText}</span>
-                                </div>
                               </div>
 
                               {/* Edit icon top-right */}
@@ -405,6 +443,8 @@ export default function IdeasPage() {
                               </button>
                             </div>
 
+                            <div className="mt-2 h-px bg-slate-100" />
+
                             {/* Footer row: two pill buttons */}
                             <div className="mt-3 flex items-center gap-3">
                               {/* Left: Compartir */}
@@ -415,7 +455,7 @@ export default function IdeasPage() {
                                   e.stopPropagation();
                                   void handleShare(item);
                                 }}
-                                className="flex-1 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center gap-2 text-[12px] font-semibold text-slate-700"
+                                className="flex-1 h-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50 inline-flex items-center justify-center gap-2 text-[12px] font-semibold text-slate-700 md:h-10 md:text-[13px] lg:h-11 lg:text-[15px]"
                                 aria-label={t("shareInvite.share")}
                                 title={t("shareInvite.share")}
                               >

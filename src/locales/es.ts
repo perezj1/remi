@@ -1,4 +1,4 @@
-// src/locales/es.ts
+﻿// src/locales/es.ts
 export const es = {
   repeat: {
     label: "Repetición",
@@ -55,16 +55,16 @@ export const es = {
 
     detectedReminder: {
       DAY_BEFORE_AND_DUE:
-        "Detecté “{word}” → lo marqué como: día antes + día límite.",
+        "Detecté \"{word}\" → lo marqué como: día antes + día límite.",
       DAILY_UNTIL_DUE:
-        "Detecté “{word}” → lo marqué como: diario hasta la fecha límite.",
+        "Detecté \"{word}\" → lo marqué como: diario hasta la fecha límite.",
       WEEK_BEFORE_AND_DUE:
-        "Detecté “{word}” → lo marqué como: 1 semana antes + día límite.",
+        "Detecté \"{word}\" → lo marqué como: 1 semana antes + día límite.",
     },
 
     why: {
-      verbTask: "Detecté “{word}” → lo marqué como tarea.",
-      prefixIdea: "Detecté “{word}” → lo marqué como idea.",
+      verbTask: "Detecté \"{word}\" → lo marqué como tarea.",
+      prefixIdea: "Detecté \"{word}\" → lo marqué como idea.",
       projectIdea: "Suena a idea/proyecto → lo marqué como idea.",
       defaultTask: "No vi una pista clara → lo marqué como tarea.",
       defaultIdea: "No vi una pista clara → lo marqué como idea.",
@@ -130,15 +130,15 @@ export const es = {
     4: "Piensa en personas: a quién quieres escribir, llamar o agradecer algo.",
     5: "Piensa en dinero y papeleo: facturas, bancos, suscripciones, documentos.",
     6: "Piensa en ti: hábitos, proyectos, ideas que no quieres que se pierdan.",
-    7:"No hace falta escribir perfecto. Usa tu lenguaje normal: “llamar al dentista el martes por la mañana”.", */
+    7:"No hace falta escribir perfecto. Usa tu lenguaje normal: \"llamar al dentista el martes por la mañana\".", */
     hints: {
       0: "Tú solo escribe, Remi lo ordena y agenda todo por ti para recordartelo cuando llegue el momento.",
       1: "Pega o envia texto de WhatsApp, un mail o una nota. Remi lo convierte en recordatorio.",
       2: "Tareas, ideas, recados… todo entra. Remi lo ordena y te lo recuerda cuando llega el momento.",
       3: "No necesitas formato perfecto. Escribe como hablas.",
       4: "¿Te dijeron algo importante? Copia y pega. Remi lo guarda por ti.",
-      5: "Escribe fechas u horas (ej: “martes 18:00, 17 de Enero a las 15...”). Remi las detecta.",
-      6: "Escribe “cada día / cada semana, etc” si es un hábito repetitivo.",
+      5: "Escribe fechas u horas (ej: \"martes 18:00, 17 de Enero a las 15...\"). Remi las detecta.",
+      6: "Escribe \"cada día / cada semana, etc\" si es un hábito repetitivo.",
       7: "Un minuto aquí = un dia mas relajado y menos cosas olvidadas.",
       8: "Consejo rápido: Escribe Idea para guardar notas sin recordatorios.",
     },
@@ -147,6 +147,8 @@ export const es = {
   common: {
     appName: "REMI",
     save: "Guardar",
+    back: "Volver",
+    menu: "Menu",
     cancel: "Cancelar",
     delete: "Eliminar",
     edit: "Editar",
@@ -159,6 +161,7 @@ export const es = {
 
   index: {
     clearMind: "Mente despejada",
+    reminders: "Recordatorios",
   },
 
   nav: {
@@ -171,7 +174,9 @@ export const es = {
   bottomNav: {
     today: "Hoy",
     inbox: "Bandeja",
-    status: "status",
+    lists: "Listas",
+    status: "Estado",
+    add: "Nuevo",
     holdToTalk: "Mantén pulsado",
     listening: "Escuchando…",
     dictationNotSupported: "Dictado no compatible",
@@ -205,11 +210,38 @@ export const es = {
     mindClearLabel: "Mente despejada",
     mindClearDescription:
       "Cada cosa que guardas en Remi es una cosa menos que carga tu mente.",
+    relaxMindButton: "Relajar la mente",
+    relaxSound: "Sonido",
+    relaxSoundOff: "Sonido apagado",
+    relaxPops: "Pops",
+    relaxModeTitle: "Bubble Pop Zen",
+    relaxModeCalm: "Calma",
+    relaxModeEnergy: "Energía",
+    relaxDoneTitle: "Reset hecho",
+    relaxDoneSubtitle: "Descarga tensión con toques simples. Sin pensar.",
+    relaxHoldToInhale: "Mantén pulsado para inspirar",
+    relaxReleaseToExhale: "Suelta para expirar",
+    relaxAverage: "Promedio",
+    relaxInhaleShort: "Insp",
+    relaxExhaleShort: "Exp",
+    relaxCycles: "Ciclos",
+    relaxCapture: "Capturar",
+    relaxViewCanvas: "Ver lienzo",
+    relaxTapToReturn: "Toca para volver",
+    relaxModalTitle: "Respira profundo",
+    relaxModalSubtitle: "Solo sigue el ritmo durante 30 segundos.",
+    relaxInhale: "Inhala lento",
+    relaxExhale: "Exhala lento",
+    relaxDone: "Buen trabajo",
+    relaxCountdownHint: "Mantente aqui hasta completar el contador",
+    relaxRepeat: "Repetir",
+    relaxBetter: "Estoy mejor",
 
-    todaySectionTitle: "Lo que hemos conseguido",
+    todaySectionTitle: "Lo que has conseguido",
     todaySectionSubtitle: "Resumen de cómo estamos cuidando tu mente.",
-    todayTasksLabel: "Tareas de hoy",
-    todayTasksDescription: "Hoy hemos organizado {{todayTotal}} tareas.",
+    todayTasksLabel: "Completadas hoy",
+    todayTasksDescription:
+      "{{todayDone}}/{{todayTotal}} tareas con fecha de hoy completadas.",
 
     streakSectionTitle: "Nuestra racha",
     streakValue: "{{streakDays}} días",
@@ -225,6 +257,27 @@ export const es = {
     weekSectionSubtitle:
       "Cada día que usas Remi, tu cabeza tiene un poco menos de carga.",
     weekActiveLabel: "Días activos esta semana",
+    mentalLoadTitle: "Balance de carga mental",
+    mentalLoadSubtitle: "Capturado vs resuelto en los últimos 7 días",
+    mentalCapturedTooltip: "Capturado: {{count}}",
+    mentalResolvedTooltip: "Resuelto: {{count}}",
+    memoryCaptured: "Capturado",
+    memoryResolved: "Resuelto",
+    memoryDistributionTitle: "Distribución de memoria",
+    memoryDistributionSubtitle: "Qué tipo de carga estás delegando a Remi",
+    memoryTasksLabel: "Recordatorios",
+    hourMapTitle: "Mapa de horas",
+    hourMapSubtitle: "Cuando capturas mas carga mental (ultimos 30 dias)",
+    pieTitle: "Estado general",
+    pieSubtitle: "Capturado, notas, listas, cerrado y vencidas (últimos 30 días)",
+    pieCaptured: "Capturado",
+    pieIdeas: "Ideas",
+    pieLists: "Listas",
+    pieClosed: "Cerrado",
+    pieOverdue: "Vencidas",
+    usersTitle: "Cada vez somos más cuidando nuestra mente",
+    usersSubtitle: "Total de usuarios en Remi",
+    usersUnavailable: "No disponible",
 
     loading: "Actualizando tu resumen con Remi…",
 
@@ -241,7 +294,7 @@ export const es = {
     moodSubtitleHappy:
       "Hoy hemos despejado bastante tu mente: tienes {{todayTotal}} tareas organizadas y {{todayDone}} de ellas ya están hechas.",
     moodSubtitleCalm:
-      "Vamos avanzando sin prisa. Tenemos {{todayTotal}} tareas guardadas para hoy y Remi se encarga de acordarse por ti.",
+      "Vamos avanzando sin prisa. Tenemos {{todayTotal}} tareas que acaban hoy y Remi se encarga de acordarse por ti.",
     moodSubtitleWaiting:
       "Hoy tu mente está ligera pero podemos descargar alguna cosa más en Remi para que no tengas que recordarla tú.",
     moodSubtitleConcerned:
@@ -324,7 +377,7 @@ export const es = {
     },
 
     tips: {
-      0: "Consejo: Di o escribe “idea” para crear notas sin recordatorio",
+      0: "Consejo: Di o escribe \"idea\" para crear notas sin recordatorio",
       1: "Consejo: Puedes pegar texto de otras aplicaciones",
       2: "Consejo: No te preocupes por el formato, escribe como hablas",
       3: "Consejo: Mantén pulsado el micrófono para dictar",
@@ -359,7 +412,7 @@ export const es = {
     textareaPlaceholderIOS:
       "iPhone/iPad: usa el micrófono del teclado para dictar.\n" +
       "Si no aparece: Ajustes > General > Teclado > Activar dictado.\n" +
-      "Si pone “no disponible”: Ajustes > Privacidad y seguridad > Micrófono (activa tu navegador).",
+      "Si pone \"no disponible\": Ajustes > Privacidad y seguridad > Micrófono (activa tu navegador).",
 
     repeatOn: "Activado",
     repeatOff: "Desactivado",
@@ -369,18 +422,19 @@ export const es = {
     timeMinute: "Minutos",
     dateTimeLabel: "Fecha y hora",
     dateTimeNoneShort: "Sin fecha ni hora",
+    timeUnset: "Sin hora",
     placeholder: "Toca para escribir",
 
     title: "Vacía tu mente",
     subtitle: "Habla, escribe o pega texto. Remi se encarga.",
     examplesTitle: "Ejemplos:",
-    exampleVoice: "🎤 “Llamar a mamá el domingo”",
-    exampleVoiceIOS: "🎤 “Usa el microfono del teclado para dictar”",
-    examplePaste: "📋 “Todos los martes a las 18 quedamos”",
+    exampleVoice: "🎤 \"Llamar a mamá el domingo\"",
+    exampleVoiceIOS: "🎤 \"Usa el microfono del teclado para dictar\"",
+    examplePaste: "📋 \"Todos los martes a las 18 quedamos\"",
     exampleIdea: "💡 Idea: viaje a Italia en primavera",
     holdToTalk: "Mantén pulsado para hablar",
     listening: "Escuchando…",
-    iosKeyboardMicHint: "En iPhone: usa el micrófono del teclado para hablar.",
+    iosKeyboardMicHint: "Usa el micrófono del teclado para hablar.",
     speakHold: "Mantén pulsado para hablar",
 
     textareaPlaceholder: "Ejemplos:",
@@ -416,8 +470,9 @@ export const es = {
   pill: {
     type: {
       label: "Tipo",
-      task: "Tarea",
+      task: "Recordatorio",
       idea: "Idea",
+      list: "Lista",
     },
 
     more: "Detalles",
@@ -427,6 +482,8 @@ export const es = {
     time: "Hora",
     reminder: "Recordatorio",
     habit: "Repetición",
+    reminderNone: "Sin recordatorio",
+    repeatNone: "Sin repetición",
 
     on: "On",
     off: "Off",
@@ -492,6 +549,10 @@ export const es = {
     submitRegister: "Crear cuenta",
     toggleToRegister: "¿No tienes cuenta? Regístrate",
     toggleToLogin: "¿Ya tienes cuenta? Inicia sesión",
+    acceptPrefix: "Al crear la cuenta aceptas los",
+    acceptTerms: "términos y condiciones",
+    acceptAnd: "y la",
+    acceptPrivacy: "política de privacidad",
 
     errorInvalidCredentials:
       "Credenciales incorrectas. Verifica tu email y contraseña.",
@@ -502,17 +563,24 @@ export const es = {
   },
 
   today: {
+    greetingHello: "Hola,",
+    captureSectionTitle: "Vacia tu mente",
+    listsTitle: "Listas",
+    listsEmptyTitle: "Crea tu primera lista",
+    tipsTitle: "Acciones",
+    openLists: "Abrir listas compartidas",
+
     shareRemindersModal: {
       title: "Compartir recordatorios con otras personas",
       body:
-        "Envía una tarea o idea por enlace para que otra persona la añada a su Remi en 1 toque.",
+        "Envía una recordatorio o idea por enlace para que otra persona la añada a su Remi en 1 toque.",
       stepsTitle: "Cómo funciona (rápido)",
-      step1: "En una tarea/idea toca el icono de Compartir.",
+      step1: "En un recordatorio/idea toca el icono de Compartir.",
       step2: "Envía el enlace por WhatsApp, Mail, etc.",
-      step3: "La persona que lo recibe toca “Añadir a Remi”.",
+      step3: "La persona que lo recibe toca \"Añadir a Remi\".",
       examplesTitle: "Ejemplos que van genial",
       examplesBody:
-        "• “Compra pan mañana” → se lo envío a mi pareja\n• “Médico el martes a las 14:00” → se lo envío a mi madre\n• “Traer cargador” → se lo envío al compañero",
+        "• \"Compra pan mañana\" → se lo envío a mi pareja\n• \"Médico el martes a las 14:00\" → se lo envío a mi madre\n• \"Traer cargador\" → se lo envío al compañero",
       footer: "Esto ayuda a otras personas a recordar cosas importantes para ellos y para tí.",
       ok: "Entendido",
       hideForever: "No volver a mostrar",
@@ -522,6 +590,8 @@ export const es = {
 
     // Header / general
     greeting: "Hola, {{name}}",
+    greetingHeader: "Hola {{name}}!",
+    greetingSubheader: "Vamos a despejar tu mente",
     tasksToday: "Tienes {{count}} tareas",
     prioritize: "Prioriza lo importante",
     done: "Hecho",
@@ -538,13 +608,14 @@ export const es = {
     // States
     loadingTasks: "Cargando…",
     noUrgentTitle: "Todo bajo control",
-    noUrgentSubtitle: "No hay nada urgente ahora mismo",
+    noUrgentSubtitle: "Pulsa + para empezar a despejar tu mente",
 
     // Dates / labels
     dueNoDate: "Sin fecha",
 
     // Actions
     actionPostpone1dTitle: "Aplazar: añade 1 día a la fecha límite",
+    actionRescheduleTitle: "Elegir fecha",
     actionDoneTitle: "Marcar como completada",
     postponeDayToast: "Aplazado",
 
@@ -595,22 +666,37 @@ export const es = {
     tip: {
       shareReminders: {
         title: "Recordatorios en equipo",
-        body: "Comparte tareas o ideas.\n Los demás las añaden a su Remi en 1 toque.",
+        body: "Comparte recordatorios o ideas.\n Los demás los añaden a su Remi en 1 toque.",
         cta: "Ver cómo",
+      },
+      shareApp: {
+        title: "Compartir Remi",
+        body: "Invita a alguien a probar Remi en un toque.",
+        cta: "Compartir",
       },
 
       multidevice: {
-        title: "Remi contigo en móvil, iPad/tablet y PC",
+        title: "Remi siempre contigo",
         body:
           "Vacía tu cabeza donde estés. Todo se sincroniza y tú eliges en qué dispositivo quieres notificaciones.",
         cta: "Cómo funciona",
       },
 
       smartShortcuts: {
-        title: "Atajos inteligentes (ahorran 10s)",
+        title: "Atajos inteligentes",
         body: "Agrega palabras con 1 toque. \nEj: Idea / Comprar / a las 18:00.",
         cta: "Probar ahora",
         prefill: "Comprar: leche, pan, huevos",
+      },
+      language: {
+        title: "Remi en tu idioma",
+        body: "Cambia el idioma de Remi cuando quieras desde tu perfil.",
+        cta: "Cambiar idioma",
+      },
+      sharedLists: {
+        title: "Listas compartidas",
+        body: "Crea una lista con otra persona y actualizad puntos en tiempo real.",
+        cta: "Abrir listas",
       },
 
       install: {
@@ -627,7 +713,7 @@ export const es = {
       },
 
       iosDict: {
-        title: "Activa el micrófono del teclado",
+        title: "Habla con Remi",
         body:
           "Si no ves el micro en el teclado, actívalo en Ajustes y dicta más rápido.",
         cta: "Ver cómo",
@@ -642,7 +728,7 @@ export const es = {
 
       shortcuts: {
         title: "Palabras que ahorran tiempo",
-        body: "Una idea = empieza con ‘Idea’. \nUna tarea = empieza con un verbo.",
+        body: "Una idea = empieza con 'Idea'. \nUna tarea = empieza con un verbo.",
         cta: "Ver ejemplos",
       },
 
@@ -653,23 +739,23 @@ export const es = {
       },
 
       paste: {
-        title: "¿Has probado a pegar texto?",
+        title: "Pegar texto",
         body: "Copia cualquier cosa (WhatsApp, Mail, Notas) y deja que Remi lo ordene.",
         cta: "Pegar ahora",
       },
 
       shareToRemi: {
-        title: "Guarda cosas con “Compartir”",
+        title: "Guarda cosas con \"Compartir\"",
         body:
           "Desde WhatsApp/Correo/Notas: Compartir → Remi. \nSe abre listo para ordenar.",
         cta: "Probar",
-        toast: "Tip: en otra app pulsa “Compartir” → “Remi” para mandarlo directo 🙂",
+        toast: "Tip: en otra app pulsa \"Compartir\" → \"Remi\" para mandarlo directo 🙂",
       },
 
       natural: {
         title: "Escribe como hablas",
         body:
-          "Ej: “Pagar la luz mañana a las 6 de la tarde”. Remi se encarga y tú descansas.",
+          "Ej: \"Pagar la luz mañana a las 6 de la tarde\". Remi se encarga y tú descansas.",
         cta: "Probar ejemplo",
         prefill: "Pagar la luz mañana 18:00",
       },
@@ -693,6 +779,12 @@ export const es = {
         prefill: "Cumpleaños de ___ el ___",
       },
 
+      feedback: {
+        title: "Mejora Remi",
+        body: "Cuéntanos en 20 segundos qué te está ayudando y qué mejorarías.",
+        cta: "Dar opinión",
+      },
+
       cleanNoDate: {
         title: "✅ Sin tareas sin fecha",
         body: "Perfecto. Ahora es fácil priorizar.",
@@ -702,17 +794,17 @@ export const es = {
 
     shareToRemiModal: {
       title: "Compartir a Remi",
-      body: "Guarda texto desde cualquier app usando “Compartir”.",
+      body: "Guarda texto desde cualquier app usando \"Compartir\".",
       iosTitle: "En iPhone (iOS)",
       iosStep1: "Abre WhatsApp/Correo/Notas.",
-      iosStep2: "Pulsa “Compartir”.",
-      iosStep3: "Si ves “Remi”, tócalo y se abrirá listo para ordenar.",
+      iosStep2: "Pulsa \"Compartir\".",
+      iosStep3: "Si ves \"Remi\", tócalo y se abrirá listo para ordenar.",
       iosStep4:
-        "Si no aparece, usa “Copiar” y luego pega en Remi (en iOS a veces depende del sistema/versión).",
+        "Si no aparece, usa \"Copiar\" y luego pega en Remi (en iOS a veces depende del sistema/versión).",
       androidTitle: "En Android",
       androidStep1: "Abre WhatsApp/Correo/Notas.",
-      androidStep2: "Selecciona el texto y/o Pulsa “Compartir”.",
-      androidStep3: "Elige “Remi” y se abrirá con el texto listo para ordenar.",
+      androidStep2: "Selecciona el texto y/o Pulsa \"Compartir\".",
+      androidStep3: "Elige \"Remi\" y se abrirá con el texto listo para ordenar.",
       androidStep4:
         "Si no aparece, asegúrate de tener Remi instalada como app (PWA) y prueba de nuevo.",
       ok: "Entendido",
@@ -738,7 +830,7 @@ export const es = {
       helpStepsTitle: "Pasos rápidos",
       step1: "Abre Ajustes",
       step2: "General → Teclado",
-      step3: "Activa “Activar Dictado”",
+      step3: "Activa \"Activar Dictado\"",
       ok: "Entendido",
       hideForever: "No volver mostrar",
     },
@@ -746,7 +838,7 @@ export const es = {
 
   inbox: {
     title: "Bandeja de entrada",
-    tasksTab: "Tareas",
+    tasksTab: "Recordatorios",
     ideasTab: "Ideas",
     allTab: "Todo",
     statusDone: "Hecha",
@@ -764,6 +856,7 @@ export const es = {
     errorUpdating: "Error actualizando tu bandeja",
     sectionToday: "Hoy",
     sectionTomorrow: "Mañana",
+    sectionWeek: "Semana",
     sectionNoDate: "Sin fecha",
   },
 
@@ -777,17 +870,17 @@ export const es = {
     savedAt: "Guardada el {{date}}",
     errorLoading: "Error cargando tus ideas",
     updateError: "No se ha podido actualizar la idea.",
-    convertError: "No se ha podido convertir la idea en tarea.",
+    convertError: "No se ha podido convertir la idea en recordatorio.",
 
     editLabel: "Editar idea",
     editTitle: "Convierte esta idea en algo accionable",
     editSubtitle:
-      "Mejora el texto o conviértela en una tarea con fecha y recordatorio.",
+      "Mejora el texto o conviértela en un recordatorio con fecha.",
 
     fieldTitle: "Texto de la idea",
     fieldTitlePlaceholder: "Ej: comprar zapatos nuevos para la boda",
 
-    taskOptionsTitle: "Opciones de tarea",
+    taskOptionsTitle: "Opciones de recordatorio",
     dueDateLabel: "Fecha y hora límite (opcional)",
     reminderLabel: "Recordatorio",
 
@@ -799,11 +892,11 @@ export const es = {
     },
 
     saveAsIdea: "Guardar como idea",
-    convertToTask: "Convertir en tarea",
-    confirmConvert: "Convertir en tarea ahora",
+    convertToTask: "Convertir en recordatorio",
+    confirmConvert: "Convertir en recordatorio ahora",
 
     footerHint:
-      "Convertir una idea en tarea no la duplica: la idea original pasa a ser una tarea.",
+      "Convertir una idea en recordatorio no la duplica: la idea original pasa a ser un recordatorio.",
   },
 
   profile: {
@@ -831,6 +924,8 @@ export const es = {
     devicePushNeedsPermissionLine:
       "Aún no has concedido permiso en este dispositivo.",
     devicePushNeedsRegisterLine: "Permiso OK, pero falta activar aquí.",
+    devicePushPaused: "Pausadas",
+    devicePushPausedLine: "Pausado en este dispositivo",
     devicePushActiveLine: "Activo en este dispositivo ✅",
     devicePushToggleAria:
       "Activar o pausar notificaciones en este dispositivo",
@@ -866,11 +961,12 @@ export const es = {
     sectionAccountDescription:
       "Comparte REMI o cierra sesión en este dispositivo.",
 
+    feedbackButton: "Dejar opinión",
     shareButton: "Compartir app",
     logoutButton: "Cerrar sesión",
 
     shareText:
-      "I’m using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\nI definitely recommend trying it, it really helps. Here’s the link. 🙂",
+      "I'm using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\nI definitely recommend trying it, it really helps. Here's the link. 🙂",
     shareCopied: "Enlace de REMI copiado al portapapeles",
 
     defaultUserName: "Usuario",
@@ -882,6 +978,77 @@ export const es = {
     updateSuccess: "Perfil actualizado correctamente.",
     updateError: "No se pudieron guardar los cambios.",
     logoutError: "No se pudo cerrar sesión. Intenta de nuevo.",
+  },
+
+  lists: {
+    title: "Listas",
+    subtitle: "Crea listas y compartelas para coordinarte con los demas.",
+    loading: "Cargando listas...",
+    empty: "Aún no tienes listas.",
+    selectOne: "Selecciona una lista para ver sus puntos.",
+    newPlaceholder: "Nueva lista (ej: Comprar)",
+    create: "Crear",
+    created: "Lista creada.",
+    updated: "Lista actualizada.",
+    createError: "No se pudo crear la lista.",
+    confirmDelete: "¿Borrar esta lista?",
+    delete: "Eliminar",
+    deleted: "Lista eliminada.",
+    deleteError: "No se pudo eliminar la lista.",
+    onlyOwnerDelete: "Solo el owner puede eliminar la lista.",
+    share: "Compartir",
+    linkCopied: "Enlace copiado.",
+    shareError: "No se pudo crear el enlace.",
+    inviteAccepted: "Lista compartida anadida.",
+    inviteError: "No se pudo aceptar la invitacion.",
+    notificationsOn: "Notificaciones activadas para esta lista.",
+    notificationsOff: "Notificaciones desactivadas para esta lista.",
+    notificationsOnShort: "Noti ON",
+    notificationsOffShort: "Noti OFF",
+    notificationsError: "No se pudo actualizar notificaciones.",
+    newItemPlaceholder: "Anadir punto...",
+    itemsEmpty: "No hay puntos todavia.",
+    itemCreateError: "No se pudo crear el punto.",
+    itemUpdateError: "No se pudo actualizar el punto.",
+    itemDeleteError: "No se pudo eliminar el punto.",
+    itemsLoadError: "No se pudieron cargar los puntos.",
+    loadError: "No se pudieron cargar las listas.",
+    renameError: "No se pudo cambiar el titulo.",
+    renamePrompt: "Nuevo nombre de la lista:",
+    iconPrompt: "Elige un emoji para esta lista (vacío para quitarlo):",
+    iconAction: "Cambiar icono",
+    iconUpdated: "Icono actualizado.",
+    iconUpdateError: "No se pudo actualizar el icono.",
+    doneOfTotal: "Completados",
+    opened: "Pendientes",
+    completed: "Completado",
+    learnedTo: "Completado",
+    roleOwner: "Owner",
+    roleEditor: "Editor",
+    roleViewer: "Viewer",
+    assignMe: "Asignarme",
+    assignedMe: "Me encargo",
+    assignedOther: "Asignado",
+    assignError: "No se pudo actualizar asignacion.",
+    searchPlaceholder: "Buscar lista...",
+    searchEmpty: "No se encontraron listas.",
+    reuse: "Reutilizar",
+    reused: "Lista reutilizada.",
+    reuseError: "No se pudo reutilizar la lista.",
+  },
+
+  feedback: {
+    title: "Tu opinión sobre Remi",
+    q1: "¿Te está ayudando Remi?",
+    q3: "¿Qué es lo que más te gusta?",
+    q2: "¿Qué mejorarías?",
+    placeholderLike: "Escribe lo que más te gusta...",
+    placeholder: "Escribe una sugerencia breve...",
+    send: "Enviar opinión",
+    later: "Ahora no",
+    thanks: "Gracias por tu opinión sobre Remi.",
+    low: "Nada",
+    high: "Mucho",
   },
 
   notifications: {
@@ -975,7 +1142,7 @@ export const es = {
 
       step2Title: "Deja que Remi lo ordene contigo",
       step2Description:
-        "Si es una idea, la guardas con un clic y luego puedes editarla o convertirla en tarea. \nSi es una tarea, eliges fecha límite y cómo quieres que Remi te la recuerde, rápido y sin tener que volver a tocarla.",
+        "Si es una idea, la guardas con un clic y luego puedes editarla o convertirla en recordatorio. \nSi es un recordatorio, eliges fecha límite y cómo quieres que Remi te la recuerde, rápido y sin tener que volver a tocarla.",
 
       step3Title: "Vuelve a tener la cabeza despejada",
       step3Description:
@@ -996,7 +1163,7 @@ export const es = {
 
       feature1: "Totalmente gratis",
       feature2: "Diseñado para todo tipo de personas y mentes",
-      feature3: "Funciona igual de bien para tareas e ideas",
+      feature3: "Funciona igual de bien para recordatorios y notas",
     },
 
     footer: {
@@ -1034,12 +1201,12 @@ export const es = {
       hero: {
         kicker: "Dile a Remi lo que no quieres olvidar.",
         description:
-          "Escribe una frase. Remi interpreta el texto y crea el recordatorio: fecha y hora, repetición si es un hábito, y el modo de recordatorio cuando toca.",
+          "Escribe una frase. Remi interpreta el texto y crea recordatorios o notas. También puedes crear listas y compartirlas en tiempo real.",
         bullets: {
           a: "Solo escribe: cero formato, cero fricción",
           b: "Remi interpreta: fechas, horas, recordatorios y repetición",
           c: "Recordatorios listos para que no dependa de tu memoria",
-          d: "En todos tus dispositivos: ordenador, móvil, iPad y tablet",
+          d: "Crea listas y compártelas al instante",
         },
       },
 
@@ -1072,26 +1239,26 @@ export const es = {
         chips: ["Fecha y hora", "Hábito / repetición", "Modo de recordatorio"],
         exampleLabel: "Ejemplos",
         examples: [
-          "“Mañana a las 18: llamar al seguro”",
-          "“Cada lunes: gimnasio”",
-          "“El día 5 pagar el alquiler”",
+          "\"Mañana a las 18: llamar al seguro\"",
+          "\"Cada lunes: gimnasio\"",
+          "\"El día 5 pagar el alquiler\"",
         ],
         helperLine: "Escribe una frase y listo",
       },
 
       shareFeature: {
         badge: "Nuevo",
-        title: "Comparte tareas e ideas para aliviar la carga mental",
+        title: "Comparte recordatorios y notas para aliviar la carga mental",
         text:
-          "Ayuda a otras personas a liberar su mente: comparte una tarea o una idea como un enlace. Así pueden añadirla y dejar de cargar con “no se me puede olvidar…”.",
+          "Ayuda a otras personas a liberar su mente: comparte un recordatorio o una nota como un enlace. Así pueden añadirla y dejar de cargar con \"no se me puede olvidar…\".",
         points: [
           "Útil para familia, pareja y equipos",
-          "Comparte recordatorios, recados e ideas en segundos",
+          "Comparte recordatorios, recados y notas en segundos",
           "Perfecto para ayudar cuando alguien está estresado o saturado",
         ],
         exampleLabel: "Ejemplo",
         example:
-          "“Añadir a Remi: ‘Mañana 18:00 llamar al seguro’ → te llega como link y lo añades en un toque.”",
+          "\"Añadir a Remi: 'Mañana 18:00 llamar al seguro' → te llega como link y lo añades en un toque.\"",
         helperLine: "Ayuda rápida, sin explicación",
         ctaTry: "Probar Remi",
         tag: "Compartir",
@@ -1122,7 +1289,7 @@ export const es = {
         mini2: "Siempre actualizada",
         mini3: "Hecha para capturar rápido",
         ctaHint:
-          "Pulsa “Instalar ahora” y sigue los pasos según tu dispositivo.",
+          "Pulsa \"Instalar ahora\" y sigue los pasos según tu dispositivo.",
         device: {
           desktop: "Ordenador",
           phone: "Móvil",
@@ -1142,16 +1309,16 @@ export const es = {
         testimonials: [
           {
             quote:
-              "“Gracias a mi compañero de trabajo por recomendarme Remi, cada dia que lo uso noto menos carga mental y olvido menos cosas.”",
+              "\"Gracias a mi compañero de trabajo por recomendarme Remi, cada dia que lo uso noto menos carga mental y olvido menos cosas.\"",
             author: "Sarah",
           },
           {
-            quote: "“Es como tener un asistente de memoria personal, Me encanta!.”",
+            quote: "\"Es como tener un asistente de memoria personal, Me encanta!.\"",
             author: "Christian",
           },
           {
             quote:
-              "“Muy facil de usar y muy útil. sobre todo la opcion de compartir tasks o ideas.”",
+              "\"Muy facil de usar y muy útil. sobre todo la opcion de compartir recordatorios o ideas.\"",
             author: "Erika",
           },
         ],
@@ -1172,12 +1339,12 @@ export const es = {
           "La instalación es necesaria para recibir notificaciones con tus recordatorios.",
         iosSteps: [
           "Abre el menú de compartir (icono de compartir en Safari).",
-          "Pulsa “Añadir a pantalla de inicio”.",
-          "Confirma “Añadir”.",
+          "Pulsa \"Añadir a pantalla de inicio\".",
+          "Confirma \"Añadir\".",
         ],
         desktopSteps: [
-          "En Chrome/Edge, busca el icono de “Instalar” en la barra de direcciones o en el menú.",
-          "Pulsa “Instalar”.",
+          "En Chrome/Edge, busca el icono de \"Instalar\" en la barra de direcciones o en el menú.",
+          "Pulsa \"Instalar\".",
         ],
         close: "Cerrar",
         openInBrowser: "Abrir en navegador",
@@ -1194,3 +1361,8 @@ export const es = {
     },
   },
 } as const;
+
+
+
+
+

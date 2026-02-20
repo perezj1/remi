@@ -16,6 +16,7 @@ import TodayPage from "@/pages/Index";
 import InboxPage from "@/pages/Inbox";
 import TasksPage from "@/pages/Tasks";
 import IdeasPage from "@/pages/Ideas";
+import SharedListsPage from "@/pages/Lists";
 import ProfilePage from "@/pages/Profile";
 import AuthPage from "@/pages/Auth";
 import NotFound from "@/pages/NotFound";
@@ -25,6 +26,7 @@ import StatusPage from "@/pages/Status";
 import ScrollToTop from "@/components/ScrollToTop";
 import LandingPage from "@/pages/Landing";
 import ShareInvitePage from "@/pages/ShareInvitePage";
+import LegalPage from "@/pages/Legal";
 
 // ✅ Provider + hook para ocultar BottomNav cuando hay modales abiertos
 import { ModalUiProvider, useModalUi } from "@/contexts/ModalUiContext";
@@ -158,12 +160,18 @@ function AppRoutes() {
   const isShareUrl = pathname.includes("/share") || search.includes("share");
 
   // Ocultar bottom nav en rutas públicas/“técnicas”
-  const hideBottomNavRoute = pathname.startsWith("/landing") || pathname.startsWith("/share-target");
+  const hideBottomNavRoute =
+    pathname.startsWith("/landing") ||
+    pathname.startsWith("/share-target") ||
+    pathname.startsWith("/legal");
 
   const isAuthRoute = pathname.startsWith("/auth");
+  const isLandingRoute = pathname.startsWith("/landing");
+  const isLegalRoute = pathname.startsWith("/legal");
 
   // ✅ NUEVO: Ocultar también si es share URL (para evitar overlays en share)
-  const hideBottomNav = hideBottomNavRoute || isAnyModalOpen || isShareUrl;
+  const hideBottomNav =
+    hideBottomNavRoute || isAnyModalOpen || isShareUrl;
 
   // ✅ Montar el host SOLO cuando:
   // - hay usuario logueado
@@ -174,9 +182,16 @@ function AppRoutes() {
   // ✅ “Shell” global: altura correcta en móvil + fondo consistente
   const isPublicShell = hideBottomNavRoute || isAuthRoute || !user;
 
-// ✅ Para share: usa el mismo fondo suave (evita “blanco infinito”)
-const shellBgClass =
-  isShareUrl ? "bg-[#F6F7FB]" : isPublicShell ? "bg-white" : "bg-[#F6F7FB]";
+  // ✅ Para share: usa el mismo fondo suave (evita “blanco infinito”)
+  // ✅ En rutas internas logueadas: fondo uniforme suave hasta abajo.
+  const isAppPrivateRoute = !!user && !isPublicShell && !isShareUrl;
+  const shellBgClass = isShareUrl
+    ? "bg-[#F6F7FB]"
+    : isAppPrivateRoute
+      ? "bg-[#fafafe]"
+      : isPublicShell
+        ? "bg-white"
+        : "bg-white";
 
   // ✅ Reserva inferior global para que el contenido nunca quede debajo de la BottomNav
   const NAV_RESERVE_PX = 110;
@@ -247,6 +262,24 @@ const shellBgClass =
           }
         />
 
+        {/* Listas compartidas */}
+        <Route
+          path="/lists"
+          element={
+            <RequireAuth>
+              <SharedListsPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/lists/invite/:inviteToken"
+          element={
+            <RequireAuth>
+              <SharedListsPage />
+            </RequireAuth>
+          }
+        />
+
         {/* Perfil */}
         <Route
           path="/profile"
@@ -270,6 +303,10 @@ const shellBgClass =
         {/* Landing pública */}
         <Route path="/landing" element={<LandingPage />} />
 
+        {/* Legal pública */}
+        <Route path="/legal" element={<Navigate to="/legal/terms" replace />} />
+        <Route path="/legal/:doc" element={<LegalPage />} />
+
         {/* share page */}
         <Route path="/share/:token" element={<ShareInvitePage />} />
 
@@ -285,7 +322,7 @@ const shellBgClass =
       {/* ✅ NUEVO: también ocultar en URLs de share */}
       {user && !hideBottomNav && <BottomNav />}
 
-      <InstallPrompt />
+      {!isLandingRoute && !isLegalRoute && !isAuthRoute && <InstallPrompt />}
     </div>
   );
 }
