@@ -1070,7 +1070,7 @@ export const de = {
 
       feature1: "Komplett kostenlos",
       feature2: "Für alle Arten von Menschen und Köpfen gemacht",
-      feature3: "Funktioniert für Aufgaben und Ideen gleich gut",
+      feature3: "Funktioniert für Erinnerungen und Notizen gleich gut",
     },
 
     footer: {
@@ -1157,12 +1157,12 @@ export const de = {
 
       shareFeature: {
         badge: "Neu",
-        title: "Teile Erinnerungen & Ideen, um mentale Last zu reduzieren",
+        title: "Teile Erinnerungen & Notizen, um mentale Last zu reduzieren",
         text:
-          "Hilf anderen, den Kopf zu entlasten: Teile eine Erinnerung oder Idee als Link. So können sie sie hinzufügen und müssen nicht mehr denken \"Das darf ich nicht vergessen…\".",
+          "Hilf anderen, den Kopf zu entlasten: Teile eine Erinnerung oder Notiz als Link. So können sie sie hinzufügen und müssen nicht mehr denken \"Das darf ich nicht vergessen…\".",
         points: [
           "Nützlich für Familie, Partner und Teams",
-          "Teile Erinnerungen, Erledigungen und Ideen in Sekunden",
+          "Teile Erinnerungen, Erledigungen und Notizen in Sekunden",
           "Perfekt, wenn jemand gestresst oder überlastet ist",
         ],
         exampleLabel: "Beispiel",
@@ -1271,6 +1271,8 @@ export const de = {
     },
   },
 } as const;
+
+
 
 
 

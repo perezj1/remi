@@ -1076,7 +1076,7 @@ export const en = {
 
       feature1: "Completely free",
       feature2: "Designed for all kinds of people and minds",
-      feature3: "Works equally well for tasks and ideas",
+      feature3: "Works equally well for reminders and notes",
     },
 
     footer: {
@@ -1162,12 +1162,12 @@ export const en = {
 
       shareFeature: {
         badge: "New",
-        title: "Share reminders and ideas to reduce mental load",
+        title: "Share reminders and notes to reduce mental load",
         text:
-          "Help other people free their mind: share a reminder or an idea as a link. They can add it and stop carrying \"I can't forget this…\".",
+          "Help other people free their mind: share a reminder or a note as a link. They can add it and stop carrying \"I can't forget this…\".",
         points: [
           "Useful for family, partners, and teams",
-          "Share reminders, errands, and ideas in seconds",
+          "Share reminders, errands, and notes in seconds",
           "Perfect to help when someone is stressed or overloaded",
         ],
         exampleLabel: "Example",
@@ -1275,6 +1275,7 @@ export const en = {
     },
   },
 } as const;
+
 
 
 

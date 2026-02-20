@@ -1089,7 +1089,7 @@ export const es = {
 
       feature1: "Totalmente gratis",
       feature2: "Diseñado para todo tipo de personas y mentes",
-      feature3: "Funciona igual de bien para tareas e ideas",
+      feature3: "Funciona igual de bien para recordatorios y notas",
     },
 
     footer: {
@@ -1174,12 +1174,12 @@ export const es = {
 
       shareFeature: {
         badge: "Nuevo",
-        title: "Comparte tareas e ideas para aliviar la carga mental",
+        title: "Comparte recordatorios y notas para aliviar la carga mental",
         text:
-          "Ayuda a otras personas a liberar su mente: comparte una tarea o una idea como un enlace. Así pueden añadirla y dejar de cargar con \"no se me puede olvidar…\".",
+          "Ayuda a otras personas a liberar su mente: comparte un recordatorio o una nota como un enlace. Así pueden añadirla y dejar de cargar con \"no se me puede olvidar…\".",
         points: [
           "Útil para familia, pareja y equipos",
-          "Comparte recordatorios, recados e ideas en segundos",
+          "Comparte recordatorios, recados y notas en segundos",
           "Perfecto para ayudar cuando alguien está estresado o saturado",
         ],
         exampleLabel: "Ejemplo",
@@ -1287,6 +1287,7 @@ export const es = {
     },
   },
 } as const;
+
 
 
 

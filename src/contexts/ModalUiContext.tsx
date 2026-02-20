@@ -70,6 +70,53 @@ export function ModalUiProvider({ children }: { children: React.ReactNode }) {
   const modalOpenCount = openModalIdsState.size;
   const isAnyModalOpen = modalOpenCount > 0;
 
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    const NORMAL_THEME = "#ffffff";
+    const MODAL_THEME = "#ffffff";
+    const nextTheme = isAnyModalOpen ? MODAL_THEME : NORMAL_THEME;
+
+    const htmlEl = document.documentElement;
+    const bodyEl = document.body;
+    const prevHtmlBg = htmlEl.style.backgroundColor;
+    const prevBodyBg = bodyEl.style.backgroundColor;
+
+    htmlEl.style.backgroundColor = nextTheme;
+    bodyEl.style.backgroundColor = nextTheme;
+
+    const ensureMeta = (name: string) => {
+      let meta = document.head.querySelector(
+        `meta[name="${name}"]`
+      ) as HTMLMetaElement | null;
+      if (!meta) {
+        meta = document.createElement("meta");
+        meta.setAttribute("name", name);
+        document.head.appendChild(meta);
+      }
+      return meta;
+    };
+
+    const themeMeta = ensureMeta("theme-color");
+    const prevThemeContent = themeMeta.getAttribute("content");
+    themeMeta.setAttribute("content", nextTheme);
+
+    const appleMeta = ensureMeta("apple-mobile-web-app-status-bar-style");
+    const prevAppleContent = appleMeta.getAttribute("content");
+    appleMeta.setAttribute("content", "black-translucent");
+
+    return () => {
+      htmlEl.style.backgroundColor = prevHtmlBg;
+      bodyEl.style.backgroundColor = prevBodyBg;
+
+      if (prevThemeContent != null) themeMeta.setAttribute("content", prevThemeContent);
+      else themeMeta.removeAttribute("content");
+
+      if (prevAppleContent != null) appleMeta.setAttribute("content", prevAppleContent);
+      else appleMeta.removeAttribute("content");
+    };
+  }, [isAnyModalOpen]);
+
   const value = useMemo(
     () => ({
       openModalIds: openModalIdsState,
