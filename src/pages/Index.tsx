@@ -48,6 +48,7 @@ import {
   CalendarClock,
   Check,
   User,
+  Users,
   Share2,
   Smartphone,
   CalendarPlus,
@@ -132,6 +133,7 @@ const TIP_EMOJI_BY_ID: Record<string, string> = {
   birthday: "🎂",
   "clean-no-date": "✅",
   "improve-remi": "💬",
+  "shared-lists": "🤝",
 };
 
 const NO_DATE_GROUP_KEY = "__NO_DATE__";
@@ -775,6 +777,11 @@ const anyModalOpen =
     navigate("/profile");
   };
 
+  const handleOpenLists = () => {
+    setProfileOpen(false);
+    navigate("/lists");
+  };
+
   const handleShareApp = async () => {
     setProfileOpen(false);
     const url = `${window.location.origin}/landing`;
@@ -1006,9 +1013,9 @@ const anyModalOpen =
       onClick: () => setShowFeedbackSurvey(true),
     });
 
-      if (!dismissedTips[SHARE_REMINDERS_TIP_KEY]) {
-        cards.push({
-          id: SHARE_REMINDERS_TIP_KEY,
+    if (!dismissedTips[SHARE_REMINDERS_TIP_KEY]) {
+      cards.push({
+        id: SHARE_REMINDERS_TIP_KEY,
           title: safeT(
             "today.tip.shareReminders.title",
             "Comparte recordatorios con alguien",
@@ -1022,8 +1029,22 @@ const anyModalOpen =
           bg: "",
           border: "rgba(125,89,201,0.70)",
           onClick: () => setShowShareRemindersHelp(true),
-        });
-      }
+      });
+    }
+
+    cards.push({
+      id: "shared-lists",
+      title: safeT("today.tip.sharedLists.title", "Listas compartidas"),
+      body: safeT(
+        "today.tip.sharedLists.body",
+        "Crea una lista con otra persona y actualizad puntos en tiempo real.",
+      ),
+      cta: safeT("today.tip.sharedLists.cta", "Abrir listas"),
+      icon: <Share2 size={18} />,
+      bg: "",
+      border: "rgba(14,165,164,0.65)",
+      onClick: () => navigate("/lists"),
+    });
 
     cards.push({
       id: "share-app",
@@ -1424,6 +1445,15 @@ const anyModalOpen =
 
                 <button
                   type="button"
+                  onClick={handleOpenLists}
+                  style={menuButtonStyle}
+                >
+                  <Users size={16} style={{ marginRight: 8 }} />
+                  <span>{safeT("today.menuLists", "Listas compartidas")}</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={handleShareApp}
                   style={menuButtonStyle}
                 >
@@ -1461,6 +1491,17 @@ const anyModalOpen =
                   "linear-gradient(90deg, #59a5c9 0%, #5989c9 12.5%, #596dc9 25%, #6b63c9 37.5%, #7d59c9 50%, #9959c9 62.5%, #b559c9 75%, #bf59b7 87.5%, #c959a5 100%)",
               }}
             />
+          </div>
+
+          <div className="mt-2">
+            <button
+              type="button"
+              onClick={handleOpenLists}
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              <Users size={14} />
+              {safeT("today.openLists", "Abrir listas compartidas")}
+            </button>
           </div>
         </div>
         </div>

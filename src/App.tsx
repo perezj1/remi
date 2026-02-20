@@ -16,6 +16,7 @@ import TodayPage from "@/pages/Index";
 import InboxPage from "@/pages/Inbox";
 import TasksPage from "@/pages/Tasks";
 import IdeasPage from "@/pages/Ideas";
+import SharedListsPage from "@/pages/Lists";
 import ProfilePage from "@/pages/Profile";
 import AuthPage from "@/pages/Auth";
 import NotFound from "@/pages/NotFound";
@@ -257,6 +258,24 @@ function AppRoutes() {
           element={
             <RequireAuth>
               <IdeasPage />
+            </RequireAuth>
+          }
+        />
+
+        {/* Listas compartidas */}
+        <Route
+          path="/lists"
+          element={
+            <RequireAuth>
+              <SharedListsPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/lists/invite/:inviteToken"
+          element={
+            <RequireAuth>
+              <SharedListsPage />
             </RequireAuth>
           }
         />
