@@ -251,12 +251,12 @@ export const de = {
       "Jeder Tag mit Remi bedeutet ein bisschen weniger Last im Kopf.",
     weekActiveLabel: "Aktive Tage diese Woche",
     mentalLoadTitle: "Balance der mentalen Last",
-    mentalLoadSubtitle: "Erfasst vs gel\u00F6st in den letzten 7 Tagen",
+    mentalLoadSubtitle: "Erfasst vs gelöst in den letzten 7 Tagen",
     mentalCapturedTooltip: "Erfasst: {{count}}",
-    mentalResolvedTooltip: "Gel\u00F6st: {{count}}",
+    mentalResolvedTooltip: "Gelöst: {{count}}",
     memoryCaptured: "Erfasst",
-    memoryResolved: "Gel\u00F6st",
-    memoryDistributionTitle: "Ged\u00E4chtnisverteilung",
+    memoryResolved: "Gelöst",
+    memoryDistributionTitle: "Gedächtnisverteilung",
     memoryDistributionSubtitle: "Welche Art von Last delegierst du an Remi",
     memoryTasksLabel: "Erinnerungen",
     hourMapTitle: "Stundenkarte",
@@ -533,6 +533,10 @@ export const de = {
     submitRegister: "Konto erstellen",
     toggleToRegister: "Noch kein Konto? Registrieren",
     toggleToLogin: "Schon ein Konto? Anmelden",
+    acceptPrefix: "Mit der Erstellung des Kontos akzeptierst du die",
+    acceptTerms: "Nutzungsbedingungen",
+    acceptAnd: "und die",
+    acceptPrivacy: "Datenschutzerklärung",
 
     errorInvalidCredentials:
       "Falsche Zugangsdaten. Prüfe deine E-Mail und dein Passwort.",
@@ -1117,7 +1121,7 @@ export const de = {
 
       step2Title: "Lass Remi mit dir ordnen",
       step2Description:
-        "Ist es eine Idee, speicherst du sie mit einem Klick und kannst sie später bearbeiten oder in eine Aufgabe umwandeln.\nIst es eine Aufgabe, wählst du Fälligkeit und Erinnerungsmodus – schnell, ohne nochmal dran denken zu müssen.",
+        "Ist es eine Idee, speicherst du sie mit einem Klick und kannst sie später bearbeiten oder in eine Erinnerung umwandeln.\nIst es eine Erinnerung, wählst du Fälligkeit und Erinnerungsmodus, schnell und ohne nochmal dran denken zu müssen.",
 
       step3Title: "Wieder einen klaren Kopf",
       step3Description:
@@ -1176,12 +1180,12 @@ export const de = {
       hero: {
         kicker: "Sag Remi, was du nicht vergessen willst.",
         description:
-          "Schreib einen Satz. Remi interpretiert den Text und erstellt die Erinnerung: Datum und Uhrzeit, Wiederholung bei Gewohnheiten und den Erinnerungsmodus zur richtigen Zeit.",
+          "Schreib einen Satz. Remi interpretiert den Text und erstellt Erinnerungen oder Notizen. Du kannst auch Listen erstellen und in Echtzeit teilen.",
         bullets: {
           a: "Einfach schreiben: kein Format, keine Reibung",
           b: "Remi interpretiert: Daten, Zeiten, Erinnerungen und Wiederholung",
           c: "Erinnerungen, damit es nicht von deinem Gedächtnis abhängt",
-          d: "Auf all deinen Geräten: PC, Handy, iPad und Tablet",
+          d: "Erstelle Listen und teile sie sofort",
         },
       },
 

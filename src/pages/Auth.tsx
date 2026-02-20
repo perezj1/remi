@@ -357,13 +357,13 @@ const Auth = () => {
 
               {!isLogin && (
                 <p className="text-[11px] leading-snug text-slate-500">
-                  Al crear la cuenta aceptas los{" "}
+                  {t("auth.acceptPrefix")}{" "}
                   <Link to="/legal/terms" className="text-violet-700 underline underline-offset-2">
-                    terminos y condiciones
+                    {t("auth.acceptTerms")}
                   </Link>{" "}
-                  y la{" "}
+                  {t("auth.acceptAnd")}{" "}
                   <Link to="/legal/privacy" className="text-violet-700 underline underline-offset-2">
-                    politica de privacidad
+                    {t("auth.acceptPrivacy")}
                   </Link>
                   .
                 </p>

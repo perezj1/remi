@@ -132,7 +132,7 @@ const TIP_EMOJI_BY_ID: Record<string, string> = {
   "share-reminders": "🔗",
   shortcuts: "⚡",
   "day-close": "🌙",
-  paste: "📋",
+  paste: "📥",
   natural: "✍️",
   "remi-language": "🌍",
   "no-date": "🗂️",
@@ -141,7 +141,7 @@ const TIP_EMOJI_BY_ID: Record<string, string> = {
   birthday: "🎂",
   "clean-no-date": "✅",
   "improve-remi": "💬",
-  "shared-lists": "🤝",
+  "shared-lists": "📋",
 };
 
 const NO_DATE_GROUP_KEY = "__NO_DATE__";
@@ -1542,15 +1542,6 @@ const anyModalOpen =
                 >
                   <User size={16} style={{ marginRight: 8 }} />
                   <span>{safeT("today.menuProfile", "Perfil")}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleOpenLists}
-                  style={menuButtonStyle}
-                >
-                  <Users size={16} style={{ marginRight: 8 }} />
-                  <span>{safeT("today.menuLists", "Listas compartidas")}</span>
                 </button>
 
                 <button

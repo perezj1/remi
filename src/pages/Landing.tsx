@@ -31,6 +31,7 @@ import type { RemiLocale } from "@/locales";
 import { es } from "@/locales/es";
 import { en } from "@/locales/en";
 import { de } from "@/locales/de";
+import { useI18n } from "@/contexts/I18nContext";
 import { Link, useNavigate } from "react-router-dom";
 
 import {
@@ -71,26 +72,7 @@ function isStandalone(): boolean {
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
-
-  const [lang, setLang] = React.useState<RemiLocale>(() => {
-    if (typeof window === "undefined") return "es";
-
-    const stored = window.localStorage.getItem(
-      "landingLang",
-    ) as RemiLocale | null;
-    if (stored && (["es", "en", "de"] as RemiLocale[]).includes(stored))
-      return stored;
-
-    const browserLang = window.navigator.language.toLowerCase();
-    if (browserLang.startsWith("es")) return "es";
-    if (browserLang.startsWith("de")) return "de";
-    return "en";
-  });
-
-  React.useEffect(() => {
-    if (typeof window !== "undefined")
-      window.localStorage.setItem("landingLang", lang);
-  }, [lang]);
+  const { lang, setLang } = useI18n();
 
   const t = landingCopyByLang[lang];
   // ✅ ahora todo lo "extra" viene del archivo de idioma:

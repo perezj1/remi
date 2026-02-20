@@ -130,6 +130,7 @@ export default function SharedListsPage() {
     () => lists.find((l) => l.id === selectedListId) ?? null,
     [lists, selectedListId],
   );
+  const listIdsSignature = useMemo(() => lists.map((list) => list.id).join("|"), [lists]);
 
   const loadLists = useCallback(async () => {
     if (!user) return;
@@ -186,14 +187,39 @@ export default function SharedListsPage() {
     });
   }, [loadItems, safeT]);
 
+  const syncSharedState = useCallback(async () => {
+    await loadLists();
+    if (viewMode === "detail" && selectedListId) {
+      await loadItems();
+    }
+  }, [loadItems, loadLists, selectedListId, viewMode]);
+
   useEffect(() => {
-    if (!selectedListId) return;
-    const off = subscribeToSharedList(selectedListId, () => {
-      void loadItems();
-      void loadLists();
-    });
-    return off;
-  }, [selectedListId, loadItems, loadLists]);
+    if (!user || lists.length === 0) return;
+    const unsubs = lists.map((list) =>
+      subscribeToSharedList(list.id, () => {
+        void syncSharedState();
+      }),
+    );
+    return () => {
+      unsubs.forEach((off) => off());
+    };
+  }, [listIdsSignature, lists, syncSharedState, user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const handleFocusOrVisible = () => {
+      if (document.visibilityState !== "hidden") {
+        void syncSharedState();
+      }
+    };
+    window.addEventListener("focus", handleFocusOrVisible);
+    document.addEventListener("visibilitychange", handleFocusOrVisible);
+    return () => {
+      window.removeEventListener("focus", handleFocusOrVisible);
+      document.removeEventListener("visibilitychange", handleFocusOrVisible);
+    };
+  }, [syncSharedState, user]);
 
   useEffect(() => {
     setModalOpen(viewMode === "detail");
@@ -465,9 +491,7 @@ export default function SharedListsPage() {
               }
             }}
             disabled={!canEdit}
-            className={`h-8 min-w-0 flex-[1_1_140px] rounded-lg border px-2 text-sm outline-none ${
-              canEdit ? "border-[#d9d4eb] bg-white text-slate-800" : "border-slate-100 bg-slate-50 text-slate-800"
-            }`}
+            className="h-8 min-w-0 flex-[1_1_140px] bg-transparent px-1 text-sm text-slate-800 outline-none"
           />
         )}
 
@@ -726,7 +750,7 @@ export default function SharedListsPage() {
                 }}
                 role="button"
                 tabIndex={0}
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#59a5c9] bg-[#eaf6fb] text-sm font-semibold uppercase text-[#3f7f99]"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-sm font-semibold uppercase text-[#3f7f99]"
                 title={safeT("lists.iconAction", "Cambiar icono")}
               >
                 {selected.icon_emoji ? (
@@ -969,7 +993,7 @@ export default function SharedListsPage() {
                   </p>
                 </div>
 
-                <div className="mt-3 border-t border-[#e3dfef] pt-4 max-h-[calc(100dvh-420px)] space-y-5 overflow-auto pb-[76px] pr-1">
+                <div className="mt-3 border-t border-[#e3dfef] pt-4 max-h-[calc(100dvh-300px)] space-y-5 overflow-auto pb-[150px] pr-1">
                   {items.length === 0 && (
                     <div className="rounded-2xl border border-[#dfdbea] bg-[#f4f2fa] px-3 py-3 text-sm text-slate-500">
                       {safeT("lists.itemsEmpty", "No hay puntos todavía.")}
@@ -981,7 +1005,7 @@ export default function SharedListsPage() {
                       <p className="mb-2 px-1 text-sm font-semibold text-[#5a5f74]">
                         {safeT("lists.opened", "Abierto")} ({pendingItems.length})
                       </p>
-                      <div className="overflow-hidden rounded-2xl border border-[#ddd9ee] divide-y divide-[#e6e3ef]">
+                      <div className="divide-y divide-[#e6e3ef]">
                         {pendingItems.map((item) => renderItemRow(item))}
                       </div>
                     </div>
@@ -992,7 +1016,7 @@ export default function SharedListsPage() {
                       <p className="mb-2 px-1 text-sm font-semibold text-[#5a5f74]">
                         {safeT("lists.completed", "Completado")} ({doneItems.length})
                       </p>
-                      <div className="overflow-hidden rounded-2xl border border-[#ddd9ee] divide-y divide-[#e6e3ef]">
+                      <div className="divide-y divide-[#e6e3ef]">
                         {doneItems.map((item) => renderItemRow(item))}
                       </div>
                     </div>

@@ -533,6 +533,10 @@ export const en = {
     submitRegister: "Create account",
     toggleToRegister: "Don't have an account? Sign up",
     toggleToLogin: "Already have an account? Sign in",
+    acceptPrefix: "By creating an account you accept the",
+    acceptTerms: "terms and conditions",
+    acceptAnd: "and the",
+    acceptPrivacy: "privacy policy",
 
     errorInvalidCredentials:
       "Incorrect credentials. Check your email and password.",
@@ -1123,7 +1127,7 @@ export const en = {
 
       step2Title: "Let Remi organize it with you",
       step2Description:
-        "If it's an idea, save it with one tap and later you can edit it or convert it into a task.\nIf it's a task, pick a due date and how you want Remi to remind you—fast, without having to touch it again.",
+        "If it's an idea, save it with one tap and later you can edit it or convert it into a reminder.\nIf it's a reminder, pick a due date and how you want Remi to remind you, fast and without having to touch it again.",
 
       step3Title: "Get a clear head again",
       step3Description:
@@ -1182,12 +1186,12 @@ export const en = {
       hero: {
         kicker: "Tell Remi what you don't want to forget.",
         description:
-          "Write a sentence. Remi interprets the text and creates the reminder: date and time, repeat if it's a habit, and the reminder mode when it's time.",
+          "Write a sentence. Remi interprets the text and creates reminders or notes. You can also create lists and share them in real time.",
         bullets: {
           a: "Just write: zero formatting, zero friction",
           b: "Remi interprets: dates, times, reminders, and repeat",
           c: "Reminders ready so it doesn't depend on your memory",
-          d: "On all your devices: computer, phone, iPad, and tablet",
+          d: "Create lists and share them instantly",
         },
       },
 

@@ -1,4 +1,4 @@
-// src/locales/es.ts
+﻿// src/locales/es.ts
 export const es = {
   repeat: {
     label: "Repetición",
@@ -548,6 +548,10 @@ export const es = {
     submitRegister: "Crear cuenta",
     toggleToRegister: "¿No tienes cuenta? Regístrate",
     toggleToLogin: "¿Ya tienes cuenta? Inicia sesión",
+    acceptPrefix: "Al crear la cuenta aceptas los",
+    acceptTerms: "términos y condiciones",
+    acceptAnd: "y la",
+    acceptPrivacy: "política de privacidad",
 
     errorInvalidCredentials:
       "Credenciales incorrectas. Verifica tu email y contraseña.",
@@ -1136,7 +1140,7 @@ export const es = {
 
       step2Title: "Deja que Remi lo ordene contigo",
       step2Description:
-        "Si es una idea, la guardas con un clic y luego puedes editarla o convertirla en tarea. \nSi es una tarea, eliges fecha límite y cómo quieres que Remi te la recuerde, rápido y sin tener que volver a tocarla.",
+        "Si es una idea, la guardas con un clic y luego puedes editarla o convertirla en recordatorio. \nSi es un recordatorio, eliges fecha límite y cómo quieres que Remi te la recuerde, rápido y sin tener que volver a tocarla.",
 
       step3Title: "Vuelve a tener la cabeza despejada",
       step3Description:
@@ -1195,12 +1199,12 @@ export const es = {
       hero: {
         kicker: "Dile a Remi lo que no quieres olvidar.",
         description:
-          "Escribe una frase. Remi interpreta el texto y crea el recordatorio: fecha y hora, repetición si es un hábito, y el modo de recordatorio cuando toca.",
+          "Escribe una frase. Remi interpreta el texto y crea recordatorios o notas. También puedes crear listas y compartirlas en tiempo real.",
         bullets: {
           a: "Solo escribe: cero formato, cero fricción",
           b: "Remi interpreta: fechas, horas, recordatorios y repetición",
           c: "Recordatorios listos para que no dependa de tu memoria",
-          d: "En todos tus dispositivos: ordenador, móvil, iPad y tablet",
+          d: "Crea listas y compártelas al instante",
         },
       },
 
