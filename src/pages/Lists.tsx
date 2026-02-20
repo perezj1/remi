@@ -1008,7 +1008,7 @@ export default function SharedListsPage() {
                       placeholder={safeT("lists.newItemPlaceholder", "Añadir punto...")}
                       disabled={!canEdit}
                       rows={1}
-                      className="max-h-28 min-h-[42px] flex-1 resize-none rounded-[14px] border border-[#d9d3ea] bg-[#f4f2fa] px-4 py-2 text-sm outline-none transition focus:border-[#59a5c9] focus:shadow-[0_0_0_3px_rgba(89,165,201,0.22)] disabled:bg-slate-50"
+                      className="max-h-28 min-h-[42px] flex-1 resize-none rounded-[14px] border border-[#d9d3ea] bg-white px-4 py-2 text-sm outline-none transition focus:border-[#59a5c9] focus:shadow-[0_0_0_3px_rgba(89,165,201,0.22)] disabled:bg-slate-50"
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
                           e.preventDefault();
