@@ -1,6 +1,6 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Check, ChevronLeft, ListPlus, Menu, Pencil, RotateCcw, SendHorizontal, Share2, Trash2, UserRoundCheck, Users } from "lucide-react";
+import { Check, ChevronLeft, CirclePlus, ListPlus, Menu, MoreVertical, Pencil, RotateCcw, Share2, Trash2, UserRoundCheck, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
@@ -26,7 +26,7 @@ import { shareTextOrCopy } from "@/lib/shareInvitesApi";
 
 export default function SharedListsPage() {
   const { user } = useAuth();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { inviteToken } = useParams();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
@@ -52,6 +52,7 @@ export default function SharedListsPage() {
   const [viewMode, setViewMode] = useState<"cards" | "detail">("cards");
   const [progressByList, setProgressByList] = useState<Record<string, { done: number; total: number }>>({});
   const [menuOpen, setMenuOpen] = useState(false);
+  const [cardMenuOpenId, setCardMenuOpenId] = useState<string | null>(null);
   const lastHandledInviteTokenRef = useRef<string | null>(null);
   const newItemInputRef = useRef<HTMLTextAreaElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -250,6 +251,22 @@ export default function SharedListsPage() {
   }, [menuOpen]);
 
   useEffect(() => {
+    const onPointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Element | null;
+      if (!cardMenuOpenId) return;
+      if (!target) return;
+      if (target.closest("[data-list-card-menu-root='true']")) return;
+      setCardMenuOpenId(null);
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("touchstart", onPointerDown, { passive: true });
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("touchstart", onPointerDown);
+    };
+  }, [cardMenuOpenId]);
+
+  useEffect(() => {
     if (!user) return;
 
     const rawToken = ((params.get("invite") ?? inviteToken ?? "") as string).trim();
@@ -348,7 +365,7 @@ export default function SharedListsPage() {
   const handleShare = async () => {
     if (!selected) return;
     try {
-      const invite = await createSharedListInviteShare(selected.id, "editor");
+      const invite = await createSharedListInviteShare(selected.id, "editor", lang);
       const result = await shareTextOrCopy(invite.shareMessage);
       if (result === "shared") {
         toast.success(safeT("shareInvite.sharedOk", "Listo. Enlace copiado/compartido."));
@@ -358,6 +375,41 @@ export default function SharedListsPage() {
     } catch (err) {
       console.error(err);
       toast.error(safeT("lists.shareError", "No se pudo crear el enlace."));
+    }
+  };
+
+  const handleShareListById = async (list: SharedList) => {
+    try {
+      const invite = await createSharedListInviteShare(list.id, "editor", lang);
+      const result = await shareTextOrCopy(invite.shareMessage);
+      if (result === "shared") {
+        toast.success(safeT("shareInvite.sharedOk", "Listo. Enlace copiado/compartido."));
+      } else {
+        toast.success(safeT("lists.linkCopied", "Enlace copiado."));
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(safeT("lists.shareError", "No se pudo crear el enlace."));
+    }
+  };
+
+  const handleRenameListById = async (list: SharedList) => {
+    const editable = list.my_role === "owner" || list.my_role === "editor";
+    if (!editable) return;
+    const nextTitle = window.prompt(
+      safeT("lists.renamePrompt", "Nuevo nombre de la lista:"),
+      list.title,
+    );
+    if (nextTitle == null) return;
+    const value = nextTitle.trim();
+    if (!value || value === list.title) return;
+    try {
+      await updateSharedListTitle(list.id, value);
+      await loadLists();
+      if (selectedListId === list.id) await loadItems();
+    } catch (err) {
+      console.error(err);
+      toast.error(safeT("lists.renameError", "No se pudo cambiar el título."));
     }
   };
 
@@ -452,31 +504,9 @@ export default function SharedListsPage() {
           {item.done ? <RotateCcw className="h-4 w-4" /> : <Check className="h-4 w-4 opacity-70" />}
         </button>
 
-        {item.done ? (
-          <p className="min-w-0 flex-1 truncate text-sm text-slate-500 line-through">{item.text}</p>
-        ) : (
-          <input
-            value={item.text}
-            onChange={(e) => {
-              const next = e.target.value;
-              setItems((prev) => prev.map((x) => (x.id === item.id ? { ...x, text: next } : x)));
-            }}
-            onBlur={async (e) => {
-              const value = e.target.value.trim();
-              if (!value || value === item.text) return;
-              if (!user) return;
-              try {
-                await updateSharedListItem(item.id, { text: value }, user.id);
-                await loadItems();
-              } catch (err) {
-                console.error(err);
-                toast.error(safeT("lists.itemUpdateError", "No se pudo actualizar el punto."));
-              }
-            }}
-            disabled={!canEdit}
-            className="h-8 min-w-0 flex-[1_1_140px] bg-transparent px-1 text-sm text-slate-800 outline-none"
-          />
-        )}
+        <p className={`min-w-0 flex-1 truncate px-1 text-sm ${item.done ? "text-slate-500 line-through" : "text-slate-800"}`}>
+          {item.text}
+        </p>
 
         {!item.done && (
           <div className="ml-auto flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap">
@@ -729,10 +759,12 @@ export default function SharedListsPage() {
                   selected.title.slice(0, 1)
                 )}
               </div>
-              <h2 className="h-12 min-w-0 flex-1 truncate px-1 text-2xl font-extrabold leading-[48px] text-[#1f2436]">
+              <h2
+                className="min-w-0 flex-1 px-1 text-2xl font-extrabold leading-tight text-[#1f2436] line-clamp-2 break-words"
+                style={{ minHeight: "2.2em" }}
+              >
                 {selected.title}
               </h2>
-              {renderListActionsMenu()}
             </div>
           ) : (
             <>
@@ -802,12 +834,69 @@ export default function SharedListsPage() {
                       const stats = progressByList[list.id] ?? { done: 0, total: 0 };
                       const percent = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
                       return (
-                        <button
+                        <div
                           key={list.id}
-                          type="button"
                           onClick={() => openListDetail(list.id)}
-                          className="group relative overflow-hidden rounded-[20px] border border-[#59a5c9] bg-white p-3 text-left transition hover:border-[#4b95b8]"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              openListDetail(list.id);
+                            }
+                          }}
+                          role="button"
+                          tabIndex={0}
+                          className="group relative cursor-pointer overflow-visible rounded-[20px] border border-[#59a5c9] bg-white p-3 text-left transition hover:border-[#4b95b8]"
                         >
+                          <div
+                            data-list-card-menu-root="true"
+                            className="absolute right-2 top-2 z-10"
+                            onClick={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => setCardMenuOpenId((prev) => (prev === list.id ? null : list.id))}
+                              className="inline-flex h-7 w-7 items-center justify-center text-slate-600 hover:text-slate-900"
+                              aria-expanded={cardMenuOpenId === list.id}
+                              aria-label={safeT("common.menu", "Menu")}
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </button>
+                            {cardMenuOpenId === list.id && (
+                              <div className="absolute right-0 z-50 mt-1 min-w-40 rounded-xl border border-[#d7d2e8] bg-white p-1.5 shadow-[0_10px_24px_rgba(32,24,61,0.12)]">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setCardMenuOpenId(null);
+                                    void handleRenameListById(list);
+                                  }}
+                                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-slate-700 hover:bg-[#f4f2fa]"
+                                >
+                                  <Pencil className="h-4 w-4" /> {safeT("common.edit", "Editar")}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setCardMenuOpenId(null);
+                                    void handleShareListById(list);
+                                  }}
+                                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-slate-700 hover:bg-[#f4f2fa]"
+                                >
+                                  <Share2 className="h-4 w-4" /> {safeT("lists.share", "Compartir")}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setCardMenuOpenId(null);
+                                    void handleDeleteListById(list);
+                                  }}
+                                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-rose-600 hover:bg-rose-50"
+                                >
+                                  <Trash2 className="h-4 w-4" /> {safeT("lists.delete", "Borrar")}
+                                </button>
+                              </div>
+                            )}
+                          </div>
                           <div className="flex items-start gap-3">
                             <div
                               onClick={(e) => {
@@ -833,8 +922,13 @@ export default function SharedListsPage() {
                               )}
                             </div>
 
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-base font-semibold text-[#2f3240]">{list.title}</p>
+                            <div className="min-w-0 flex-1 pr-8">
+                              <p
+                                className="line-clamp-2 break-words text-base font-semibold leading-tight text-[#2f3240]"
+                                style={{ minHeight: "2.2em" }}
+                              >
+                                {list.title}
+                              </p>
                               <p className="mt-0.5 text-xs font-medium text-[#8b8fa6]">
                                 {list.my_role === "owner"
                                   ? safeT("lists.roleOwner", "Owner")
@@ -880,7 +974,7 @@ export default function SharedListsPage() {
                               </div>
                             </div>
                           </div>
-                        </button>
+                        </div>
                       );
                     })}
                   </div>
@@ -1022,7 +1116,7 @@ export default function SharedListsPage() {
                       disabled={!canEdit}
                       className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#59a5c9] text-white transition hover:bg-[#4b95b8] disabled:opacity-40"
                     >
-                      <SendHorizontal className="h-5 w-5" />
+                      <CirclePlus className="h-5 w-5" />
                     </button>
                   </div>
                 </div>

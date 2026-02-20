@@ -35,6 +35,7 @@ import {
 } from "@/lib/shareInvitesApi";
 import {
   createSharedList,
+  createSharedListInviteShare,
   createSharedListItem,
   fetchSharedListItems,
   type SharedList,
@@ -858,6 +859,24 @@ const anyModalOpen =
     [navigate],
   );
 
+  const handleShareListById = useCallback(
+    async (list: SharedList) => {
+      try {
+        const invite = await createSharedListInviteShare(list.id, "editor", lang);
+        const result = await shareTextOrCopy(invite.shareMessage);
+        if (result === "shared") {
+          toast.success(safeT("shareInvite.sharedOk", "Listo. Enlace copiado/compartido."));
+        } else {
+          toast.success(safeT("lists.linkCopied", "Enlace copiado."));
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error(safeT("lists.shareError", "No se pudo crear el enlace."));
+      }
+    },
+    [lang, safeT],
+  );
+
   const renderMemberAvatar = useCallback((member: SharedListMemberPreview) => {
     const label =
       member.display_name?.trim()?.slice(0, 1)?.toUpperCase() ||
@@ -1641,10 +1660,17 @@ const anyModalOpen =
                 const stats = recentListsProgress[list.id] ?? { done: 0, total: 0 };
                 const percent = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
                 return (
-              <button
+              <div
                 key={list.id}
-                type="button"
                 onClick={() => handleOpenListById(list.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleOpenListById(list.id);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
                 className="group relative shrink-0 overflow-hidden rounded-[20px] border border-[#59a5c9] bg-white p-3 text-left transition hover:border-[#4b95b8]"
                 style={{
                   width: "clamp(280px, 36vw, 360px)",
@@ -1661,7 +1687,12 @@ const anyModalOpen =
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-base font-semibold text-[#2f3240]">{list.title}</p>
+                    <p
+                      className="line-clamp-2 break-words text-base font-semibold leading-tight text-[#2f3240]"
+                      style={{ minHeight: "2.2em" }}
+                    >
+                      {list.title}
+                    </p>
                     <p className="mt-0.5 text-xs font-medium text-[#8b8fa6]">
                       {list.my_role === "owner"
                         ? safeT("lists.roleOwner", "Owner")
@@ -1680,16 +1711,29 @@ const anyModalOpen =
                     </div>
                   </div>
                 </div>
-                <p className="mt-2 text-sm font-medium text-[#5c6073]">
-                  {safeT("lists.learnedTo", "Completado")} <span className="text-[#59a5c9]">{percent}%</span>
-                </p>
+                <div className="mt-2 flex items-baseline justify-between gap-2">
+                  <p className="text-sm font-medium text-[#5c6073]">
+                    {safeT("lists.learnedTo", "Completado")} <span className="text-[#59a5c9]">{percent}%</span>
+                  </p>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void handleShareListById(list);
+                    }}
+                    className="inline-flex shrink-0 items-center gap-1 self-baseline rounded-full border border-[#d9d4eb] bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-[#f6f4fc]"
+                  >
+                    <Share2 className="h-3.5 w-3.5" />
+                    {safeT("lists.share", "Compartir")}
+                  </button>
+                </div>
                 <div className="mt-1.5 h-1.5 w-full rounded-full bg-[#dbeef6]">
                   <div
                     className="h-1.5 rounded-full transition-all"
                     style={{ width: `${percent}%`, background: "#59a5c9" }}
                   />
                 </div>
-              </button>
+              </div>
                 );
               })()
             ))

@@ -263,7 +263,7 @@ export const de = {
     hourMapSubtitle: "Wann du mehr mentale Last erfasst (letzte 30 Tage)",
     pieTitle: "Allgemeiner Status",
     pieSubtitle: "Erfasst, Notizen, Listen, geschlossen und uberfallig (letzte 30 Tage)",
-    pieCaptured: "Erfasst",
+    pieCaptured: "Gesamt",
     pieIdeas: "Ideen",
     pieLists: "Listen",
     pieClosed: "Geschlossen",

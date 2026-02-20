@@ -8,8 +8,16 @@ const corsHeaders = {
 type RequestBody = {
   listId?: string;
   role?: "editor" | "viewer";
+  lang?: "es" | "en" | "de";
   expiresInHours?: number;
 };
+
+function normalizeLang(raw?: string | null): "es" | "en" | "de" {
+  const value = String(raw ?? "").toLowerCase().trim();
+  if (value.startsWith("de")) return "de";
+  if (value.startsWith("en")) return "en";
+  return "es";
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -55,6 +63,7 @@ Deno.serve(async (req) => {
     const listId = (body.listId ?? "").trim();
     const role = body.role === "viewer" ? "viewer" : "editor";
     const expiresInHours = Math.max(1, Math.min(body.expiresInHours ?? 24 * 7, 24 * 30));
+    const reqLang = normalizeLang(body.lang || req.headers.get("accept-language"));
 
     if (!listId) {
       return new Response(JSON.stringify({ error: "missing_list_id" }), {
@@ -116,7 +125,17 @@ Deno.serve(async (req) => {
     const shareBase = appUrl || new URL(req.url).origin;
     const shareUrl = `${shareBase}/lists/invite/${invite.token}`;
     const listTitle = String(listRow?.title ?? "Shared list");
-    const shareMessage = `Remi - ${listTitle}\n${shareUrl}`;
+    const senderName =
+      String(
+        user.user_metadata?.display_name ??
+          user.user_metadata?.full_name ??
+          user.user_metadata?.name ??
+          user.email?.split("@")[0] ??
+          "Alguien",
+      ).trim() || "Alguien";
+    const sharedListLabel =
+      reqLang === "en" ? "Shared list" : reqLang === "de" ? "Geteilte Liste" : "Lista compartida";
+    const shareMessage = `${senderName} 💬:\n────────\n${sharedListLabel}: ${listTitle}\n────────\nREMI ->\n${shareUrl}`;
 
     return new Response(
       JSON.stringify({
