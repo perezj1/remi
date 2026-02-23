@@ -425,6 +425,7 @@ export const es = {
     timeUnset: "Sin hora",
     placeholder: "Toca para escribir",
     noteHint: "Guarda tus memorias para no perderlas",
+    masterHint: "Dile a Remi lo que quieres hacer.",
 
     title: "Vacía tu mente",
     subtitle: "Habla, escribe o pega texto. Remi se encarga.",
@@ -467,6 +468,12 @@ export const es = {
     toastTaskError: "Error al crear la tarea",
     toastIdeaSaved: "Idea guardada correctamente",
     toastIdeaError: "Error al crear la idea",
+    type: {
+      master: "Remi",
+      task: "Recordatorio",
+      note: "Nota",
+      list: "Lista",
+    },
   },
 
   // ✅ NUEVO: bloque "pill" (para cubrir MODAL_I18N)
@@ -1011,6 +1018,7 @@ export const es = {
     notificationsOffShort: "Noti OFF",
     notificationsError: "No se pudo actualizar notificaciones.",
     newItemPlaceholder: "Anadir punto...",
+    itemsPlaceholder: 'Crea o actualiza listas existentes:\nEj: "Añade pan, leche y azucar a la lista comprar".',
     itemsEmpty: "No hay puntos todavia.",
     itemCreateError: "No se pudo crear el punto.",
     itemUpdateError: "No se pudo actualizar el punto.",

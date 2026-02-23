@@ -410,11 +410,12 @@ export const de = {
     timeUnset: "Keine Uhrzeit",
     placeholder: "Tippen zum Schreiben",
     noteHint: "Bewahre deine Erinnerungen auf, damit sie nicht verloren gehen",
+    masterHint: "Sag Remi, was du machen willst.",
 
     title: "Kopf frei machen",
     subtitle: "Sprich, schreib oder füge Text ein. Remi kümmert sich.",
     inlineGuide: "❓ Was?  📅 Wann?  🔔 Erinnerung?",
-    inlineExample: "z. B.: Marcos' Geburtstag am 12. Juni um 13:00 Uhr. Erinnere mich eine Woche vorher.",
+    inlineExample: "Bsp.: Marcos' Geburtstag am 12. Juni um 13:00 Uhr. Erinnere mich eine Woche vorher.",
     examplesTitle: "Beispiele:",
     exampleVoice: "🎤 \"Mama am Sonntag anrufen\"",
     exampleVoiceIOS: "🎤 \"Nutze das Tastatur-Mikro zum Diktieren\"",
@@ -452,6 +453,12 @@ export const de = {
     toastTaskError: "Fehler beim Erstellen der Aufgabe",
     toastIdeaSaved: "Idee erfolgreich gespeichert",
     toastIdeaError: "Fehler beim Erstellen der Idee",
+    type: {
+      master: "Remi",
+      task: "Erinnerung",
+      note: "Notiz",
+      list: "Liste",
+    },
   },
 
   pill: {
@@ -992,6 +999,7 @@ export const de = {
     notificationsOffShort: "Noti AUS",
     notificationsError: "Benachrichtigungen konnten nicht aktualisiert werden.",
     newItemPlaceholder: "Punkt hinzufuegen...",
+    itemsPlaceholder: 'Erstelle oder aktualisiere bestehende Listen:\nBsp.: "Füge Brot, Milch und Zucker zur Einkaufsliste hinzu".',
     itemsEmpty: "Noch keine Punkte.",
     itemCreateError: "Punkt konnte nicht erstellt werden.",
     itemUpdateError: "Punkt konnte nicht aktualisiert werden.",

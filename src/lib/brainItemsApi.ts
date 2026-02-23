@@ -535,6 +535,62 @@ export async function setTaskStatus(
   try {
     if (isOffline()) throw new Error("offline");
 
+    // Weekly habits: when user marks DONE, roll to next exact 7-day cycle.
+    if (status === "DONE") {
+      const { data: currentData, error: currentError } = await supabase
+        .from("brain_items")
+        .select("*")
+        .eq("id", id)
+        .eq("type", "task")
+        .single();
+
+      if (currentError) throw currentError;
+
+      const current = currentData as BrainItem;
+      const canRollWeekly =
+        current.repeat_type === "weekly" &&
+        typeof current.due_date === "string" &&
+        current.due_date.length > 0;
+
+      if (canRollWeekly) {
+        const baseDue = new Date(current.due_date as string);
+        if (!Number.isNaN(baseDue.getTime())) {
+          const nextDueDate = new Date(baseDue.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+          const hasHabit = current.repeat_type !== "none";
+          const habitOffsetMinutes =
+            typeof current.habit_offset_minutes === "number"
+              ? current.habit_offset_minutes
+              : hasHabit
+                ? DEFAULT_HABIT_OFFSET_MINUTES
+                : 0;
+
+          const nextReminderAt = hasHabit
+            ? computeHabitNotificationTime(nextDueDate, habitOffsetMinutes)
+            : nextDueDate;
+          const nextNotificationAt = hasHabit ? nextReminderAt : nextDueDate;
+
+          const { data: rolledData, error: rolledError } = await supabase
+            .from("brain_items")
+            .update({
+              status: "ACTIVE",
+              due_date: nextDueDate,
+              next_reminder_at: nextReminderAt,
+              next_notification_at: nextNotificationAt,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", id)
+            .select()
+            .single();
+
+          if (rolledError) throw rolledError;
+
+          const rolled = rolledData as BrainItem;
+          cacheUpsertTask(rolled.user_id, rolled);
+          return rolled;
+        }
+      }
+    }
+
     const { data, error } = await supabase
       .from("brain_items")
       .update({

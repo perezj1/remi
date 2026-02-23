@@ -81,9 +81,11 @@ const EMOJI_RULES: EmojiRule[] = [
     ],
   },
   {
-    emoji: "🍔", // burger
+    emoji: "🍽️", // burger
     keywords: [
       "food",
+      "eat",
+      "eating",
       "meal",
       "meals",
       "menu",
@@ -92,6 +94,7 @@ const EMOJI_RULES: EmojiRule[] = [
       "recipe",
       "recipes",
       "comida",
+      "comer",
       "almuerzo",
       "desayuno",
       "cena",
@@ -100,6 +103,8 @@ const EMOJI_RULES: EmojiRule[] = [
       "receta",
       "recetas",
       "essen",
+      "esse",
+      "isst",
       "mahlzeit",
       "kueche",
       "küche",
@@ -686,10 +691,13 @@ function tokenMatchesKeyword(token: string, keyword: string): boolean {
     const keywordStem = stemLatinWord(keyword);
     const minStemLen = Math.min(tokenStem.length, keywordStem.length);
 
+    if (minStemLen >= 3 && tokenStem === keywordStem) {
+      return true;
+    }
+
     if (
-      minStemLen >= 3 &&
-      (tokenStem === keywordStem ||
-        tokenStem.startsWith(keywordStem) ||
+      minStemLen >= 4 &&
+      (tokenStem.startsWith(keywordStem) ||
         keywordStem.startsWith(tokenStem))
     ) {
       return true;
@@ -697,7 +705,7 @@ function tokenMatchesKeyword(token: string, keyword: string): boolean {
 
     const minRawLen = Math.min(token.length, keyword.length);
     if (
-      minRawLen >= 3 &&
+      minRawLen >= 4 &&
       (token.startsWith(keyword) || keyword.startsWith(token))
     ) {
       return true;
