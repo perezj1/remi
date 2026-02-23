@@ -821,7 +821,7 @@ export const en = {
     },
     naturalModal: {
       title: "Write the way you talk",
-      body: "Remi detects the type automatically: reminder, note, or list.",
+      body: "Remi detects what is needed from the text.",
       reminderTitle: "Reminder with advance alert",
       reminderBody:
         "Creates a reminder for a date and time, and can alert you before it (1 day or 1 week).",
@@ -835,10 +835,10 @@ export const en = {
       noteExample: 'E.g. "Note: there is a new market on X street."',
       listUpdateTitle: "Update existing list",
       listUpdateBody: "Add items to an existing list by name.",
-      listUpdateExample: 'E.g. "Add X, Y and Z to list 1."',
+      listUpdateExample: 'E.g. "Add book, pencil and eraser to the school list."',
       listCreateTitle: "Create new list",
       listCreateBody: "Create a new list and separate items by commas or line breaks.",
-      listCreateExample: 'E.g. "Create list X with 1, 2 and 3."',
+      listCreateExample: 'E.g. "Create the shopping list with bread, milk and sugar."',
       openRemi: "Open Remi",
       close: "Close",
     },

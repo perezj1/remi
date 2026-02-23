@@ -1093,17 +1093,17 @@ const anyModalOpen =
     }
 
     cards.push({
-      id: "shortcuts",
-      title: safeT("today.tip.shortcuts.title", "Palabras que ahorran tiempo"),
+      id: "natural",
+      title: safeT("today.tip.natural.title", "Escribe como hablas"),
       body: safeT(
-        "today.tip.shortcuts.body",
-        "Una idea empieza con \"Idea: ...\". Una tarea empieza con un verbo.",
+        "today.tip.natural.body",
+        "Ej: \"Pagar la luz mañana a las 18:00\". Remi lo ordena y tú te olvidas.",
       ),
-      cta: safeT("today.tip.shortcuts.cta", "Ver ejemplos"),
+      cta: safeT("today.tip.natural.cta", "Ver ejemplos"),
       icon: <Sparkles size={18} />,
       bg: "",
-      border: "rgba(125,89,201,0.70)",
-      onClick: () => setShowShortcutsModal(true),
+      border: "rgba(16,185,129,0.65)",
+      onClick: () => setShowNaturalHelp(true),
     });
 
     if (shouldShowDayCloseTip) {
@@ -1183,20 +1183,6 @@ const anyModalOpen =
       onClick: () => void handleShareApp(),
     });
 
-
-    cards.push({
-      id: "natural",
-      title: safeT("today.tip.natural.title", "Escribe como hablas"),
-      body: safeT(
-        "today.tip.natural.body",
-        "Ej: \"Pagar la luz mañana a las 18:00\". Remi lo ordena y tú te olvidas.",
-      ),
-      cta: safeT("today.tip.natural.cta", "Ver ejemplos"),
-      icon: <Sparkles size={18} />,
-      bg: "",
-      border: "rgba(16,185,129,0.65)",
-      onClick: () => setShowNaturalHelp(true),
-    });
 
     cards.push({
       id: "paste",

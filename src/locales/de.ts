@@ -815,7 +815,7 @@ export const de = {
     },
     naturalModal: {
       title: "Schreib so, wie du sprichst",
-      body: "Remi erkennt den Typ automatisch: Erinnerung, Notiz oder Liste.",
+      body: "Remi erkennt im Text, was nötig ist.",
       reminderTitle: "Erinnerung mit Vorab-Hinweis",
       reminderBody:
         "Erstellt eine Erinnerung für Datum und Uhrzeit und kann dich vorher erinnern (1 Tag oder 1 Woche).",
@@ -830,10 +830,10 @@ export const de = {
       noteExample: 'Bsp.: "Notiz: In der X-Straße gibt es einen neuen Markt."',
       listUpdateTitle: "Bestehende Liste aktualisieren",
       listUpdateBody: "Fügt Punkte zu einer bestehenden Liste per Namen hinzu.",
-      listUpdateExample: 'Bsp.: "Füge X, Y und Z zur Liste 1 hinzu."',
+      listUpdateExample: 'Bsp.: "Füge Buch, Bleistift und Radiergummi zur Liste Schule hinzu."',
       listCreateTitle: "Neue Liste erstellen",
       listCreateBody: "Erstellt eine neue Liste und trennt Punkte per Komma oder Zeilenumbruch.",
-      listCreateExample: 'Bsp.: "Erstelle die Liste X mit 1, 2 und 3."',
+      listCreateExample: 'Bsp.: "Erstelle die Liste Einkauf mit Brot, Milch und Zucker."',
       openRemi: "Remi öffnen",
       close: "Schliessen",
     },

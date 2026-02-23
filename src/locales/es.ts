@@ -834,7 +834,7 @@ export const es = {
     },
     naturalModal: {
       title: "Escribe como hablas",
-      body: "Remi detecta el tipo automáticamente: recordatorio, nota o lista.",
+      body: "Remi detecta lo necesario en el texto.",
       reminderTitle: "Recordatorio con aviso previo",
       reminderBody:
         "Crea un recordatorio para una fecha y hora, y puede avisarte antes (1 día o 1 semana).",
@@ -848,10 +848,10 @@ export const es = {
       noteExample: 'Ej: "Nota: en la calle X hay un nuevo mercado".',
       listUpdateTitle: "Actualizar lista existente",
       listUpdateBody: "Añade puntos a una lista que ya existe por su nombre.",
-      listUpdateExample: 'Ej: "Agrega X, Y y Z a la lista 1".',
+      listUpdateExample: 'Ej: "Agrega libro, lapiz y goma a la lista escuela".',
       listCreateTitle: "Crear lista nueva",
       listCreateBody: "Crea una lista nueva y separa los puntos por comas o saltos de línea.",
-      listCreateExample: 'Ej: "Crea la lista X que tenga 1, 2 y 3".',
+      listCreateExample: 'Ej: "Crea la lista comprar que tenga pan, leche y azucar".',
       openRemi: "Abrir Remi",
       close: "Cerrar",
     },
