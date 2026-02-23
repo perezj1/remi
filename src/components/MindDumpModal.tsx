@@ -2281,7 +2281,12 @@ export default function MindDumpModal({
     if (!timeTouched) {
       const hhmm = parseTimeToHHMM(detectedTime);
       if (hhmm && hhmm !== pickedTime) setPickedTime(hhmm);
-      if (!hhmm && pickedTime) setPickedTime("");
+      if (!hhmm) {
+        const hasDateSignal = !!(pickedDate || parseDateToISO(detectedDate, uiLang));
+        const fallbackTime = hasDateSignal ? "12:00" : "";
+        if (fallbackTime && pickedTime !== fallbackTime) setPickedTime(fallbackTime);
+        if (!fallbackTime && pickedTime) setPickedTime("");
+      }
     }
 
     if (!reminderTouched) {
@@ -2356,15 +2361,6 @@ export default function MindDumpModal({
   const showTalkActiveRing = listening;
   const showTalkRipple = talkPressed || listening;
 
-  const chipTitle =
-    chipStage === "ROOT"
-      ? t("capture.chips.title", "Atajos inteligentes")
-      : chipStage === "SCHEDULE"
-        ? t("capture.chips.title2", "Fecha / hábito")
-        : chipStage === "TIME"
-          ? t("capture.chips.title3", "Hora")
-          : t("capture.chips.title4", "Recordatorio");
-
   // ✅ labels (píldoras)
   const bcp47 = uiLangToBCP47(uiLang);
 
@@ -2404,6 +2400,8 @@ export default function MindDumpModal({
     if (habitRepeat === "yearly") return t("pill.habitYearly", "Anual");
     return t("pill.repeatNone", "Sin repetición");
   })();
+  const showEmbeddedExamples = embedded && itemKind === "task" && text.trim().length === 0;
+  const showEmbeddedIdeaHint = embedded && itemKind === "idea" && text.trim().length === 0;
 
   return (
     <div
@@ -2602,15 +2600,11 @@ export default function MindDumpModal({
               style={{
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "space-between",
+                justifyContent: "flex-end",
                 gap: 10,
               }}
             >
-              <div style={{ fontSize: 11, fontWeight: 800, color: embedded ? "rgba(15,23,42,0.72)" : "#5f6c85" }}>
-                {chipTitle}
-              </div>
-
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", marginLeft: "auto" }}>
                 <div
                   style={{
                     display: "inline-flex",
@@ -2618,7 +2612,7 @@ export default function MindDumpModal({
                     gap: 4,
                     padding: 3,
                     borderRadius: 999,
-                    border: "1px solid #e2e8f0",
+                    border: "1px solid #cfc3f7",
                     background: "#ffffff",
                   }}
                 >
@@ -2629,22 +2623,25 @@ export default function MindDumpModal({
                       setItemKind("task");
                     }}
                     style={{
-                      height: 22,
-                      padding: "0 8px",
+                      height: 30,
+                      minWidth: 102,
+                      padding: "0 12px",
                       borderRadius: 999,
                       border: "none",
                       background: itemKind === "task" ? "#ede9fe" : "transparent",
-                      color: itemKind === "task" ? "#7d59c9" : "#64748b",
-                      fontSize: 11,
-                      fontWeight: 700,
+                      color: itemKind === "task" ? "#7c3aed" : "#64748b",
+                      fontSize: 13,
+                      lineHeight: 1.1,
+                      fontWeight: 800,
                       cursor: "pointer",
                       display: "inline-flex",
                       alignItems: "center",
+                      justifyContent: "center",
                     }}
                     title={t("pill.type.task", "Recordatorio")}
                     aria-label={t("pill.type.task", "Recordatorio")}
                   >
-                    <CalendarClock size={13} />
+                    {t("pill.type.task", "Recordatorio")}
                   </button>
                   <button
                     type="button"
@@ -2663,64 +2660,29 @@ export default function MindDumpModal({
                       setRepeatMenuOpen(false);
                     }}
                     style={{
-                      height: 22,
-                      padding: "0 8px",
+                      height: 30,
+                      minWidth: 72,
+                      padding: "0 12px",
                       borderRadius: 999,
                       border: "none",
                       background: itemKind === "idea" ? "#fef3c7" : "transparent",
                       color: itemKind === "idea" ? "#a16207" : "#64748b",
-                      fontSize: 11,
-                      fontWeight: 700,
+                      fontSize: 13,
+                      lineHeight: 1.1,
+                      fontWeight: 800,
                       cursor: "pointer",
                       display: "inline-flex",
                       alignItems: "center",
+                      justifyContent: "center",
                     }}
-                    title={t("pill.type.idea", "Idea")}
-                    aria-label={t("pill.type.idea", "Idea")}
+                    title={t("inbox.ideasTab", "Notas")}
+                    aria-label={t("inbox.ideasTab", "Notas")}
                   >
-                    <StickyNote size={13} />
+                    {t("inbox.ideasTab", "Notas")}
                   </button>
                 </div>
                 
               </div>
-            </div>
-
-            <div
-              className="remi-chipRow"
-              style={{
-                marginTop: 10,
-                display: "flex",
-                overflowX: "auto",
-                WebkitOverflowScrolling: "touch",
-                gap: 8,
-                paddingBottom: 2,
-                alignItems: "center",
-              }}
-            >
-              {chipStage === "ROOT" && (
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  {rootChips.map((c) => (
-                    <Chip key={c.id} label={c.label} embedded={embedded} onClick={() => handleRootChip(c.id)} />
-                  ))}
-                </div>
-              )}
-
-              {chipStage === "SCHEDULE" &&
-                scheduleChips.map((c) => (
-                  <Chip key={c.id} label={c.label} embedded={embedded} onClick={() => handleScheduleChip(c.insert)} />
-                ))}
-
-              {chipStage === "TIME" &&
-                timeChips.map((c) => (
-                  <Chip key={c.id} label={c.label} embedded={embedded} onClick={() => handleTimeChip(c.insert)} />
-                ))}
-
-              {chipStage === "REMINDER" &&
-                reminderChips.map((c) => (
-                  <Chip key={c.id} label={c.label} embedded={embedded} onClick={() => handleReminderChip(c.insert)} />
-                ))}
-
-              <Chip label="↵" embedded={embedded} onClick={() => insertAtCursor("\n")} />
             </div>
           </div>
         </div>
@@ -2777,6 +2739,43 @@ export default function MindDumpModal({
               transition: "min-height 240ms ease",
             }}
           >
+            {showEmbeddedExamples && (
+              <div
+                aria-hidden
+                style={{
+                  position: "absolute",
+                  top: 68,
+                  left: 16,
+                  right: 16,
+                  zIndex: 1,
+                  pointerEvents: "none",
+                  color: "rgba(15,23,42,0.45)",
+                  fontSize: 12,
+                  lineHeight: 1.35,
+                }}
+              >
+                <div>{t("capture.inlineGuide", "❓ ¿Qué?  📅 ¿Cuándo?  🔔 ¿Recordatorio?")}</div>
+                <div style={{ marginTop: 6 }}>{t("capture.inlineExample", "Ej: cumpleaños el 12 de junio a las 13:00. Recuérdamelo una semana antes.")}</div>
+              </div>
+            )}
+            {showEmbeddedIdeaHint && (
+              <div
+                aria-hidden
+                style={{
+                  position: "absolute",
+                  top: 70,
+                  left: 16,
+                  right: 16,
+                  zIndex: 1,
+                  pointerEvents: "none",
+                  color: "rgba(15,23,42,0.45)",
+                  fontSize: 12,
+                  lineHeight: 1.35,
+                }}
+              >
+                {t("capture.noteHint", "Guarda tus memorias para no perderlas")}
+              </div>
+            )}
             <div
               ref={textareaRef}
               contentEditable

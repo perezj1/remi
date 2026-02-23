@@ -102,6 +102,7 @@ const EMOJI_RULES: EmojiRule[] = [
       "essen",
       "mahlzeit",
       "kueche",
+      "küche",
       "rezept",
       "rezepte",
     ],
@@ -126,7 +127,9 @@ const EMOJI_RULES: EmojiRule[] = [
       "tomar",
       "agua",
       "cafe",
+      "café",
       "te",
+      "té",
       "zumo",
       "jugo",
       "cerveza",
@@ -134,6 +137,8 @@ const EMOJI_RULES: EmojiRule[] = [
       "trinken",
       "getrank",
       "getranke",
+      "getränk",
+      "getränke",
       "wasser",
       "kaffee",
       "tee",
@@ -155,10 +160,12 @@ const EMOJI_RULES: EmojiRule[] = [
       "oficina",
       "empresa",
       "reunion",
+      "reunión",
       "reuniones",
       "laboral",
       "arbeit",
       "buero",
+      "büro",
       "beruf",
       "firma",
       "arbeitstermin",
@@ -185,12 +192,16 @@ const EMOJI_RULES: EmojiRule[] = [
       "copilot",
       "inteligencia artificial",
       "aprendizaje automatico",
+      "aprendizaje automático",
       "robotica",
+      "robótica",
       "automatizacion",
+      "automatización",
       "automatizar",
       "ki",
       "robotik",
       "kuenstliche intelligenz",
+      "künstliche intelligenz",
       "maschinelles lernen",
       "automatisierung",
       "roboter",
@@ -212,6 +223,7 @@ const EMOJI_RULES: EmojiRule[] = [
       "estudiantes",
       "preparar examen",
       "preparar examenes",
+      "preparar exámenes",
       "lernen",
       "studieren",
       "student",
@@ -247,6 +259,7 @@ const EMOJI_RULES: EmojiRule[] = [
       "studium",
       "hausaufgaben",
       "pruefung",
+      "prüfung",
       "kurs",
       "kurse",
     ],
@@ -279,6 +292,7 @@ const EMOJI_RULES: EmojiRule[] = [
       "urlaub",
       "flug",
       "fluege",
+      "flüge",
     ],
   },
   {
@@ -344,9 +358,11 @@ const EMOJI_RULES: EmojiRule[] = [
       "appointment",
       "salud",
       "medico",
+      "médico",
       "medicina",
       "farmacia",
       "cita medica",
+      "cita médica",
       "arzt",
       "gesundheit",
       "medizin",
@@ -394,6 +410,7 @@ const EMOJI_RULES: EmojiRule[] = [
       "coches",
       "carro",
       "vehiculo",
+      "vehículo",
       "taller",
       "gasolina",
       "combustible",
@@ -402,8 +419,11 @@ const EMOJI_RULES: EmojiRule[] = [
       "fahrzeug",
       "werkstatt",
       "benzin",
+      "öl",
+      "oel",
       "tankstelle",
       "tuv",
+      "tüv",
     ],
   },
   {
@@ -473,6 +493,7 @@ const EMOJI_RULES: EmojiRule[] = [
       "heiraten",
       "braut",
       "braeutigam",
+      "bräutigam",
     ],
   },
   {
@@ -487,6 +508,7 @@ const EMOJI_RULES: EmojiRule[] = [
       "fiesta",
       "fiestas",
       "celebracion",
+      "celebración",
       "celebrar",
       "evento",
       "eventos",
@@ -504,6 +526,7 @@ const EMOJI_RULES: EmojiRule[] = [
       "birthday",
       "cumple",
       "cumpleanos",
+      "cumpleaños",
       "regalo",
       "regalos",
       "geschenk",
@@ -526,6 +549,7 @@ const EMOJI_RULES: EmojiRule[] = [
       "putzen",
       "haushalt",
       "aufraeumen",
+      "aufräumen",
       "ordnung",
     ],
   },
@@ -537,12 +561,15 @@ const EMOJI_RULES: EmojiRule[] = [
       "plant",
       "plants",
       "jardin",
+      "jardín",
       "jardineria",
+      "jardinería",
       "planta",
       "plantas",
       "huerto",
       "garten",
       "gaertnern",
+      "gärtnern",
       "pflanze",
       "pflanzen",
     ],
@@ -563,6 +590,7 @@ const EMOJI_RULES: EmojiRule[] = [
       "apunte",
       "apuntes",
       "inspiracion",
+      "inspiración",
       "idee",
       "ideen",
       "notiz",
@@ -574,14 +602,25 @@ const EMOJI_RULES: EmojiRule[] = [
 function normalizeText(raw: string): string {
   return raw
     .toLocaleLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    // German transliteration (ä->ae, ö->oe, ü->ue, ß->ss) to match
+    // both keyboard variants: "aufräumen" <-> "aufraeumen".
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
+    .replace(/ß/g, "ss")
+    // Common extra transliterations used in EU languages.
+    .replace(/æ/g, "ae")
+    .replace(/œ/g, "oe")
+    .replace(/ø/g, "o")
+    .replace(/ł/g, "l")
+    .normalize("NFKD")
+    .replace(/\p{M}+/gu, "")
     .replace(/[^\p{L}\p{N}\s]/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
-const LATIN_WORD_RE = /^[a-z0-9]+$/u;
+const LATIN_WORD_RE = /^[\p{Script=Latin}0-9]+$/u;
 const STEM_SUFFIXES = [
   "amientos",
   "imientos",
