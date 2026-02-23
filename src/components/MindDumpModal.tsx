@@ -1,5 +1,6 @@
 // src/components/MindDumpModal.tsx
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -19,6 +20,7 @@ import {
   Calendar,
   Clock,
   Repeat,
+  List,
   StickyNote,
   // ChevronDown, // ⛔️ (comentado) Solo necesario si reactivas la “píldora” de idioma
 } from "lucide-react";
@@ -27,6 +29,7 @@ import { useI18n } from "@/contexts/I18nContext";
 import { useSpeechDictation } from "@/hooks/useSpeechDictation";
 import { useModalUi } from "@/contexts/ModalUiContext";
 import type { ReminderMode, RepeatType } from "@/lib/brainItemsApi";
+import { suggestSharedListEmoji } from "@/lib/sharedListEmojiAuto";
 
 // ✅ Usa tus archivos de idiomas (sin diccionario local en este componente)
 import { es as esLocale } from "@/locales/es";
@@ -170,7 +173,7 @@ function tFromLocales(
   }
 }
 
-type ItemKind = "task" | "idea";
+type ItemKind = "task" | "idea" | "list";
 
 type Props = {
   open: boolean;
@@ -259,7 +262,7 @@ function normalizeIncomingText(raw: string): string {
 }
 
 type ChipStage = "ROOT" | "SCHEDULE" | "TIME" | "REMINDER";
-type RootChipId = "birthday" | "call" | "buy" | "pay" | "appointment" | "idea";
+type RootChipId = "birthday" | "call" | "buy" | "pay" | "appointment" | "idea" | "list";
 
 const GAP = " "; // ✅ 1 solo espacio
 const BULLET = "• ";
@@ -476,7 +479,13 @@ function detectIdeaSignal(text: string): string | null {
   return explicit;
 }
 
-type HighlightKind = "date" | "time" | "reminder" | "habit" | "idea";
+function detectListSignal(text: string): string | null {
+  const s = foldForMatch(text);
+  const explicit = s.match(/\b(lista|list|liste|checklist|checkliste)\b/i)?.[0] ?? null;
+  return explicit;
+}
+
+type HighlightKind = "date" | "time" | "reminder" | "habit" | "idea" | "list";
 type HighlightToken = {
   start: number;
   end: number;
@@ -484,6 +493,7 @@ type HighlightToken = {
 };
 
 const HIGHLIGHT_PRIORITY: Record<HighlightKind, number> = {
+  list: 6,
   idea: 5,
   reminder: 4,
   time: 3,
@@ -515,6 +525,10 @@ const HIGHLIGHT_PATTERNS: Array<{ kind: HighlightKind; regex: RegExp }> = [
   {
     kind: "idea",
     regex: /\b(nota|note|notiz|idea|idee)\b/gi,
+  },
+  {
+    kind: "list",
+    regex: /\b(lista|list|liste|checklist|checkliste)\b/gi,
   },
 ];
 
@@ -622,6 +636,8 @@ function buildHighlightedHtml(text: string, tokens: HighlightToken[]): string {
   const styleFor = (kind: HighlightKind) =>
     kind === "idea"
       ? "color:#b48617;font-weight:600;"
+      : kind === "list"
+        ? "color:#2563eb;font-weight:600;"
       : `color:${REMI_PURPLE};font-weight:600;`;
 
   let out = "";
@@ -1229,7 +1245,7 @@ function titleFromMindDump(raw: string): string {
 }
 
 // ✅ PillButton (más pequeña)
-type PillVariant = "purple" | "amber";
+type PillVariant = "purple" | "amber" | "blue";
 
 function PillButton({
   active,
@@ -1249,6 +1265,7 @@ function PillButton({
   size?: "sm" | "md";
 }) {
   const isAmber = variant === "amber";
+  const isBlue = variant === "blue";
 
   const activeStyle: CSSProperties | undefined = !active
     ? undefined
@@ -1258,6 +1275,12 @@ function PillButton({
           borderColor: "rgba(251,191,36,0.45)",
           color: "#92400E",
         }
+      : isBlue
+        ? {
+            background: "rgba(59,130,246,0.14)",
+            borderColor: "rgba(59,130,246,0.34)",
+            color: "#2563eb",
+          }
       : {
           background: REMI_PURPLE_BG,
           borderColor: REMI_PURPLE_BORDER,
@@ -1446,6 +1469,7 @@ export default function MindDumpModal({
   onOpenReview,
   onCreateTask,
   onCreateIdea,
+  onCreateList,
   initialText,
   initialTextNonce,
 }: Props) {
@@ -1510,7 +1534,10 @@ export default function MindDumpModal({
   const caretRef = useRef<number>(0);
 
   const [itemKind, setItemKind] = useState<ItemKind>("task");
+  const [masterMode, setMasterMode] = useState(true);
   const [typeTouched, setTypeTouched] = useState(false);
+  const [listTitle, setListTitle] = useState("");
+  const [, setListTitleTouched] = useState(false);
 
   const [pickedDate, setPickedDate] = useState<string>("");
   const [pickedTime, setPickedTime] = useState<string>("");
@@ -1534,6 +1561,192 @@ export default function MindDumpModal({
   const showSettingsPanel = embedded ? settingsPanelOpen : true;
 
   const withGap = (s: string) => `${String(s ?? "").trim()}${GAP}`;
+
+  const parseListItemsFromText = (raw: string): string[] => {
+    return String(raw ?? "")
+      .split("\n")
+      .flatMap((line) =>
+        line
+          .split(",")
+          .map((part) =>
+            part
+              .replace(/^\s*[-*•]\s*/u, "")
+              .replace(/^\s*\d+[.)]\s*/u, "")
+              .trim(),
+          ),
+      )
+      .filter((line) => line.length > 0);
+  };
+
+  const splitNaturalListItems = (raw: string): string[] => {
+    const cleaned = String(raw ?? "")
+      .replace(/[.!?]+$/g, "")
+      .replace(/[“”"']/g, "")
+      .trim();
+    if (!cleaned) return [];
+
+    // Comma is the main separator; also support y/and/und for trailing items.
+    return cleaned
+      .split(",")
+      .flatMap((chunk) => chunk.split(/\s+(?:y|e|and|und)\s+/i))
+      .map((item) =>
+        item
+          .replace(/^\s*(?:dentro(?:\s+de)?|inside)\s+/i, "")
+          .trim(),
+      )
+      .filter((item) => item.length > 0);
+  };
+
+  const parseListCommandFromText = (
+    raw: string,
+  ): { title: string; items: string[] } | null => {
+    const text = String(raw ?? "").trim();
+    if (!text) return null;
+
+    // ES/EN/DE verbs in natural commands: "pon/agrega/add/füge ..."
+    const verbRe =
+      "(?:agrega(?:r)?|añad(?:e|ir)|anad(?:e|ir)|mete(?:r)?|pon(?:er)?|add|put|insert|f(?:u|ü)ge(?:n)?|hinzu(?:f(?:u|ü)gen)?)";
+    const listWordRe = "(?:lista|list|liste|checklist|checkliste)";
+    const prepRe = "(?:en|a|to|into|in|auf|zu|zur|zum)";
+    const articleRe = "(?:la\\s+|el\\s+|the\\s+|die\\s+|der\\s+|das\\s+|den\\s+)?";
+    const createVerbRe =
+      "(?:crea(?:r)?|crea\\s*me|creame|cre[aá]me|haz|make|create|erstelle(?:n)?|mach(?:en)?)";
+    const calledAsRe =
+      "(?:que\\s+se\\s+llame|que\\s+se\\s+llama|llamada\\s*|llamado\\s*|called\\s*|named\\s*|namens\\s*)";
+
+    // "pon huevos, arroz y leche en la lista de comprar"
+    const actionBeforeList = new RegExp(
+      `(?:^|\\b)${verbRe}\\s+(.+?)\\s+${prepRe}\\s+${articleRe}${listWordRe}\\s+(?:de\\s+|von\\s+)?(.+?)(?:[.!?]|$)`,
+      "i",
+    );
+    const m1 = text.match(actionBeforeList);
+    if (m1) {
+      const items = splitNaturalListItems(m1[1]);
+      const title = (m1[2] ?? "").trim();
+      if (title && items.length > 0) return { title, items };
+    }
+
+    // "en la lista comprar agrega huevos"
+    const listBeforeAction = new RegExp(
+      `(?:^|\\b)${prepRe}\\s+${articleRe}${listWordRe}\\s+(?:de\\s+|von\\s+)?(.+?)\\s+${verbRe}\\s+(.+?)(?:[.!?]|$)`,
+      "i",
+    );
+    const m2 = text.match(listBeforeAction);
+    if (m2) {
+      const title = (m2[1] ?? "").trim();
+      const items = splitNaturalListItems(m2[2]);
+      if (title && items.length > 0) return { title, items };
+    }
+
+    // "crea la lista deporte y añade correr, gimnasio, estirar"
+    const createThenAdd = new RegExp(
+      `(?:^|\\b)${createVerbRe}\\s+${articleRe}${listWordRe}\\s+(?:de\\s+|von\\s+)?(.+?)\\s+(?:y|e|and|und)\\s+${verbRe}\\s+(.+?)(?:[.!?]|$)`,
+      "i",
+    );
+    const m3 = text.match(createThenAdd);
+    if (m3) {
+      const title = (m3[1] ?? "").trim();
+      const items = splitNaturalListItems(m3[2]);
+      if (title && items.length > 0) return { title, items };
+    }
+
+    // "crea la lista deporte: correr, gimnasio, estirar"
+    const createWithColon = new RegExp(
+      `(?:^|\\b)${createVerbRe}\\s+${articleRe}${listWordRe}\\s+(?:de\\s+|von\\s+)?(.+?)\\s*:\\s*(.+?)(?:[.!?]|$)`,
+      "i",
+    );
+    const m4 = text.match(createWithColon);
+    if (m4) {
+      const title = (m4[1] ?? "").trim();
+      const items = splitNaturalListItems(m4[2]);
+      if (title && items.length > 0) return { title, items };
+    }
+
+    // "crea una lista nueva que se llame viaje y tenga dentro bañador, crema del sol y toalla"
+    const createNamedWithItems = new RegExp(
+      `(?:^|\\b)${createVerbRe}\\s+(?:una\\s+|un\\s+|a\\s+|eine\\s+)?${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+${calledAsRe}\\s*(.+?)\\s+(?:y|e|and|und)\\s+(?:tenga(?:\\s+dentro)?|que\\s+tenga|con|incluya|incluye|mit|with)\\s+(.+?)(?:[.!?]|$)`,
+      "i",
+    );
+    const m6 = text.match(createNamedWithItems);
+    if (m6) {
+      const title = (m6[1] ?? "").trim();
+      const items = splitNaturalListItems(m6[2]);
+      if (title && items.length > 0) return { title, items };
+    }
+
+    // "créame la lista torreznos y que dentro tenga pan, leche"
+    const createWithInsideItems = new RegExp(
+      `(?:^|\\b)${createVerbRe}\\s+${articleRe}${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+(?:de\\s+|von\\s+)?(.+?)\\s+(?:y|e|and|und)\\s+(?:que\\s+dentro\\s+tenga|que\\s+tenga\\s+dentro|dentro\\s+tenga|inside\\s+with|mit\\s+drin|mit)\\s+(.+?)(?:[.!?]|$)`,
+      "iu",
+    );
+    const m8 = text.match(createWithInsideItems);
+    if (m8) {
+      const title = (m8[1] ?? "").trim();
+      const items = splitNaturalListItems(m8[2]);
+      if (title && items.length > 0) return { title, items };
+    }
+
+    // "crea una lista que se llame test" / "create a list called test"
+    const createNamedList = new RegExp(
+      `(?:^|\\b)${createVerbRe}\\s+(?:una\\s+|un\\s+|a\\s+|eine\\s+)?${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+${calledAsRe}\\s*(.+?)(?:[.!?]|$)`,
+      "i",
+    );
+    const m5 = text.match(createNamedList);
+    if (m5) {
+      const title = (m5[1] ?? "").trim();
+      if (title) return { title, items: [] };
+    }
+
+    // "crea la lista viaje" / "create list travel" / "erstelle liste reise"
+    const createSimpleList = new RegExp(
+      `(?:^|\\b)${createVerbRe}\\s+${articleRe}${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+(?:de\\s+|von\\s+)?(.+?)(?:[.!?]|$)`,
+      "iu",
+    );
+    const m7 = text.match(createSimpleList);
+    if (m7) {
+      const title = (m7[1] ?? "").trim();
+      if (title) return { title, items: [] };
+    }
+
+    return null;
+  };
+
+  const parseListTitleFromText = (raw: string): string | null => {
+    const text = String(raw ?? "").trim();
+    if (!text) return null;
+
+    const listWordRe = "(?:lista|list|liste|checklist|checkliste)";
+    const prepRe = "(?:en|a|to|into|in|auf|zu|zur|zum)";
+    const articleRe = "(?:la\\s+|el\\s+|the\\s+|die\\s+|der\\s+|das\\s+|den\\s+)?";
+
+    // "agregar a la lista comprar" / "in der liste einkaufen"
+    const m1 = text.match(
+      new RegExp(
+        `(?:^|\\b)(?:agrega(?:r)?|añad(?:e|ir)|anad(?:e|ir)|mete(?:r)?|pon(?:er)?|add|put|insert|f(?:u|ü)ge(?:n)?|hinzu(?:f(?:u|ü)gen)?)\\s+${prepRe}\\s+${articleRe}${listWordRe}\\s+(?:de\\s+|von\\s+)?(.+?)(?:[.!?]|$)`,
+        "iu",
+      ),
+    );
+    if (m1?.[1]?.trim()) return m1[1].trim();
+
+    // "en la lista comprar"
+    const m2 = text.match(
+      new RegExp(
+        `(?:^|\\b)${prepRe}\\s+${articleRe}${listWordRe}\\s+(?:de\\s+|von\\s+)?(.+?)(?:[.!?]|$)`,
+        "iu",
+      ),
+    );
+    if (m2?.[1]?.trim()) return m2[1].trim();
+
+    const createSimple = text.match(
+      new RegExp(
+        `(?:^|\\b)(?:crea(?:r)?|crea\\s*me|creame|cre[aá]me|haz|make|create|erstelle(?:n)?|mach(?:en)?)\\s+${articleRe}${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+(?:de\\s+|von\\s+)?(.+?)(?:[.!?]|$)`,
+        "iu",
+      ),
+    );
+    if (createSimple?.[1]?.trim()) return createSimple[1].trim();
+
+    return null;
+  };
 
   const blurTextarea = () => {
     try {
@@ -1693,14 +1906,71 @@ export default function MindDumpModal({
     }
   };
 
+  const resetTaskOnlyFields = useCallback(() => {
+    setPickedDate("");
+    setPickedTime("");
+    setReminderMode("NONE");
+    setHabitRepeat("none");
+    setDateTouched(false);
+    setTimeTouched(false);
+    setReminderTouched(false);
+    setHabitTouched(false);
+    setReminderMenuOpen(false);
+    setRepeatMenuOpen(false);
+  }, []);
+
   const handleSave = async () => {
     startedRef.current = false;
     stop();
     blurTextarea();
 
     const trimmed = text.trim();
-    if (!trimmed) {
+    if (itemKind !== "list" && !trimmed) {
       toast.message(t("capture.toast.writeSomething", "Escribe algo primero."));
+      return;
+    }
+
+    const naturalListCommand =
+      onCreateList && trimmed.length > 0 ? parseListCommandFromText(trimmed) : null;
+    if (naturalListCommand) {
+      onClose();
+      setTimeout(() => {
+        void (async () => {
+          try {
+            await onCreateList?.(naturalListCommand.title, naturalListCommand.items);
+          } catch {
+            toast.error(t("capture.toast.saveError", "No se pudo guardar."));
+          }
+        })();
+      }, 0);
+      return;
+    }
+
+    if (itemKind === "list") {
+      const parsedLines = parseListItemsFromText(text);
+      const typedTitle = listTitle.trim();
+      const inferredTitle = typedTitle || parsedLines[0] || "";
+      const cleanTitle = inferredTitle.trim();
+      if (!cleanTitle) {
+        toast.message(t("lists.titlePlaceholder", "Título de la lista"));
+        return;
+      }
+
+      const listItems = typedTitle ? parsedLines : parsedLines.slice(1);
+      onClose();
+      setTimeout(() => {
+        void (async () => {
+          try {
+            if (onCreateList) {
+              await onCreateList(cleanTitle, listItems);
+            } else {
+              toast.error(t("capture.toast.saveError", "No se pudo guardar."));
+            }
+          } catch {
+            toast.error(t("capture.toast.saveError", "No se pudo guardar."));
+          }
+        })();
+      }, 0);
       return;
     }
 
@@ -1772,7 +2042,10 @@ export default function MindDumpModal({
       setCaretTick((n) => n + 1);
 
       setItemKind("task");
+      setMasterMode(true);
       setTypeTouched(false);
+      setListTitle("");
+      setListTitleTouched(false);
 
       setPickedDate("");
       setPickedTime("");
@@ -1917,6 +2190,7 @@ export default function MindDumpModal({
         { id: "birthday" as const, re: /^(cumple|cumpleanos)\b/i },
         { id: "appointment" as const, re: /^(cita|reunion)\b/i },
         { id: "idea" as const, re: /^(nota|idea)\b/i },
+        { id: "list" as const, re: /^(lista|listado|lista de)\b/i },
       ],
       scheduleTokens: [
         /\bel\b/i,
@@ -1941,6 +2215,7 @@ export default function MindDumpModal({
         { id: "birthday" as const, re: /^(birthday)\b/i },
         { id: "appointment" as const, re: /^(meeting|appointment)\b/i },
         { id: "idea" as const, re: /^(note|idea)\b/i },
+        { id: "list" as const, re: /^(list|checklist)\b/i },
       ],
       scheduleTokens: [/\bon\b/i, /\bevery\b/i, /\bbefore\b/i, /\btoday\b/i, /\btomorrow\b/i],
       timeTokens: [/\bat\b/i, /\b\d{1,2}:\d{2}\b/, /\b\d{1,2}\s?(am|pm)\b/i],
@@ -1955,6 +2230,7 @@ export default function MindDumpModal({
         { id: "birthday" as const, re: /^(geburtstag)\b/i },
         { id: "appointment" as const, re: /^(termin|meeting)\b/i },
         { id: "idea" as const, re: /^(notiz|idee)\b/i },
+        { id: "list" as const, re: /^(liste|checkliste)\b/i },
       ],
       scheduleTokens: [/\bam\b/i, /\bjeden\b/i, /\bvor\b/i, /\bheute\b/i, /\bmorgen\b/i],
       timeTokens: [/\bum\b/i, /\b\d{1,2}:\d{2}\b/],
@@ -2148,29 +2424,78 @@ export default function MindDumpModal({
 
   useEffect(() => {
     if (!open) return;
-    // Si el texto detecta explícitamente "idea", priorizamos siempre ese tipo.
-    if (activeRootChip === "idea") {
-      if (itemKind !== "idea") {
-        setItemKind("idea");
-        setPickedDate("");
-        setPickedTime("");
-        setReminderMode("NONE");
-        setHabitRepeat("none");
-        setDateTouched(false);
-        setTimeTouched(false);
-        setReminderTouched(false);
-        setHabitTouched(false);
+
+    const listCommand = parseListCommandFromText(text);
+    const hasIdeaSignal = !!detectIdeaSignal(text);
+    const hasListSignal = !!detectListSignal(text);
+    const hasListCommand = !!listCommand;
+
+    if (!masterMode && typeTouched && !hasIdeaSignal && !hasListSignal && !hasListCommand) return;
+
+    const next: ItemKind =
+      hasListCommand || hasListSignal
+        ? "list"
+        : hasIdeaSignal
+          ? "idea"
+          : "task";
+
+    if (next !== itemKind) {
+      setItemKind(next);
+      if (next !== "task") {
+        resetTaskOnlyFields();
       }
+      if (next !== "list") {
+        setListTitle("");
+        setListTitleTouched(false);
+      }
+    }
+  }, [open, masterMode, typeTouched, itemKind, resetTaskOnlyFields, text]);
+
+  useEffect(() => {
+    if (!embedded) return;
+    if (itemKind === "task") return;
+    if (!settingsPanelOpen) return;
+    setSettingsPanelOpen(false);
+  }, [embedded, itemKind, settingsPanelOpen]);
+
+  useEffect(() => {
+    if (!open || itemKind !== "list") return;
+    const lines = String(text ?? "").split("\n");
+    const firstLine = (lines[0] ?? "").trim();
+    // 1) Natural command detection ("crea una lista que se llame test", etc.)
+    const natural = parseListCommandFromText(text);
+    const naturalTitle = natural?.title?.trim() ?? "";
+    if (naturalTitle) {
+      if (naturalTitle !== listTitle.trim()) setListTitle(naturalTitle);
       return;
     }
 
-    if (typeTouched) return;
-
-    const next: ItemKind = "task";
-    if (next !== itemKind) {
-      setItemKind(next);
+    const inferredTitleFromText = parseListTitleFromText(text);
+    if (inferredTitleFromText) {
+      if (inferredTitleFromText !== listTitle.trim()) setListTitle(inferredTitleFromText);
+      return;
     }
-  }, [open, activeRootChip, typeTouched, itemKind]);
+
+    // 2) Explicit inline syntax ("lista: compras")
+    const match = firstLine.match(/^(lista|list|liste)\s*:\s*(.+)$/i);
+    if (!match) return;
+    const inferredTitle = (match[2] ?? "").trim();
+    if (!inferredTitle) return;
+    if (inferredTitle !== listTitle.trim()) setListTitle(inferredTitle);
+
+    const rest = lines.slice(1).join("\n").trimStart();
+    setText(rest);
+    requestAnimationFrame(() => {
+      const node = textareaRef.current;
+      if (!node) return;
+      try {
+        const pos = node.innerText.length;
+        setSelectionOffsetsInElement(node, pos, pos);
+        caretRef.current = pos;
+        setCaretTick((n) => n + 1);
+      } catch {}
+    });
+  }, [open, itemKind, listTitle, text]);
 
   const handleRootChip = (id: RootChipId) => {
     hapticTick(12);
@@ -2224,6 +2549,7 @@ export default function MindDumpModal({
   const detectedReminder = detectReminderSignal(currentLine) ?? detectReminderSignal(allTextForSignals);
   const detectedHabit = detectHabitSignal(currentLine) ?? detectHabitSignal(allTextForSignals);
   const detectedIdea = detectIdeaSignal(currentLine) ?? detectIdeaSignal(allTextForSignals);
+  const detectedList = detectListSignal(currentLine) ?? detectListSignal(allTextForSignals);
   const highlightTokens = useMemo(() => {
     const base = collectHighlightTokens(text);
     const fromSignals = collectSignalTokens(text, [
@@ -2232,6 +2558,7 @@ export default function MindDumpModal({
       { kind: "reminder", value: detectedReminder },
       { kind: "habit", value: detectedHabit },
       { kind: "idea", value: detectedIdea },
+      { kind: "list", value: detectedList },
     ]);
     const merged = [...base, ...fromSignals];
     if (merged.length === 0) return merged;
@@ -2251,7 +2578,7 @@ export default function MindDumpModal({
       if (!overlaps) selected.push(token);
     }
     return selected.sort((a, b) => a.start - b.start);
-  }, [text, detectedDate, detectedTime, detectedReminder, detectedHabit, detectedIdea]);
+  }, [text, detectedDate, detectedTime, detectedReminder, detectedHabit, detectedIdea, detectedList]);
   const highlightedHtml = useMemo(() => buildHighlightedHtml(text, highlightTokens), [text, highlightTokens]);
 
   useEffect(() => {
@@ -2400,9 +2727,22 @@ export default function MindDumpModal({
     if (habitRepeat === "yearly") return t("pill.habitYearly", "Anual");
     return t("pill.repeatNone", "Sin repetición");
   })();
-  const editorBorderColor = itemKind === "idea" ? "rgba(245, 158, 11, 0.42)" : REMI_PURPLE_BORDER;
-  const showEmbeddedExamples = embedded && itemKind === "task" && text.trim().length === 0;
+  const editorBorderColor =
+    itemKind === "idea"
+      ? "rgba(245, 158, 11, 0.42)"
+      : itemKind === "list"
+        ? "rgba(37, 99, 235, 0.35)"
+        : REMI_PURPLE_BORDER;
+  const showEmbeddedExamples =
+    embedded && !masterMode && itemKind === "task" && text.trim().length === 0;
+  const showEmbeddedRemiHint =
+    embedded && masterMode && itemKind === "task" && text.trim().length === 0;
   const showEmbeddedIdeaHint = embedded && itemKind === "idea" && text.trim().length === 0;
+  const showEmbeddedListHint = embedded && itemKind === "list" && text.trim().length === 0;
+  const listTitleEmojiPreview = useMemo(() => {
+    const picked = suggestSharedListEmoji(listTitle ?? "");
+    return picked && picked.trim().length > 0 ? picked : null;
+  }, [listTitle]);
 
   return (
     <div
@@ -2601,11 +2941,12 @@ export default function MindDumpModal({
               style={{
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "flex-end",
-                gap: 10,
+                justifyContent: "space-between",
+                gap: 14,
+                width: "100%",
               }}
             >
-              <div style={{ display: "flex", gap: 8, alignItems: "center", marginLeft: "auto" }}>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
                 <div
                   style={{
                     display: "inline-flex",
@@ -2620,17 +2961,20 @@ export default function MindDumpModal({
                   <button
                     type="button"
                     onClick={() => {
-                      setTypeTouched(true);
+                      setMasterMode(true);
+                      setTypeTouched(false);
                       setItemKind("task");
+                      setListTitle("");
+                      setListTitleTouched(false);
                     }}
                     style={{
                       height: 30,
-                      minWidth: 102,
-                      padding: "0 12px",
+                      minWidth: 0,
+                      padding: "0 10px",
                       borderRadius: 999,
                       border: "none",
-                      background: itemKind === "task" ? "#ede9fe" : "transparent",
-                      color: itemKind === "task" ? "#7c3aed" : "#64748b",
+                      background: masterMode && itemKind === "task" ? "#6d46c4" : "transparent",
+                      color: masterMode && itemKind === "task" ? "#f8f7ff" : "#64748b",
                       fontSize: 13,
                       lineHeight: 1.1,
                       fontWeight: 800,
@@ -2638,6 +2982,57 @@ export default function MindDumpModal({
                       display: "inline-flex",
                       alignItems: "center",
                       justifyContent: "center",
+                      whiteSpace: "nowrap",
+                    }}
+                    title={t("capture.type.master", "Remi")}
+                    aria-label={t("capture.type.master", "Remi")}
+                  >
+                    {t("capture.type.master", "Remi")}
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flex: "1 1 auto", minWidth: 0 }}>
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    padding: 4,
+                    borderRadius: 999,
+                    border: "1px solid #cfc3f7",
+                    background: "#ffffff",
+                    width: "auto",
+                    minWidth: "fit-content",
+                    marginLeft: "auto",
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMasterMode(false);
+                      setTypeTouched(true);
+                      setItemKind("task");
+                      setListTitle("");
+                      setListTitleTouched(false);
+                    }}
+                    style={{
+                      height: "auto",
+                      minWidth: 0,
+                      flex: "0 1 auto",
+                      padding: "6px 16px",
+                      borderRadius: 999,
+                      border: "none",
+                      background: !masterMode && itemKind === "task" ? "#ede9fe" : "transparent",
+                      color: !masterMode && itemKind === "task" ? "#7c3aed" : "#64748b",
+                      fontSize: "clamp(13px, 0.9vw, 18px)",
+                      lineHeight: 1.1,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      whiteSpace: "nowrap",
                     }}
                     title={t("pill.type.task", "Recordatorio")}
                     aria-label={t("pill.type.task", "Recordatorio")}
@@ -2647,39 +3042,69 @@ export default function MindDumpModal({
                   <button
                     type="button"
                     onClick={() => {
+                      setMasterMode(false);
                       setTypeTouched(true);
                       setItemKind("idea");
-                      setPickedDate("");
-                      setPickedTime("");
-                      setReminderMode("NONE");
-                      setHabitRepeat("none");
-                      setDateTouched(false);
-                      setTimeTouched(false);
-                      setReminderTouched(false);
-                      setHabitTouched(false);
-                      setReminderMenuOpen(false);
-                      setRepeatMenuOpen(false);
+                      setListTitle("");
+                      setListTitleTouched(false);
+                      resetTaskOnlyFields();
+                      setSettingsPanelOpen(false);
                     }}
                     style={{
-                      height: 30,
-                      minWidth: 72,
-                      padding: "0 12px",
+                      height: "auto",
+                      minWidth: 0,
+                      flex: "0 1 auto",
+                      padding: "6px 16px",
                       borderRadius: 999,
                       border: "none",
                       background: itemKind === "idea" ? "#fef3c7" : "transparent",
                       color: itemKind === "idea" ? "#a16207" : "#64748b",
-                      fontSize: 13,
+                      fontSize: "clamp(13px, 0.9vw, 18px)",
                       lineHeight: 1.1,
-                      fontWeight: 800,
+                      fontWeight: 600,
                       cursor: "pointer",
                       display: "inline-flex",
                       alignItems: "center",
                       justifyContent: "center",
+                      whiteSpace: "nowrap",
                     }}
-                    title={t("inbox.ideasTab", "Notas")}
-                    aria-label={t("inbox.ideasTab", "Notas")}
+                    title={t("capture.type.note", "Nota")}
+                    aria-label={t("capture.type.note", "Nota")}
                   >
-                    {t("inbox.ideasTab", "Notas")}
+                    {t("capture.type.note", "Nota")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMasterMode(false);
+                      setTypeTouched(true);
+                      setItemKind("list");
+                      setListTitleTouched(false);
+                      resetTaskOnlyFields();
+                      setSettingsPanelOpen(false);
+                    }}
+                    style={{
+                      height: "auto",
+                      minWidth: 0,
+                      flex: "0 1 auto",
+                      padding: "6px 16px",
+                      borderRadius: 999,
+                      border: "none",
+                      background: itemKind === "list" ? "#dbeafe" : "transparent",
+                      color: itemKind === "list" ? "#2563eb" : "#64748b",
+                      fontSize: "clamp(13px, 0.9vw, 18px)",
+                      lineHeight: 1.1,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      whiteSpace: "nowrap",
+                    }}
+                    title={t("capture.type.list", "Lista")}
+                    aria-label={t("capture.type.list", "Lista")}
+                  >
+                    {t("capture.type.list", "Lista")}
                   </button>
                 </div>
                 
@@ -2759,6 +3184,24 @@ export default function MindDumpModal({
                 <div style={{ marginTop: 6 }}>{t("capture.inlineExample", "Ej: cumpleaños el 12 de junio a las 13:00. Recuérdamelo una semana antes.")}</div>
               </div>
             )}
+            {showEmbeddedRemiHint && (
+              <div
+                aria-hidden
+                style={{
+                  position: "absolute",
+                  top: 70,
+                  left: 16,
+                  right: 16,
+                  zIndex: 1,
+                  pointerEvents: "none",
+                  color: "rgba(15,23,42,0.45)",
+                  fontSize: 12,
+                  lineHeight: 1.35,
+                }}
+              >
+                {t("capture.masterHint", "Dile a Remi lo que quieres hacer.")}
+              </div>
+            )}
             {showEmbeddedIdeaHint && (
               <div
                 aria-hidden
@@ -2775,6 +3218,96 @@ export default function MindDumpModal({
                 }}
               >
                 {t("capture.noteHint", "Guarda tus memorias para no perderlas")}
+              </div>
+            )}
+            {itemKind === "list" && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: 12,
+                  left: 14,
+                  right: 14,
+                  zIndex: 3,
+                  pointerEvents: "auto",
+                }}
+              >
+                <div
+                  style={{
+                    width: "100%",
+                    height: 38,
+                    borderRadius: 10,
+                    border: "1px solid rgba(37, 99, 235, 0.25)",
+                    background: "#ffffff",
+                    display: "flex",
+                    alignItems: "center",
+                    overflow: "hidden",
+                  }}
+                >
+                  <span
+                    aria-hidden
+                    style={{
+                      width: 34,
+                      minWidth: 34,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 16,
+                      color: "#8b8fa6",
+                      lineHeight: 1,
+                    }}
+                  >
+                    {listTitleEmojiPreview ?? "•"}
+                  </span>
+                  <span
+                    aria-hidden
+                    style={{
+                      width: 1,
+                      height: 18,
+                      background: "#d5d8e1",
+                      flexShrink: 0,
+                    }}
+                  />
+                  <input
+                    type="text"
+                    value={listTitle}
+                    onChange={(e) => {
+                      setTypeTouched(true);
+                      setListTitleTouched(true);
+                      setListTitle(e.target.value);
+                    }}
+                    placeholder={t("lists.titlePlaceholder", "Título de la lista")}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      border: "none",
+                      background: "transparent",
+                      padding: "0 12px",
+                      color: REMI_TEXT,
+                      fontSize: 15,
+                      fontWeight: 700,
+                      outline: "none",
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+            {showEmbeddedListHint && (
+              <div
+                aria-hidden
+                style={{
+                  position: "absolute",
+                  top: 74,
+                  left: 16,
+                  right: 16,
+                  zIndex: 1,
+                  pointerEvents: "none",
+                  color: "rgba(15,23,42,0.45)",
+                  fontSize: 12,
+                  lineHeight: 1.35,
+                  whiteSpace: "pre-line",
+                }}
+              >
+                {t("lists.itemsPlaceholder", 'Crea o actualiza listas existentes: Ej: "Añade pan, leche y azucar a la lista comprar".')}
               </div>
             )}
             <div
@@ -2849,12 +3382,17 @@ export default function MindDumpModal({
                 color: REMI_TEXT,
                 caretColor: REMI_TEXT,
                 padding: 16,
+                paddingTop: itemKind === "list" ? 72 : 16,
                 paddingBottom: embedded ? 88 : 16,
                 whiteSpace: "pre-wrap",
                 wordBreak: "break-word",
                 overflowWrap: "anywhere",
               }}
-              data-placeholder={t("capture.placeholder", "Toca para escribir")}
+              data-placeholder={
+                itemKind === "list"
+                  ? ""
+                  : t("capture.placeholder", "Toca para escribir")
+              }
             />
 
             {embedded && (
@@ -2871,28 +3409,32 @@ export default function MindDumpModal({
                   zIndex: showSettingsPanel ? 2 : 6,
                 }}
               >
-                <button
-                  type="button"
-                  onClick={() => setSettingsPanelOpen((v) => !v)}
-                  aria-label={t("common.settings", "Ajustes")}
-                  title={t("common.settings", "Ajustes")}
-                  aria-pressed={settingsPanelOpen}
-                  style={{
-                    width: 38,
-                    height: 38,
-                    borderRadius: 999,
-                    border: "1px solid #c7b5f6",
-                    background: "#f3f4f6",
-                    color: "#7d59c9",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    pointerEvents: "auto",
-                  }}
-                >
-                  <SlidersHorizontal className="h-3.5 w-3.5" />
-                </button>
+                {itemKind === "task" ? (
+                  <button
+                    type="button"
+                    onClick={() => setSettingsPanelOpen((v) => !v)}
+                    aria-label={t("common.settings", "Ajustes")}
+                    title={t("common.settings", "Ajustes")}
+                    aria-pressed={settingsPanelOpen}
+                    style={{
+                      width: 38,
+                      height: 38,
+                      borderRadius: 999,
+                      border: "1px solid #c7b5f6",
+                      background: "#f3f4f6",
+                      color: "#7d59c9",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      pointerEvents: "auto",
+                    }}
+                  >
+                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                  </button>
+                ) : (
+                  <div style={{ width: 38, height: 38 }} />
+                )}
 
                 {showTalkButton ? (
                   <button
@@ -3029,54 +3571,6 @@ export default function MindDumpModal({
                   pointerEvents: showSettingsPanel ? "auto" : "none",
                 }}
               >
-                {/* ✅ Tipo (task/idea) */}
-                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="text-[11px] font-extrabold text-slate-700">
-                      {t("pill.type.label", "Tipo")}
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <PillButton
-                        active={itemKind === "task"}
-                        size="sm"
-                        onClick={() => {
-                          setTypeTouched(true);
-                          setItemKind("task");
-                        }}
-                        icon={<CalendarClock className="h-3.5 w-3.5" />}
-                      >
-                        {t("pill.type.task", "Recordatorio")}
-                      </PillButton>
-
-                      <PillButton
-                        active={itemKind === "idea"}
-                        variant="amber"
-                        size="sm"
-                        onClick={() => {
-                          setTypeTouched(true);
-                          setItemKind("idea");
-
-                          setPickedDate("");
-                          setPickedTime("");
-                          setReminderMode("NONE");
-                          setHabitRepeat("none");
-                          setDateTouched(false);
-                          setTimeTouched(false);
-                          setReminderTouched(false);
-                          setHabitTouched(false);
-
-                          setReminderMenuOpen(false);
-                          setRepeatMenuOpen(false);
-                        }}
-                        icon={<StickyNote className="h-3.5 w-3.5" />}
-                      >
-                        {t("pill.type.idea", "Idea")}
-                      </PillButton>
-            </div>
-          </div>
-                </div>
-
                 {/* ✅ NUEVO: 2x2 pills (Fecha / Hora / Recordatorio / Repetición) */}
                 <div className="grid grid-cols-2 gap-2">
                   {/* Fecha */}

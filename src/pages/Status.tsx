@@ -560,7 +560,7 @@ export default function StatusPage() {
               </div>
             </div>
 
-            <div className="mt-3 rounded-[22px] border border-violet-200 bg-gradient-to-r from-[#f1ecff] via-[#e9f0ff] to-[#e2f5f3] px-4 py-3.5 shadow-[0_10px_24px_rgba(125,89,201,0.12)]">
+            <div className="mt-3 rounded-[22px] border border-violet-200 bg-[#e9f0ff] px-4 py-3.5 shadow-[0_10px_24px_rgba(125,89,201,0.12)]">
               <div className="flex items-center justify-between gap-4">
                 <div className="text-slate-800 min-w-0">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-violet-700/80">

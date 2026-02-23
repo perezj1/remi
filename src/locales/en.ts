@@ -411,11 +411,12 @@ export const en = {
     timeUnset: "No time",
     placeholder: "Tap to type",
     noteHint: "Save your memories so you don't lose them",
+    masterHint: "Tell Remi what you want to do.",
 
     title: "Clear your mind",
     subtitle: "Speak, type, or paste text. Remi takes care of it.",
     inlineGuide: "❓ What?  📅 When?  🔔 Reminder?",
-    inlineExample: "e.g.: Marcos's birthday on June 12 at 1:00 PM. Remind me one week before.",
+    inlineExample: "Ex: Marcos's birthday on June 12 at 1:00 PM. Remind me one week before.",
     examplesTitle: "Examples:",
     exampleVoice: '🎤 "Call mom on Sunday"',
     exampleVoiceIOS: '🎤 "Use the keyboard mic to dictate"',
@@ -453,6 +454,12 @@ export const en = {
     toastTaskError: "Error creating task",
     toastIdeaSaved: "Idea saved successfully",
     toastIdeaError: "Error creating idea",
+    type: {
+      master: "Remi",
+      task: "Reminder",
+      note: "Note",
+      list: "List",
+    },
   },
 
   pill: {
@@ -998,6 +1005,7 @@ export const en = {
     notificationsOffShort: "Noti OFF",
     notificationsError: "Could not update notifications.",
     newItemPlaceholder: "Add item...",
+    itemsPlaceholder: 'Create or update existing lists:\nEx: "Add bread, milk and sugar to the shopping list".',
     itemsEmpty: "No items yet.",
     itemCreateError: "Could not create item.",
     itemUpdateError: "Could not update item.",

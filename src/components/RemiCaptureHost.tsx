@@ -3,9 +3,11 @@ import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { useI18n } from "@/contexts/I18nContext";
 import { celebrateCreation } from "@/lib/creationCelebration";
 import { computeMindClearPercent } from "@/lib/mindClear";
 import { useModalUi } from "@/contexts/ModalUiContext";
+import { toast } from "sonner";
 
 import MindDumpModal from "@/components/MindDumpModal";
 import MentalDumpModal from "@/components/MentalDumpModal";
@@ -17,6 +19,12 @@ import {
   createTask,
   fetchRemiStatusSummary,
 } from "@/lib/brainItemsApi";
+import {
+  createSharedList,
+  createSharedListItem,
+  fetchSharedListItems,
+  fetchSharedLists,
+} from "@/lib/sharedListsApi";
 
 import { SHARE_DRAFT_KEY } from "@/pages/ShareTarget";
 
@@ -110,6 +118,7 @@ function clearHistoryToken(search: string): string {
 
 export default function RemiCaptureHost() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const { setModalOpen } = useModalUi();
 
   const location = useLocation();
@@ -330,6 +339,35 @@ export default function RemiCaptureHost() {
     [emitItemsChanged, user]
   );
 
+  const handleCreateList = useCallback(
+    async (title: string, items: string[]) => {
+      if (!user) return;
+      const cleanTitle = title.trim();
+      if (!cleanTitle) return;
+
+      const lists = await fetchSharedLists(user.id);
+      const existing = lists.find(
+        (list) => list.title.trim().toLocaleLowerCase() === cleanTitle.toLocaleLowerCase(),
+      );
+      const targetList = existing ?? (await createSharedList(user.id, cleanTitle));
+      const existingCount = existing ? (await fetchSharedListItems(existing.id)).length : 0;
+
+      let nextPosition = existingCount;
+      for (let i = 0; i < items.length; i += 1) {
+        const text = items[i]?.trim();
+        if (!text) continue;
+        nextPosition += 1;
+        await createSharedListItem(targetList.id, text, user.id, nextPosition);
+      }
+
+      toast.success(
+        existing ? t("lists.updated", "Lista actualizada.") : t("lists.created", "Lista creada."),
+      );
+      emitItemsChanged();
+    },
+    [emitItemsChanged, t, user],
+  );
+
   // ✅ Cierre: siempre cerrar y dejar INDEX limpio (sin modal, sin _mh)
   const closeAllAndGoIndex = useCallback(() => {
     setMindDumpOpen(false);
@@ -348,6 +386,7 @@ export default function RemiCaptureHost() {
         initialText={mindDumpInitialText}
         onCreateTask={handleCreateTask}
         onCreateIdea={handleCreateIdea}
+        onCreateList={handleCreateList}
         initialTextNonce={mindDumpInitialNonce}
       />
 
