@@ -409,9 +409,12 @@ export const de = {
     dateTimeNoneShort: "Ohne Datum/Uhrzeit",
     timeUnset: "Keine Uhrzeit",
     placeholder: "Tippen zum Schreiben",
+    noteHint: "Bewahre deine Erinnerungen auf, damit sie nicht verloren gehen",
 
     title: "Kopf frei machen",
     subtitle: "Sprich, schreib oder füge Text ein. Remi kümmert sich.",
+    inlineGuide: "❓ Was?  📅 Wann?  🔔 Erinnerung?",
+    inlineExample: "z. B.: Marcos' Geburtstag am 12. Juni um 13:00 Uhr. Erinnere mich eine Woche vorher.",
     examplesTitle: "Beispiele:",
     exampleVoice: "🎤 \"Mama am Sonntag anrufen\"",
     exampleVoiceIOS: "🎤 \"Nutze das Tastatur-Mikro zum Diktieren\"",
@@ -419,7 +422,7 @@ export const de = {
     exampleIdea: "💡 Idee: Italienreise im Frühling",
     holdToTalk: "Gedrückt halten zum Sprechen",
     listening: "Höre zu…",
-    iosKeyboardMicHint: "Usa el micrófono del teclado para hablar.",
+    iosKeyboardMicHint: "Nutze das Tastaturmikrofon zum Sprechen.",
     speakHold: "Gedrückt halten zum Sprechen",
 
     textareaPlaceholder: "Beispiele:",

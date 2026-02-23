@@ -410,9 +410,12 @@ export const en = {
     dateTimeNoneShort: "No date or time",
     timeUnset: "No time",
     placeholder: "Tap to type",
+    noteHint: "Save your memories so you don't lose them",
 
     title: "Clear your mind",
     subtitle: "Speak, type, or paste text. Remi takes care of it.",
+    inlineGuide: "❓ What?  📅 When?  🔔 Reminder?",
+    inlineExample: "e.g.: Marcos's birthday on June 12 at 1:00 PM. Remind me one week before.",
     examplesTitle: "Examples:",
     exampleVoice: '🎤 "Call mom on Sunday"',
     exampleVoiceIOS: '🎤 "Use the keyboard mic to dictate"',
@@ -420,7 +423,7 @@ export const en = {
     exampleIdea: "💡 Idea: trip to Italy in spring",
     holdToTalk: "Press and hold to speak",
     listening: "Listening…",
-    iosKeyboardMicHint: "Usa el micrófono del teclado para hablar.",
+    iosKeyboardMicHint: "Use the keyboard microphone to speak.",
     speakHold: "Press and hold to speak",
 
     textareaPlaceholder: "Examples:",

@@ -1,7 +1,7 @@
 ﻿// src/locales/es.ts
 export const es = {
   repeat: {
-    label: "Repetición",
+    label: "Frecuencia",
     help:
       "Convierte esta tarea en un hábito que Remi te recordará siempre a la hora elegida.",
 
@@ -49,7 +49,7 @@ export const es = {
     detectedDash: "—",
     habitDetectedLabel: "Hábito detectado:",
     detectedDefault: "Por defecto",
-    habitLabel: "Repetición",
+    habitLabel: "Frecuencia",
     habitOn: "On",
     habitOff: "Off",
 
@@ -116,11 +116,11 @@ export const es = {
     previewBackToEdit: "Volver a editar texto",
 
     // Hábitos
-    habitNone: "Sin Repetición",
-    habitDaily: "Repetición diaria",
-    habitWeekly: "Repetición semanal",
-    habitMonthly: "Repetición mensual",
-    habitYearly: "Repetición anual",
+    habitNone: "Sin frecuencia",
+    habitDaily: "Frecuencia diaria",
+    habitWeekly: "Frecuencia semanal",
+    habitMonthly: "Frecuencia mensual",
+    habitYearly: "Frecuencia anual",
 
     // Pistas rotatorias (hints)
     /*     0: "Tu solo escribe, Remi lo ordena y agenda todo por ti para recordartelo cuando llegue el momento.",
@@ -312,7 +312,7 @@ export const es = {
     chips: {
       backHint: "Volver a atajos",
       title: "Atajos inteligentes",
-      title2: "Fecha / Repetición",
+      title2: "Fecha / Frecuencia",
       title3: "Hora",
       title4: "Recordatorio",
       back: "Atajos",
@@ -424,9 +424,12 @@ export const es = {
     dateTimeNoneShort: "Sin fecha ni hora",
     timeUnset: "Sin hora",
     placeholder: "Toca para escribir",
+    noteHint: "Guarda tus memorias para no perderlas",
 
     title: "Vacía tu mente",
     subtitle: "Habla, escribe o pega texto. Remi se encarga.",
+    inlineGuide: "❓ ¿Qué?  📅 ¿Cuándo?  🔔 ¿Recordatorio?",
+    inlineExample: "Ej: cumpleaños el 12 de junio a las 13:00. Recuérdamelo una semana antes.",
     examplesTitle: "Ejemplos:",
     exampleVoice: "🎤 \"Llamar a mamá el domingo\"",
     exampleVoiceIOS: "🎤 \"Usa el microfono del teclado para dictar\"",
@@ -481,9 +484,9 @@ export const es = {
     date: "Fecha",
     time: "Hora",
     reminder: "Recordatorio",
-    habit: "Repetición",
+    habit: "Frecuencia",
     reminderNone: "Sin recordatorio",
-    repeatNone: "Sin repetición",
+    repeatNone: "Sin frecuencia",
 
     on: "On",
     off: "Off",
@@ -503,7 +506,7 @@ export const es = {
 
     editLabel: "Editar",
     editTitle: "Editar tarea",
-    editSubtitle: "Cambia el texto, la fecha y hora, los recordatorios y la repetición.",
+    editSubtitle: "Cambia el texto, la fecha y hora, los recordatorios y la frecuencia.",
 
     fieldTitle: "Tarea",
     fieldTitlePlaceholder: "Escribe tu tarea...",
@@ -1205,7 +1208,7 @@ export const es = {
           "Escribe una frase. Remi interpreta el texto y crea recordatorios o notas. También puedes crear listas y compartirlas en tiempo real.",
         bullets: {
           a: "Solo escribe: cero formato, cero fricción",
-          b: "Remi interpreta: fechas, horas, recordatorios y repetición",
+          b: "Remi interpreta: fechas, horas, recordatorios y frecuencia",
           c: "Recordatorios listos para que no dependa de tu memoria",
           d: "Crea listas y compártelas al instante",
         },
@@ -1227,7 +1230,7 @@ export const es = {
         step1Text: "Una frase, tal cual te sale. Sin menús, sin pensar en campos.",
         step2Title: "2) Remi lo interpreta",
         step2Text:
-          "Detecta fecha y hora, si es un hábito (repetición), y ajusta el recordatorio.",
+          "Detecta fecha y hora, si es un hábito (frecuencia), y ajusta el recordatorio.",
         step3Title: "3) Te lo devuelve cuando toca",
         step3Text:
           "Remi te lo pone delante en el momento adecuado para que no lo cargues tú.",
@@ -1237,7 +1240,7 @@ export const es = {
         title: "Texto → recordatorio automático",
         text:
           "No necesitas configurar mil cosas. Remi entiende el lenguaje natural y lo convierte en un recordatorio útil.",
-        chips: ["Fecha y hora", "Hábito / repetición", "Modo de recordatorio"],
+        chips: ["Fecha y hora", "Hábito / frecuencia", "Modo de recordatorio"],
         exampleLabel: "Ejemplos",
         examples: [
           "\"Mañana a las 18: llamar al seguro\"",
