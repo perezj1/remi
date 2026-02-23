@@ -979,6 +979,7 @@ export const en = {
     updated: "List updated.",
     createError: "Could not create the list.",
     confirmDelete: "Delete this list?",
+    confirmDeleteItem: "Are you sure you want to delete this item?",
     delete: "Delete",
     deleted: "List deleted.",
     deleteError: "Could not delete the list.",

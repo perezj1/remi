@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
 import { useModalUi } from "@/contexts/ModalUiContext";
+import { suggestSharedListEmoji } from "@/lib/sharedListEmojiAuto";
 import {
   acceptSharedListInvite,
   createSharedList,
@@ -47,6 +48,7 @@ export default function SharedListsPage() {
   const [items, setItems] = useState<SharedListItem[]>([]);
 
   const [newListTitle, setNewListTitle] = useState("");
+  const [newListManualEmoji, setNewListManualEmoji] = useState<string | null>(null);
   const [newItemText, setNewItemText] = useState("");
   const [saving, setSaving] = useState(false);
   const [viewMode, setViewMode] = useState<"cards" | "detail">("cards");
@@ -130,6 +132,11 @@ export default function SharedListsPage() {
     () => lists.find((l) => l.id === selectedListId) ?? null,
     [lists, selectedListId],
   );
+  const liveSuggestedListEmoji = useMemo(
+    () => suggestSharedListEmoji(newListTitle),
+    [newListTitle],
+  );
+  const newListEmojiPreview = newListManualEmoji ?? liveSuggestedListEmoji;
   const listIdsSignature = useMemo(() => lists.map((list) => list.id).join("|"), [lists]);
 
   const loadLists = useCallback(async () => {
@@ -307,11 +314,16 @@ export default function SharedListsPage() {
     if (!user) return;
     const title = newListTitle.trim();
     if (!title) return;
+    const manualEmoji = newListManualEmoji?.trim() ?? "";
 
     setSaving(true);
     try {
       const created = await createSharedList(user.id, title);
+      if (manualEmoji) {
+        await updateSharedListIcon(created.id, manualEmoji);
+      }
       setNewListTitle("");
+      setNewListManualEmoji(null);
       await loadLists();
       openListDetail(created.id);
       toast.success(safeT("lists.created", "Lista creada."));
@@ -323,6 +335,16 @@ export default function SharedListsPage() {
     }
   };
 
+  const handlePickNewListEmoji = () => {
+    const nextRaw = window.prompt(
+      safeT("lists.iconPrompt", "Elige un emoji para esta lista (vacío para quitarlo):"),
+      newListEmojiPreview ?? "",
+    );
+    if (nextRaw == null) return;
+    const next = nextRaw.trim();
+    setNewListManualEmoji(next.length > 0 ? next : null);
+  };
+
   const handleDeleteList = async () => {
     if (!selected) return;
     if (selected.my_role !== "owner") {
@@ -330,7 +352,7 @@ export default function SharedListsPage() {
       return;
     }
 
-    const ok = window.confirm(safeT("lists.confirmDelete", "Borrar esta lista?"));
+    const ok = window.confirm(safeT("lists.confirmDelete", "¿Eliminar esta lista?"));
     if (!ok) return;
 
     try {
@@ -452,6 +474,9 @@ export default function SharedListsPage() {
   };
 
   const handleDeleteItem = async (item: SharedListItem) => {
+    const ok = window.confirm(safeT("lists.confirmDeleteItem", "¿Seguro que quieres eliminar este punto?"));
+    if (!ok) return;
+
     try {
       await deleteSharedListItem(item.id);
       await loadItems();
@@ -580,7 +605,7 @@ export default function SharedListsPage() {
       toast.error(safeT("lists.onlyOwnerDelete", "Solo el owner puede eliminar la lista."));
       return;
     }
-    const ok = window.confirm(safeT("lists.confirmDelete", "Borrar esta lista?"));
+    const ok = window.confirm(safeT("lists.confirmDelete", "¿Eliminar esta lista?"));
     if (!ok) return;
     try {
       await deleteSharedList(list.id);
@@ -791,15 +816,28 @@ export default function SharedListsPage() {
         {viewMode === "cards" && (
           <>
             <div className="flex items-center gap-2">
-              <input
-                value={newListTitle}
-                onChange={(e) => setNewListTitle(e.target.value)}
-                placeholder={safeT("lists.newPlaceholder", "Nueva lista (ej: Comprar)")}
-                className="h-11 min-w-0 flex-[1_1_auto] rounded-full border border-[#d9d3ea] bg-white px-4 text-base md:text-sm outline-none transition focus:border-[#59a5c9] focus:shadow-[0_0_0_3px_rgba(89,165,201,0.22)]"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") void handleCreateList();
-                }}
-              />
+              <div className="h-11 min-w-0 flex-[1_1_auto] rounded-full border border-[#d9d3ea] bg-white transition focus-within:border-[#59a5c9] focus-within:shadow-[0_0_0_3px_rgba(89,165,201,0.22)]">
+                <div className="flex h-full items-center">
+                  <button
+                    type="button"
+                    onClick={handlePickNewListEmoji}
+                    className="ml-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg"
+                    title={safeT("lists.iconAction", "Cambiar icono")}
+                  >
+                    {newListEmojiPreview ?? <span className="text-sm text-[#8b8fa6]">•</span>}
+                  </button>
+                  <span className="h-5 w-px shrink-0 bg-[#d5d8e1]" />
+                  <input
+                    value={newListTitle}
+                    onChange={(e) => setNewListTitle(e.target.value)}
+                    placeholder={safeT("lists.newPlaceholder", "Nueva lista (ej: Comprar)")}
+                    className="h-full min-w-0 flex-1 bg-transparent px-3 text-base md:text-sm outline-none"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") void handleCreateList();
+                    }}
+                  />
+                </div>
+              </div>
               <button
                 type="button"
                 onClick={handleCreateList}

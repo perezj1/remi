@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { suggestSharedListEmoji } from "@/lib/sharedListEmojiAuto";
 
 export type SharedListRole = "owner" | "editor" | "viewer";
 
@@ -145,11 +146,26 @@ export async function createSharedList(_userId: string, title: string): Promise<
 
   const row = (Array.isArray(data) ? data[0] : data) as Record<string, unknown>;
   const ownerUserId = ensure(row.owner_user_id, "");
+  const listId = ensure(row.id, "");
+  const existingIcon = typeof row.icon_emoji === "string" ? row.icon_emoji.trim() : "";
+  let iconEmoji = existingIcon.length > 0 ? existingIcon : null;
+
+  if (!iconEmoji) {
+    const suggestedEmoji = suggestSharedListEmoji(clean);
+    if (suggestedEmoji) {
+      try {
+        await updateSharedListIcon(listId, suggestedEmoji);
+        iconEmoji = suggestedEmoji;
+      } catch (err) {
+        console.error("Error applying automatic emoji to shared list", err);
+      }
+    }
+  }
 
   return {
-    id: ensure(row.id, ""),
+    id: listId,
     title: ensure(row.title, clean),
-    icon_emoji: typeof row.icon_emoji === "string" ? row.icon_emoji : null,
+    icon_emoji: iconEmoji,
     owner_user_id: ownerUserId,
     created_at: ensure(row.created_at, new Date().toISOString()),
     updated_at: ensure(row.updated_at, new Date().toISOString()),
