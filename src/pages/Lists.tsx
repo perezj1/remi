@@ -739,7 +739,7 @@ export default function SharedListsPage() {
       >
         <div className="mx-auto mt-0.5 w-full" style={{ maxWidth: "min(96vw, 1440px)" }}>
           {viewMode === "detail" && selected ? (
-            <div className="flex items-center gap-2 pl-3">
+            <div className="flex items-center gap-2 pl-3 pt-2 pb-1">
               <div
                 onClick={() => void handleSetListIcon(selected)}
                 onKeyDown={(e) => {
@@ -795,7 +795,7 @@ export default function SharedListsPage() {
                 value={newListTitle}
                 onChange={(e) => setNewListTitle(e.target.value)}
                 placeholder={safeT("lists.newPlaceholder", "Nueva lista (ej: Comprar)")}
-                className="h-11 min-w-0 flex-[1_1_auto] rounded-full border border-[#d9d3ea] bg-white px-4 text-sm outline-none transition focus:border-[#59a5c9] focus:shadow-[0_0_0_3px_rgba(89,165,201,0.22)]"
+                className="h-11 min-w-0 flex-[1_1_auto] rounded-full border border-[#d9d3ea] bg-white px-4 text-base md:text-sm outline-none transition focus:border-[#59a5c9] focus:shadow-[0_0_0_3px_rgba(89,165,201,0.22)]"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") void handleCreateList();
                 }}
@@ -1101,7 +1101,7 @@ export default function SharedListsPage() {
                       placeholder={safeT("lists.newItemPlaceholder", "Añadir punto...")}
                       disabled={!canEdit}
                       rows={1}
-                      className="max-h-28 min-h-[42px] flex-1 resize-none rounded-[14px] border border-[#d9d3ea] bg-white px-4 py-2 text-sm outline-none transition focus:border-[#59a5c9] focus:shadow-[0_0_0_3px_rgba(89,165,201,0.22)] disabled:bg-slate-50"
+                      className="max-h-28 min-h-[42px] flex-1 resize-none rounded-[14px] border border-[#d9d3ea] bg-white px-4 py-2 text-base md:text-sm outline-none transition focus:border-[#59a5c9] focus:shadow-[0_0_0_3px_rgba(89,165,201,0.22)] disabled:bg-slate-50"
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
                           e.preventDefault();
