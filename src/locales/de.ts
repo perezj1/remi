@@ -973,6 +973,7 @@ export const de = {
     updated: "Liste aktualisiert.",
     createError: "Liste konnte nicht erstellt werden.",
     confirmDelete: "Diese Liste loeschen?",
+    confirmDeleteItem: "Moechtest du diesen Punkt wirklich loeschen?",
     delete: "Loeschen",
     deleted: "Liste geloescht.",
     deleteError: "Liste konnte nicht geloescht werden.",
