@@ -1106,21 +1106,7 @@ const anyModalOpen =
       onClick: () => setShowNaturalHelp(true),
     });
 
-    if (shouldShowDayCloseTip) {
-      cards.push({
-        id: "day-close",
-        title: safeT("today.tip.dayClose.title", "Cierre de 60 segundos"),
-        body: safeT(
-          "today.tip.dayClose.body",
-          "¿Qué te preocupa para mañana? Suéltalo y listo.",
-        ),
-        cta: safeT("today.tip.dayClose.cta", "Soltar"),
-        icon: <HeartPulse size={18} />,
-        bg: "",
-        border: "rgba(244,63,94,0.60)",
-        onClick: () => openCapture(""),
-      });
-    }
+    // Hidden by request: day-close mini card.
 
     cards.push({
       id: "improve-remi",
