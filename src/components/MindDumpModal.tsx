@@ -2400,6 +2400,7 @@ export default function MindDumpModal({
     if (habitRepeat === "yearly") return t("pill.habitYearly", "Anual");
     return t("pill.repeatNone", "Sin repetición");
   })();
+  const editorBorderColor = itemKind === "idea" ? "rgba(245, 158, 11, 0.42)" : REMI_PURPLE_BORDER;
   const showEmbeddedExamples = embedded && itemKind === "task" && text.trim().length === 0;
   const showEmbeddedIdeaHint = embedded && itemKind === "idea" && text.trim().length === 0;
 
@@ -2733,7 +2734,7 @@ export default function MindDumpModal({
             }}
             style={{
               background: "#fff",
-              border: "1px solid rgba(15,23,42,0.15)",
+              border: `1px solid ${editorBorderColor}`,
               boxShadow: embedded ? "none" : "0 10px 30px rgba(15,23,42,0.06)",
               minHeight: embedded ? (showSettingsPanel ? 200 : 260) : undefined,
               transition: "min-height 240ms ease",
