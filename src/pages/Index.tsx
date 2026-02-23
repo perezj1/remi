@@ -41,6 +41,7 @@ import {
   type SharedList,
   type SharedListMemberPreview,
   fetchSharedLists,
+  updateSharedListIcon,
 } from "@/lib/sharedListsApi";
 import { useSnapTipDeck } from "@/hooks/useSnapTipDeck";
 import FeedbackSurveyModal from "@/components/FeedbackSurveyModal";
@@ -749,7 +750,7 @@ const anyModalOpen =
   );
 
   const handleCreateListFromMindDump = useCallback(
-    async (title: string, items: string[]) => {
+    async (title: string, items: string[], iconEmoji?: string | null) => {
       if (!user) return;
       const cleanTitle = title.trim();
       if (!cleanTitle) return;
@@ -770,6 +771,11 @@ const anyModalOpen =
         if (!text) continue;
         nextPosition += 1;
         await createSharedListItem(targetList.id, text, user.id, nextPosition);
+      }
+
+      if (typeof iconEmoji === "string") {
+        const cleanEmoji = iconEmoji.trim();
+        await updateSharedListIcon(targetList.id, cleanEmoji.length > 0 ? cleanEmoji : null);
       }
       toast.success(
         existing ? safeT("lists.updated", "Lista actualizada.") : safeT("lists.created", "Lista creada."),
@@ -1621,8 +1627,8 @@ const anyModalOpen =
             onCreateIdea={async (title) => {
               await handleCreateIdeaFromMindDump(title);
             }}
-            onCreateList={async (title, items) => {
-              await handleCreateListFromMindDump(title, items);
+            onCreateList={async (title, items, iconEmoji) => {
+              await handleCreateListFromMindDump(title, items, iconEmoji);
             }}
             initialTextNonce={mindDumpResetNonce}
           />

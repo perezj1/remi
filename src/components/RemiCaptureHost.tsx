@@ -24,6 +24,7 @@ import {
   createSharedListItem,
   fetchSharedListItems,
   fetchSharedLists,
+  updateSharedListIcon,
 } from "@/lib/sharedListsApi";
 
 import { SHARE_DRAFT_KEY } from "@/pages/ShareTarget";
@@ -340,7 +341,7 @@ export default function RemiCaptureHost() {
   );
 
   const handleCreateList = useCallback(
-    async (title: string, items: string[]) => {
+    async (title: string, items: string[], iconEmoji?: string | null) => {
       if (!user) return;
       const cleanTitle = title.trim();
       if (!cleanTitle) return;
@@ -358,6 +359,11 @@ export default function RemiCaptureHost() {
         if (!text) continue;
         nextPosition += 1;
         await createSharedListItem(targetList.id, text, user.id, nextPosition);
+      }
+
+      if (typeof iconEmoji === "string") {
+        const cleanEmoji = iconEmoji.trim();
+        await updateSharedListIcon(targetList.id, cleanEmoji.length > 0 ? cleanEmoji : null);
       }
 
       toast.success(

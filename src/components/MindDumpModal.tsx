@@ -194,7 +194,7 @@ type Props = {
   // ✅ NUEVO (opcional): crear idea
   onCreateIdea?: (title: string, body: string) => Promise<void>;
   // compat: usado por Index para crear listas desde captura
-  onCreateList?: (title: string, items: string[]) => Promise<void>;
+  onCreateList?: (title: string, items: string[], iconEmoji?: string | null) => Promise<void>;
 
   initialText?: string;
   initialTextNonce?: number;
@@ -1537,6 +1537,7 @@ export default function MindDumpModal({
   const [masterMode, setMasterMode] = useState(true);
   const [typeTouched, setTypeTouched] = useState(false);
   const [listTitle, setListTitle] = useState("");
+  const [listManualEmoji, setListManualEmoji] = useState<string | null>(null);
   const [, setListTitleTouched] = useState(false);
 
   const [pickedDate, setPickedDate] = useState<string>("");
@@ -1937,7 +1938,7 @@ export default function MindDumpModal({
       setTimeout(() => {
         void (async () => {
           try {
-            await onCreateList?.(naturalListCommand.title, naturalListCommand.items);
+            await onCreateList?.(naturalListCommand.title, naturalListCommand.items, listManualEmoji);
           } catch {
             toast.error(t("capture.toast.saveError", "No se pudo guardar."));
           }
@@ -1962,7 +1963,7 @@ export default function MindDumpModal({
         void (async () => {
           try {
             if (onCreateList) {
-              await onCreateList(cleanTitle, listItems);
+              await onCreateList(cleanTitle, listItems, listManualEmoji);
             } else {
               toast.error(t("capture.toast.saveError", "No se pudo guardar."));
             }
@@ -2021,6 +2022,17 @@ export default function MindDumpModal({
     onClose();
   };
 
+  const handlePickListEmoji = () => {
+    const current = listManualEmoji ?? listTitleEmojiPreview ?? "";
+    const raw = window.prompt(
+      t("lists.iconPrompt", "Elige un emoji para esta lista (vacío para quitarlo):"),
+      current,
+    );
+    if (raw === null) return;
+    const next = raw.trim();
+    setListManualEmoji(next.length > 0 ? next : null);
+  };
+
   const updateCaret = () => {
     const node = textareaRef.current;
     if (!node) return;
@@ -2045,6 +2057,7 @@ export default function MindDumpModal({
       setMasterMode(true);
       setTypeTouched(false);
       setListTitle("");
+      setListManualEmoji(null);
       setListTitleTouched(false);
 
       setPickedDate("");
@@ -2446,6 +2459,7 @@ export default function MindDumpModal({
       }
       if (next !== "list") {
         setListTitle("");
+        setListManualEmoji(null);
         setListTitleTouched(false);
       }
     }
@@ -2739,10 +2753,13 @@ export default function MindDumpModal({
     embedded && masterMode && itemKind === "task" && text.trim().length === 0;
   const showEmbeddedIdeaHint = embedded && itemKind === "idea" && text.trim().length === 0;
   const showEmbeddedListHint = embedded && itemKind === "list" && text.trim().length === 0;
-  const listTitleEmojiPreview = useMemo(() => {
-    const picked = suggestSharedListEmoji(listTitle ?? "");
-    return picked && picked.trim().length > 0 ? picked : null;
-  }, [listTitle]);
+  const listTitleEmojiPreview =
+    listManualEmoji && listManualEmoji.trim().length > 0
+      ? listManualEmoji.trim()
+      : (() => {
+          const picked = suggestSharedListEmoji(listTitle ?? "");
+          return picked && picked.trim().length > 0 ? picked : null;
+        })();
 
   return (
     <div
@@ -2965,6 +2982,7 @@ export default function MindDumpModal({
                       setTypeTouched(false);
                       setItemKind("task");
                       setListTitle("");
+                      setListManualEmoji(null);
                       setListTitleTouched(false);
                     }}
                     style={{
@@ -3014,6 +3032,7 @@ export default function MindDumpModal({
                       setTypeTouched(true);
                       setItemKind("task");
                       setListTitle("");
+                      setListManualEmoji(null);
                       setListTitleTouched(false);
                     }}
                     style={{
@@ -3046,6 +3065,7 @@ export default function MindDumpModal({
                       setTypeTouched(true);
                       setItemKind("idea");
                       setListTitle("");
+                      setListManualEmoji(null);
                       setListTitleTouched(false);
                       resetTaskOnlyFields();
                       setSettingsPanelOpen(false);
@@ -3243,21 +3263,28 @@ export default function MindDumpModal({
                     overflow: "hidden",
                   }}
                 >
-                  <span
-                    aria-hidden
+                  <button
+                    type="button"
+                    onClick={handlePickListEmoji}
+                    title={t("lists.iconAction", "Cambiar icono")}
+                    aria-label={t("lists.iconAction", "Cambiar icono")}
                     style={{
                       width: 34,
                       minWidth: 34,
+                      height: "100%",
+                      border: "none",
+                      background: "transparent",
                       display: "inline-flex",
                       alignItems: "center",
                       justifyContent: "center",
                       fontSize: 16,
                       color: "#8b8fa6",
                       lineHeight: 1,
+                      cursor: "pointer",
                     }}
                   >
                     {listTitleEmojiPreview ?? "•"}
-                  </span>
+                  </button>
                   <span
                     aria-hidden
                     style={{
