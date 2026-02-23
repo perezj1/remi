@@ -761,7 +761,6 @@ export default function SharedListsPage() {
               </div>
               <h2
                 className="min-w-0 flex-1 px-1 text-2xl font-extrabold leading-tight text-[#1f2436] line-clamp-2 break-words"
-                style={{ minHeight: "2.2em" }}
               >
                 {selected.title}
               </h2>
