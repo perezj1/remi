@@ -1,4 +1,4 @@
-// src/components/MindDumpModal.tsx
+﻿// src/components/MindDumpModal.tsx
 import {
   useCallback,
   useEffect,
@@ -1582,21 +1582,34 @@ export default function MindDumpModal({
   const splitNaturalListItems = (raw: string): string[] => {
     const cleaned = String(raw ?? "")
       .replace(/[.!?]+$/g, "")
-      .replace(/[“”"']/g, "")
+      .replace(/[\u201C\u201D"']/g, "")
       .trim();
     if (!cleaned) return [];
 
     // Comma is the main separator; also support y/and/und for trailing items.
     return cleaned
       .split(",")
-      .flatMap((chunk) => chunk.split(/\s+(?:y|e|and|und)\s+/i))
+      .flatMap((chunk) => chunk.split(/\s+(?:y|e|u|and|und|oder)\s+/i))
       .map((item) =>
         item
-          .replace(/^\s*(?:dentro(?:\s+de)?|inside)\s+/i, "")
+          .replace(/^\s*(?:dentro(?:\s+de)?|inside|mit|drin)\s+/i, "")
           .trim(),
       )
       .filter((item) => item.length > 0);
   };
+
+  const listWordRe = "(?:lista|list|liste|checklist|checkliste)";
+  const listPrepRe = "(?:en|a|to|into|in|auf|zu|zur|zum)";
+  const listArticleRe = "(?:la\\s+|el\\s+|the\\s+|die\\s+|der\\s+|das\\s+|den\\s+|dem\\s+)?";
+  const listConjRe = "(?:y|e|u|and|und|oder)";
+  const listAddVerbRe =
+    "(?:agrega(?:r)?|añad(?:e|ir)|anad(?:e|ir)|mete(?:r)?|pon(?:er)?|incluy(?:e|ir)|add|put|insert|include|f(?:u|ue|ü)g(?:e|en)|hinzu(?:f(?:u|ue|ü)gen))";
+  const listCreateVerbRe =
+    "(?:crea(?:r)?|crea\\s*me|creame|cr(?:e|é)ame|haz|make|create|erstell(?:e|en)|mach(?:e|en)?)";
+  const listCalledAsRe =
+    "(?:que\\s+se\\s+llam(?:e|a)|llamad[oa]\\s*|called\\s*|named\\s*|namens\\s*|hei(?:ss|ß)t\\s*)";
+  const listWithItemsRe =
+    "(?:tenga|tener|con|incluya|incluye|include|includes|with|mit|enthalt(?:e|en)|inside)";
 
   const parseListCommandFromText = (
     raw: string,
@@ -1604,21 +1617,10 @@ export default function MindDumpModal({
     const text = String(raw ?? "").trim();
     if (!text) return null;
 
-    // ES/EN/DE verbs in natural commands: "pon/agrega/add/füge ..."
-    const verbRe =
-      "(?:agrega(?:r)?|añad(?:e|ir)|anad(?:e|ir)|mete(?:r)?|pon(?:er)?|add|put|insert|f(?:u|ü)ge(?:n)?|hinzu(?:f(?:u|ü)gen)?)";
-    const listWordRe = "(?:lista|list|liste|checklist|checkliste)";
-    const prepRe = "(?:en|a|to|into|in|auf|zu|zur|zum)";
-    const articleRe = "(?:la\\s+|el\\s+|the\\s+|die\\s+|der\\s+|das\\s+|den\\s+)?";
-    const createVerbRe =
-      "(?:crea(?:r)?|crea\\s*me|creame|cre[aá]me|haz|make|create|erstelle(?:n)?|mach(?:en)?)";
-    const calledAsRe =
-      "(?:que\\s+se\\s+llame|que\\s+se\\s+llama|llamada\\s*|llamado\\s*|called\\s*|named\\s*|namens\\s*)";
-
     // "pon huevos, arroz y leche en la lista de comprar"
     const actionBeforeList = new RegExp(
-      `(?:^|\\b)${verbRe}\\s+(.+?)\\s+${prepRe}\\s+${articleRe}${listWordRe}\\s+(?:de\\s+|von\\s+)?(.+?)(?:[.!?]|$)`,
-      "i",
+      `(?:^|\\b)${listAddVerbRe}\\s+(.+?)\\s+${listPrepRe}\\s+${listArticleRe}${listWordRe}\\s+(?:de\\s+|von\\s+)?(.+?)(?:[.!?]|$)`,
+      "iu",
     );
     const m1 = text.match(actionBeforeList);
     if (m1) {
@@ -1629,8 +1631,8 @@ export default function MindDumpModal({
 
     // "en la lista comprar agrega huevos"
     const listBeforeAction = new RegExp(
-      `(?:^|\\b)${prepRe}\\s+${articleRe}${listWordRe}\\s+(?:de\\s+|von\\s+)?(.+?)\\s+${verbRe}\\s+(.+?)(?:[.!?]|$)`,
-      "i",
+      `(?:^|\\b)${listPrepRe}\\s+${listArticleRe}${listWordRe}\\s+(?:de\\s+|von\\s+)?(.+?)\\s+${listAddVerbRe}\\s+(.+?)(?:[.!?]|$)`,
+      "iu",
     );
     const m2 = text.match(listBeforeAction);
     if (m2) {
@@ -1639,10 +1641,10 @@ export default function MindDumpModal({
       if (title && items.length > 0) return { title, items };
     }
 
-    // "crea la lista deporte y añade correr, gimnasio, estirar"
+    // "crea la lista deporte y anade correr, gimnasio"
     const createThenAdd = new RegExp(
-      `(?:^|\\b)${createVerbRe}\\s+${articleRe}${listWordRe}\\s+(?:de\\s+|von\\s+)?(.+?)\\s+(?:y|e|and|und)\\s+${verbRe}\\s+(.+?)(?:[.!?]|$)`,
-      "i",
+      `(?:^|\\b)${listCreateVerbRe}\\s+${listArticleRe}${listWordRe}\\s+(?:de\\s+|von\\s+)?(.+?)\\s+${listConjRe}\\s+${listAddVerbRe}\\s+(.+?)(?:[.!?]|$)`,
+      "iu",
     );
     const m3 = text.match(createThenAdd);
     if (m3) {
@@ -1651,10 +1653,10 @@ export default function MindDumpModal({
       if (title && items.length > 0) return { title, items };
     }
 
-    // "crea la lista deporte: correr, gimnasio, estirar"
+    // "crea la lista deporte: correr, gimnasio"
     const createWithColon = new RegExp(
-      `(?:^|\\b)${createVerbRe}\\s+${articleRe}${listWordRe}\\s+(?:de\\s+|von\\s+)?(.+?)\\s*:\\s*(.+?)(?:[.!?]|$)`,
-      "i",
+      `(?:^|\\b)${listCreateVerbRe}\\s+${listArticleRe}${listWordRe}\\s+(?:de\\s+|von\\s+)?(.+?)\\s*:\\s*(.+?)(?:[.!?]|$)`,
+      "iu",
     );
     const m4 = text.match(createWithColon);
     if (m4) {
@@ -1663,49 +1665,61 @@ export default function MindDumpModal({
       if (title && items.length > 0) return { title, items };
     }
 
-    // "crea una lista nueva que se llame viaje y tenga dentro bañador, crema del sol y toalla"
+    // "crea una lista nueva que se llame viaje y tenga dentro banador, crema"
     const createNamedWithItems = new RegExp(
-      `(?:^|\\b)${createVerbRe}\\s+(?:una\\s+|un\\s+|a\\s+|eine\\s+)?${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+${calledAsRe}\\s*(.+?)\\s+(?:y|e|and|und)\\s+(?:tenga(?:\\s+dentro)?|que\\s+tenga|con|incluya|incluye|mit|with)\\s+(.+?)(?:[.!?]|$)`,
-      "i",
+      `(?:^|\\b)${listCreateVerbRe}\\s+(?:una\\s+|un\\s+|a\\s+|eine\\s+)?${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+${listCalledAsRe}\\s*(.+?)\\s+${listConjRe}\\s+(?:que\\s+)?(?:dentro\\s+)?${listWithItemsRe}(?:\\s+dentro)?\\s+(.+?)(?:[.!?]|$)`,
+      "iu",
     );
-    const m6 = text.match(createNamedWithItems);
+    const m5 = text.match(createNamedWithItems);
+    if (m5) {
+      const title = (m5[1] ?? "").trim();
+      const items = splitNaturalListItems(m5[2]);
+      if (title && items.length > 0) return { title, items };
+    }
+
+    // "crea la lista comer que tenga dentro pollo y arroz"
+    const createWithInsideItems = new RegExp(
+      `(?:^|\\b)${listCreateVerbRe}\\s+${listArticleRe}${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+(?:de\\s+|von\\s+)?(.+?)\\s+(?:${listConjRe}\\s+)?(?:que\\s+)?(?:dentro\\s+)?${listWithItemsRe}(?:\\s+dentro)?\\s+(.+?)(?:[.!?]|$)`,
+      "iu",
+    );
+    const m6 = text.match(createWithInsideItems);
     if (m6) {
       const title = (m6[1] ?? "").trim();
       const items = splitNaturalListItems(m6[2]);
       if (title && items.length > 0) return { title, items };
     }
 
-    // "créame la lista torreznos y que dentro tenga pan, leche"
-    const createWithInsideItems = new RegExp(
-      `(?:^|\\b)${createVerbRe}\\s+${articleRe}${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+(?:de\\s+|von\\s+)?(.+?)\\s+(?:y|e|and|und)\\s+(?:que\\s+dentro\\s+tenga|que\\s+tenga\\s+dentro|dentro\\s+tenga|inside\\s+with|mit\\s+drin|mit)\\s+(.+?)(?:[.!?]|$)`,
+    // "crea la lista X que tenga 1,2 y 3"
+    const createWithItemsSimple = new RegExp(
+      `(?:^|\\b)${listCreateVerbRe}\\s+${listArticleRe}${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+(?:de\\s+|von\\s+)?(.+?)\\s+que\\s+tenga\\s+(.+?)(?:[.!?]|$)`,
       "iu",
     );
-    const m8 = text.match(createWithInsideItems);
-    if (m8) {
-      const title = (m8[1] ?? "").trim();
-      const items = splitNaturalListItems(m8[2]);
+    const m7 = text.match(createWithItemsSimple);
+    if (m7) {
+      const title = (m7[1] ?? "").trim();
+      const items = splitNaturalListItems(m7[2]);
       if (title && items.length > 0) return { title, items };
     }
 
     // "crea una lista que se llame test" / "create a list called test"
     const createNamedList = new RegExp(
-      `(?:^|\\b)${createVerbRe}\\s+(?:una\\s+|un\\s+|a\\s+|eine\\s+)?${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+${calledAsRe}\\s*(.+?)(?:[.!?]|$)`,
-      "i",
+      `(?:^|\\b)${listCreateVerbRe}\\s+(?:una\\s+|un\\s+|a\\s+|eine\\s+)?${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+${listCalledAsRe}\\s*(.+?)(?:[.!?]|$)`,
+      "iu",
     );
-    const m5 = text.match(createNamedList);
-    if (m5) {
-      const title = (m5[1] ?? "").trim();
+    const m8 = text.match(createNamedList);
+    if (m8) {
+      const title = (m8[1] ?? "").trim();
       if (title) return { title, items: [] };
     }
 
     // "crea la lista viaje" / "create list travel" / "erstelle liste reise"
     const createSimpleList = new RegExp(
-      `(?:^|\\b)${createVerbRe}\\s+${articleRe}${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+(?:de\\s+|von\\s+)?(.+?)(?:[.!?]|$)`,
+      `(?:^|\\b)${listCreateVerbRe}\\s+${listArticleRe}${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+(?:de\\s+|von\\s+)?(.+?)(?:[.!?]|$)`,
       "iu",
     );
-    const m7 = text.match(createSimpleList);
-    if (m7) {
-      const title = (m7[1] ?? "").trim();
+    const m9 = text.match(createSimpleList);
+    if (m9) {
+      const title = (m9[1] ?? "").trim();
       if (title) return { title, items: [] };
     }
 
@@ -1716,31 +1730,41 @@ export default function MindDumpModal({
     const text = String(raw ?? "").trim();
     if (!text) return null;
 
-    const listWordRe = "(?:lista|list|liste|checklist|checkliste)";
-    const prepRe = "(?:en|a|to|into|in|auf|zu|zur|zum)";
-    const articleRe = "(?:la\\s+|el\\s+|the\\s+|die\\s+|der\\s+|das\\s+|den\\s+)?";
-
-    // "agregar a la lista comprar" / "in der liste einkaufen"
     const m1 = text.match(
       new RegExp(
-        `(?:^|\\b)(?:agrega(?:r)?|añad(?:e|ir)|anad(?:e|ir)|mete(?:r)?|pon(?:er)?|add|put|insert|f(?:u|ü)ge(?:n)?|hinzu(?:f(?:u|ü)gen)?)\\s+${prepRe}\\s+${articleRe}${listWordRe}\\s+(?:de\\s+|von\\s+)?(.+?)(?:[.!?]|$)`,
+        `(?:^|\\b)${listAddVerbRe}\\s+${listPrepRe}\\s+${listArticleRe}${listWordRe}\\s+(?:de\\s+|von\\s+)?(.+?)(?:[.!?]|$)`,
         "iu",
       ),
     );
     if (m1?.[1]?.trim()) return m1[1].trim();
 
-    // "en la lista comprar"
     const m2 = text.match(
       new RegExp(
-        `(?:^|\\b)${prepRe}\\s+${articleRe}${listWordRe}\\s+(?:de\\s+|von\\s+)?(.+?)(?:[.!?]|$)`,
+        `(?:^|\\b)${listPrepRe}\\s+${listArticleRe}${listWordRe}\\s+(?:de\\s+|von\\s+)?(.+?)(?:[.!?]|$)`,
         "iu",
       ),
     );
     if (m2?.[1]?.trim()) return m2[1].trim();
 
+    const createNamed = text.match(
+      new RegExp(
+        `(?:^|\\b)${listCreateVerbRe}\\s+(?:una\\s+|un\\s+|a\\s+|eine\\s+)?${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+${listCalledAsRe}\\s*(.+?)(?:[.!?]|$)`,
+        "iu",
+      ),
+    );
+    if (createNamed?.[1]?.trim()) return createNamed[1].trim();
+
+    const createWithItems = text.match(
+      new RegExp(
+        `(?:^|\\b)${listCreateVerbRe}\\s+${listArticleRe}${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+(?:de\\s+|von\\s+)?(.+?)\\s+(?:${listConjRe}\\s+)?(?:que\\s+)?(?:dentro\\s+)?${listWithItemsRe}(?:\\s+dentro)?\\s+.+?(?:[.!?]|$)`,
+        "iu",
+      ),
+    );
+    if (createWithItems?.[1]?.trim()) return createWithItems[1].trim();
+
     const createSimple = text.match(
       new RegExp(
-        `(?:^|\\b)(?:crea(?:r)?|crea\\s*me|creame|cre[aá]me|haz|make|create|erstelle(?:n)?|mach(?:en)?)\\s+${articleRe}${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+(?:de\\s+|von\\s+)?(.+?)(?:[.!?]|$)`,
+        `(?:^|\\b)${listCreateVerbRe}\\s+${listArticleRe}${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+(?:de\\s+|von\\s+)?(.+?)(?:[.!?]|$)`,
         "iu",
       ),
     );
@@ -4038,3 +4062,6 @@ function ChipSeparator() {
     </div>
   );
 }
+
+
+

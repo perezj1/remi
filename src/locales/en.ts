@@ -819,6 +819,29 @@ export const en = {
       openEmpty: "Open Remi",
       close: "Close",
     },
+    naturalModal: {
+      title: "Write the way you talk",
+      body: "Remi detects the type automatically: reminder, note, or list.",
+      reminderTitle: "Reminder with advance alert",
+      reminderBody:
+        "Creates a reminder for a date and time, and can alert you before it (1 day or 1 week).",
+      reminderExample:
+        'E.g. "Remind me to call the dentist on Tuesday at 2:00 PM, remind me one day before."',
+      repeatTitle: "Frequency",
+      repeatBody: "Set a daily, weekly, monthly, or yearly alert at roughly the same time.",
+      repeatExample: 'E.g. "Remind me every Monday to buy bread at 9:00 AM."',
+      noteTitle: "Note",
+      noteBody: "Save free text without a date.",
+      noteExample: 'E.g. "Note: there is a new market on X street."',
+      listUpdateTitle: "Update existing list",
+      listUpdateBody: "Add items to an existing list by name.",
+      listUpdateExample: 'E.g. "Add X, Y and Z to list 1."',
+      listCreateTitle: "Create new list",
+      listCreateBody: "Create a new list and separate items by commas or line breaks.",
+      listCreateExample: 'E.g. "Create list X with 1, 2 and 3."',
+      openRemi: "Open Remi",
+      close: "Close",
+    },
 
     iosDict: {
       helpTitle: "Enable Dictation on iPhone",

@@ -813,6 +813,30 @@ export const de = {
       openEmpty: "Remi öffnen",
       close: "Schliessen",
     },
+    naturalModal: {
+      title: "Schreib so, wie du sprichst",
+      body: "Remi erkennt den Typ automatisch: Erinnerung, Notiz oder Liste.",
+      reminderTitle: "Erinnerung mit Vorab-Hinweis",
+      reminderBody:
+        "Erstellt eine Erinnerung für Datum und Uhrzeit und kann dich vorher erinnern (1 Tag oder 1 Woche).",
+      reminderExample:
+        'Bsp.: "Erinnere mich daran, am Dienstag um 14:00 den Zahnarzt anzurufen, erinnere mich einen Tag vorher."',
+      repeatTitle: "Frequenz",
+      repeatBody:
+        "Stellt einen täglichen, wöchentlichen, monatlichen oder jährlichen Alarm zur ungefähr gleichen Uhrzeit ein.",
+      repeatExample: 'Bsp.: "Erinnere mich jeden Montag um 09:00 daran, Brot zu kaufen."',
+      noteTitle: "Notiz",
+      noteBody: "Speichert freien Text ohne Datum.",
+      noteExample: 'Bsp.: "Notiz: In der X-Straße gibt es einen neuen Markt."',
+      listUpdateTitle: "Bestehende Liste aktualisieren",
+      listUpdateBody: "Fügt Punkte zu einer bestehenden Liste per Namen hinzu.",
+      listUpdateExample: 'Bsp.: "Füge X, Y und Z zur Liste 1 hinzu."',
+      listCreateTitle: "Neue Liste erstellen",
+      listCreateBody: "Erstellt eine neue Liste und trennt Punkte per Komma oder Zeilenumbruch.",
+      listCreateExample: 'Bsp.: "Erstelle die Liste X mit 1, 2 und 3."',
+      openRemi: "Remi öffnen",
+      close: "Schliessen",
+    },
 
     iosDict: {
       helpTitle: "Diktat auf dem iPhone aktivieren",

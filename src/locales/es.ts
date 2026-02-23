@@ -832,6 +832,29 @@ export const es = {
       openEmpty: "Abrir Remi",
       close: "Cerrar",
     },
+    naturalModal: {
+      title: "Escribe como hablas",
+      body: "Remi detecta el tipo automáticamente: recordatorio, nota o lista.",
+      reminderTitle: "Recordatorio con aviso previo",
+      reminderBody:
+        "Crea un recordatorio para una fecha y hora, y puede avisarte antes (1 día o 1 semana).",
+      reminderExample:
+        'Ej: "Recuérdame llamar al dentista el martes a las 14:00, recuérdamelo un día antes".',
+      repeatTitle: "Frecuencia",
+      repeatBody: "Programa una alarma diaria, semanal, mensual o anual a una hora aproximada.",
+      repeatExample: 'Ej: "Recuérdame todos los lunes comprar pan a las 09:00".',
+      noteTitle: "Nota",
+      noteBody: "Guarda texto libre sin fecha.",
+      noteExample: 'Ej: "Nota: en la calle X hay un nuevo mercado".',
+      listUpdateTitle: "Actualizar lista existente",
+      listUpdateBody: "Añade puntos a una lista que ya existe por su nombre.",
+      listUpdateExample: 'Ej: "Agrega X, Y y Z a la lista 1".',
+      listCreateTitle: "Crear lista nueva",
+      listCreateBody: "Crea una lista nueva y separa los puntos por comas o saltos de línea.",
+      listCreateExample: 'Ej: "Crea la lista X que tenga 1, 2 y 3".',
+      openRemi: "Abrir Remi",
+      close: "Cerrar",
+    },
 
     iosDict: {
       helpTitle: "Activa Dictado en iPhone",

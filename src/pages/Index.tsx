@@ -231,6 +231,7 @@ export default function TodayPage() {
   const [showMultiDeviceHelp, setShowMultiDeviceHelp] = useState(false);
 
   const [showShareRemindersHelp, setShowShareRemindersHelp] = useState(false);
+  const [showNaturalHelp, setShowNaturalHelp] = useState(false);
   const [showFeedbackSurvey, setShowFeedbackSurvey] = useState(false);
   const [savingFeedback, setSavingFeedback] = useState(false);
   const [mindDumpResetNonce, setMindDumpResetNonce] = useState(0);
@@ -247,6 +248,7 @@ const anyModalOpen =
   showShareToRemiHelp ||
   showMultiDeviceHelp ||
   showShareRemindersHelp ||
+  showNaturalHelp ||
   showFeedbackSurvey;
 
  useEffect(() => {
@@ -1189,14 +1191,11 @@ const anyModalOpen =
         "today.tip.natural.body",
         "Ej: \"Pagar la luz mañana a las 18:00\". Remi lo ordena y tú te olvidas.",
       ),
-      cta: safeT("today.tip.natural.cta", "Probar ejemplo"),
+      cta: safeT("today.tip.natural.cta", "Ver ejemplos"),
       icon: <Sparkles size={18} />,
       bg: "",
       border: "rgba(16,185,129,0.65)",
-      onClick: () =>
-        openCapture(
-          safeT("today.tip.natural.prefill", "Pagar la luz mañana 18:00"),
-        ),
+      onClick: () => setShowNaturalHelp(true),
     });
 
     cards.push({
@@ -2073,6 +2072,133 @@ const anyModalOpen =
                 className="w-full rounded-full bg-slate-100 text-slate-700 text-xs font-semibold py-2.5"
               >
                 {safeT("today.shortcutsModal.close", "Cerrar")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: natural language guide */}
+      {showNaturalHelp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" style={MODAL_OVERLAY_STYLE}>
+          <div className="bg-white rounded-2xl p-5 w-[92%] max-w-md shadow-xl">
+            <h2 className="text-base font-semibold mb-1">
+              {safeT("today.naturalModal.title", "Escribe como hablas")}
+            </h2>
+            <p className="text-xs text-slate-600 mb-3">
+              {safeT(
+                "today.naturalModal.body",
+                "Remi detecta el tipo automáticamente: recordatorio, nota o lista.",
+              )}
+            </p>
+
+            <div className="space-y-2.5 mb-4">
+              <div className="rounded-xl bg-slate-50 border border-slate-200 px-3 py-2">
+                <p className="text-[12px] font-semibold text-slate-800">
+                  {safeT("today.naturalModal.reminderTitle", "Recordatorio con aviso previo")}
+                </p>
+                <p className="text-[11px] text-slate-600 mt-0.5">
+                  {safeT(
+                    "today.naturalModal.reminderBody",
+                    "Crea un recordatorio para una fecha y hora, y puede avisarte antes (1 día o 1 semana).",
+                  )}
+                </p>
+                <p className="text-[12px] text-slate-800 mt-1">
+                  {safeT(
+                    "today.naturalModal.reminderExample",
+                    'Ej: "Recuérdame llamar al dentista el martes a las 14:00, recuérdamelo un día antes".',
+                  )}
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-slate-50 border border-slate-200 px-3 py-2">
+                <p className="text-[12px] font-semibold text-slate-800">
+                  {safeT("today.naturalModal.repeatTitle", "Frecuencia")}
+                </p>
+                <p className="text-[11px] text-slate-600 mt-0.5">
+                  {safeT(
+                    "today.naturalModal.repeatBody",
+                    "Programa una alarma diaria, semanal, mensual o anual a una hora aproximada.",
+                  )}
+                </p>
+                <p className="text-[12px] text-slate-800 mt-1">
+                  {safeT(
+                    "today.naturalModal.repeatExample",
+                    'Ej: "Recuérdame todos los lunes comprar pan a las 09:00".',
+                  )}
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-slate-50 border border-slate-200 px-3 py-2">
+                <p className="text-[12px] font-semibold text-slate-800">
+                  {safeT("today.naturalModal.noteTitle", "Nota")}
+                </p>
+                <p className="text-[11px] text-slate-600 mt-0.5">
+                  {safeT("today.naturalModal.noteBody", "Guarda texto libre sin fecha.")}
+                </p>
+                <p className="text-[12px] text-slate-800 mt-1">
+                  {safeT(
+                    "today.naturalModal.noteExample",
+                    'Ej: "Nota: en la calle X hay un nuevo mercado".',
+                  )}
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-slate-50 border border-slate-200 px-3 py-2">
+                <p className="text-[12px] font-semibold text-slate-800">
+                  {safeT("today.naturalModal.listUpdateTitle", "Actualizar lista existente")}
+                </p>
+                <p className="text-[11px] text-slate-600 mt-0.5">
+                  {safeT(
+                    "today.naturalModal.listUpdateBody",
+                    "Añade puntos a una lista que ya existe por su nombre.",
+                  )}
+                </p>
+                <p className="text-[12px] text-slate-800 mt-1">
+                  {safeT(
+                    "today.naturalModal.listUpdateExample",
+                    'Ej: "Agrega X, Y y Z a la lista 1".',
+                  )}
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-slate-50 border border-slate-200 px-3 py-2">
+                <p className="text-[12px] font-semibold text-slate-800">
+                  {safeT("today.naturalModal.listCreateTitle", "Crear lista nueva")}
+                </p>
+                <p className="text-[11px] text-slate-600 mt-0.5">
+                  {safeT(
+                    "today.naturalModal.listCreateBody",
+                    "Crea una lista nueva y separa los puntos por comas o saltos de línea.",
+                  )}
+                </p>
+                <p className="text-[12px] text-slate-800 mt-1">
+                  {safeT(
+                    "today.naturalModal.listCreateExample",
+                    'Ej: "Crea la lista X que tenga 1, 2 y 3".',
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowNaturalHelp(false);
+                  openCapture("");
+                }}
+                className="w-full rounded-full bg-[#7d59c9] text-white text-xs font-semibold py-2.5 shadow-md"
+              >
+                {safeT("today.naturalModal.openRemi", "Abrir Remi")}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowNaturalHelp(false)}
+                className="w-full rounded-full bg-slate-100 text-slate-700 text-xs font-semibold py-2.5"
+              >
+                {safeT("today.naturalModal.close", "Cerrar")}
               </button>
             </div>
           </div>
