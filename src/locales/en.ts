@@ -689,7 +689,7 @@ export const en = {
         cta: "Change language",
       },
       sharedLists: {
-        title: "Shared lists",
+        title: "Lists",
         body: "Create a list with someone else and update items in real time.",
         cta: "Open lists",
       },

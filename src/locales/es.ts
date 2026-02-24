@@ -704,7 +704,7 @@ export const es = {
         cta: "Cambiar idioma",
       },
       sharedLists: {
-        title: "Listas compartidas",
+        title: "Listas",
         body: "Crea una lista con otra persona y actualizad puntos en tiempo real.",
         cta: "Abrir listas",
       },
