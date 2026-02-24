@@ -837,12 +837,12 @@ export const es = {
       body: "Remi detecta lo necesario en el texto.",
       reminderTitle: "Recordatorio con aviso previo",
       reminderBody:
-        "Crea un recordatorio para una fecha y hora, y puede avisarte antes (1 día o 1 semana).",
+        "Crea un recordatorio con fecha y hora. Recibe avisos desde hoy, 1 semana antes o 1 día antes.",
       reminderExample:
         'Ej: "Recuérdame llamar al dentista el martes a las 14:00, recuérdamelo un día antes".',
       repeatTitle: "Frecuencia",
       repeatBody: "Programa una alarma diaria, semanal, mensual o anual a una hora aproximada.",
-      repeatExample: 'Ej: "Recuérdame todos los lunes comprar pan a las 09:00".',
+      repeatExample: 'Ej: "Todos los lunes a las 9:00 comprar pan".',
       noteTitle: "Nota",
       noteBody: "Guarda texto libre sin fecha.",
       noteExample: 'Ej: "Nota: en la calle X hay un nuevo mercado".',

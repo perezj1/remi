@@ -818,7 +818,7 @@ export const de = {
       body: "Remi erkennt im Text, was nötig ist.",
       reminderTitle: "Erinnerung mit Vorab-Hinweis",
       reminderBody:
-        "Erstellt eine Erinnerung für Datum und Uhrzeit und kann dich vorher erinnern (1 Tag oder 1 Woche).",
+        "Erstelle eine Erinnerung mit Datum und Uhrzeit. Erhalte Hinweise ab heute, 1 Woche vorher oder 1 Tag vorher.",
       reminderExample:
         'Bsp.: "Erinnere mich daran, am Dienstag um 14:00 den Zahnarzt anzurufen, erinnere mich einen Tag vorher."',
       repeatTitle: "Frequenz",

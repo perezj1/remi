@@ -824,7 +824,7 @@ export const en = {
       body: "Remi detects what is needed from the text.",
       reminderTitle: "Reminder with advance alert",
       reminderBody:
-        "Creates a reminder for a date and time, and can alert you before it (1 day or 1 week).",
+        "Create a reminder with date and time. Get alerts from today, 1 week before, or 1 day before.",
       reminderExample:
         'E.g. "Remind me to call the dentist on Tuesday at 2:00 PM, remind me one day before."',
       repeatTitle: "Frequency",
