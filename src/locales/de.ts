@@ -680,7 +680,7 @@ export const de = {
         cta: "Sprache ändern",
       },
       sharedLists: {
-        title: "Geteilte Listen",
+        title: "Listen",
         body: "Erstelle eine Liste mit jemandem und aktualisiert Punkte in Echtzeit.",
         cta: "Listen öffnen",
       },
