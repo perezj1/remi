@@ -71,8 +71,12 @@ export const AVATAR_PARTS: Record<AvatarPartKey, AvatarPartOption[]> = {
     { id: "none", label: "None", src: "" },
     { id: "face-1", label: "Face 1", src: "/avatar-parts/face-1.svg" },
     { id: "face-2", label: "Face 2", src: "/avatar-parts/face-2.svg" },
+    { id: "face-3", label: "Face 3", src: "/avatar-parts/face-3.svg" },
+    { id: "face-4", label: "Face 4", src: "/avatar-parts/face-4.svg" },
+    { id: "face-5", label: "Face 5", src: "/avatar-parts/face-5.svg" },
     { id: "face-6", label: "Face 6", src: "/avatar-parts/face-6.svg" },
     { id: "face-7", label: "Face 7", src: "/avatar-parts/face-7.svg" },
+    { id: "face-8", label: "Face 8", src: "/avatar-parts/face-8.svg" },
   ],
   hair: [
     { id: "none", label: "None", src: "" },
