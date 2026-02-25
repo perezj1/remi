@@ -214,30 +214,66 @@ const DEFAULT_PART_TRANSFORM: RemiAvatarPartTransform = {
 };
 
 export const GLOBAL_PART_TRANSFORMS: Record<AvatarPartKey, RemiAvatarPartTransform> = {
-  face: { ...DEFAULT_PART_TRANSFORM },
-  hair: {
-    scaleX: 1.06,
-    scaleY: 1.08,
+  face: {
+    scaleX: 1,
+    scaleY: 1,
     offsetX: 0,
-    offsetY: -7,
+    offsetY: 5,
   },
-  eyes: { ...DEFAULT_PART_TRANSFORM },
-  smile: { ...DEFAULT_PART_TRANSFORM },
-  beard: { ...DEFAULT_PART_TRANSFORM },
-  glasses: { ...DEFAULT_PART_TRANSFORM },
-  hat: { ...DEFAULT_PART_TRANSFORM },
-  nose: { ...DEFAULT_PART_TRANSFORM },
-  special: { ...DEFAULT_PART_TRANSFORM },
+  hair: {
+    scaleX: 1.18,
+    scaleY: 1.17,
+    offsetX: 0.8,
+    offsetY: 3.2,
+  },
+  eyes: {
+    scaleX: 1.2,
+    scaleY: 1.15,
+    offsetX: 2.7,
+    offsetY: 1.7,
+  },
+  smile: {
+    scaleX: 1.1,
+    scaleY: 1.1,
+    offsetX: 2.9,
+    offsetY: 5,
+  },
+  beard: {
+    scaleX: 1.1,
+    scaleY: 1,
+    offsetX: 2.1,
+    offsetY: 10.3,
+  },
+  glasses: {
+    scaleX: 1.25,
+    scaleY: 1.14,
+    offsetX: -1.5,
+    offsetY: 5.6,
+  },
+  hat: {
+    scaleX: 1.2,
+    scaleY: 1.51,
+    offsetX: -0.3,
+    offsetY: 12.1,
+  },
+  nose: {
+    scaleX: 1,
+    scaleY: 1,
+    offsetX: 2.5,
+    offsetY: 2.1,
+  },
+  special: {
+    scaleX: 1.22,
+    scaleY: 1.21,
+    offsetX: 0,
+    offsetY: 4,
+  },
 };
 
-const GLOBAL_TRANSFORMS_STORAGE_KEY = "remi-avatar-global-transforms-v1";
-const GLOBAL_AVATAR_TRANSFORM_STORAGE_KEY = "remi-avatar-global-avatar-transform-v1";
-let globalTransformsHydrated = false;
-let globalAvatarTransformHydrated = false;
 let globalAvatarTransform: RemiAvatarGlobalTransform = {
-  scale: 1,
-  offsetX: 0,
-  offsetY: 0,
+  scale: 0.92,
+  offsetX: 2.1,
+  offsetY: -2.9,
 };
 
 function clamp(value: number, min: number, max: number) {
@@ -256,59 +292,7 @@ export function normalizePartTransform(
   };
 }
 
-function hydrateGlobalTransforms() {
-  if (globalTransformsHydrated || typeof window === "undefined") return;
-  globalTransformsHydrated = true;
-  try {
-    const raw = window.localStorage.getItem(GLOBAL_TRANSFORMS_STORAGE_KEY);
-    if (!raw) return;
-    const parsed = JSON.parse(raw) as Partial<
-      Record<AvatarPartKey, Partial<RemiAvatarPartTransform>>
-    >;
-    (Object.keys(GLOBAL_PART_TRANSFORMS) as AvatarPartKey[]).forEach((part) => {
-      if (!parsed?.[part]) return;
-      GLOBAL_PART_TRANSFORMS[part] = normalizePartTransform(parsed[part]);
-    });
-  } catch {
-    // ignore invalid local data
-  }
-}
-
-function persistGlobalTransforms() {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(
-    GLOBAL_TRANSFORMS_STORAGE_KEY,
-    JSON.stringify(GLOBAL_PART_TRANSFORMS),
-  );
-}
-
-function hydrateGlobalAvatarTransform() {
-  if (globalAvatarTransformHydrated || typeof window === "undefined") return;
-  globalAvatarTransformHydrated = true;
-  try {
-    const raw = window.localStorage.getItem(GLOBAL_AVATAR_TRANSFORM_STORAGE_KEY);
-    if (!raw) return;
-    const parsed = JSON.parse(raw) as Partial<RemiAvatarGlobalTransform>;
-    globalAvatarTransform = {
-      scale: clamp(Number(parsed.scale ?? globalAvatarTransform.scale), 0.6, 2),
-      offsetX: clamp(Number(parsed.offsetX ?? globalAvatarTransform.offsetX), -40, 40),
-      offsetY: clamp(Number(parsed.offsetY ?? globalAvatarTransform.offsetY), -40, 40),
-    };
-  } catch {
-    // ignore invalid local data
-  }
-}
-
-function persistGlobalAvatarTransform() {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(
-    GLOBAL_AVATAR_TRANSFORM_STORAGE_KEY,
-    JSON.stringify(globalAvatarTransform),
-  );
-}
-
 export function getGlobalPartTransform(part: AvatarPartKey): RemiAvatarPartTransform {
-  hydrateGlobalTransforms();
   return { ...GLOBAL_PART_TRANSFORMS[part] };
 }
 
@@ -316,12 +300,10 @@ export function updateGlobalPartTransform(
   part: AvatarPartKey,
   patch: Partial<RemiAvatarPartTransform>,
 ): RemiAvatarPartTransform {
-  hydrateGlobalTransforms();
   GLOBAL_PART_TRANSFORMS[part] = normalizePartTransform({
     ...GLOBAL_PART_TRANSFORMS[part],
     ...patch,
   });
-  persistGlobalTransforms();
   return { ...GLOBAL_PART_TRANSFORMS[part] };
 }
 
@@ -329,25 +311,21 @@ export function getPartTransform(
   part: AvatarPartKey,
   _optionId: string,
 ): RemiAvatarPartTransform {
-  hydrateGlobalTransforms();
   return { ...GLOBAL_PART_TRANSFORMS[part] };
 }
 
 export function getGlobalAvatarTransform(): RemiAvatarGlobalTransform {
-  hydrateGlobalAvatarTransform();
   return { ...globalAvatarTransform };
 }
 
 export function updateGlobalAvatarTransform(
   patch: Partial<RemiAvatarGlobalTransform>,
 ): RemiAvatarGlobalTransform {
-  hydrateGlobalAvatarTransform();
   globalAvatarTransform = {
     scale: clamp(Number(patch.scale ?? globalAvatarTransform.scale), 0.6, 2),
     offsetX: clamp(Number(patch.offsetX ?? globalAvatarTransform.offsetX), -40, 40),
     offsetY: clamp(Number(patch.offsetY ?? globalAvatarTransform.offsetY), -40, 40),
   };
-  persistGlobalAvatarTransform();
   return { ...globalAvatarTransform };
 }
 
