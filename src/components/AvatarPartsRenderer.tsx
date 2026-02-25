@@ -35,7 +35,10 @@ export default function AvatarPartsRenderer({ parts, className }: Props) {
   };
 
   return (
-    <div className={cn("relative h-full w-full bg-white", className)}>
+    <div
+      className={cn("relative h-full w-full", className)}
+      style={{ backgroundColor: parts.bgColor }}
+    >
       <div className={cn("relative mx-auto h-full", CANVAS_RATIO_CLASS)}>
         <div className="absolute inset-[8%]" style={groupStyle}>
           {RENDER_ORDER.map((partKey) => {

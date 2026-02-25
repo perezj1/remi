@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import AvatarPartsRenderer from "@/components/AvatarPartsRenderer";
 import {
   AVATAR_PARTS,
+  AVATAR_BG_COLOR_PRESETS,
   AVATAR_COLOR_PRESETS,
   ORIGINAL_COLOR_VALUE,
   getGlobalAvatarTransform,
@@ -93,8 +94,34 @@ export default function AvatarPartsEditor({
     <div className="min-w-0 space-y-4 overflow-x-hidden">
       <p className="text-xs font-semibold text-slate-700">{title}</p>
 
-      <div className="mx-auto h-32 w-32 overflow-hidden rounded-full border-4 border-[#d8cdf8] shadow-[0_12px_30px_rgba(125,89,201,0.18)] sm:h-36 sm:w-36">
+      <div className="mx-auto h-24 w-24 overflow-hidden rounded-full border-2 border-[#d1d5db] shadow-[0_10px_22px_rgba(15,23,42,0.12)] sm:h-28 sm:w-28">
         <AvatarPartsRenderer parts={value} />
+      </div>
+
+      <div className="rounded-xl border border-[#e2d8fb] bg-[#f7f3ff] p-2">
+        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+          Fondo
+        </p>
+        <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {AVATAR_BG_COLOR_PRESETS.map((color) => {
+            const selected = value.bgColor === color;
+            return (
+              <button
+                key={`bg-${color}`}
+                type="button"
+                onClick={() => onChange({ ...value, bgColor: color })}
+                className="h-8 w-8 shrink-0 rounded-full border-2 transition"
+                style={{
+                  backgroundColor: color,
+                  borderColor: selected ? "#7d59c9" : "#e2d8fb",
+                  boxShadow: selected ? "0 0 0 2px #f3edff" : "none",
+                }}
+                aria-label={`Fondo ${color}`}
+                title={color}
+              />
+            );
+          })}
+        </div>
       </div>
 
       {showGlobalAdjustEditor && (
@@ -156,7 +183,7 @@ export default function AvatarPartsEditor({
         <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
           Categorias
         </p>
-        <div className="flex flex-wrap gap-2.5">
+        <div className="flex gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {PART_KEYS.map((partKey) => {
             const selected = activePart === partKey;
             return (
@@ -164,7 +191,7 @@ export default function AvatarPartsEditor({
                 key={partKey}
                 type="button"
                 onClick={() => handleSelectPart(partKey)}
-                className="rounded-full border px-4 py-2 text-[13px] font-semibold leading-none transition"
+                className="shrink-0 rounded-full border px-4 py-2 text-[13px] font-semibold leading-none transition"
                 style={{
                   borderColor: selected ? "#7d59c9" : "#dbe2ea",
                   backgroundColor: selected ? "#f3edff" : "#ffffff",
@@ -189,7 +216,7 @@ export default function AvatarPartsEditor({
             <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
               Color
             </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {(() => {
                 const colorField =
                   activePart === "hair"
@@ -203,7 +230,7 @@ export default function AvatarPartsEditor({
                     key={`${activePart}-original`}
                     type="button"
                     onClick={() => onChange({ ...value, [colorField]: ORIGINAL_COLOR_VALUE })}
-                    className="h-7 rounded-full border-2 px-2 text-[10px] font-semibold transition"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-[9px] font-semibold transition"
                     style={{
                       borderColor: selected ? "#7d59c9" : "#e2d8fb",
                       color: selected ? "#6d4cb6" : "#475569",
@@ -213,7 +240,7 @@ export default function AvatarPartsEditor({
                     aria-label="Color original"
                     title="Original"
                   >
-                    Original
+                    O
                   </button>
                 );
               })()}
@@ -230,7 +257,7 @@ export default function AvatarPartsEditor({
                     key={`${activePart}-${color}`}
                     type="button"
                     onClick={() => onChange({ ...value, [colorField]: color })}
-                    className="h-7 w-7 rounded-full border-2 transition"
+                    className="h-8 w-8 shrink-0 rounded-full border-2 transition"
                     style={{
                       backgroundColor: color,
                       borderColor: selected ? "#7d59c9" : "#e2d8fb",
@@ -298,8 +325,8 @@ export default function AvatarPartsEditor({
           </div>
         )}
 
-        <div className="max-h-[30vh] w-full max-w-full overflow-x-hidden overflow-y-auto pr-1 sm:max-h-[34vh]">
-          <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+        <div className="w-full max-w-full overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex gap-2">
             {activeOptions.map((option) => {
               const selected = value[activePart] === option.id;
               return (
@@ -307,7 +334,7 @@ export default function AvatarPartsEditor({
                   key={option.id}
                   type="button"
                   onClick={() => onChange({ ...value, [activePart]: option.id })}
-                  className="min-w-0 overflow-hidden rounded-2xl border bg-white p-2 transition"
+                  className="w-[132px] shrink-0 overflow-hidden rounded-2xl border bg-white p-2 transition sm:w-[140px]"
                   style={{
                     borderColor: selected ? "#7d59c9" : "#dbe2ea",
                     boxShadow: selected ? "0 0 0 1px #7d59c9 inset" : "none",

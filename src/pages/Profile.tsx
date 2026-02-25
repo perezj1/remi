@@ -803,7 +803,7 @@ export default function ProfilePage() {
 
         <div className="flex flex-col items-center gap-3 mt-1">
           {/* AVATAR */}
-          <div className="w-[90px] h-[90px] rounded-full border-4 border-[#d8cdf8] bg-white shadow-[0_10px_24px_rgba(125,89,201,0.16)] flex items-center justify-center overflow-hidden">
+          <div className="w-[90px] h-[90px] rounded-full border-2 border-[#d1d5db] bg-white shadow-[0_8px_18px_rgba(15,23,42,0.10)] flex items-center justify-center overflow-hidden">
             <RemiAvatar
               avatarUrl={avatarPreviewUrl}
               fallback={<span className="text-3xl font-bold">{initial}</span>}
@@ -823,20 +823,22 @@ export default function ProfilePage() {
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={() => setAvatarSelectorOpen(true)}
-            className="rounded-full border border-violet-200 bg-white px-4 py-2 text-xs font-semibold text-violet-700 shadow-sm"
-          >
-            {safeT("profile.avatarSelectorOpen", "Elegir avatar")}
-          </button>
-          <button
-            type="button"
-            onClick={handlePickAvatarImage}
-            className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm"
-          >
-            {safeT("profile.avatarUploadPick", "Elegir imagen")}
-          </button>
+          <div className="flex w-full max-w-[320px] items-center justify-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={() => setAvatarSelectorOpen(true)}
+              className="flex-1 rounded-full border border-violet-200 bg-white px-4 py-2 text-xs font-semibold text-violet-700 shadow-sm"
+            >
+              {safeT("profile.avatarSelectorOpen", "Elegir avatar")}
+            </button>
+            <button
+              type="button"
+              onClick={handlePickAvatarImage}
+              className="flex-1 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm"
+            >
+              {safeT("profile.avatarUploadPick", "Elegir imagen")}
+            </button>
+          </div>
           <input
             ref={avatarInputRef}
             type="file"
@@ -1071,7 +1073,7 @@ export default function ProfilePage() {
       />
 
       <Dialog open={avatarSelectorOpen} onOpenChange={handleAvatarSelectorOpenChange}>
-        <DialogContent className="max-h-[90dvh] w-[calc(100vw-1.5rem)] max-w-xl overflow-hidden rounded-[28px] border-[#e6dff8] bg-[#fbfaff] p-4 shadow-[0_20px_55px_rgba(77,53,140,0.25)] sm:p-6">
+        <DialogContent className="flex max-h-[88dvh] w-[calc(100vw-1.5rem)] max-w-xl flex-col overflow-hidden rounded-[28px] border-[#e6dff8] bg-[#fbfaff] p-4 shadow-[0_20px_55px_rgba(77,53,140,0.25)] sm:max-h-[85dvh] sm:p-6">
           <DialogHeader>
             <DialogTitle className="text-slate-900">
               {safeT("profile.avatarSelectorTitle", "Seleccionar avatar")}
@@ -1084,7 +1086,7 @@ export default function ProfilePage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex min-h-0 min-w-0 flex-col gap-3 overflow-x-hidden">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-x-hidden">
             <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto pr-1">
               <AvatarPartsEditor
                 value={avatarParts}

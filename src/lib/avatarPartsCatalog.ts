@@ -28,15 +28,28 @@ export const AVATAR_COLOR_PRESETS = [
   "#7D59C9",
 ] as const;
 
+export const AVATAR_BG_COLOR_PRESETS = [
+  "#FFFFFF",
+  "#F7F5FF",
+  "#EEF4FF",
+  "#EAF8F4",
+  "#FFF5E8",
+  "#FFEFF3",
+  "#F3F4F6",
+  "#F5F0E8",
+] as const;
+
 export const ORIGINAL_COLOR_VALUE = "original";
 export const DEFAULT_HAIR_COLOR = "#6B3F2A";
 export const DEFAULT_BEARD_COLOR = "#6B3F2A";
 export const DEFAULT_GLASSES_COLOR = "#2A2F38";
+export const DEFAULT_BG_COLOR = "#FFFFFF";
 
 export type RemiAvatarPartsConfig = Record<AvatarPartKey, string> & {
   hairColor: string;
   beardColor: string;
   glassesColor: string;
+  bgColor: string;
 };
 
 export type RemiAvatarPartTransform = {
@@ -190,6 +203,7 @@ export const DEFAULT_REMI_AVATAR_PARTS: RemiAvatarPartsConfig = {
   hairColor: DEFAULT_HAIR_COLOR,
   beardColor: DEFAULT_BEARD_COLOR,
   glassesColor: DEFAULT_GLASSES_COLOR,
+  bgColor: DEFAULT_BG_COLOR,
 };
 
 const DEFAULT_PART_TRANSFORM: RemiAvatarPartTransform = {
@@ -370,5 +384,6 @@ export function normalizeRemiAvatarPartsConfig(
     hairColor: normalizeAvatarColor(v.hairColor, DEFAULT_HAIR_COLOR),
     beardColor: normalizeAvatarColor(v.beardColor, DEFAULT_BEARD_COLOR),
     glassesColor: normalizeAvatarColor(v.glassesColor, DEFAULT_GLASSES_COLOR),
+    bgColor: normalizeAvatarColor(v.bgColor, DEFAULT_BG_COLOR),
   };
 }
