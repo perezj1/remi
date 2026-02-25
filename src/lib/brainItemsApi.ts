@@ -541,13 +541,13 @@ export async function setTaskStatus(
         .from("brain_items")
         .select("*")
         .eq("id", id)
-        .eq("type", "task")
-        .single();
+        .maybeSingle();
 
       if (currentError) throw currentError;
 
-      const current = currentData as BrainItem;
+      const current = currentData as BrainItem | null;
       const canRollWeekly =
+        current?.type === "task" &&
         current.repeat_type === "weekly" &&
         typeof current.due_date === "string" &&
         current.due_date.length > 0;
