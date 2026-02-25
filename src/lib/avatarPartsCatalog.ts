@@ -50,6 +50,7 @@ export type RemiAvatarPartsConfig = Record<AvatarPartKey, string> & {
   beardColor: string;
   glassesColor: string;
   bgColor: string;
+  flipX: boolean;
 };
 
 export type RemiAvatarPartTransform = {
@@ -204,6 +205,7 @@ export const DEFAULT_REMI_AVATAR_PARTS: RemiAvatarPartsConfig = {
   beardColor: DEFAULT_BEARD_COLOR,
   glassesColor: DEFAULT_GLASSES_COLOR,
   bgColor: DEFAULT_BG_COLOR,
+  flipX: false,
 };
 
 const DEFAULT_PART_TRANSFORM: RemiAvatarPartTransform = {
@@ -363,5 +365,6 @@ export function normalizeRemiAvatarPartsConfig(
     beardColor: normalizeAvatarColor(v.beardColor, DEFAULT_BEARD_COLOR),
     glassesColor: normalizeAvatarColor(v.glassesColor, DEFAULT_GLASSES_COLOR),
     bgColor: normalizeAvatarColor(v.bgColor, DEFAULT_BG_COLOR),
+    flipX: typeof v.flipX === "boolean" ? v.flipX : DEFAULT_REMI_AVATAR_PARTS.flipX,
   };
 }

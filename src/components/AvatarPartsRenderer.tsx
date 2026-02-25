@@ -29,8 +29,9 @@ type Props = {
 
 export default function AvatarPartsRenderer({ parts, className }: Props) {
   const avatarTransform = getGlobalAvatarTransform();
+  const scaleX = parts.flipX ? -avatarTransform.scale : avatarTransform.scale;
   const groupStyle = {
-    transform: `translate(${avatarTransform.offsetX}%, ${avatarTransform.offsetY}%) scale(${avatarTransform.scale})`,
+    transform: `translate(${avatarTransform.offsetX}%, ${avatarTransform.offsetY}%) scale(${scaleX}, ${avatarTransform.scale})`,
     transformOrigin: "center center",
   };
 

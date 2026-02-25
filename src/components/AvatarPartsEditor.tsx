@@ -98,7 +98,39 @@ export default function AvatarPartsEditor({
         <AvatarPartsRenderer parts={value} />
       </div>
 
-      <div className="rounded-xl border border-[#e2d8fb] bg-[#f7f3ff] p-2">
+      <div className="rounded-xl border border-[#e2d8fb] bg-white p-2">
+        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+          Direccion
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => onChange({ ...value, flipX: true })}
+            className="rounded-full border px-3 py-1.5 text-[12px] font-semibold transition"
+            style={{
+              borderColor: value.flipX ? "#7d59c9" : "#dbe2ea",
+              backgroundColor: value.flipX ? "#f3edff" : "#ffffff",
+              color: value.flipX ? "#6d4cb6" : "#475569",
+            }}
+          >
+            Izquierda
+          </button>
+          <button
+            type="button"
+            onClick={() => onChange({ ...value, flipX: false })}
+            className="rounded-full border px-3 py-1.5 text-[12px] font-semibold transition"
+            style={{
+              borderColor: !value.flipX ? "#7d59c9" : "#dbe2ea",
+              backgroundColor: !value.flipX ? "#f3edff" : "#ffffff",
+              color: !value.flipX ? "#6d4cb6" : "#475569",
+            }}
+          >
+            Derecha
+          </button>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-[#e2d8fb] bg-white p-2">
         <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
           Fondo
         </p>
@@ -212,7 +244,7 @@ export default function AvatarPartsEditor({
         </p>
 
         {showColorEditor && (
-          <div className="mb-2 rounded-xl border border-[#e2d8fb] bg-[#f7f3ff] p-2">
+          <div className="mb-2 rounded-xl border border-[#e2d8fb] bg-white p-2">
             <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
               Color
             </p>
