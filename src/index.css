@@ -325,6 +325,7 @@
   align-items: center;
 }
 
+
 .remi-task-row + .remi-task-row {
   border-top: 1px solid var(--remi-border-soft);
 }

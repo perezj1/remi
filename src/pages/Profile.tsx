@@ -1,10 +1,10 @@
 // src/pages/Profile.tsx
 import {
   useEffect,
+  useRef,
   useState,
   type ChangeEvent,
   type FormEvent,
-  useRef,
 } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -15,7 +15,6 @@ import {
   User as UserIcon,
   Lock,
   Globe2,
-  Camera,
   Bell,
   MessageSquare,
 } from "lucide-react";
@@ -32,6 +31,23 @@ import {
   submitFeedbackSurvey,
 } from "@/lib/feedbackSurvey";
 import type { RemiLocale } from "@/locales";
+import AvatarPartsEditor from "@/components/AvatarPartsEditor";
+import RemiAvatar from "@/components/RemiAvatar";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  encodeRemiAvatarParts,
+  decodeRemiAvatar,
+} from "@/lib/remiAvatar";
+import {
+  DEFAULT_REMI_AVATAR_PARTS,
+  type RemiAvatarPartsConfig,
+} from "@/lib/avatarPartsCatalog";
 
 type DevicePushStatus =
   | "unsupported"
@@ -88,7 +104,6 @@ export default function ProfilePage() {
   const { user, profile, signOut, updateProfile, updateAuthUser } = useAuth();
   const { lang, setLang, t } = useI18n();
   const navigate = useNavigate();
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const safeT = (key: string, fallback: string, vars?: Record<string, any>) => {
     const v = t(key as any, vars as any);
@@ -119,7 +134,17 @@ export default function ProfilePage() {
   // ---- avatar ----
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarLocalPreviewUrl, setAvatarLocalPreviewUrl] = useState<
+    string | null
+  >(null);
   const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [avatarParts, setAvatarParts] = useState<RemiAvatarPartsConfig>(
+    DEFAULT_REMI_AVATAR_PARTS,
+  );
+  const [avatarSelectorDirty, setAvatarSelectorDirty] = useState(false);
+  const [avatarSelectorOpen, setAvatarSelectorOpen] = useState(false);
+  const [avatarSelectorSaving, setAvatarSelectorSaving] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
 
   const hasPushSupport = () => {
     if (typeof window === "undefined") return false;
@@ -376,10 +401,19 @@ export default function ProfilePage() {
     // avatar
     const avatarFromProfile = profile?.avatar_url || null;
     const metaAvatar = meta.avatar_url || null;
+    const resolvedAvatar = avatarFromProfile ?? metaAvatar;
+    const parsedAvatar = decodeRemiAvatar(resolvedAvatar);
 
-    setAvatarUrl(avatarFromProfile ?? metaAvatar);
+    setAvatarUrl(resolvedAvatar);
+    if (parsedAvatar?.version === "v3") {
+      setAvatarParts(parsedAvatar.value.parts);
+    } else {
+      setAvatarParts(DEFAULT_REMI_AVATAR_PARTS);
+    }
     setAvatarFile(null);
+    setAvatarLocalPreviewUrl(null);
     setAvatarError(null);
+    setAvatarSelectorDirty(false);
 
     // ✅ asegurar que global está "siempre activado" para que la Edge Function no excluya al usuario
     // (upsert mínimo: no toca otras columnas)
@@ -412,6 +446,14 @@ export default function ProfilePage() {
     initFeedbackTracker();
     void flushPendingFeedback();
   }, [user?.id]);
+
+  useEffect(() => {
+    return () => {
+      if (avatarLocalPreviewUrl) {
+        URL.revokeObjectURL(avatarLocalPreviewUrl);
+      }
+    };
+  }, [avatarLocalPreviewUrl]);
 
   const handleLanguageChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value as RemiLocale;
@@ -447,26 +489,90 @@ export default function ProfilePage() {
     }
   };
 
-  // Avatar
-  const handleAvatarClick = () => {
-    fileInputRef.current?.click();
+  const handleAvatarPartsChange = (nextParts: RemiAvatarPartsConfig) => {
+    setAvatarFile(null);
+    setAvatarLocalPreviewUrl(null);
+    setAvatarError(null);
+    setAvatarParts(nextParts);
+    setAvatarSelectorDirty(true);
   };
 
-  const handleAvatarChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const resetAvatarSelectorDraft = () => {
+    const parsed = decodeRemiAvatar(avatarUrl);
+    if (parsed?.version === "v3") {
+      setAvatarParts(parsed.value.parts);
+    } else {
+      setAvatarParts(DEFAULT_REMI_AVATAR_PARTS);
+    }
+    setAvatarSelectorDirty(false);
+  };
+
+  const handleAvatarSelectorOpenChange = (open: boolean) => {
+    if (!open && avatarSelectorDirty) {
+      resetAvatarSelectorDraft();
+    }
+    setAvatarSelectorOpen(open);
+  };
+
+  const handleSaveAvatarFromSelector = async () => {
+    if (!user || !avatarSelectorDirty) {
+      setAvatarSelectorOpen(false);
+      return;
+    }
+
+    setAvatarSelectorSaving(true);
+    try {
+      const finalAvatarUrl = encodeRemiAvatarParts({
+        parts: avatarParts,
+      });
+
+      await updateProfile({
+        avatar_url: finalAvatarUrl,
+      } as any);
+
+      await supabase.auth.updateUser({
+        data: {
+          avatar_url: finalAvatarUrl,
+        },
+      });
+
+      setAvatarUrl(finalAvatarUrl);
+      setAvatarFile(null);
+      setAvatarLocalPreviewUrl(null);
+      setAvatarError(null);
+      setAvatarSelectorDirty(false);
+      setAvatarSelectorOpen(false);
+      toast.success(safeT("profile.avatarSelectorSaved", "Avatar guardado."));
+    } catch (err) {
+      console.error(err);
+      toast.error(safeT("profile.updateError", "No se pudieron guardar los cambios."));
+    } finally {
+      setAvatarSelectorSaving(false);
+    }
+  };
+
+  const handlePickAvatarImage = () => {
+    avatarInputRef.current?.click();
+  };
+
+  const handleAvatarImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    setAvatarError(null);
 
     if (file.size > 5 * 1024 * 1024) {
       setAvatarError(t("profile.avatarTooBig"));
       return;
     }
 
+    setAvatarError(null);
+    setAvatarSelectorDirty(false);
     setAvatarFile(file);
 
     const previewUrl = URL.createObjectURL(file);
-    setAvatarUrl(previewUrl);
+    if (avatarLocalPreviewUrl) {
+      URL.revokeObjectURL(avatarLocalPreviewUrl);
+    }
+    setAvatarLocalPreviewUrl(previewUrl);
   };
 
   const handleSave = async (e: FormEvent) => {
@@ -477,7 +583,6 @@ export default function ProfilePage() {
 
     try {
       let finalAvatarUrl: string | null = avatarUrl;
-
       if (avatarFile) {
         const fileExt = avatarFile.name.split(".").pop() || "png";
         const path = `${user.id}-${Date.now()}.${fileExt}`;
@@ -501,8 +606,6 @@ export default function ProfilePage() {
           .getPublicUrl(uploadData.path);
 
         finalAvatarUrl = publicData.publicUrl;
-        setAvatarUrl(finalAvatarUrl);
-        setAvatarFile(null);
       }
 
       // profiles
@@ -511,6 +614,17 @@ export default function ProfilePage() {
         avatar_url: finalAvatarUrl,
         language: preferredLanguage,
       } as any);
+
+      if (avatarFile) {
+        await supabase.auth.updateUser({
+          data: {
+            avatar_url: finalAvatarUrl,
+          },
+        });
+        setAvatarUrl(finalAvatarUrl);
+        setAvatarFile(null);
+        setAvatarLocalPreviewUrl(null);
+      }
 
       // Auth updates
       const authUpdates: { email?: string; password?: string } = {};
@@ -582,8 +696,14 @@ export default function ProfilePage() {
   };
 
   const displayName = username || (user?.email ?? t("profile.defaultUserName"));
-  const initial =
-    !avatarUrl && displayName ? displayName.charAt(0).toUpperCase() : "R";
+  const initial = displayName ? displayName.charAt(0).toUpperCase() : "R";
+  const avatarPreviewUrl =
+    avatarLocalPreviewUrl ||
+    (avatarSelectorOpen && avatarSelectorDirty
+      ? encodeRemiAvatarParts({
+          parts: avatarParts,
+        })
+      : avatarUrl);
 
   const devicePushLine = (() => {
     if (checkingDevicePush) return t("profile.devicePushChecking");
@@ -683,43 +803,14 @@ export default function ProfilePage() {
 
         <div className="flex flex-col items-center gap-3 mt-1">
           {/* AVATAR */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={handleAvatarClick}
-              className="w-[90px] h-[90px] rounded-full border-4 border-[#d8cdf8] bg-white shadow-[0_10px_24px_rgba(125,89,201,0.16)] flex items-center justify-center overflow-hidden"
-            >
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt="Avatar"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-3xl font-bold">{initial}</span>
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={handleAvatarClick}
-              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#f5f2ff] shadow-md flex items-center justify-center"
-            >
-              <Camera size={14} className="text-violet-500" />
-            </button>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleAvatarChange}
+          <div className="w-[90px] h-[90px] rounded-full border-4 border-[#d8cdf8] bg-white shadow-[0_10px_24px_rgba(125,89,201,0.16)] flex items-center justify-center overflow-hidden">
+            <RemiAvatar
+              avatarUrl={avatarPreviewUrl}
+              fallback={<span className="text-3xl font-bold">{initial}</span>}
+              alt="Avatar"
+              className="w-full h-full"
             />
           </div>
-
-          {avatarError && (
-            <p className="text-[11px] text-red-500 mt-1">{avatarError}</p>
-          )}
 
           <div className="text-center">
             <div className="font-extrabold leading-tight text-slate-900" style={{ fontSize: "clamp(28px, 2vw, 42px)" }}>
@@ -731,6 +822,31 @@ export default function ProfilePage() {
               </div>
             )}
           </div>
+
+          <button
+            type="button"
+            onClick={() => setAvatarSelectorOpen(true)}
+            className="rounded-full border border-violet-200 bg-white px-4 py-2 text-xs font-semibold text-violet-700 shadow-sm"
+          >
+            {safeT("profile.avatarSelectorOpen", "Elegir avatar")}
+          </button>
+          <button
+            type="button"
+            onClick={handlePickAvatarImage}
+            className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm"
+          >
+            {safeT("profile.avatarUploadPick", "Elegir imagen")}
+          </button>
+          <input
+            ref={avatarInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAvatarImageChange}
+          />
+          {avatarError && (
+            <p className="text-[11px] font-medium text-red-500">{avatarError}</p>
+          )}
         </div>
         </div>
       </div>
@@ -953,6 +1069,46 @@ export default function ProfilePage() {
         onClose={() => setShowFeedbackSurvey(false)}
         onSubmit={handleSubmitFeedbackSurvey}
       />
+
+      <Dialog open={avatarSelectorOpen} onOpenChange={handleAvatarSelectorOpenChange}>
+        <DialogContent className="max-h-[90dvh] w-[calc(100vw-1.5rem)] max-w-xl overflow-hidden rounded-[28px] border-[#e6dff8] bg-[#fbfaff] p-4 shadow-[0_20px_55px_rgba(77,53,140,0.25)] sm:p-6">
+          <DialogHeader>
+            <DialogTitle className="text-slate-900">
+              {safeT("profile.avatarSelectorTitle", "Seleccionar avatar")}
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              {safeT(
+                "profile.avatarSelectorDescription",
+                "Elige un avatar y su color de fondo.",
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex min-h-0 min-w-0 flex-col gap-3 overflow-x-hidden">
+            <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto pr-1">
+              <AvatarPartsEditor
+                value={avatarParts}
+                title={safeT(
+                  "profile.avatarSelectorControls",
+                  "Crea tu avatar personalizado",
+                )}
+                onChange={handleAvatarPartsChange}
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleSaveAvatarFromSelector}
+              disabled={avatarSelectorSaving || !avatarSelectorDirty}
+              className="w-full shrink-0 rounded-full bg-[#7d59c9] px-4 py-2.5 text-sm font-semibold text-white shadow-md disabled:opacity-60"
+            >
+              {avatarSelectorSaving
+                ? safeT("profile.avatarSelectorSaving", "Guardando...")
+                : safeT("profile.avatarSelectorSave", "Guardar avatar")}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

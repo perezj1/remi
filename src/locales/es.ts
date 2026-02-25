@@ -1001,6 +1001,17 @@ export const es = {
     shareText:
       "I'm using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\nI definitely recommend trying it, it really helps. Here's the link. 🙂",
     shareCopied: "Enlace de REMI copiado al portapapeles",
+    avatarSelectorOpen: "Elegir avatar",
+    avatarUploadPick: "Elegir imagen",
+    avatarSelectorTitle: "Seleccionar avatar",
+    avatarSelectorDescription: "Elige un avatar y su color de fondo.",
+    avatarSelectorControls: "Elige tu avatar y color de fondo",
+    avatarSelectorBg: "Color de fondo",
+    avatarSelectorAvatars: "Avatares",
+    avatarSelectorSave: "Guardar avatar",
+    avatarSelectorSaving: "Guardando...",
+    avatarSelectorSaved: "Avatar guardado.",
+    avatarSelectorMissing: "No se encontró el avatar seleccionado.",
 
     defaultUserName: "Usuario",
 
