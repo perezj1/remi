@@ -79,6 +79,7 @@ import {
 import { useModalUi } from "@/contexts/ModalUiContext";
 import MindDumpModal from "@/components/MindDumpModal";
 import MindRelaxSurface from "@/components/MindRelaxSurface";
+import RemiAvatar from "@/components/RemiAvatar";
 
 const AVATAR_KEY = "remi_avatar";
 
@@ -896,11 +897,7 @@ const anyModalOpen =
         className="inline-flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border border-white bg-[#ece9f6] text-[10px] font-semibold text-[#4f4a69]"
         title={member.display_name ?? undefined}
       >
-        {member.avatar_url ? (
-          <img src={member.avatar_url} alt="" className="h-full w-full object-cover" />
-        ) : (
-          label
-        )}
+        <RemiAvatar avatarUrl={member.avatar_url} fallback={label} />
       </span>
     );
   }, []);
@@ -1482,21 +1479,12 @@ const anyModalOpen =
                 padding: 0,
               }}
             >
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt="Avatar"
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    borderRadius: "999px",
-                    objectFit: "cover",
-                    display: "block",
-                  }}
-                />
-              ) : (
-                initial
-              )}
+              <RemiAvatar
+                avatarUrl={avatarUrl}
+                fallback={initial}
+                alt="Avatar"
+                className="h-full w-full"
+              />
             </button>
 
             {profileOpen && (

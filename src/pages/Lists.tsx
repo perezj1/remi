@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
 import { useModalUi } from "@/contexts/ModalUiContext";
 import { suggestSharedListEmoji } from "@/lib/sharedListEmojiAuto";
+import RemiAvatar from "@/components/RemiAvatar";
 import {
   acceptSharedListInvite,
   createSharedList,
@@ -561,14 +562,14 @@ export default function SharedListsPage() {
                   className="inline-flex h-5 w-5 items-center justify-center overflow-hidden rounded-full border border-white bg-[#ece9f6] text-[10px] font-semibold text-[#4f4a69]"
                   title={assignedMember?.display_name ?? safeT("lists.assignedOther", "Asignado")}
                 >
-                  {assignedMember?.avatar_url ? (
-                    <img src={assignedMember.avatar_url} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    (assignedMember?.display_name?.trim()?.slice(0, 1) ??
+                  <RemiAvatar
+                    avatarUrl={assignedMember?.avatar_url}
+                    fallback={(
+                      assignedMember?.display_name?.trim()?.slice(0, 1) ??
                       assignedMember?.user_id?.slice(0, 1) ??
                       "U"
-                    ).toUpperCase()
-                  )}
+                    ).toUpperCase()}
+                  />
                 </span>
               )}
             </button>
@@ -980,13 +981,14 @@ export default function SharedListsPage() {
                                       key={`${list.id}-${member.user_id}`}
                                       className="inline-flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border border-white bg-[#ece9f6] text-[10px] font-semibold text-[#4f4a69]"
                                     >
-                                      {member.avatar_url ? (
-                                        <img src={member.avatar_url} alt="" className="h-full w-full object-cover" />
-                                      ) : (
-                                        (member.display_name?.trim()?.slice(0, 1) ||
+                                      <RemiAvatar
+                                        avatarUrl={member.avatar_url}
+                                        fallback={(
+                                          member.display_name?.trim()?.slice(0, 1) ||
                                           member.user_id?.slice(0, 1) ||
-                                          "U").toUpperCase()
-                                      )}
+                                          "U"
+                                        ).toUpperCase()}
+                                      />
                                     </div>
                                   ))}
                                   {list.members_count > 4 && (
