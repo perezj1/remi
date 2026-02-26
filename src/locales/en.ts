@@ -1048,6 +1048,9 @@ export const en = {
     loadError: "Could not load lists.",
     renameError: "Could not rename list.",
     renamePrompt: "New list name:",
+    duplicateConfirm: "Duplicate item. Add anyway?",
+    duplicateConfirmDetailed:
+      'Duplicate item. "{{item}}" already exists in list "{{list}}". Add anyway?',
     iconPrompt: "Choose an emoji for this list (leave empty to remove):",
     iconAction: "Change icon",
     iconUpdated: "Icon updated.",

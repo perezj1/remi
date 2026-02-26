@@ -441,6 +441,23 @@ export default function SharedListsPage() {
     const text = newItemText.trim();
     if (!text) return;
 
+    const normalizeItemKey = (value: string) =>
+      String(value ?? "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLocaleLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
+
+    const newKey = normalizeItemKey(text);
+    const duplicateExists = items.some((item) => normalizeItemKey(item.text) === newKey);
+    if (duplicateExists) {
+      const shouldAddDuplicate = window.confirm(
+        safeT("lists.duplicateConfirm", "Punto duplicado, ¿agregar de todas formas?"),
+      );
+      if (!shouldAddDuplicate) return;
+    }
+
     try {
       await createSharedListItem(selected.id, text, user.id, items.length);
       setNewItemText("");

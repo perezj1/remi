@@ -748,32 +748,65 @@ const anyModalOpen =
       if (!user) return;
       const cleanTitle = title.trim();
       if (!cleanTitle) return;
+      const normalizeItemKey = (value: string) =>
+        String(value ?? "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLocaleLowerCase()
+          .replace(/\s+/g, " ")
+          .trim();
 
       const lists = await fetchSharedLists(user.id);
       const existing = lists.find(
         (list) => list.title.trim().toLocaleLowerCase() === cleanTitle.toLocaleLowerCase(),
       );
       const targetList = existing ?? (await createSharedList(user.id, cleanTitle));
+      const listWasCreated = !existing;
 
-      const existingCount = existing
-        ? (await fetchSharedListItems(existing.id)).length
-        : 0;
+      const existingItems = existing ? await fetchSharedListItems(existing.id) : [];
+      const existingCount = existingItems.length;
+      const existingKeys = new Set(existingItems.map((item) => normalizeItemKey(item.text)));
+      let addedCount = 0;
+      let iconChanged = false;
 
       let nextPosition = existingCount;
       for (let i = 0; i < items.length; i += 1) {
         const text = items[i]?.trim();
         if (!text) continue;
+
+        const key = normalizeItemKey(text);
+        const isDuplicate = existingKeys.has(key);
+        if (isDuplicate) {
+          const shouldAddDuplicate = window.confirm(
+            safeT(
+              "lists.duplicateConfirmDetailed",
+              `Punto duplicado. "${text}" ya existe en la lista "${targetList.title}". ¿Agregar de todos modos?`,
+              { item: text, list: targetList.title },
+            ),
+          );
+          if (!shouldAddDuplicate) continue;
+        }
+
         nextPosition += 1;
         await createSharedListItem(targetList.id, text, user.id, nextPosition);
+        existingKeys.add(key);
+        addedCount += 1;
       }
 
       if (typeof iconEmoji === "string") {
         const cleanEmoji = iconEmoji.trim();
-        await updateSharedListIcon(targetList.id, cleanEmoji.length > 0 ? cleanEmoji : null);
+        const nextEmoji = cleanEmoji.length > 0 ? cleanEmoji : null;
+        if ((targetList.icon_emoji ?? null) !== nextEmoji) {
+          await updateSharedListIcon(targetList.id, nextEmoji);
+          iconChanged = true;
+        }
       }
-      toast.success(
-        existing ? safeT("lists.updated", "Lista actualizada.") : safeT("lists.created", "Lista creada."),
-      );
+      const didChange = listWasCreated || addedCount > 0 || iconChanged;
+      if (didChange) {
+        toast.success(
+          existing ? safeT("lists.updated", "Lista actualizada.") : safeT("lists.created", "Lista creada."),
+        );
+      }
     },
     [safeT, user],
   );

@@ -1061,6 +1061,9 @@ export const es = {
     loadError: "No se pudieron cargar las listas.",
     renameError: "No se pudo cambiar el titulo.",
     renamePrompt: "Nuevo nombre de la lista:",
+    duplicateConfirm: "Punto duplicado, ¿agregar de todas formas?",
+    duplicateConfirmDetailed:
+      'Punto duplicado. "{{item}}" ya existe en la lista "{{list}}". ¿Agregar de todos modos?',
     iconPrompt: "Elige un emoji para esta lista (vacío para quitarlo):",
     iconAction: "Cambiar icono",
     iconUpdated: "Icono actualizado.",

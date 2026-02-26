@@ -1043,6 +1043,9 @@ export const de = {
     loadError: "Listen konnten nicht geladen werden.",
     renameError: "Titel konnte nicht geaendert werden.",
     renamePrompt: "Neuer Listenname:",
+    duplicateConfirm: "Doppelter Punkt, trotzdem hinzufuegen?",
+    duplicateConfirmDetailed:
+      'Doppelter Punkt. "{{item}}" existiert bereits in der Liste "{{list}}". Trotzdem hinzufuegen?',
     iconPrompt: "Waehle ein Emoji fuer diese Liste (leer = entfernen):",
     iconAction: "Icon aendern",
     iconUpdated: "Icon aktualisiert.",

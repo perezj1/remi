@@ -1535,7 +1535,8 @@ export default function MindDumpModal({
 
   const [itemKind, setItemKind] = useState<ItemKind>("task");
   const [masterMode, setMasterMode] = useState(true);
-  const [typeTouched, setTypeTouched] = useState(false);
+  const [, setTypeTouched] = useState(false);
+  const [typeManuallySelected, setTypeManuallySelected] = useState(false);
   const [listTitle, setListTitle] = useState("");
   const [listManualEmoji, setListManualEmoji] = useState<string | null>(null);
   const [, setListTitleTouched] = useState(false);
@@ -1603,13 +1604,22 @@ export default function MindDumpModal({
   const listArticleRe = "(?:la\\s+|el\\s+|the\\s+|die\\s+|der\\s+|das\\s+|den\\s+|dem\\s+)?";
   const listConjRe = "(?:y|e|u|and|und|oder)";
   const listAddVerbRe =
-    "(?:agrega(?:r)?|añad(?:e|ir)|anad(?:e|ir)|mete(?:r)?|pon(?:er)?|incluy(?:e|ir)|add|put|insert|include|f(?:u|ue|ü)g(?:e|en)|hinzu(?:f(?:u|ue|ü)gen))";
+    "(?:agrega(?:r)?|añad(?:e|ir)|anad(?:e|ir)|mete(?:r)?|pon(?:er)?|escrib(?:e|ir)|echa(?:r)?|anota(?:r)?|apunta(?:r)?|incluy(?:e|ir)|add|put|insert|include|place|drop|write|f(?:u|ue|ü)g(?:e|en)|hinzu(?:f(?:u|ue|ü)gen)|pack(?:e|en)?|leg(?:e|en)?|schreib(?:e|en)?)";
   const listCreateVerbRe =
     "(?:crea(?:r)?|crea\\s*me|creame|cr(?:e|é)ame|haz|make|create|erstell(?:e|en)|mach(?:e|en)?)";
   const listCalledAsRe =
     "(?:que\\s+se\\s+llam(?:e|a)|llamad[oa]\\s*|called\\s*|named\\s*|namens\\s*|hei(?:ss|ß)t\\s*)";
   const listWithItemsRe =
     "(?:tenga|tener|con|incluya|incluye|include|includes|with|mit|enthalt(?:e|en)|inside)";
+  const listOfRe = "(?:de\\s+|del\\s+|of\\s+|von\\s+)?";
+
+  const cleanListTitle = (rawTitle: string): string => {
+    return String(rawTitle ?? "")
+      .trim()
+      .replace(/^(?:de|del|of|von)\s+/iu, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  };
 
   const parseListCommandFromText = (
     raw: string,
@@ -1619,48 +1629,48 @@ export default function MindDumpModal({
 
     // "pon huevos, arroz y leche en la lista de comprar"
     const actionBeforeList = new RegExp(
-      `(?:^|\\b)${listAddVerbRe}\\s+(.+?)\\s+${listPrepRe}\\s+${listArticleRe}${listWordRe}\\s+(?:de\\s+|von\\s+)?(.+?)(?:[.!?]|$)`,
+      `(?:^|\\b)${listAddVerbRe}\\s+(.+?)\\s+${listPrepRe}\\s+${listArticleRe}${listWordRe}\\s+${listOfRe}(.+?)(?:[.!?]|$)`,
       "iu",
     );
     const m1 = text.match(actionBeforeList);
     if (m1) {
       const items = splitNaturalListItems(m1[1]);
-      const title = (m1[2] ?? "").trim();
+      const title = cleanListTitle(m1[2] ?? "");
       if (title && items.length > 0) return { title, items };
     }
 
     // "en la lista comprar agrega huevos"
     const listBeforeAction = new RegExp(
-      `(?:^|\\b)${listPrepRe}\\s+${listArticleRe}${listWordRe}\\s+(?:de\\s+|von\\s+)?(.+?)\\s+${listAddVerbRe}\\s+(.+?)(?:[.!?]|$)`,
+      `(?:^|\\b)${listPrepRe}\\s+${listArticleRe}${listWordRe}\\s+${listOfRe}(.+?)\\s+${listAddVerbRe}\\s+(.+?)(?:[.!?]|$)`,
       "iu",
     );
     const m2 = text.match(listBeforeAction);
     if (m2) {
-      const title = (m2[1] ?? "").trim();
+      const title = cleanListTitle(m2[1] ?? "");
       const items = splitNaturalListItems(m2[2]);
       if (title && items.length > 0) return { title, items };
     }
 
     // "crea la lista deporte y anade correr, gimnasio"
     const createThenAdd = new RegExp(
-      `(?:^|\\b)${listCreateVerbRe}\\s+${listArticleRe}${listWordRe}\\s+(?:de\\s+|von\\s+)?(.+?)\\s+${listConjRe}\\s+${listAddVerbRe}\\s+(.+?)(?:[.!?]|$)`,
+      `(?:^|\\b)${listCreateVerbRe}\\s+${listArticleRe}${listWordRe}\\s+${listOfRe}(.+?)\\s+${listConjRe}\\s+${listAddVerbRe}\\s+(.+?)(?:[.!?]|$)`,
       "iu",
     );
     const m3 = text.match(createThenAdd);
     if (m3) {
-      const title = (m3[1] ?? "").trim();
+      const title = cleanListTitle(m3[1] ?? "");
       const items = splitNaturalListItems(m3[2]);
       if (title && items.length > 0) return { title, items };
     }
 
     // "crea la lista deporte: correr, gimnasio"
     const createWithColon = new RegExp(
-      `(?:^|\\b)${listCreateVerbRe}\\s+${listArticleRe}${listWordRe}\\s+(?:de\\s+|von\\s+)?(.+?)\\s*:\\s*(.+?)(?:[.!?]|$)`,
+      `(?:^|\\b)${listCreateVerbRe}\\s+${listArticleRe}${listWordRe}\\s+${listOfRe}(.+?)\\s*:\\s*(.+?)(?:[.!?]|$)`,
       "iu",
     );
     const m4 = text.match(createWithColon);
     if (m4) {
-      const title = (m4[1] ?? "").trim();
+      const title = cleanListTitle(m4[1] ?? "");
       const items = splitNaturalListItems(m4[2]);
       if (title && items.length > 0) return { title, items };
     }
@@ -1672,31 +1682,31 @@ export default function MindDumpModal({
     );
     const m5 = text.match(createNamedWithItems);
     if (m5) {
-      const title = (m5[1] ?? "").trim();
+      const title = cleanListTitle(m5[1] ?? "");
       const items = splitNaturalListItems(m5[2]);
       if (title && items.length > 0) return { title, items };
     }
 
     // "crea la lista comer que tenga dentro pollo y arroz"
     const createWithInsideItems = new RegExp(
-      `(?:^|\\b)${listCreateVerbRe}\\s+${listArticleRe}${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+(?:de\\s+|von\\s+)?(.+?)\\s+(?:${listConjRe}\\s+)?(?:que\\s+)?(?:dentro\\s+)?${listWithItemsRe}(?:\\s+dentro)?\\s+(.+?)(?:[.!?]|$)`,
+      `(?:^|\\b)${listCreateVerbRe}\\s+${listArticleRe}${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+${listOfRe}(.+?)\\s+(?:${listConjRe}\\s+)?(?:que\\s+)?(?:dentro\\s+)?${listWithItemsRe}(?:\\s+dentro)?\\s+(.+?)(?:[.!?]|$)`,
       "iu",
     );
     const m6 = text.match(createWithInsideItems);
     if (m6) {
-      const title = (m6[1] ?? "").trim();
+      const title = cleanListTitle(m6[1] ?? "");
       const items = splitNaturalListItems(m6[2]);
       if (title && items.length > 0) return { title, items };
     }
 
     // "crea la lista X que tenga 1,2 y 3"
     const createWithItemsSimple = new RegExp(
-      `(?:^|\\b)${listCreateVerbRe}\\s+${listArticleRe}${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+(?:de\\s+|von\\s+)?(.+?)\\s+que\\s+tenga\\s+(.+?)(?:[.!?]|$)`,
+      `(?:^|\\b)${listCreateVerbRe}\\s+${listArticleRe}${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+${listOfRe}(.+?)\\s+que\\s+tenga\\s+(.+?)(?:[.!?]|$)`,
       "iu",
     );
     const m7 = text.match(createWithItemsSimple);
     if (m7) {
-      const title = (m7[1] ?? "").trim();
+      const title = cleanListTitle(m7[1] ?? "");
       const items = splitNaturalListItems(m7[2]);
       if (title && items.length > 0) return { title, items };
     }
@@ -1708,18 +1718,18 @@ export default function MindDumpModal({
     );
     const m8 = text.match(createNamedList);
     if (m8) {
-      const title = (m8[1] ?? "").trim();
+      const title = cleanListTitle(m8[1] ?? "");
       if (title) return { title, items: [] };
     }
 
     // "crea la lista viaje" / "create list travel" / "erstelle liste reise"
     const createSimpleList = new RegExp(
-      `(?:^|\\b)${listCreateVerbRe}\\s+${listArticleRe}${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+(?:de\\s+|von\\s+)?(.+?)(?:[.!?]|$)`,
+      `(?:^|\\b)${listCreateVerbRe}\\s+${listArticleRe}${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+${listOfRe}(.+?)(?:[.!?]|$)`,
       "iu",
     );
     const m9 = text.match(createSimpleList);
     if (m9) {
-      const title = (m9[1] ?? "").trim();
+      const title = cleanListTitle(m9[1] ?? "");
       if (title) return { title, items: [] };
     }
 
@@ -1732,19 +1742,19 @@ export default function MindDumpModal({
 
     const m1 = text.match(
       new RegExp(
-        `(?:^|\\b)${listAddVerbRe}\\s+${listPrepRe}\\s+${listArticleRe}${listWordRe}\\s+(?:de\\s+|von\\s+)?(.+?)(?:[.!?]|$)`,
+        `(?:^|\\b)${listAddVerbRe}\\s+${listPrepRe}\\s+${listArticleRe}${listWordRe}\\s+${listOfRe}(.+?)(?:[.!?]|$)`,
         "iu",
       ),
     );
-    if (m1?.[1]?.trim()) return m1[1].trim();
+    if (m1?.[1]?.trim()) return cleanListTitle(m1[1]);
 
     const m2 = text.match(
       new RegExp(
-        `(?:^|\\b)${listPrepRe}\\s+${listArticleRe}${listWordRe}\\s+(?:de\\s+|von\\s+)?(.+?)(?:[.!?]|$)`,
+        `(?:^|\\b)${listPrepRe}\\s+${listArticleRe}${listWordRe}\\s+${listOfRe}(.+?)(?:[.!?]|$)`,
         "iu",
       ),
     );
-    if (m2?.[1]?.trim()) return m2[1].trim();
+    if (m2?.[1]?.trim()) return cleanListTitle(m2[1]);
 
     const createNamed = text.match(
       new RegExp(
@@ -1752,23 +1762,23 @@ export default function MindDumpModal({
         "iu",
       ),
     );
-    if (createNamed?.[1]?.trim()) return createNamed[1].trim();
+    if (createNamed?.[1]?.trim()) return cleanListTitle(createNamed[1]);
 
     const createWithItems = text.match(
       new RegExp(
-        `(?:^|\\b)${listCreateVerbRe}\\s+${listArticleRe}${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+(?:de\\s+|von\\s+)?(.+?)\\s+(?:${listConjRe}\\s+)?(?:que\\s+)?(?:dentro\\s+)?${listWithItemsRe}(?:\\s+dentro)?\\s+.+?(?:[.!?]|$)`,
+        `(?:^|\\b)${listCreateVerbRe}\\s+${listArticleRe}${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+${listOfRe}(.+?)\\s+(?:${listConjRe}\\s+)?(?:que\\s+)?(?:dentro\\s+)?${listWithItemsRe}(?:\\s+dentro)?\\s+.+?(?:[.!?]|$)`,
         "iu",
       ),
     );
-    if (createWithItems?.[1]?.trim()) return createWithItems[1].trim();
+    if (createWithItems?.[1]?.trim()) return cleanListTitle(createWithItems[1]);
 
     const createSimple = text.match(
       new RegExp(
-        `(?:^|\\b)${listCreateVerbRe}\\s+${listArticleRe}${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+(?:de\\s+|von\\s+)?(.+?)(?:[.!?]|$)`,
+        `(?:^|\\b)${listCreateVerbRe}\\s+${listArticleRe}${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+${listOfRe}(.+?)(?:[.!?]|$)`,
         "iu",
       ),
     );
-    if (createSimple?.[1]?.trim()) return createSimple[1].trim();
+    if (createSimple?.[1]?.trim()) return cleanListTitle(createSimple[1]);
 
     return null;
   };
@@ -2080,6 +2090,7 @@ export default function MindDumpModal({
       setItemKind("task");
       setMasterMode(true);
       setTypeTouched(false);
+      setTypeManuallySelected(false);
       setListTitle("");
       setListManualEmoji(null);
       setListTitleTouched(false);
@@ -2467,7 +2478,8 @@ export default function MindDumpModal({
     const hasListSignal = !!detectListSignal(text);
     const hasListCommand = !!listCommand;
 
-    if (!masterMode && typeTouched && !hasIdeaSignal && !hasListSignal && !hasListCommand) return;
+    // If user selected type manually (Recordatorio/Nota/Lista), keep it locked.
+    if (!masterMode && typeManuallySelected) return;
 
     const next: ItemKind =
       hasListCommand || hasListSignal
@@ -2487,7 +2499,7 @@ export default function MindDumpModal({
         setListTitleTouched(false);
       }
     }
-  }, [open, masterMode, typeTouched, itemKind, resetTaskOnlyFields, text]);
+  }, [open, masterMode, typeManuallySelected, itemKind, resetTaskOnlyFields, text]);
 
   useEffect(() => {
     if (!embedded) return;
@@ -3004,6 +3016,7 @@ export default function MindDumpModal({
                     onClick={() => {
                       setMasterMode(true);
                       setTypeTouched(false);
+                      setTypeManuallySelected(false);
                       setItemKind("task");
                       setListTitle("");
                       setListManualEmoji(null);
@@ -3054,6 +3067,7 @@ export default function MindDumpModal({
                     onClick={() => {
                       setMasterMode(false);
                       setTypeTouched(true);
+                      setTypeManuallySelected(true);
                       setItemKind("task");
                       setListTitle("");
                       setListManualEmoji(null);
@@ -3087,6 +3101,7 @@ export default function MindDumpModal({
                     onClick={() => {
                       setMasterMode(false);
                       setTypeTouched(true);
+                      setTypeManuallySelected(true);
                       setItemKind("idea");
                       setListTitle("");
                       setListManualEmoji(null);
@@ -3122,6 +3137,7 @@ export default function MindDumpModal({
                     onClick={() => {
                       setMasterMode(false);
                       setTypeTouched(true);
+                      setTypeManuallySelected(true);
                       setItemKind("list");
                       setListTitleTouched(false);
                       resetTaskOnlyFields();
