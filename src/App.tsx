@@ -27,6 +27,7 @@ import ScrollToTop from "@/components/ScrollToTop";
 import LandingPage from "@/pages/Landing";
 import ShareInvitePage from "@/pages/ShareInvitePage";
 import LegalPage from "@/pages/Legal";
+import ResetPasswordPage from "@/pages/ResetPassword";
 
 // ✅ Provider + hook para ocultar BottomNav cuando hay modales abiertos
 import { ModalUiProvider, useModalUi } from "@/contexts/ModalUiContext";
@@ -154,6 +155,7 @@ function AppRoutes() {
 
   const pathname = location.pathname.toLowerCase();
   const search = location.search.toLowerCase();
+  const hash = location.hash.toLowerCase();
 
   // ✅ NUEVO: si la URL contiene "share" (en path o query), NO queremos modales globales
   // Esto cubre: /share/:token, /share-target, y cualquier ruta con ?share=...
@@ -163,11 +165,18 @@ function AppRoutes() {
   const hideBottomNavRoute =
     pathname.startsWith("/landing") ||
     pathname.startsWith("/share-target") ||
-    pathname.startsWith("/legal");
+    pathname.startsWith("/legal") ||
+    pathname.startsWith("/reset-password");
 
   const isAuthRoute = pathname.startsWith("/auth");
+  const isAuthRecoveryRoute =
+    isAuthRoute &&
+    (hash.includes("type=recovery") ||
+      search.includes("type=recovery") ||
+      search.includes("token_hash="));
   const isLandingRoute = pathname.startsWith("/landing");
   const isLegalRoute = pathname.startsWith("/legal");
+  const isResetPasswordRoute = pathname.startsWith("/reset-password");
 
   // ✅ NUEVO: Ocultar también si es share URL (para evitar overlays en share)
   const hideBottomNav =
@@ -219,8 +228,11 @@ function AppRoutes() {
         {/* Auth */}
         <Route
           path="/auth"
-          element={!user ? <AuthPage /> : <Navigate to={from} replace />}
+          element={!user || isAuthRecoveryRoute ? <AuthPage /> : <Navigate to={from} replace />}
         />
+
+        {/* Reset password (pública) */}
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* Hoy */}
         <Route
@@ -322,7 +334,7 @@ function AppRoutes() {
       {/* ✅ NUEVO: también ocultar en URLs de share */}
       {user && !hideBottomNav && <BottomNav />}
 
-      {!isLandingRoute && !isLegalRoute && !isAuthRoute && <InstallPrompt />}
+      {!isLandingRoute && !isLegalRoute && !isAuthRoute && !isResetPasswordRoute && <InstallPrompt />}
     </div>
   );
 }

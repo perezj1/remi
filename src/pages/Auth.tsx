@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -17,18 +18,102 @@ type SlideItem = {
   useLogo?: boolean;
 };
 
+type AuthView = "login" | "register" | "forgot" | "reset";
+
+function hasRecoveryHash(): boolean {
+  if (typeof window === "undefined") return false;
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const searchParams = new URLSearchParams(window.location.search);
+  return (
+    hashParams.get("type") === "recovery" ||
+    searchParams.get("type") === "recovery" ||
+    searchParams.has("token_hash")
+  );
+}
+
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [authView, setAuthView] = useState<AuthView>(() =>
+    hasRecoveryHash() ? "reset" : "login"
+  );
+  const [sheetOpen, setSheetOpen] = useState<boolean>(() => hasRecoveryHash());
   const [activeSlide, setActiveSlide] = useState(0);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { signUp, signIn, user } = useAuth();
+  const [resetModalOpen, setResetModalOpen] = useState<boolean>(() => hasRecoveryHash());
+  const { signUp, signIn, requestPasswordReset, updatePassword, user } = useAuth();
   const { t, lang } = useI18n();
   const navigate = useNavigate();
   const sliderRef = useRef<HTMLDivElement | null>(null);
+  const isLogin = authView === "login";
+  const isRegister = authView === "register";
+  const isForgot = authView === "forgot";
+  const authCopy =
+    lang === "de"
+      ? {
+          forgotCta: "Passwort vergessen?",
+          forgotTitle: "Passwort zuruecksetzen",
+          forgotHelp: "Wir senden dir einen Link per E-Mail, um dein Passwort zu aendern.",
+          forgotSubmit: "Wiederherstellungslink senden",
+          forgotSuccess:
+            "Wenn diese E-Mail existiert, haben wir einen Wiederherstellungslink gesendet.",
+          forgotError: "Wiederherstellungs-E-Mail konnte nicht gesendet werden.",
+          backToLogin: "Zurueck zur Anmeldung",
+          resetTitle: "Neues Passwort festlegen",
+          resetHelp: "Gib dein neues Passwort ein, um die Wiederherstellung abzuschliessen.",
+          resetPasswordLabel: "Neues Passwort",
+          resetConfirmLabel: "Passwort bestaetigen",
+          resetConfirmPlaceholder: "Passwort wiederholen",
+          resetSubmit: "Passwort aktualisieren",
+          resetSuccess: "Passwort aktualisiert. Du bist nun eingeloggt.",
+          resetError: "Passwort konnte nicht aktualisiert werden.",
+          resetMismatch: "Die Passwoerter stimmen nicht ueberein.",
+          hidePassword: "Passwort ausblenden",
+          showPassword: "Passwort anzeigen",
+        }
+      : lang === "en"
+        ? {
+            forgotCta: "Forgot password?",
+            forgotTitle: "Reset password",
+            forgotHelp: "We'll send you an email with a link to change your password.",
+            forgotSubmit: "Send reset link",
+            forgotSuccess: "If that email exists, we sent a reset link.",
+            forgotError: "Couldn't send the reset email.",
+            backToLogin: "Back to sign in",
+            resetTitle: "Set a new password",
+            resetHelp: "Enter your new password to finish recovery.",
+            resetPasswordLabel: "New password",
+            resetConfirmLabel: "Confirm password",
+            resetConfirmPlaceholder: "Repeat your password",
+            resetSubmit: "Update password",
+            resetSuccess: "Password updated. You're now signed in.",
+            resetError: "Couldn't update your password.",
+            resetMismatch: "Passwords do not match.",
+            hidePassword: "Hide password",
+            showPassword: "Show password",
+          }
+        : {
+            forgotCta: "¿Olvidaste tu contraseña?",
+            forgotTitle: "Recuperar contraseña",
+            forgotHelp: "Te enviaremos un enlace por email para cambiar tu contraseña.",
+            forgotSubmit: "Enviar enlace de recuperación",
+            forgotSuccess: "Si el email existe, enviamos el enlace de recuperación.",
+            forgotError: "No se pudo enviar el email de recuperación.",
+            backToLogin: "Volver a iniciar sesión",
+            resetTitle: "Define tu nueva contraseña",
+            resetHelp: "Introduce la nueva contraseña para completar la recuperación.",
+            resetPasswordLabel: "Nueva contraseña",
+            resetConfirmLabel: "Confirmar contraseña",
+            resetConfirmPlaceholder: "Repite tu contraseña",
+            resetSubmit: "Actualizar contraseña",
+            resetSuccess: "Contraseña actualizada. Ya puedes continuar.",
+            resetError: "No se pudo actualizar la contraseña.",
+            resetMismatch: "Las contraseñas no coinciden.",
+            hidePassword: "Ocultar contraseña",
+            showPassword: "Mostrar contraseña",
+          };
 
   const slides: SlideItem[] =
     lang === "de"
@@ -140,19 +225,60 @@ const Auth = () => {
           ];
 
   useEffect(() => {
-    if (user) {
+    if (user && !resetModalOpen) {
       navigate("/");
     }
-  }, [user, navigate]);
+  }, [user, navigate, resetModalOpen]);
+
+  useEffect(() => {
+    const syncRecoveryState = () => {
+      if (hasRecoveryHash()) {
+        setAuthView("login");
+        setResetModalOpen(true);
+        setSheetOpen(true);
+      }
+    };
+
+    syncRecoveryState();
+    window.addEventListener("hashchange", syncRecoveryState);
+    window.addEventListener("popstate", syncRecoveryState);
+    return () => {
+      window.removeEventListener("hashchange", syncRecoveryState);
+      window.removeEventListener("popstate", syncRecoveryState);
+    };
+  }, []);
+
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setAuthView("login");
+        setResetModalOpen(true);
+        setSheetOpen(true);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const { error } = isLogin
-        ? await signIn(email, password)
-        : await signUp(email, password);
+      if (isForgot) {
+        const { error } = await requestPasswordReset(email);
+        if (error) {
+          toast.error(error.message || authCopy.forgotError);
+        } else {
+          toast.success(authCopy.forgotSuccess);
+          setAuthView("login");
+        }
+        return;
+      }
+
+      const { error } = isLogin ? await signIn(email, password) : await signUp(email, password);
 
       if (error) {
         if (error.message.includes("Invalid login credentials")) {
@@ -163,13 +289,40 @@ const Auth = () => {
           toast.error(error.message);
         }
       } else {
-        if (!isLogin) {
+        if (isRegister) {
           toast.success(t("auth.signUpSuccess"));
         }
         navigate("/");
       }
     } catch (_error) {
       toast.error(t("auth.errorGeneric"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      if (password !== confirmPassword) {
+        toast.error(authCopy.resetMismatch);
+        return;
+      }
+
+      const { error } = await updatePassword(password);
+      if (error) {
+        toast.error(error.message || authCopy.resetError);
+        return;
+      }
+
+      toast.success(authCopy.resetSuccess);
+      setResetModalOpen(false);
+      setPassword("");
+      setConfirmPassword("");
+      window.history.replaceState({}, document.title, "/auth");
+      navigate("/");
     } finally {
       setLoading(false);
     }
@@ -270,14 +423,14 @@ const Auth = () => {
         <section
           className="mx-auto w-full max-w-md rounded-t-[30px] border border-slate-200 bg-white px-4 pt-4 pb-5 shadow-[0_-12px_28px_rgba(15,23,42,0.14)] transition-all duration-300"
           style={{
-            height: sheetOpen ? "50dvh" : "122px",
+            height: sheetOpen ? "56dvh" : "122px",
           }}
         >
           <div className="grid grid-cols-2 gap-2.5 bg-white">
             <button
               type="button"
               onClick={() => {
-                setIsLogin(true);
+                setAuthView("login");
                 setSheetOpen(true);
               }}
               className="h-12 rounded-full text-[15px] font-semibold focus:outline-none focus:ring-0"
@@ -293,13 +446,13 @@ const Auth = () => {
             <button
               type="button"
               onClick={() => {
-                setIsLogin(false);
+                setAuthView("register");
                 setSheetOpen(true);
               }}
               className="h-12 rounded-full text-[15px] font-semibold focus:outline-none focus:ring-0"
               style={{
-                background: !isLogin ? "#7d59c9" : "#f3f4f8",
-                color: !isLogin ? "#ffffff" : "#475569",
+                background: isRegister ? "#7d59c9" : "#f3f4f8",
+                color: isRegister ? "#ffffff" : "#475569",
                 boxShadow: "none",
                 WebkitTapHighlightColor: "transparent",
               }}
@@ -310,6 +463,15 @@ const Auth = () => {
 
           {sheetOpen && (
             <form onSubmit={handleSubmit} className="mt-4 space-y-3 overflow-y-auto px-1 pb-1">
+              {isForgot && (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] leading-relaxed text-slate-600">
+                  <p className="font-semibold text-slate-700">
+                    {authCopy.forgotTitle}
+                  </p>
+                  <p>{authCopy.forgotHelp}</p>
+                </div>
+              )}
+
               <div className="space-y-1.5">
                 <Label htmlFor="email" className="text-[13px] font-semibold text-slate-700">
                   {t("auth.emailLabel")}
@@ -328,34 +490,36 @@ const Auth = () => {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="password" className="text-[13px] font-semibold text-slate-700">
-                  {t("auth.passwordLabel")}
-                </Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder={t("auth.passwordPlaceholder")}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    minLength={6}
-                    className="h-11 rounded-2xl border-slate-200 bg-[#fbfbfe] pl-10 pr-10 text-[15px]"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-slate-400"
-                    aria-label={showPassword ? "Ocultar password" : "Mostrar password"}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
+              {!isForgot && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="password" className="text-[13px] font-semibold text-slate-700">
+                    {t("auth.passwordLabel")}
+                  </Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder={t("auth.passwordPlaceholder")}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      className="h-11 rounded-2xl border-slate-200 bg-[#fbfbfe] pl-10 pr-10 text-[15px]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-slate-400"
+                      aria-label={showPassword ? authCopy.hidePassword : authCopy.showPassword}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {!isLogin && (
+              {isRegister && (
                 <p className="text-[11px] leading-snug text-slate-500">
                   {t("auth.acceptPrefix")}{" "}
                   <Link to="/legal/terms" className="text-violet-700 underline underline-offset-2">
@@ -369,6 +533,30 @@ const Auth = () => {
                 </p>
               )}
 
+              {isLogin && (
+                <button
+                  type="button"
+                  onClick={() => setAuthView("forgot")}
+                  className="w-full text-left text-[12px] font-medium text-violet-700 underline underline-offset-2"
+                >
+                  {authCopy.forgotCta}
+                </button>
+              )}
+
+              {isForgot && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthView("login");
+                    setPassword("");
+                    setConfirmPassword("");
+                  }}
+                  className="w-full text-left text-[12px] font-medium text-slate-600 underline underline-offset-2"
+                >
+                  {authCopy.backToLogin}
+                </button>
+              )}
+
               <button
                 type="submit"
                 className="h-11 w-full rounded-full border-0 text-[15px] font-semibold text-white focus:outline-none"
@@ -377,7 +565,9 @@ const Auth = () => {
               >
                 {loading
                   ? t("common.loading")
-                  : isLogin
+                  : isForgot
+                    ? authCopy.forgotSubmit
+                    : isLogin
                     ? t("auth.submitLogin")
                     : t("auth.submitRegister")}
               </button>
@@ -385,6 +575,86 @@ const Auth = () => {
           )}
         </section>
       </div>
+
+      {resetModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
+          <form
+            onSubmit={handleResetSubmit}
+            className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_24px_56px_rgba(15,23,42,0.28)]"
+          >
+            <h2 className="text-[20px] font-bold text-slate-900">{authCopy.resetTitle}</h2>
+            <p className="mt-1 text-[13px] leading-relaxed text-slate-600">{authCopy.resetHelp}</p>
+
+            <div className="mt-4 space-y-1.5">
+              <Label htmlFor="reset-password" className="text-[13px] font-semibold text-slate-700">
+                {authCopy.resetPasswordLabel}
+              </Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
+                <Input
+                  id="reset-password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder={t("auth.passwordPlaceholder")}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="h-11 rounded-2xl border-slate-200 bg-[#fbfbfe] pl-10 pr-10 text-[15px]"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-slate-400"
+                  aria-label={showPassword ? authCopy.hidePassword : authCopy.showPassword}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-3 space-y-1.5">
+              <Label htmlFor="confirm-password" className="text-[13px] font-semibold text-slate-700">
+                {authCopy.resetConfirmLabel}
+              </Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
+                <Input
+                  id="confirm-password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder={authCopy.resetConfirmPlaceholder}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="h-11 rounded-2xl border-slate-200 bg-[#fbfbfe] pl-10 text-[15px]"
+                />
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setResetModalOpen(false);
+                  setPassword("");
+                  setConfirmPassword("");
+                  window.history.replaceState({}, document.title, "/auth");
+                }}
+                className="h-11 flex-1 rounded-full bg-slate-100 text-[14px] font-semibold text-slate-700"
+              >
+                {authCopy.backToLogin}
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="h-11 flex-1 rounded-full bg-[#7d59c9] text-[14px] font-semibold text-white"
+              >
+                {loading ? t("common.loading") : authCopy.resetSubmit}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 };

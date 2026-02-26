@@ -81,8 +81,6 @@ import MindDumpModal from "@/components/MindDumpModal";
 import MindRelaxSurface from "@/components/MindRelaxSurface";
 import RemiAvatar from "@/components/RemiAvatar";
 
-const AVATAR_KEY = "remi_avatar";
-
 const TIP_DISMISS_KEY = "remi_tip_dismissed_v1";
 
 const SHARE_TO_REMI_DISMISS_KEY = "share-to-remi-help";
@@ -490,13 +488,6 @@ const anyModalOpen =
     }
 
     let finalUrl: string | null = profile?.avatar_url ?? null;
-
-    if (!finalUrl && typeof window !== "undefined") {
-      const stored = window.localStorage.getItem(AVATAR_KEY);
-      if (stored && stored !== "null" && stored !== "undefined") {
-        finalUrl = stored;
-      }
-    }
 
     if (!finalUrl) {
       const meta = (user as any)?.user_metadata;
