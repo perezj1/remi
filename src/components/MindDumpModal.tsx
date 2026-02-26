@@ -1966,7 +1966,9 @@ export default function MindDumpModal({
     }
 
     const naturalListCommand =
-      onCreateList && trimmed.length > 0 ? parseListCommandFromText(trimmed) : null;
+      !typeManuallySelected && onCreateList && trimmed.length > 0
+        ? parseListCommandFromText(trimmed)
+        : null;
     if (naturalListCommand) {
       onClose();
       setTimeout(() => {
