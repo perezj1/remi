@@ -16,6 +16,7 @@ import {
   type RemiStatusSummary,
   type RemiStatusInsights,
 } from "@/lib/brainItemsApi";
+import { computeMindClearPercent } from "@/lib/mindClear";
 import { fetchSharedLists } from "@/lib/sharedListsApi";
 import { useI18n } from "@/contexts/I18nContext";
 
@@ -319,7 +320,6 @@ export default function StatusPage() {
   const totalIdeasStored = summary?.totalIdeasStored ?? 0;
   const totalItemsStored = summary?.totalItemsStored ?? totalTasksStored + totalIdeasStored;
   const streakDays = summary?.streakDays ?? 0;
-  const daysSinceLastActivity = summary?.daysSinceLastActivity ?? null;
   const capturedSeries = insights?.capturedSeries ?? [0, 0, 0, 0, 0, 0, 0];
   const resolvedSeries = insights?.resolvedSeries ?? [0, 0, 0, 0, 0, 0, 0];
   const capturedHeatmap = insights?.capturedHeatmap ?? [];
@@ -368,27 +368,7 @@ export default function StatusPage() {
   const capturedPeakRangeLabel = `${formatHour(capturedPeakWindow.start)}-${formatHour((capturedPeakWindow.end + 1) % 24)}`;
   const resolvedPeakRangeLabel = `${formatHour(resolvedPeakWindow.start)}-${formatHour((resolvedPeakWindow.end + 1) % 24)}`;
 
-  // Mind clear score rewards offloading/completing and decays with inactivity.
-  const mindClearPercent = (() => {
-    if (!summary) return 10;
-
-    const delegatedItems = totalItemsStored;
-    const completedToday = todayDone;
-    const streakBonusDays = Math.min(streakDays, 14);
-    const weeklyBonusDays = Math.min(weekActiveDays, 7);
-    const inactiveDays = Math.max(0, daysSinceLastActivity ?? 0);
-    const inactivityPenalty = Math.min(40, inactiveDays * 4);
-
-    const value =
-      10 +
-      delegatedItems * 4 +
-      completedToday * 6 +
-      streakBonusDays * 2 +
-      weeklyBonusDays -
-      inactivityPenalty;
-
-    return Math.max(10, Math.min(100, Math.round(value)));
-  })();
+  const mindClearPercent = computeMindClearPercent(summary);
 
   const mood: RemiMood = getMoodFromMindClearPercent(mindClearPercent);
 
