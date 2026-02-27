@@ -1040,7 +1040,6 @@ const anyModalOpen =
   }, [hasPushSubscription]);
 
   const tipCards: TipCardItem[] = useMemo(() => {
-    const noDateCount = noDateTasks.length;
     const cards: TipCardItem[] = [];
 
     if (!isStandalone) {
@@ -1250,26 +1249,9 @@ const anyModalOpen =
         ),
     });
 
-    if (noDateCount === 0) {
-      cards.push({
-        id: "clean-no-date",
-        title: safeT("today.tip.cleanNoDate.title", "Sin tareas sin fecha"),
-        body: safeT(
-          "today.tip.cleanNoDate.body",
-          "Perfecto. Ahora es fácil priorizar.",
-        ),
-        cta: safeT("today.tip.cleanNoDate.cta", "Ver hoy"),
-        icon: <Sparkles size={18} />,
-        bg: "",
-        border: "rgba(125,89,201,0.70)",
-        onClick: () => setFilter("TODAY"),
-      });
-    }
-
     return cards;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    noDateTasks.length,
     safeT,
     isStandalone,
     isIOSDevice,
