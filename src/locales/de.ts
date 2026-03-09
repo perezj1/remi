@@ -560,6 +560,17 @@ export const de = {
   today: {
     greetingHello: "Hallo,",
     captureSectionTitle: "Leere deinen Kopf",
+    memoryAskTitle: "Frag Remi",
+    memoryAskBody:
+      "Durchsuche deine gespeicherten Notizen, Erinnerungen und Listen und erhalte eine natuerliche Antwort.",
+    memoryAskPlaceholder:
+      'Z. B. "Wo sind die Schluessel?" oder "Was steht auf der Einkaufsliste?"',
+    memoryAskButton: "Fragen",
+    memoryAskLoading: "Suche...",
+    memoryAskAnswerLabel: "Antwort",
+    memoryAskExample1: "Wo sind die Schluessel?",
+    memoryAskExample2: "Was musste ich mir zum Zahnarzt merken?",
+    memoryAskExample3: "Was steht auf der Einkaufsliste?",
     listsTitle: "Listen",
     listsEmptyTitle: "Erstelle deine erste Liste",
     tipsTitle: "Aktionen",

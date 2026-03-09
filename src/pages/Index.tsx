@@ -26,6 +26,7 @@ import {
   fetchRemiStatusSummary,
   type RemiStatusSummary,
 } from "@/lib/brainItemsApi";
+import { answerMemoryQuestion, type MemoryRecallAnswer } from "@/lib/memoryRecallApi";
 import { supabase } from "@/integrations/supabase/client";
 import { registerPushSubscription } from "@/lib/registerPush";
 import {
@@ -44,6 +45,7 @@ import {
   updateSharedListIcon,
 } from "@/lib/sharedListsApi";
 import { useSnapTipDeck } from "@/hooks/useSnapTipDeck";
+import { useSpeechDictation } from "@/hooks/useSpeechDictation";
 import FeedbackSurveyModal from "@/components/FeedbackSurveyModal";
 import {
   flushPendingFeedback,
@@ -68,12 +70,15 @@ import {
   HeartPulse,
   Flame,
   LayoutGrid,
-  Bell,
   ChevronDown,
   Keyboard,
   Download,
   Search,
   Plus,
+  Menu,
+  Mic,
+  SendHorizontal,
+  X,
 } from "lucide-react";
 
 import { useModalUi } from "@/contexts/ModalUiContext";
@@ -178,6 +183,15 @@ export default function TodayPage() {
     if (lang === "en") return "en-US";
     return "es-ES";
   }, [lang]);
+  const speechLocale = useMemo(() => {
+    if (lang === "de") return "de-DE";
+    if (lang === "en") return "en-US";
+    return "es-ES";
+  }, [lang]);
+  const isAndroid = useMemo(() => {
+    if (typeof navigator === "undefined") return false;
+    return /Android/i.test(navigator.userAgent || "");
+  }, []);
 
   const { setModalOpen } = useModalUi();
 
@@ -237,8 +251,20 @@ export default function TodayPage() {
   const [relaxOpen, setRelaxOpen] = useState(false);
   const [recentLists, setRecentLists] = useState<SharedList[]>([]);
   const [recentListsProgress, setRecentListsProgress] = useState<Record<string, { done: number; total: number }>>({});
+  const [memoryQuestion, setMemoryQuestion] = useState("");
+  const [memoryAnswer, setMemoryAnswer] = useState<MemoryRecallAnswer | null>(null);
+  const [memoryLoading, setMemoryLoading] = useState(false);
+  const [memoryInterim, setMemoryInterim] = useState("");
 
   const [nowTick, setNowTick] = useState(0);
+
+  const { isSupported: dictationSupported, status: dictationStatus, error: dictationError, start: startDictation, stop: stopDictation } =
+    useSpeechDictation({
+      lang: speechLocale,
+      continuous: true,
+      interimResults: true,
+    });
+  const dictationListening = dictationStatus === "listening";
 
 const anyModalOpen =
     showPushModal ||
@@ -1022,6 +1048,74 @@ const anyModalOpen =
     }
   };
 
+  const handleMemoryQuestionSubmit = useCallback(async () => {
+    const cleanQuestion = memoryQuestion.trim();
+    if (!user || !cleanQuestion || memoryLoading) return;
+    if (dictationListening) stopDictation();
+    setMemoryQuestion("");
+    setMemoryInterim("");
+
+    try {
+      setMemoryLoading(true);
+      const answer = await answerMemoryQuestion(
+        user.id,
+        cleanQuestion,
+        lang === "en" || lang === "de" ? lang : "es",
+      );
+      setMemoryAnswer(answer);
+    } catch (error) {
+      console.error("Error answering memory question", error);
+      setMemoryAnswer({
+        ok: false,
+        answer:
+          lang === "en"
+            ? "I couldn't review your saved memory right now."
+            : lang === "de"
+              ? "Ich konnte deine gespeicherte Erinnerung gerade nicht prüfen."
+              : "No pude revisar tu memoria guardada ahora mismo.",
+        source: null,
+        matchedLabel: null,
+        confidence: 0,
+      });
+    } finally {
+      setMemoryLoading(false);
+    }
+  }, [dictationListening, lang, memoryLoading, memoryQuestion, stopDictation, user]);
+
+  useEffect(() => {
+    if (!dictationListening) setMemoryInterim("");
+  }, [dictationListening]);
+
+  useEffect(() => {
+    if (!dictationError) return;
+    if (dictationError === "not-allowed" || dictationError === "service-not-allowed") {
+      toast.error(safeT("capture.toast.micDenied", "Permiso de micrófono denegado."));
+      return;
+    }
+    if (dictationError === "no-speech") {
+      toast.message(safeT("capture.toast.noSpeech", "No detecté voz. Prueba de nuevo."));
+      return;
+    }
+    toast.error(safeT("capture.toast.dictationError", "Error de dictado."));
+  }, [dictationError, safeT]);
+
+  const handleMemoryMic = useCallback(() => {
+    if (!dictationSupported) return;
+    setMemoryAnswer(null);
+    setMemoryInterim("");
+    startDictation(({ finalText, interimText }) => {
+      if (finalText) {
+        setMemoryQuestion((prev) => {
+          const needsSpace = prev.trim().length > 0 && !prev.endsWith(" ");
+          return `${prev}${needsSpace ? " " : ""}${finalText}`.trim();
+        });
+        setMemoryInterim("");
+      } else {
+        setMemoryInterim(interimText);
+      }
+    }, speechLocale);
+  }, [dictationSupported, speechLocale, startDictation]);
+
   const shouldShowDayCloseTip = useMemo(() => {
     const hour = new Date().getHours(); // local hour
     const isEvening = hour >= 17; // evening/night
@@ -1448,136 +1542,249 @@ const anyModalOpen =
         }}
       >
         <div className="mx-auto w-full relative z-[1]" style={{ maxWidth: "min(96vw, 1440px)" }}>
-        <div className="mt-0.5 flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <p
-              className="leading-tight font-semibold text-slate-500"
-              style={{ fontSize: "clamp(14px, 0.9vw, 18px)" }}
-            >
-              {safeT("today.greetingHello", "Hello,")}
-            </p>
-            <p
-              className="leading-tight font-extrabold text-slate-900"
-              style={{ fontSize: "clamp(21px, 1.45vw, 31px)", marginTop: 4 }}
-            >
-              {displayName} <span aria-hidden="true">👋</span>
-            </p>
-          </div>
-
-          <div style={{ position: "relative" }} ref={profileMenuRef}>
-            <button
-              onClick={() => setProfileOpen((open) => !open)}
+        <div
+          className="rounded-[32px] bg-white px-3 py-3"
+          style={{ minHeight: 116 }}
+        >
+          <div className="flex items-center gap-3">
+            <div
               style={{
-                width: 42,
-                height: 42,
-                borderRadius: "999px",
-                border: "1px solid #e2e8f0",
-                background: "#ffffff",
-                color: "#334155",
-                fontSize: 16,
-                fontWeight: 600,
+                width: 56,
+                height: 56,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 4px 14px rgba(15,23,42,0.08)",
-                cursor: "pointer",
-                overflow: "hidden",
-                padding: 0,
+                position: "relative",
+                flexShrink: 0,
               }}
             >
-              <RemiAvatar
-                avatarUrl={avatarUrl}
-                fallback={initial}
-                alt="Avatar"
-                className="h-full w-full"
-              />
-            </button>
-
-            {profileOpen && (
-              <div
+              <span
                 style={{
-                  position: "absolute",
-                  top: 48,
-                  right: 0,
+                  display: "flex",
+                  width: 44,
+                  height: 44,
+                  borderRadius: "999px",
+                  overflow: "hidden",
                   background: "#ffffff",
-                  color: "#1e293b",
-                  borderRadius: 16,
-                  boxShadow: "0 18px 40px rgba(15,23,42,0.2)",
-                  padding: "8px 10px",
-                  minWidth: 170,
-                  maxWidth: "min(280px, calc(100vw - 24px))",
-                  zIndex: 5000,
+                  position: "relative",
+                  zIndex: 1,
+                  margin: 5,
                 }}
               >
+                <RemiAvatar
+                  avatarUrl={avatarUrl}
+                  fallback={initial}
+                  alt="Avatar"
+                  className="h-full w-full"
+                />
+              </span>
+
+              <span
+                className="absolute bottom-0 left-1/2 z-10 -translate-x-1/2 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none text-white"
+                style={{
+                  background: "#7c3aed",
+                  minWidth: 28,
+                  textAlign: "center",
+                  boxShadow: "0 4px 10px rgba(124,58,237,0.2)",
+                }}
+              >
+                {mindClearPercent}%
+              </span>
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <p
+                className="leading-tight font-semibold text-slate-900"
+                style={{ fontSize: "clamp(14px, 1vw, 18px)" }}
+              >
+                {safeT("today.greetingHello", "Hello,")} <span aria-hidden="true">👋</span> {displayName}!
+              </p>
+              <p
+                className="mt-1 text-slate-500"
+                style={{ fontSize: "clamp(12px, 0.85vw, 15px)" }}
+              >
+                {safeT("index.clearMind", "Mente despejada")}
+              </p>
+            </div>
+
+            <div style={{ position: "relative" }} ref={profileMenuRef}>
+              <button
+                type="button"
+                onClick={() => setProfileOpen((open) => !open)}
+                className="inline-flex h-11 w-11 shrink-0 items-center justify-center text-slate-700"
+                aria-label={safeT("common.menu", "Menu")}
+                title={safeT("common.menu", "Menu")}
+              >
+                <Menu size={18} />
+              </button>
+
+              {profileOpen && (
                 <div
                   style={{
-                    padding: "6px 8px 8px",
-                    borderBottom: "1px solid rgba(226,232,240,0.9)",
-                    marginBottom: 4,
-                    fontSize: 11,
-                    color: "#64748b",
+                    position: "absolute",
+                    top: 48,
+                    right: 0,
+                    background: "#ffffff",
+                    color: "#1e293b",
+                    borderRadius: 16,
+                    boxShadow: "0 18px 40px rgba(15,23,42,0.2)",
+                    padding: "8px 10px",
+                    minWidth: 170,
+                    maxWidth: "min(280px, calc(100vw - 24px))",
+                    zIndex: 5000,
                   }}
                 >
-                  {safeT(
-                    "today.profileLoggedInAs",
-                    `Conectado como ${displayName}`,
-                    { name: displayName },
-                  )}
+                  <div
+                    style={{
+                      padding: "6px 8px 8px",
+                      borderBottom: "1px solid rgba(226,232,240,0.9)",
+                      marginBottom: 4,
+                      fontSize: 11,
+                      color: "#64748b",
+                    }}
+                  >
+                    {safeT(
+                      "today.profileLoggedInAs",
+                      `Conectado como ${displayName}`,
+                      { name: displayName },
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleOpenProfile}
+                    style={menuButtonStyle}
+                  >
+                    <User size={16} style={{ marginRight: 8 }} />
+                    <span>{safeT("today.menuProfile", "Perfil")}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleShareApp}
+                    style={menuButtonStyle}
+                  >
+                    <Share2 size={16} style={{ marginRight: 8 }} />
+                    <span>{safeT("today.menuShareApp", "Compartir app")}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleInstallApp}
+                    style={menuButtonStyle}
+                  >
+                    <Smartphone size={16} style={{ marginRight: 8 }} />
+                    <span>{safeT("today.menuInstallApp", "Instalar app")}</span>
+                  </button>
                 </div>
+              )}
+            </div>
+          </div>
 
-                <button
-                  type="button"
-                  onClick={handleOpenProfile}
-                  style={menuButtonStyle}
-                >
-                  <User size={16} style={{ marginRight: 8 }} />
-                  <span>{safeT("today.menuProfile", "Perfil")}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleShareApp}
-                  style={menuButtonStyle}
-                >
-                  <Share2 size={16} style={{ marginRight: 8 }} />
-                  <span>{safeT("today.menuShareApp", "Compartir app")}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleInstallApp}
-                  style={menuButtonStyle}
-                >
-                  <Smartphone size={16} style={{ marginRight: 8 }} />
-                  <span>{safeT("today.menuInstallApp", "Instalar app")}</span>
-                </button>
+          <div className="mt-2.5 pt-1">
+            <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500">
+                <Search size={18} />
               </div>
-            )}
-          </div>
-        </div>
-        <div className="mt-2" style={{ width: "calc(100% - 56px)" }}>
-          <div className="mb-1.5 flex items-center justify-between">
-            <p className="font-semibold text-slate-600" style={{ fontSize: "clamp(13px, 0.9vw, 19px)" }}>
-              {safeT("index.clearMind", "Mente despejada")}
-            </p>
-            <p className="font-extrabold text-slate-800" style={{ fontSize: "clamp(13px, 0.9vw, 19px)" }}>
-              {mindClearPercent}%
-            </p>
-          </div>
-          <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
-            <div
-              className="h-full rounded-full transition-all duration-500 ease-out"
-              style={{
-                width: `${mindClearPercent}%`,
-                background:
-                  "linear-gradient(90deg, #59a5c9 0%, #5989c9 12.5%, #596dc9 25%, #6b63c9 37.5%, #7d59c9 50%, #9959c9 62.5%, #b559c9 75%, #bf59b7 87.5%, #c959a5 100%)",
-              }}
-            />
-          </div>
+              <div className="min-w-0 flex-1">
+                <input
+                  value={memoryQuestion}
+                  onChange={(e) => setMemoryQuestion(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      void handleMemoryQuestionSubmit();
+                    }
+                  }}
+                  placeholder={safeT(
+                    "today.memoryAskPlaceholder",
+                    'Ej: "¿Dónde están las llaves?" o "¿Qué hay en la lista compra?"',
+                  )}
+                  className="h-8 w-full bg-transparent text-[14px] text-slate-900 outline-none placeholder:text-slate-400"
+                />
+                {memoryInterim ? (
+                  <p className="truncate text-[11px] text-slate-400">{memoryInterim}</p>
+                ) : null}
+              </div>
 
+              {isAndroid && memoryQuestion.trim().length === 0 ? (
+                <button
+                  type="button"
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!dictationListening) handleMemoryMic();
+                  }}
+                  onPointerUp={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    stopDictation();
+                  }}
+                  onPointerCancel={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    stopDictation();
+                  }}
+                  onPointerLeave={(e) => {
+                    if (!dictationListening) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    stopDictation();
+                  }}
+                  disabled={!dictationSupported}
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label={dictationListening ? safeT("bottomNav.listening", "Escuchando…") : safeT("common.speak", "Hablar")}
+                  title={dictationListening ? safeT("bottomNav.listening", "Escuchando…") : safeT("common.speak", "Hablar")}
+                >
+                  <Mic size={17} className={dictationListening ? "text-violet-600" : ""} />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void handleMemoryQuestionSubmit()}
+                  disabled={memoryLoading || memoryQuestion.trim().length === 0}
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  aria-label={safeT("today.memoryAskButton", "Preguntar")}
+                  title={safeT("today.memoryAskButton", "Preguntar")}
+                >
+                  {memoryLoading ? (
+                    safeT("today.memoryAskLoading", "Buscando...")
+                  ) : (
+                    <SendHorizontal size={15} />
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
         </div>
       </div>
+
+      {memoryAnswer && (
+        <div className="mx-auto mt-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
+          <div
+            className={`relative rounded-[18px] border px-4 py-3 ${
+              memoryAnswer.ok ? "border-emerald-200 bg-emerald-50/70" : "border-slate-200 bg-slate-50"
+            }`}
+          >
+            <button
+              type="button"
+              onClick={() => setMemoryAnswer(null)}
+              className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full text-slate-400 hover:bg-white/70 hover:text-slate-600"
+              aria-label={safeT("common.close", "Cerrar")}
+              title={safeT("common.close", "Cerrar")}
+            >
+              <X size={14} />
+            </button>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+              {safeT("today.memoryAskAnswerLabel", "Respuesta")}
+            </p>
+            <p className="mt-1 whitespace-pre-wrap text-[14px] leading-6 text-slate-800">
+              {memoryAnswer.answer}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="mx-auto mt-6 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
         <p className="leading-none font-extrabold text-slate-900" style={{ fontSize: "clamp(18px, 1.1vw, 24px)" }}>
