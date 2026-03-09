@@ -160,7 +160,7 @@ export const es = {
   },
 
   index: {
-    clearMind: "Mente despejada",
+    clearMind: "Pregunta y recuerda",
     reminders: "Recordatorios",
   },
 
@@ -207,7 +207,7 @@ export const es = {
     helperFallback:
       "Estoy aquí para guardar tus tareas, ideas y recordatorios, para que tu mente no tenga que cargar con todo.",
 
-    mindClearLabel: "Mente despejada",
+    mindClearLabel: "Pregunta y recuerda",
     mindClearDescription:
       "Cada cosa que guardas en Remi es una cosa menos que carga tu mente.",
     relaxMindButton: "Relajar la mente",
@@ -1186,7 +1186,7 @@ export const es = {
       headline: "Hoy vamos genial",
       subheadline:
         "Hoy hemos despejado bastante tu mente: tienes 5 tareas organizadas y 3 de ellas ya están hechas.",
-      clearMindLabel: "Mente despejada",
+      clearMindLabel: "Pregunta y recuerda",
       clearMindHelper:
         "Cada cosa que guardas en Remi es una cosa menos que carga tu mente.",
 

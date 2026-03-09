@@ -476,7 +476,23 @@ function detectReminderSignal(text: string): string | null {
 function detectIdeaSignal(text: string): string | null {
   const s = foldForMatch(text);
   const explicit = s.match(/\b(nota|note|notiz|idea|idee)\b/i)?.[0] ?? null;
-  return explicit;
+  if (explicit) return explicit;
+
+  const factualPatterns = [
+    /\b(se llama|is called|heisst|heißt)\b/i,
+    /\b(le gusta|likes|mag)\b/i,
+    /^\s*(el|la|los|las|mi|mis|the|my|der|die|das|mein|meine)?\s*[\p{L}\d\s]+?\b(es|son|is|are|ist|sind)\b\s+[\p{L}\d\s]+$/iu,
+    /\b(es|son|is|are|ist|sind)\b.{0,40}\b(azul|verde|rojo|blanco|negro|grande|pequeno|pequeño|nuevo|viejo|arriba|abajo|outside|inside|delante|detras|detrás)\b/i,
+    /\b(esta|está|estan|están|is|are|liegt|steht|ist)\b.{0,40}\b(en|in|im|am|oben|unten|inside|under|near|sobre|debajo|encima|cajon|cajón|corral)\b/i,
+    /\b(aparcado|aparcada|parked|geparkt)\b/i,
+    /\b(deje|dejé|dejado|dejada|guarde|guardé|guardado|guardada|left|stored|kept)\b/i,
+    /\b(mi|mis|my|mein|meine)\s+(perro|perra|novio|novia|coche|auto|carro|dog|girlfriend|boyfriend|hund|freundin|freund|auto)\b/i,
+  ];
+
+  const factualMatch = factualPatterns.find((pattern) => pattern.test(s));
+  if (factualMatch) return "note";
+
+  return null;
 }
 
 function detectListSignal(text: string): string | null {

@@ -152,7 +152,7 @@ export const de = {
   },
 
   index: {
-    clearMind: "Klarer Kopf",
+    clearMind: "Frag und erinnere dich",
     reminders: "Erinnerungen",
   },
 
@@ -200,7 +200,7 @@ export const de = {
     helperFallback:
       "Ich bin hier, um deine Aufgaben, Ideen und Erinnerungen zu speichern, damit dein Kopf nicht alles tragen muss.",
 
-    mindClearLabel: "Klarer Kopf",
+    mindClearLabel: "Frag und erinnere dich",
     mindClearDescription:
       "Alles, was du in Remi speicherst, ist eine Sache weniger, die dein Kopf tragen muss.",
     relaxMindButton: "Geist entspannen",
@@ -1168,7 +1168,7 @@ export const de = {
       headline: "Heute läuft's gut",
       subheadline:
         "Heute haben wir deinen Kopf spürbar entlastet: Du hast 5 Aufgaben organisiert und 3 davon sind schon erledigt.",
-      clearMindLabel: "Klarer Kopf",
+      clearMindLabel: "Frag und erinnere dich",
       clearMindHelper:
         "Alles, was du in Remi speicherst, ist eine Sache weniger, die dein Kopf tragen muss.",
 

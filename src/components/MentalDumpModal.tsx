@@ -404,7 +404,26 @@ function detectWhyForText(text: string): {
     return { kind: "idea", whyKey: "mentalDump.why.projectIdea" };
   }
 
-  return { kind: "task", whyKey: "mentalDump.why.defaultTask" };
+  if (isLikelyFactualNote(lower)) {
+    return { kind: "idea", whyKey: "mentalDump.why.defaultIdea" };
+  }
+
+  return { kind: "idea", whyKey: "mentalDump.why.defaultIdea" };
+}
+
+function isLikelyFactualNote(text: string): boolean {
+  const lower = text.toLowerCase().trim();
+
+  const factualPatterns = [
+    /\b(se llama|is called|heisst|heißt)\b/i,
+    /\b(le gusta|likes|mag)\b/i,
+    /\b(esta|está|estan|están|is|are|liegt|steht|ist)\b.{0,40}\b(en|in|im|am|oben|unten|inside|under|near|sobre|debajo|encima)\b/i,
+    /\b(aparcado|aparcada|parked|geparkt)\b/i,
+    /\b(deje|dejé|dejado|dejada|guarde|guardé|guardado|guardada|left|stored|kept)\b/i,
+    /\b(mi|mis|my|mein|meine)\s+(perro|perra|novio|novia|coche|auto|carro|dog|girlfriend|boyfriend|hund|freundin|freund|auto)\b/i,
+  ];
+
+  return factualPatterns.some((pattern) => pattern.test(lower));
 }
 
 function detectWhyForKind(
@@ -610,11 +629,16 @@ export default function MentalDumpModal({
       const original = stripVisualBullets(raw).trim();
       if (!original) continue;
 
+      const fields = computeTaskFieldsFromText(original);
       const det = detectWhyForText(original);
+      const shouldForceTask =
+        !!fields.dueDate ||
+        !!fields.detectedDateText ||
+        !!fields.detectedTimeText ||
+        !!fields.detectedHabitText ||
+        fields.repeatType !== "none";
 
-      if (det.kind === "task") {
-        const fields = computeTaskFieldsFromText(original);
-
+      if (det.kind === "task" || shouldForceTask) {
         next.push({
           id: idCounter++,
           kind: "task",

@@ -75,7 +75,6 @@ import {
   Download,
   Search,
   Plus,
-  Menu,
   Mic,
   SendHorizontal,
   X,
@@ -1547,55 +1546,10 @@ const anyModalOpen =
           style={{ minHeight: 116 }}
         >
           <div className="flex items-center gap-3">
-            <div
-              style={{
-                width: 56,
-                height: 56,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                position: "relative",
-                flexShrink: 0,
-              }}
-            >
-              <span
-                style={{
-                  display: "flex",
-                  width: 44,
-                  height: 44,
-                  borderRadius: "999px",
-                  overflow: "hidden",
-                  background: "#ffffff",
-                  position: "relative",
-                  zIndex: 1,
-                  margin: 5,
-                }}
-              >
-                <RemiAvatar
-                  avatarUrl={avatarUrl}
-                  fallback={initial}
-                  alt="Avatar"
-                  className="h-full w-full"
-                />
-              </span>
-
-              <span
-                className="absolute bottom-0 left-1/2 z-10 -translate-x-1/2 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none text-white"
-                style={{
-                  background: "#7c3aed",
-                  minWidth: 28,
-                  textAlign: "center",
-                  boxShadow: "0 4px 10px rgba(124,58,237,0.2)",
-                }}
-              >
-                {mindClearPercent}%
-              </span>
-            </div>
-
             <div className="min-w-0 flex-1">
               <p
                 className="leading-tight font-semibold text-slate-900"
-                style={{ fontSize: "clamp(14px, 1vw, 18px)" }}
+                style={{ fontSize: "clamp(15px, 1.15vw, 20px)" }}
               >
                 {safeT("today.greetingHello", "Hello,")} <span aria-hidden="true">👋</span> {displayName}!
               </p>
@@ -1611,12 +1565,28 @@ const anyModalOpen =
               <button
                 type="button"
                 onClick={() => setProfileOpen((open) => !open)}
-                className="inline-flex h-11 w-11 shrink-0 items-center justify-center text-slate-700"
-                aria-label={safeT("common.menu", "Menu")}
-                title={safeT("common.menu", "Menu")}
+                className="inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-violet-100 bg-white text-slate-700 shadow-[0_8px_18px_rgba(125,89,201,0.12)]"
+                aria-label={safeT("today.menuProfile", "Perfil")}
+                title={safeT("today.menuProfile", "Perfil")}
               >
-                <Menu size={18} />
+                <RemiAvatar
+                  avatarUrl={avatarUrl}
+                  fallback={initial}
+                  alt={safeT("today.menuProfile", "Perfil")}
+                  className="h-full w-full"
+                />
               </button>
+              <span
+                className="absolute -bottom-1 left-1/2 z-10 -translate-x-1/2 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none text-white"
+                style={{
+                  background: "#7c3aed",
+                  minWidth: 28,
+                  textAlign: "center",
+                  boxShadow: "0 4px 10px rgba(124,58,237,0.2)",
+                }}
+              >
+                {mindClearPercent}%
+              </span>
 
               {profileOpen && (
                 <div

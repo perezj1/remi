@@ -150,7 +150,7 @@ export const en = {
   },
 
   index: {
-    clearMind: "Clear mind",
+    clearMind: "Ask and remember",
     reminders: "Reminders",
   },
 
@@ -197,7 +197,7 @@ export const en = {
     helperFallback:
       "I'm here to store your tasks, ideas, and reminders so your mind doesn't have to carry everything.",
 
-    mindClearLabel: "Clear mind",
+    mindClearLabel: "Ask and remember",
     mindClearDescription:
       "Every thing you save in Remi is one less thing your mind has to carry.",
     relaxMindButton: "Relax your mind",
@@ -1173,7 +1173,7 @@ export const en = {
       headline: "We're doing great today",
       subheadline:
         "Today we cleared quite a bit from your mind: you have 5 tasks organized and 3 of them are already done.",
-      clearMindLabel: "Clear mind",
+      clearMindLabel: "Ask and remember",
       clearMindHelper:
         "Every thing you save in Remi is one less thing your mind has to carry.",
 

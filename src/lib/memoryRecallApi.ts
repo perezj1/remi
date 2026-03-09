@@ -53,23 +53,50 @@ function normalizeText(value: string | null | undefined): string {
     .trim();
 }
 
+const WEAK_QUERY_TOKENS = new Set([
+  "tengo",
+  "debo",
+  "necesito",
+  "quiero",
+  "have",
+  "need",
+  "must",
+  "should",
+  "habe",
+  "muss",
+  "soll",
+]);
+
 function tokenize(value: string): string[] {
   return normalizeText(value)
     .split(" ")
-    .filter((token) => token.length >= 2 && !STOPWORDS.has(token));
+    .filter(
+      (token) =>
+        token.length >= 2 &&
+        !STOPWORDS.has(token) &&
+        !WEAK_QUERY_TOKENS.has(token)
+    );
 }
 
 function buildTokenSet(value: string): Set<string> {
   return new Set(tokenize(value));
 }
 
+function tokensRoughlyMatch(a: string, b: string): boolean {
+  if (a === b) return true;
+  if (a.length < 4 || b.length < 4) return false;
+  return a.startsWith(b) || b.startsWith(a);
+}
+
 function computeOverlapScore(queryTokens: Set<string>, text: string): number {
   if (queryTokens.size === 0) return 0;
-  const textTokens = buildTokenSet(text);
+  const textTokens = Array.from(buildTokenSet(text));
   let score = 0;
 
   for (const token of queryTokens) {
-    if (textTokens.has(token)) score += token.length >= 5 ? 18 : 10;
+    if (textTokens.some((textToken) => tokensRoughlyMatch(token, textToken))) {
+      score += token.length >= 5 ? 18 : 10;
+    }
   }
 
   return score;
@@ -77,14 +104,32 @@ function computeOverlapScore(queryTokens: Set<string>, text: string): number {
 
 function countOverlapTokens(queryTokens: Set<string>, text: string): number {
   if (queryTokens.size === 0) return 0;
-  const textTokens = buildTokenSet(text);
+  const textTokens = Array.from(buildTokenSet(text));
   let count = 0;
 
   for (const token of queryTokens) {
-    if (textTokens.has(token)) count += 1;
+    if (textTokens.some((textToken) => tokensRoughlyMatch(token, textToken))) count += 1;
   }
 
   return count;
+}
+
+function buildMatchedTokenSet(queryTokens: Set<string>, text: string): Set<string> {
+  if (queryTokens.size === 0) return new Set<string>();
+  const textTokens = Array.from(buildTokenSet(text));
+  const matched = new Set<string>();
+
+  for (const token of queryTokens) {
+    if (textTokens.some((textToken) => tokensRoughlyMatch(token, textToken))) {
+      matched.add(token);
+    }
+  }
+
+  return matched;
+}
+
+function hasMeaningfulSharedTokens(queryTokens: Set<string>, text: string, minCount = 2): boolean {
+  return countOverlapTokens(queryTokens, text) >= minCount;
 }
 
 function detectQueryIntent(question: string): QueryIntent {
@@ -261,6 +306,44 @@ function formatNoResult(lang: UiLang): string {
   return "No encontré un recuerdo claro sobre eso. Prueba con palabras más específicas.";
 }
 
+function formatMultipleBrainItems(items: BrainItem[], lang: UiLang): string {
+  const lines = items
+    .map((item) => item.title.trim())
+    .filter(Boolean)
+    .slice(0, 5)
+    .map((title) => `- ${title}`);
+
+  if (lines.length === 0) return formatNoResult(lang);
+  return lines.join("\n");
+}
+
+function pickRelatedBrainItems(
+  candidates: BrainRecallCandidate[],
+  referenceTokens: Set<string>,
+  minScore: number,
+  minSharedTokens: number,
+): BrainItem[] {
+  return candidates
+    .filter((candidate) => {
+      if (candidate.score < minScore) return false;
+      return hasMeaningfulSharedTokens(referenceTokens, candidate.item.title, minSharedTokens);
+    })
+    .slice(0, 5)
+    .map((candidate) => candidate.item);
+}
+
+function formatListWithRelatedBrainItems(
+  list: SharedList,
+  listItems: SharedListItem[],
+  relatedItems: BrainItem[],
+  lang: UiLang,
+): string {
+  const listAnswer = formatListAnswer(list, listItems, lang);
+  const relatedAnswer = formatMultipleBrainItems(relatedItems, lang);
+  if (!relatedItems.length) return listAnswer;
+  return `${listAnswer}\n${relatedAnswer}`;
+}
+
 export async function answerMemoryQuestion(
   userId: string,
   question: string,
@@ -292,7 +375,13 @@ export async function answerMemoryQuestion(
   if (error) throw error;
 
   const brainItems = (data ?? []) as BrainItem[];
-  const brainCandidates: BrainRecallCandidate[] = brainItems
+  const visibleBrainItems = brainItems.filter((item) => {
+    if (item.type === "idea") return item.status !== "ARCHIVED";
+    if (item.type === "task") return item.status === "ACTIVE";
+    return false;
+  });
+
+  const brainCandidates: BrainRecallCandidate[] = visibleBrainItems
     .map((item) => ({
       source: "brain_item" as const,
       item,
@@ -338,18 +427,43 @@ export async function answerMemoryQuestion(
   }
 
   if (best.source === "brain_item") {
+    const relatedReferenceTokens = buildMatchedTokenSet(queryTokens, best.item.title);
+    const effectiveReferenceTokens =
+      relatedReferenceTokens.size > 0 ? relatedReferenceTokens : queryTokens;
+    const relatedBrainItems = pickRelatedBrainItems(
+      brainCandidates,
+      effectiveReferenceTokens,
+      Math.max(18, best.score - 18),
+      effectiveReferenceTokens.size <= 1 ? 1 : 2,
+    );
+
     return {
       ok: true,
-      answer: best.item.title,
+      answer:
+        relatedBrainItems.length >= 2
+          ? formatMultipleBrainItems(relatedBrainItems, lang)
+          : best.item.title,
       source: "brain_item",
       matchedLabel: best.item.type === "idea" ? "note" : "reminder",
       confidence: best.score,
     };
   }
 
+  const listReferenceTokens = new Set([
+    ...queryTokens,
+    ...buildTokenSet(best.list.title),
+  ]);
+  const topBrainScore = brainCandidates[0]?.score ?? 0;
+  const relatedBrainItems = pickRelatedBrainItems(
+    brainCandidates,
+    listReferenceTokens,
+    Math.max(18, Math.min(topBrainScore, best.score - 24)),
+    listReferenceTokens.size <= 2 ? 1 : 2,
+  );
+
   return {
     ok: true,
-    answer: formatListAnswer(best.list, best.items, lang),
+    answer: formatListWithRelatedBrainItems(best.list, best.items, relatedBrainItems, lang),
     source: "list",
     matchedLabel: best.list.title,
     confidence: best.score,
