@@ -1,5 +1,8 @@
-import { supabase } from "@/integrations/supabase/client";
-import type { BrainItem } from "@/lib/brainItemsApi";
+import {
+  fetchActiveIdeas,
+  fetchActiveTasks,
+  type BrainItem,
+} from "@/lib/brainItemsApi";
 import {
   fetchSharedListItems,
   fetchSharedLists,
@@ -31,7 +34,7 @@ type ListRecallCandidate = {
   score: number;
 };
 
-type QueryIntent = "location" | "action" | "list" | "generic";
+type QueryIntent = "location" | "action" | "list" | "next_reminder" | "generic";
 
 const STOPWORDS = new Set([
   "a", "al", "algo", "and", "ante", "are", "as", "at", "con", "cual", "cuales", "como", "cuál",
@@ -132,8 +135,37 @@ function hasMeaningfulSharedTokens(queryTokens: Set<string>, text: string, minCo
   return countOverlapTokens(queryTokens, text) >= minCount;
 }
 
+const NEXT_REMINDER_PATTERNS = [
+  /\b(?:que|cual)\s+(?:es\s+)?(?:lo\s+)?(?:proximo|siguiente)\b/,
+  /\bque\s+es\s+lo\s+proximo\s+que\s+tengo\s+que\s+hacer\b/,
+  /\bque\s+(?:deberia|debo)\s+hacer\s+ahora\b/,
+  /\bque\s+deberia\s+hacer\s+despues\b/,
+  /\bque\s+tengo\s+que\s+hacer\s+ahora\b/,
+  /\bque\s+me\s+toca\s+ahora\b/,
+  /\bwhat(?:\s+is|'s)?\s+next\b/,
+  /\bwhat(?:\s+is|'s)?\s+my\s+next\s+(?:task|reminder)\b/,
+  /\bwhat\s+should\s+i\s+do\s+next\b/,
+  /\bwhat\s+should\s+i\s+do\s+now\b/,
+  /\bwhat\s+do\s+i\s+(?:need|have)\s+to\s+do\s+now\b/,
+  /\bwas\s+ist\s+als\s+nachstes\b/,
+  /\bwas\s+kommt\s+als\s+nachstes\b/,
+  /\bwas\s+ist\s+meine\s+nachste\s+erinnerung\b/,
+  /\bwas\s+soll\s+ich\s+als\s+nachstes\s+tun\b/,
+  /\bwas\s+soll\s+ich\s+jetzt\s+tun\b/,
+  /\bwas\s+muss\s+ich\s+jetzt\s+tun\b/,
+];
+
+function isNextReminderQuestion(question: string): boolean {
+  const normalized = normalizeText(question);
+  return NEXT_REMINDER_PATTERNS.some((pattern) => pattern.test(normalized));
+}
+
 function detectQueryIntent(question: string): QueryIntent {
   const normalized = normalizeText(question);
+
+  if (isNextReminderQuestion(normalized)) {
+    return "next_reminder";
+  }
 
   if (
     normalized.includes("lista") ||
@@ -306,6 +338,126 @@ function formatNoResult(lang: UiLang): string {
   return "No encontré un recuerdo claro sobre eso. Prueba con palabras más específicas.";
 }
 
+function formatNoScheduledReminder(lang: UiLang): string {
+  if (lang === "en") return "I don't see any scheduled reminders right now.";
+  if (lang === "de") return "Ich sehe gerade keine terminierten Erinnerungen.";
+  return "No veo recordatorios con fecha pendientes ahora mismo.";
+}
+
+function getLocaleForLang(lang: UiLang): string {
+  if (lang === "en") return "en-US";
+  if (lang === "de") return "de-DE";
+  return "es-ES";
+}
+
+function parseValidDate(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function getReminderMoments(item: BrainItem): Date[] {
+  const deduped = new Map<number, Date>();
+
+  for (const raw of [item.next_notification_at ?? null, item.next_reminder_at, item.due_date]) {
+    const parsed = parseValidDate(raw);
+    if (parsed) deduped.set(parsed.getTime(), parsed);
+  }
+
+  return Array.from(deduped.values()).sort((a, b) => a.getTime() - b.getTime());
+}
+
+function formatReminderDate(date: Date, lang: UiLang): string {
+  return new Intl.DateTimeFormat(getLocaleForLang(lang), {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function compareTaskTiebreak(a: BrainItem, b: BrainItem): number {
+  const aDue = parseValidDate(a.due_date)?.getTime() ?? Number.POSITIVE_INFINITY;
+  const bDue = parseValidDate(b.due_date)?.getTime() ?? Number.POSITIVE_INFINITY;
+  if (aDue !== bDue) return aDue - bDue;
+
+  const aCreated = parseValidDate(a.created_at)?.getTime() ?? 0;
+  const bCreated = parseValidDate(b.created_at)?.getTime() ?? 0;
+  return aCreated - bCreated;
+}
+
+function answerNextReminderQuestion(
+  items: BrainItem[],
+  lang: UiLang,
+): MemoryRecallAnswer {
+  const now = Date.now();
+  const taskCandidates = items
+    .filter((item) => item.type === "task" && item.status === "ACTIVE")
+    .map((item) => {
+      const moments = getReminderMoments(item);
+      const upcomingAt = moments.find((moment) => moment.getTime() >= now) ?? null;
+      const overdueAt = [...moments].reverse().find((moment) => moment.getTime() < now) ?? null;
+      return {
+        item,
+        upcomingAt,
+        overdueAt,
+      };
+    })
+    .filter((entry) => entry.upcomingAt || entry.overdueAt);
+
+  const upcoming = taskCandidates
+    .filter((entry) => entry.upcomingAt)
+    .sort((a, b) => {
+      const delta = (a.upcomingAt as Date).getTime() - (b.upcomingAt as Date).getTime();
+      return delta !== 0 ? delta : compareTaskTiebreak(a.item, b.item);
+    })[0];
+
+  if (upcoming?.upcomingAt) {
+    const when = formatReminderDate(upcoming.upcomingAt, lang);
+    return {
+      ok: true,
+      answer:
+        lang === "en"
+          ? `Your next reminder is "${upcoming.item.title}" on ${when}.`
+          : lang === "de"
+            ? `Deine n\u00e4chste Erinnerung ist "${upcoming.item.title}" am ${when}.`
+            : `Tu pr\u00f3ximo recordatorio es "${upcoming.item.title}" el ${when}.`,
+      source: "brain_item",
+      matchedLabel: upcoming.item.title,
+      confidence: 120,
+    };
+  }
+
+  const overdue = taskCandidates
+    .filter((entry) => entry.overdueAt)
+    .sort((a, b) => {
+      const delta = (b.overdueAt as Date).getTime() - (a.overdueAt as Date).getTime();
+      return delta !== 0 ? delta : compareTaskTiebreak(a.item, b.item);
+    })[0];
+
+  if (!overdue?.overdueAt) {
+    return {
+      ok: false,
+      answer: formatNoScheduledReminder(lang),
+      source: null,
+      matchedLabel: null,
+      confidence: 0,
+    };
+  }
+
+  const when = formatReminderDate(overdue.overdueAt, lang);
+  return {
+    ok: true,
+    answer:
+      lang === "en"
+        ? `You don't have upcoming reminders. The closest pending one is "${overdue.item.title}" (${when}).`
+        : lang === "de"
+          ? `Du hast keine zuk\u00fcnftigen Erinnerungen. Die n\u00e4chste noch offene ist "${overdue.item.title}" (${when}).`
+          : `No tienes recordatorios futuros. El pendiente m\u00e1s cercano es "${overdue.item.title}" (${when}).`,
+    source: "brain_item",
+    matchedLabel: overdue.item.title,
+    confidence: 90,
+  };
+}
+
 function formatMultipleBrainItems(items: BrainItem[], lang: UiLang): string {
   const lines = items
     .map((item) => item.title.trim())
@@ -361,25 +513,17 @@ export async function answerMemoryQuestion(
   }
 
   const queryTokens = buildTokenSet(cleanQuestion);
-  const normalizedQuestion = normalizeText(cleanQuestion);
   const intent = detectQueryIntent(cleanQuestion);
 
-  const { data, error } = await supabase
-    .from("brain_items")
-    .select("*")
-    .eq("user_id", userId)
-    .neq("status", "ARCHIVED")
-    .order("updated_at", { ascending: false })
-    .limit(200);
+  const [visibleTasks, visibleIdeas] = await Promise.all([
+    fetchActiveTasks(userId),
+    fetchActiveIdeas(userId),
+  ]);
+  const visibleBrainItems = [...visibleTasks, ...visibleIdeas];
 
-  if (error) throw error;
-
-  const brainItems = (data ?? []) as BrainItem[];
-  const visibleBrainItems = brainItems.filter((item) => {
-    if (item.type === "idea") return item.status !== "ARCHIVED";
-    if (item.type === "task") return item.status === "ACTIVE";
-    return false;
-  });
+  if (intent === "next_reminder") {
+    return answerNextReminderQuestion(visibleBrainItems, lang);
+  }
 
   const brainCandidates: BrainRecallCandidate[] = visibleBrainItems
     .map((item) => ({

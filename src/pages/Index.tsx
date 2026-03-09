@@ -1543,9 +1543,9 @@ const anyModalOpen =
         <div className="mx-auto w-full relative z-[1]" style={{ maxWidth: "min(96vw, 1440px)" }}>
         <div
           className="rounded-[32px] bg-white px-3 py-3"
-          style={{ minHeight: 116 }}
+          style={{ minHeight: 84 }}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 -translate-y-1">
             <div className="min-w-0 flex-1">
               <p
                 className="leading-tight font-semibold text-slate-900"
@@ -1650,83 +1650,106 @@ const anyModalOpen =
               )}
             </div>
           </div>
-
-          <div className="mt-2.5 pt-1">
-            <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500">
-                <Search size={18} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <input
-                  value={memoryQuestion}
-                  onChange={(e) => setMemoryQuestion(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      void handleMemoryQuestionSubmit();
-                    }
-                  }}
-                  placeholder={safeT(
-                    "today.memoryAskPlaceholder",
-                    'Ej: "¿Dónde están las llaves?" o "¿Qué hay en la lista compra?"',
-                  )}
-                  className="h-8 w-full bg-transparent text-[14px] text-slate-900 outline-none placeholder:text-slate-400"
-                />
-                {memoryInterim ? (
-                  <p className="truncate text-[11px] text-slate-400">{memoryInterim}</p>
-                ) : null}
-              </div>
-
-              {isAndroid && memoryQuestion.trim().length === 0 ? (
-                <button
-                  type="button"
-                  onPointerDown={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (!dictationListening) handleMemoryMic();
-                  }}
-                  onPointerUp={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    stopDictation();
-                  }}
-                  onPointerCancel={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    stopDictation();
-                  }}
-                  onPointerLeave={(e) => {
-                    if (!dictationListening) return;
-                    e.preventDefault();
-                    e.stopPropagation();
-                    stopDictation();
-                  }}
-                  disabled={!dictationSupported}
-                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
-                  aria-label={dictationListening ? safeT("bottomNav.listening", "Escuchando…") : safeT("common.speak", "Hablar")}
-                  title={dictationListening ? safeT("bottomNav.listening", "Escuchando…") : safeT("common.speak", "Hablar")}
-                >
-                  <Mic size={17} className={dictationListening ? "text-violet-600" : ""} />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => void handleMemoryQuestionSubmit()}
-                  disabled={memoryLoading || memoryQuestion.trim().length === 0}
-                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
-                  aria-label={safeT("today.memoryAskButton", "Preguntar")}
-                  title={safeT("today.memoryAskButton", "Preguntar")}
-                >
-                  {memoryLoading ? (
-                    safeT("today.memoryAskLoading", "Buscando...")
-                  ) : (
-                    <SendHorizontal size={15} />
-                  )}
-                </button>
-              )}
-            </div>
-          </div>
         </div>
+        </div>
+      </div>
+
+      <div className="mx-auto mt-6 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
+        <p className="leading-none font-extrabold text-slate-900" style={{ fontSize: "clamp(18px, 1.1vw, 24px)" }}>
+          {safeT("today.captureSectionTitle", "Vacia tu mente")}
+        </p>
+        <div className="mt-3 px-1">
+          <MindDumpModal
+            open={true}
+            embedded
+            onClose={() => setMindDumpResetNonce((n) => n + 1)}
+            onCreateTask={handleCreateTaskFromMindDump}
+            onCreateIdea={async (title) => {
+              await handleCreateIdeaFromMindDump(title);
+            }}
+            onCreateList={async (title, items, iconEmoji) => {
+              await handleCreateListFromMindDump(title, items, iconEmoji);
+            }}
+            initialTextNonce={mindDumpResetNonce}
+          />
+        </div>
+      </div>
+
+      <div className="mx-auto mt-4 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
+        <div className="px-1">
+          <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500">
+              <Search size={18} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <input
+                value={memoryQuestion}
+                onChange={(e) => setMemoryQuestion(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void handleMemoryQuestionSubmit();
+                  }
+                }}
+                placeholder={safeT(
+                  "today.memoryAskPlaceholder",
+                  'Ej: "¿Dónde están las llaves?" o "¿Qué hay en la lista compra?"',
+                )}
+                className="h-8 w-full bg-transparent text-[14px] text-slate-900 outline-none placeholder:text-slate-400"
+              />
+              {memoryInterim ? (
+                <p className="truncate text-[11px] text-slate-400">{memoryInterim}</p>
+              ) : null}
+            </div>
+
+            {isAndroid && memoryQuestion.trim().length === 0 ? (
+              <button
+                type="button"
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (!dictationListening) handleMemoryMic();
+                }}
+                onPointerUp={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  stopDictation();
+                }}
+                onPointerCancel={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  stopDictation();
+                }}
+                onPointerLeave={(e) => {
+                  if (!dictationListening) return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  stopDictation();
+                }}
+                disabled={!dictationSupported}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-700 transition-colors hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label={dictationListening ? safeT("bottomNav.listening", "Escuchando…") : safeT("common.speak", "Hablar")}
+                title={dictationListening ? safeT("bottomNav.listening", "Escuchando…") : safeT("common.speak", "Hablar")}
+              >
+                <Mic size={17} className={dictationListening ? "text-violet-600" : ""} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => void handleMemoryQuestionSubmit()}
+                disabled={memoryLoading || memoryQuestion.trim().length === 0}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-700 transition-colors hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+                aria-label={safeT("today.memoryAskButton", "Preguntar")}
+                title={safeT("today.memoryAskButton", "Preguntar")}
+              >
+                {memoryLoading ? (
+                  safeT("today.memoryAskLoading", "Buscando...")
+                ) : (
+                  <SendHorizontal size={15} />
+                )}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1756,28 +1779,7 @@ const anyModalOpen =
         </div>
       )}
 
-      <div className="mx-auto mt-6 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
-        <p className="leading-none font-extrabold text-slate-900" style={{ fontSize: "clamp(18px, 1.1vw, 24px)" }}>
-          {safeT("today.captureSectionTitle", "Vacia tu mente")}
-        </p>
-        <div className="mt-3 px-1">
-          <MindDumpModal
-            open={true}
-            embedded
-            onClose={() => setMindDumpResetNonce((n) => n + 1)}
-            onCreateTask={handleCreateTaskFromMindDump}
-            onCreateIdea={async (title) => {
-              await handleCreateIdeaFromMindDump(title);
-            }}
-            onCreateList={async (title, items, iconEmoji) => {
-              await handleCreateListFromMindDump(title, items, iconEmoji);
-            }}
-            initialTextNonce={mindDumpResetNonce}
-          />
-        </div>
-      </div>
-
-      <div className="mx-auto mt-7 mb-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
+      <div className="mx-auto mt-5 mb-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
         <div>
           <p className="font-extrabold text-slate-900" style={{ fontSize: "clamp(16px, 1vw, 22px)" }}>
             {safeT("today.listsTitle", "Listas")}
