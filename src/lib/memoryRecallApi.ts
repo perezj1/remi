@@ -136,23 +136,18 @@ function hasMeaningfulSharedTokens(queryTokens: Set<string>, text: string, minCo
 }
 
 const NEXT_REMINDER_PATTERNS = [
-  /\b(?:que|cual)\s+(?:es\s+)?(?:lo\s+)?(?:proximo|siguiente)\b/,
-  /\bque\s+es\s+lo\s+proximo\s+que\s+tengo\s+que\s+hacer\b/,
-  /\bque\s+(?:deberia|debo)\s+hacer\s+ahora\b/,
-  /\bque\s+deberia\s+hacer\s+despues\b/,
-  /\bque\s+tengo\s+que\s+hacer\s+ahora\b/,
-  /\bque\s+me\s+toca\s+ahora\b/,
-  /\bwhat(?:\s+is|'s)?\s+next\b/,
-  /\bwhat(?:\s+is|'s)?\s+my\s+next\s+(?:task|reminder)\b/,
-  /\bwhat\s+should\s+i\s+do\s+next\b/,
-  /\bwhat\s+should\s+i\s+do\s+now\b/,
-  /\bwhat\s+do\s+i\s+(?:need|have)\s+to\s+do\s+now\b/,
-  /\bwas\s+ist\s+als\s+nachstes\b/,
-  /\bwas\s+kommt\s+als\s+nachstes\b/,
-  /\bwas\s+ist\s+meine\s+nachste\s+erinnerung\b/,
-  /\bwas\s+soll\s+ich\s+als\s+nachstes\s+tun\b/,
-  /\bwas\s+soll\s+ich\s+jetzt\s+tun\b/,
-  /\bwas\s+muss\s+ich\s+jetzt\s+tun\b/,
+  /^(?:que|cual)\s+(?:es\s+)?(?:lo\s+)?(?:proximo|siguiente)(?:\s+que\s+(?:tengo\s+que|debo|deberia)\s+hacer)?$/,
+  /^que\s+(?:deberia|debo|tengo\s+que)\s+hacer(?:\s+(?:ahora|despues))?$/,
+  /^que\s+me\s+toca(?:\s+ahora)?$/,
+  /^what(?:\s+is|'s)?\s+next$/,
+  /^what(?:\s+is|'s)?\s+my\s+next\s+(?:task|reminder)$/,
+  /^what\s+should\s+i\s+do(?:\s+(?:now|next))?$/,
+  /^what\s+do\s+i\s+(?:need|have)\s+to\s+do(?:\s+(?:now|next))?$/,
+  /^was\s+ist\s+als\s+nachstes$/,
+  /^was\s+kommt\s+als\s+nachstes$/,
+  /^was\s+ist\s+meine\s+nachste\s+erinnerung$/,
+  /^was\s+soll\s+ich(?:(?:\s+(?:jetzt|nachstes|als\s+nachstes))?\s+(?:machen|tun)|\s+(?:machen|tun)(?:\s+(?:jetzt|nachstes|als\s+nachstes))?)$/,
+  /^was\s+muss\s+ich(?:(?:\s+(?:jetzt|nachstes|als\s+nachstes))?\s+(?:machen|tun)|\s+(?:machen|tun)(?:\s+(?:jetzt|nachstes|als\s+nachstes))?)$/,
 ];
 
 function isNextReminderQuestion(question: string): boolean {
