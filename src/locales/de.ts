@@ -1290,6 +1290,30 @@ export const de = {
         helperLine: "Schreib einen Satz – fertig",
       },
 
+      askRemi: {
+        badge: "Neu",
+        title: "Frag Remi und finde wieder, was du schon gespeichert hast",
+        text:
+          "Remi hilft dir nicht nur beim Festhalten. Du kannst auch Fragen in natürlicher Sprache stellen, um Notizen, Erinnerungen und Listen in Sekunden wiederzufinden.",
+        points: [
+          "Durchsuche Notizen, Erinnerungen und Listen mit nur einer Frage",
+          "Finde Orte, offene Punkte oder Inhalte aus einer Liste wieder",
+          "Remi sagt dir auch, was deine nächste Erinnerung ist",
+        ],
+        exampleLabel: "Beispiele",
+        helperLine: "Frag so, wie du denkst",
+        examples: [
+          "\"Wo sind die Schluessel?\"",
+          "\"Was musste ich mir zum Zahnarzt merken?\"",
+          "\"Was steht auf der Einkaufsliste?\"",
+        ],
+        answerLabel: "Was passiert",
+        answer:
+          "Remi durchsucht alles, was du schon gespeichert hast, und gibt dir die relevanteste Antwort zurück, damit du nicht alles manuell durchsuchen musst.",
+        ctaTry: "Remi ausprobieren",
+        tag: "Fragen",
+      },
+
       shareFeature: {
         badge: "Neu",
         title: "Teile Erinnerungen & Notizen, um mentale Last zu reduzieren",

@@ -1294,6 +1294,30 @@ export const en = {
         helperLine: "Write a sentence and you're done",
       },
 
+      askRemi: {
+        badge: "New",
+        title: "Ask Remi and find what you already saved",
+        text:
+          "Remi does more than capture things for you. You can also ask natural-language questions to recover notes, reminders, and lists in seconds.",
+        points: [
+          "Search notes, reminders, and lists with a single question",
+          "Recover locations, pending items, or what is inside a list",
+          "It can also tell you what your next reminder is",
+        ],
+        exampleLabel: "Examples",
+        helperLine: "Ask the way you think",
+        examples: [
+          "\"Where are the keys?\"",
+          "\"What did I need to remember about the dentist?\"",
+          "\"What is on the shopping list?\"",
+        ],
+        answerLabel: "What it does",
+        answer:
+          "Remi searches through what you have already saved and returns the most relevant answer, so you do not have to dig through everything manually.",
+        ctaTry: "Try Remi",
+        tag: "Questions",
+      },
+
       shareFeature: {
         badge: "New",
         title: "Share reminders and notes to reduce mental load",

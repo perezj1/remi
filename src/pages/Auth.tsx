@@ -13,6 +13,7 @@ type SlideItem = {
   title: string;
   subtitle: string;
   description: string;
+  examplesText?: string;
   emoji: string;
   accent: string;
   useLogo?: boolean;
@@ -151,6 +152,16 @@ const Auth = () => {
             emoji: "\uD83E\uDD1D",
             accent: "#c959a5",
           },
+          {
+            title: "Frag Remi",
+            subtitle: "Finde wieder, was du gespeichert hast",
+            description:
+              "Stell Remi eine Frage und du bekommst schnell eine Antwort aus dem, was du gespeichert hast.",
+            examplesText:
+              'Z. B.: "Wo sind die Schluessel?" · "Was steht auf der Einkaufsliste?"...',
+            emoji: "🔍",
+            accent: "#59a5c9",
+          },
         ]
       : lang === "en"
         ? [
@@ -187,6 +198,16 @@ const Auth = () => {
               emoji: "\uD83E\uDD1D",
               accent: "#c959a5",
             },
+            {
+              title: "Ask Remi",
+              subtitle: "Find what you already saved",
+              description:
+                "Ask Remi a question and it quickly answers using what you have saved.",
+              examplesText:
+                'Examples: "Where are the keys?" · "What is on the shopping list?"...',
+              emoji: "🔍",
+              accent: "#59a5c9",
+            },
           ]
         : [
             {
@@ -199,7 +220,7 @@ const Auth = () => {
               useLogo: true,
             },
             {
-              title: "Recuerda todo sin estres",
+              title: "Recuerda todo sin estrés",
               subtitle: "Tu memoria externa",
               description:
                 "Remi te devuelve lo importante justo en el momento adecuado.",
@@ -208,9 +229,9 @@ const Auth = () => {
             },
             {
               title: "Menos carga mental",
-              subtitle: "Captura rapida, mente tranquila",
+              subtitle: "Captura rápida, mente tranquila",
               description:
-                "Escribe una frase y Remi interpreta fecha, hora y recordatorio automaticamente.",
+                "Escribe una frase y Remi interpreta fecha, hora y recordatorio automáticamente.",
               emoji: "🌿",
               accent: "#59c9b5",
             },
@@ -218,9 +239,19 @@ const Auth = () => {
               title: "Memoria compartida",
               subtitle: "Comparte listas, notas y recordatorios",
               description:
-                "Ayuda a los demas a despejar su mente y a disfrutar recordando juntos, sin tener que cargar solos con todo.",
+                "Ayuda a los demás a despejar su mente y a disfrutar recordando juntos, sin tener que cargar solos con todo.",
               emoji: "\uD83E\uDD1D",
               accent: "#c959a5",
+            },
+            {
+              title: "Pregúntale a Remi",
+              subtitle: "Encuentra lo que ya guardaste",
+              description:
+                "Haz una pregunta a Remi y te responderá rápidamente usando la información que has guardado.",
+              examplesText:
+                'Ej.: "¿Dónde están las llaves?" · "¿Qué tengo que comprar?"...',
+              emoji: "🔍",
+              accent: "#59a5c9",
             },
           ];
 
@@ -391,6 +422,14 @@ const Auth = () => {
                 >
                   {slide.description}
                 </p>
+                {slide.examplesText ? (
+                  <p
+                    className="mt-2 max-w-[320px] leading-relaxed text-slate-500"
+                    style={{ fontSize: "clamp(13px, 3.4vw, 16px)" }}
+                  >
+                    {slide.examplesText}
+                  </p>
+                ) : null}
               </article>
             ))}
           </div>

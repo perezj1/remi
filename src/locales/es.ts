@@ -1306,6 +1306,30 @@ export const es = {
         helperLine: "Escribe una frase y listo",
       },
 
+      askRemi: {
+        badge: "Nuevo",
+        title: "Pregúntale a Remi y encuentra lo que ya guardaste",
+        text:
+          "Remi no solo te ayuda a vaciar la mente. También puedes hacerle preguntas en lenguaje natural para recuperar notas, recordatorios y listas en segundos.",
+        points: [
+          "Busca en notas, recordatorios y listas con una sola pregunta",
+          "Recupera ubicaciones, pendientes o el contenido de una lista",
+          "También te dice cuál es tu próximo recordatorio",
+        ],
+        exampleLabel: "Ejemplos",
+        helperLine: "Pregunta como pensarías",
+        examples: [
+          "\"¿Dónde están las llaves?\"",
+          "\"¿Qué tenía que recordar sobre el dentista?\"",
+          "\"¿Qué hay en la lista de la compra?\"",
+        ],
+        answerLabel: "Qué hace",
+        answer:
+          "Remi busca en lo que ya guardaste y te devuelve la respuesta más relevante para que no tengas que revisar todo manualmente.",
+        ctaTry: "Probar Remi",
+        tag: "Preguntas",
+      },
+
       shareFeature: {
         badge: "Nuevo",
         title: "Comparte recordatorios y notas para aliviar la carga mental",

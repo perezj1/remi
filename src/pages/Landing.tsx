@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   Quote,
   RefreshCw,
+  Search,
   Wand2,
   ExternalLink,
 } from "lucide-react";
@@ -522,6 +523,114 @@ const LandingPage: React.FC = () => {
           </div>
         </section>
 
+        {/* ASK REMI FEATURE */}
+        <section className="py-14 md:py-20 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-background via-secondary/10 to-background" />
+          <div className="relative z-10 px-6">
+            <div className="mx-auto w-full max-w-6xl grid lg:grid-cols-2 gap-6 items-stretch">
+              <Card className="landing-card p-6 md:p-8 shadow-elegant">
+                <div className="flex flex-col items-start gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-[#f1eff7] flex items-center justify-center">
+                      <Search className="w-6 h-6 text-[#7d59c9]" />
+                    </div>
+
+                    <p className="text-xs font-semibold tracking-[0.18em] uppercase text-[#7d59c9]">
+                      {x.askRemi.badge}
+                    </p>
+                  </div>
+
+                  <p className="text-xl md:text-2xl font-extrabold text-slate-900 text-center w-full">
+                    {x.askRemi.title}
+                  </p>
+
+                  <span className="text-[11px] font-medium text-[#7d59c9] bg-[#f1eff7] px-2.5 py-1 rounded-full">
+                    {x.askRemi.tag}
+                  </span>
+                </div>
+
+                <p className="mt-4 text-sm md:text-base text-muted-foreground leading-relaxed">
+                  {x.askRemi.text}
+                </p>
+
+                <div className="mt-5 grid gap-3">
+                  {x.askRemi.points.map((point: string, idx: number) => (
+                    <div key={idx} className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-[#f1eff7] border border-[#d8cee9] flex items-center justify-center mt-0.5">
+                        <Check className="w-3.5 h-3.5 text-[#7d59c9]" />
+                      </div>
+                      <span className="text-sm md:text-base text-slate-900 leading-snug">
+                        {point}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              <Card className="landing-card p-6 md:p-8 shadow-elegant">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-[#f1eff7] flex items-center justify-center">
+                    <Search className="w-5 h-5 text-[#7d59c9]" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {x.askRemi.exampleLabel}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {x.askRemi.helperLine}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-2xl bg-[#f8f6fc] border border-[#ddd4ef] p-4 text-sm text-slate-900 leading-relaxed">
+                  {x.askRemi.examples.map((example: string, idx: number) => (
+                    <div key={idx} className="flex gap-2">
+                      <span className="text-[#7d59c9] font-semibold">•</span>
+                      <span>{example}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4 rounded-2xl bg-white border border-slate-200 p-4">
+                  <p className="text-xs font-semibold text-[#7d59c9] mb-2">
+                    {x.askRemi.answerLabel}
+                  </p>
+                  <p className="text-sm text-slate-900 leading-relaxed">
+                    {x.askRemi.answer}
+                  </p>
+                </div>
+
+                <div className="mt-5 flex flex-col sm:flex-row gap-3">
+                  <Button
+                    onClick={() => navigate("/auth")}
+                    className="
+                      w-full
+                      inline-flex items-center justify-center gap-2
+                      font-semibold
+                      bg-[linear-gradient(135deg,hsl(260_52%_57%),hsl(280_70%_65%))]
+                      text-white
+                      shadow-none border-0
+                    "
+                  >
+                    {x.askRemi.ctaTry}
+                    <ArrowRight className="ml-2 w-4 h-4" />
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleShareRemi}
+                    className="w-full inline-flex items-center justify-center gap-2"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    <span>{t.hero.shareButtonLabel}</span>
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          </div>
+        </section>
+
         {/* SHARE FEATURE */}
         <section className="py-14 md:py-20 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-background via-secondary/10 to-background" />
@@ -826,19 +935,19 @@ const LandingPage: React.FC = () => {
         {/* MENTAL LOAD (tu sección original) */}
         <section className="py-16 md:py-24 relative">
           <div className="px-6">
-            <div className="mx-auto w-full max-w-6xl grid lg:grid-cols-2 gap-12 md:gap-16 items-center">
+            <div className="mx-auto w-full max-w-4xl">
               <div
                 className="space-y-6 animate-fade-in"
                 style={{ animationDelay: "0.2s" }}
               >
-                <h2 className="text-3xl md:text-4xl font-extrabold leading-tight tracking-tight text-center lg:text-left">
+                <h2 className="mx-auto max-w-3xl text-3xl md:text-4xl font-extrabold leading-tight tracking-tight text-center">
                   {t.mentalLoad.title.part1}{" "}
                   <span className="text-[#7d59c9]">
                     {t.mentalLoad.title.highlighted}
                   </span>
                 </h2>
 
-                <div className="space-y-6 animate-fade-in">
+                <div className="mx-auto max-w-3xl space-y-6 animate-fade-in">
                   <Card className="landing-card p-6 md:p-8 shadow-elegant">
                     <div className="flex flex-col items-center text-center gap-3 md:gap-4">
                       <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-[#f1eff7] flex items-center justify-center shadow-sm">
@@ -876,11 +985,11 @@ const LandingPage: React.FC = () => {
                   </Card>
                 </div>
 
-                <p className="text-s md:text-base leading-relaxed text-slate-900 max-w-md text-center">
+                <p className="mx-auto max-w-3xl text-s md:text-base leading-relaxed text-slate-900 text-center">
                   {t.mentalLoad.description}
                 </p>
 
-                <div className="rounded-2xl bg-white shadow-[0_18px_45px_rgba(15,23,42,0.12)] border border-slate-100 px-4 py-4 md:px-5 md:py-5">
+                <div className="mx-auto max-w-3xl rounded-2xl bg-white shadow-[0_18px_45px_rgba(15,23,42,0.12)] border border-slate-100 px-4 py-4 md:px-5 md:py-5">
                   <div className="space-y-4 whitespace-pre-line">
                     {[1, 2, 3].map((step) => {
                       const titleKey =
@@ -916,7 +1025,6 @@ const LandingPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-              {/* tu layout original deja la otra columna vacía */}
             </div>
           </div>
         </section>
