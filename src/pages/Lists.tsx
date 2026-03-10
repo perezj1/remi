@@ -7,6 +7,7 @@ import { useI18n } from "@/contexts/I18nContext";
 import { useModalUi } from "@/contexts/ModalUiContext";
 import { suggestSharedListEmoji } from "@/lib/sharedListEmojiAuto";
 import RemiAvatar from "@/components/RemiAvatar";
+import RemiShareLoader from "@/components/RemiShareLoader";
 import {
   acceptSharedListInvite,
   createSharedList,
@@ -52,6 +53,7 @@ export default function SharedListsPage() {
   const [newListManualEmoji, setNewListManualEmoji] = useState<string | null>(null);
   const [newItemText, setNewItemText] = useState("");
   const [saving, setSaving] = useState(false);
+  const [shareLoading, setShareLoading] = useState(false);
   const [viewMode, setViewMode] = useState<"cards" | "detail">("cards");
   const [progressByList, setProgressByList] = useState<Record<string, { done: number; total: number }>>({});
   const [menuOpen, setMenuOpen] = useState(false);
@@ -394,8 +396,10 @@ export default function SharedListsPage() {
   };
 
   const handleShare = async () => {
+    if (shareLoading) return;
     if (!selected) return;
     try {
+      setShareLoading(true);
       const invite = await createSharedListInviteShare(selected.id, "editor", lang);
       const result = await shareTextOrCopy(invite.shareMessage);
       if (result === "shared") {
@@ -406,11 +410,15 @@ export default function SharedListsPage() {
     } catch (err) {
       console.error(err);
       toast.error(safeT("lists.shareError", "No se pudo crear el enlace."));
+    } finally {
+      setShareLoading(false);
     }
   };
 
   const handleShareListById = async (list: SharedList) => {
+    if (shareLoading) return;
     try {
+      setShareLoading(true);
       const invite = await createSharedListInviteShare(list.id, "editor", lang);
       const result = await shareTextOrCopy(invite.shareMessage);
       if (result === "shared") {
@@ -421,6 +429,8 @@ export default function SharedListsPage() {
     } catch (err) {
       console.error(err);
       toast.error(safeT("lists.shareError", "No se pudo crear el enlace."));
+    } finally {
+      setShareLoading(false);
     }
   };
 
@@ -1207,6 +1217,10 @@ export default function SharedListsPage() {
           </>
         )}
       </main>
+      <RemiShareLoader
+        active={shareLoading}
+        label={safeT("common.preparingLink", "Preparando enlace...")}
+      />
     </div>
   );
 }

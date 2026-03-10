@@ -145,6 +145,7 @@ export const en = {
     close: "Close",
     confirm: "Confirm",
     loading: "Loading...",
+    preparingLink: "Preparing link...",
     speak: "Speak",
     paste: "Paste",
   },

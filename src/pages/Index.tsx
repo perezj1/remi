@@ -90,6 +90,7 @@ import { useModalUi } from "@/contexts/ModalUiContext";
 import MindDumpModal from "@/components/MindDumpModal";
 import MindRelaxSurface from "@/components/MindRelaxSurface";
 import RemiAvatar from "@/components/RemiAvatar";
+import RemiShareLoader from "@/components/RemiShareLoader";
 
 const TIP_DISMISS_KEY = "remi_tip_dismissed_v1";
 
@@ -409,6 +410,7 @@ export default function TodayPage() {
   const [memoryPlaceholderIndex, setMemoryPlaceholderIndex] = useState(0);
   const [memoryAnswer, setMemoryAnswer] = useState<MemoryRecallAnswer | null>(null);
   const [memoryLoading, setMemoryLoading] = useState(false);
+  const [shareLoading, setShareLoading] = useState(false);
   const [memoryInterim, setMemoryInterim] = useState("");
 
   const [nowTick, setNowTick] = useState(0);
@@ -898,7 +900,9 @@ const anyModalOpen =
   );
 
   const handleShareTask = async (task: BrainItem) => {
+  if (shareLoading) return;
   try {
+    setShareLoading(true);
     const res = await createShareInviteCached(task.id);
     await shareTextOrCopy(res.shareMessage);
     alert(safeT("shareInvite.sharedOk", "Listo. Enlace copiado/compartido."));
@@ -910,6 +914,8 @@ const anyModalOpen =
         "No se pudo compartir. Inténtalo de nuevo.",
       ),
     );
+  } finally {
+    setShareLoading(false);
   }
 };
 
@@ -1095,7 +1101,9 @@ const anyModalOpen =
 
   const handleShareListById = useCallback(
     async (list: SharedList) => {
+      if (shareLoading) return;
       try {
+        setShareLoading(true);
         const invite = await createSharedListInviteShare(list.id, "editor", lang);
         const result = await shareTextOrCopy(invite.shareMessage);
         if (result === "shared") {
@@ -1106,9 +1114,11 @@ const anyModalOpen =
       } catch (err) {
         console.error(err);
         toast.error(safeT("lists.shareError", "No se pudo crear el enlace."));
+      } finally {
+        setShareLoading(false);
       }
     },
-    [lang, safeT],
+    [lang, safeT, shareLoading],
   );
 
   const renderMemberAvatar = useCallback((member: SharedListMemberPreview) => {
@@ -2397,6 +2407,10 @@ const anyModalOpen =
 
       </div>
       </div>
+      <RemiShareLoader
+        active={shareLoading}
+        label={safeT("common.preparingLink", "Preparando enlace...")}
+      />
       {/* MODAL: shortcuts examples */}
       {showShortcutsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" style={MODAL_OVERLAY_STYLE}>

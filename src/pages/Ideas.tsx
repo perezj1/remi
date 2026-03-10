@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
 import IdeaEditModal from "@/components/IdeaEditModal";
+import RemiShareLoader from "@/components/RemiShareLoader";
 import {
   createShareInviteCached,
   prefetchShareInvite,
@@ -60,6 +61,7 @@ export default function IdeasPage() {
 
   const [items, setItems] = useState<BrainItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [shareLoading, setShareLoading] = useState(false);
 
   const [editingIdea, setEditingIdea] = useState<BrainItem | null>(null);
   const [editOpen, setEditOpen] = useState(false);
@@ -211,8 +213,10 @@ export default function IdeasPage() {
   };
 
   const handleShare = async (item: BrainItem) => {
+    if (shareLoading) return;
     try {
       if (!item?.id) return;
+      setShareLoading(true);
       const res = await createShareInviteCached(item.id);
 
       // IMPORTANTE: si el shareTextOrCopy internamente "normaliza" saltos de lÃ­nea,
@@ -223,6 +227,8 @@ export default function IdeasPage() {
     } catch (err) {
       console.error(err);
       alert(t("shareInvite.sharedError"));
+    } finally {
+      setShareLoading(false);
     }
   };
 
@@ -510,6 +516,10 @@ export default function IdeasPage() {
             prev.map((i) => (i.id === convertedTask.id ? convertedTask : i)),
           );
         }}
+      />
+      <RemiShareLoader
+        active={shareLoading}
+        label={t("common.preparingLink")}
       />
     </div>
   );

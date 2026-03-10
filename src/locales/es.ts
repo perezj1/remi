@@ -155,6 +155,7 @@ export const es = {
     close: "Cerrar",
     confirm: "Confirmar",
     loading: "Cargando...",
+    preparingLink: "Preparando enlace...",
     speak: "Hablar",
     paste: "Pegar",
   },

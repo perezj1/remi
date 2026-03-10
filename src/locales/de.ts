@@ -147,6 +147,7 @@ export const de = {
     close: "Schliessen",
     confirm: "Bestätigen",
     loading: "Wird geladen...",
+    preparingLink: "Link wird vorbereitet...",
     speak: "Sprechen",
     paste: "Einfügen",
   },

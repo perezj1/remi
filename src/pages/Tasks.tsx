@@ -22,6 +22,7 @@ import {
 import { useI18n } from "@/contexts/I18nContext";
 import TaskEditModal from "@/components/TaskEditModal";
 import IdeaEditModal from "@/components/IdeaEditModal";
+import RemiShareLoader from "@/components/RemiShareLoader";
 import {
   createShareInviteCached,
   prefetchShareInvite,
@@ -80,6 +81,7 @@ export default function TasksPage() {
 
   const [items, setItems] = useState<BrainItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [shareLoading, setShareLoading] = useState(false);
 
   const [editingTask, setEditingTask] = useState<BrainItem | null>(null);
   const [editOpen, setEditOpen] = useState(false);
@@ -262,14 +264,18 @@ export default function TasksPage() {
   };
 
   const handleShare = async (item: BrainItem) => {
+    if (shareLoading) return;
     try {
       if (!item?.id) return;
+      setShareLoading(true);
       const res = await createShareInviteCached(item.id);
       await shareTextOrCopy(res.shareMessage);
       alert(t("shareInvite.sharedOk"));
     } catch (err) {
       console.error(err);
       alert(t("shareInvite.sharedError"));
+    } finally {
+      setShareLoading(false);
     }
   };
 
@@ -598,6 +604,10 @@ export default function TasksPage() {
           });
           setActiveTypeTab("tasks");
         }}
+      />
+      <RemiShareLoader
+        active={shareLoading}
+        label={t("common.preparingLink")}
       />
     </div>
   );
