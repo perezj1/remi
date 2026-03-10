@@ -575,17 +575,22 @@ export const es = {
   today: {
     greetingHello: "Hola,",
     captureSectionTitle: "Vacia tu mente",
+    memorySectionTitle: "Recuerda",
     memoryAskTitle: "Pregúntale a Remi",
     memoryAskBody:
       "Busca en tus notas, recordatorios y listas guardadas y responde en lenguaje natural.",
     memoryAskPlaceholder:
       'Ej: "¿Dónde están las llaves?" o "¿Qué hay en la lista compra?"',
+    memoryAskPlaceholderFormat: 'Ej: "{{example}}"',
     memoryAskButton: "Preguntar",
     memoryAskLoading: "Buscando...",
     memoryAskAnswerLabel: "Respuesta",
     memoryAskExample1: "¿Dónde están las llaves?",
-    memoryAskExample2: "¿Qué tenía que recordar sobre el dentista?",
+    memoryAskExample2: "¿Cuándo tengo que ir al dentista?",
     memoryAskExample3: "¿Qué hay en la lista compra?",
+    memoryAskExample4: "¿Qué debo comprar?",
+    memoryAskExample5: "¿Qué serie quería ver?",
+    memoryAskExample6: "¿Qué tengo que hacer hoy?",
     listsTitle: "Listas",
     listsEmptyTitle: "Crea tu primera lista",
     tipsTitle: "Acciones",

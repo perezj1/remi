@@ -560,17 +560,22 @@ export const en = {
   today: {
     greetingHello: "Hello,",
     captureSectionTitle: "Clear your mind",
+    memorySectionTitle: "Remember",
     memoryAskTitle: "Ask Remi",
     memoryAskBody:
       "Search your saved notes, reminders, and lists and get a natural-language answer.",
     memoryAskPlaceholder:
       'Ex: "Where are the keys?" or "What is on the shopping list?"',
+    memoryAskPlaceholderFormat: 'Ex: "{{example}}"',
     memoryAskButton: "Ask",
     memoryAskLoading: "Searching...",
     memoryAskAnswerLabel: "Answer",
     memoryAskExample1: "Where are the keys?",
-    memoryAskExample2: "What did I need to remember about the dentist?",
+    memoryAskExample2: "When do I need to go to the dentist?",
     memoryAskExample3: "What is on the shopping list?",
+    memoryAskExample4: "What should I buy?",
+    memoryAskExample5: "Which series did I want to watch?",
+    memoryAskExample6: "What do I need to do today?",
     listsTitle: "Lists",
     listsEmptyTitle: "Create your first list",
     tipsTitle: "Actions",

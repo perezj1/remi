@@ -315,6 +315,7 @@ const MODAL_OVERLAY_STYLE: CSSProperties = {
 const REMINDER_DECK_CARD_WIDTH = "clamp(280px, 54vw, 640px)";
 const REMINDER_DECK_SIDE_PADDING = "calc(50% - clamp(140px, 27vw, 320px))";
 const REMINDER_DECK_OVERLAP = 14;
+const MEMORY_PLACEHOLDER_ROTATION_MS = 15000;
 
 export default function TodayPage() {
   const navigate = useNavigate();
@@ -394,6 +395,18 @@ export default function TodayPage() {
   const [recentLists, setRecentLists] = useState<SharedList[]>([]);
   const [recentListsProgress, setRecentListsProgress] = useState<Record<string, { done: number; total: number }>>({});
   const [memoryQuestion, setMemoryQuestion] = useState("");
+  const memoryPlaceholderExamples = useMemo(
+    () => [
+      safeT("today.memoryAskExample1", "Where are the keys?"),
+      safeT("today.memoryAskExample2", "When do I need to go to the dentist?"),
+      safeT("today.memoryAskExample3", "What is on the shopping list?"),
+      safeT("today.memoryAskExample4", "What should I buy?"),
+      safeT("today.memoryAskExample5", "Which series did I want to watch?"),
+      safeT("today.memoryAskExample6", "What do I need to do today?"),
+    ],
+    [safeT],
+  );
+  const [memoryPlaceholderIndex, setMemoryPlaceholderIndex] = useState(0);
   const [memoryAnswer, setMemoryAnswer] = useState<MemoryRecallAnswer | null>(null);
   const [memoryLoading, setMemoryLoading] = useState(false);
   const [memoryInterim, setMemoryInterim] = useState("");
@@ -550,6 +563,26 @@ const anyModalOpen =
     window.addEventListener("remi-items-changed", onChanged);
     return () => window.removeEventListener("remi-items-changed", onChanged);
   }, [loadData, user]);
+
+  useEffect(() => {
+    if (memoryPlaceholderExamples.length === 0) return;
+    setMemoryPlaceholderIndex(
+      Math.floor(Math.random() * memoryPlaceholderExamples.length),
+    );
+  }, [memoryPlaceholderExamples]);
+
+  useEffect(() => {
+    if (memoryPlaceholderExamples.length <= 1) return;
+
+    const intervalId = window.setInterval(() => {
+      setMemoryPlaceholderIndex((prev) => {
+        const next = prev + 1;
+        return next >= memoryPlaceholderExamples.length ? 0 : next;
+      });
+    }, MEMORY_PLACEHOLDER_ROTATION_MS);
+
+    return () => window.clearInterval(intervalId);
+  }, [memoryPlaceholderExamples.length]);
 
   useEffect(() => {
     if (!user) return;
@@ -1224,6 +1257,21 @@ const anyModalOpen =
     }
   }, [dictationListening, lang, memoryLoading, memoryQuestion, stopDictation, user]);
 
+  const memoryPlaceholder = useMemo(() => {
+    const currentExample =
+      memoryPlaceholderExamples[memoryPlaceholderIndex] ??
+      memoryPlaceholderExamples[0] ??
+      safeT("today.memoryAskPlaceholder", 'Ex: "Where are the keys?"');
+
+    const formattedPlaceholder = safeT(
+      "today.memoryAskPlaceholderFormat",
+      'Ex: "{{example}}"',
+      { example: currentExample },
+    );
+
+    return formattedPlaceholder.replace("{{example}}", currentExample);
+  }, [memoryPlaceholderExamples, memoryPlaceholderIndex, safeT]);
+
   const handleMemoryAnswerDone = useCallback(
     async (item: MemoryRecallItem) => {
       if (!user) return;
@@ -1853,8 +1901,13 @@ const anyModalOpen =
         </div>
       </div>
 
-      <div className="mx-auto mt-4 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
-        <div className="px-1">
+      <div className="mx-auto mt-5 mb-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
+        <div>
+          <p className="font-extrabold text-slate-900" style={{ fontSize: "clamp(16px, 1vw, 22px)" }}>
+            {safeT("today.memorySectionTitle", "Recuerda")}
+          </p>
+        </div>
+        <div className="mt-2 px-1">
           <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500">
               <Search size={18} />
@@ -1869,10 +1922,7 @@ const anyModalOpen =
                     void handleMemoryQuestionSubmit();
                   }
                 }}
-                placeholder={safeT(
-                  "today.memoryAskPlaceholder",
-                  'Ej: "¿Dónde están las llaves?" o "¿Qué hay en la lista compra?"',
-                )}
+                placeholder={memoryPlaceholder}
                 className="h-8 w-full bg-transparent text-[14px] text-slate-900 outline-none placeholder:text-slate-400"
               />
               {memoryInterim ? (
@@ -1929,39 +1979,39 @@ const anyModalOpen =
             )}
           </div>
         </div>
-      </div>
 
-      {memoryAnswer && (
-        <div className="mx-auto mt-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
-          <div
-            className={`relative overflow-hidden rounded-[20px] border px-4 py-3.5 shadow-[0_10px_24px_rgba(15,23,42,0.05)] ${
-              memoryAnswer.ok
-                ? "border-emerald-200 bg-[linear-gradient(180deg,rgba(236,253,245,0.92),rgba(244,250,248,0.96))]"
-                : "border-slate-200 bg-slate-50"
-            }`}
-          >
-            <button
-              type="button"
-              onClick={() => setMemoryAnswer(null)}
-              className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full text-slate-400 hover:bg-white/70 hover:text-slate-600"
-              aria-label={safeT("common.close", "Cerrar")}
-              title={safeT("common.close", "Cerrar")}
+        {memoryAnswer && (
+          <div className="mt-2 px-1">
+            <div
+              className={`relative overflow-hidden rounded-[20px] border px-4 py-3.5 shadow-[0_10px_24px_rgba(15,23,42,0.05)] ${
+                memoryAnswer.ok
+                  ? "border-emerald-200 bg-[linear-gradient(180deg,rgba(236,253,245,0.92),rgba(244,250,248,0.96))]"
+                  : "border-slate-200 bg-slate-50"
+              }`}
             >
-              <X size={14} />
-            </button>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-              {safeT("today.memoryAskAnswerLabel", "Respuesta")}
-            </p>
-            {memoryAnswer.ok ? (
-              renderMemoryAnswerContent(memoryAnswer, handleMemoryAnswerDone)
-            ) : (
-              <p className="mt-1 whitespace-pre-wrap text-[14px] leading-6 text-slate-800">
-                {memoryAnswer.answer}
+              <button
+                type="button"
+                onClick={() => setMemoryAnswer(null)}
+                className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full text-slate-400 hover:bg-white/70 hover:text-slate-600"
+                aria-label={safeT("common.close", "Cerrar")}
+                title={safeT("common.close", "Cerrar")}
+              >
+                <X size={14} />
+              </button>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                {safeT("today.memoryAskAnswerLabel", "Respuesta")}
               </p>
-            )}
+              {memoryAnswer.ok ? (
+                renderMemoryAnswerContent(memoryAnswer, handleMemoryAnswerDone)
+              ) : (
+                <p className="mt-1 whitespace-pre-wrap text-[14px] leading-6 text-slate-800">
+                  {memoryAnswer.answer}
+                </p>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="mx-auto mt-5 mb-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
         <div>
