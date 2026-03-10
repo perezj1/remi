@@ -63,6 +63,7 @@ import {
 
 import {
   CalendarClock,
+  Bell,
   Check,
   User,
   Users,
