@@ -56,6 +56,7 @@ export default function SharedListsPage() {
   const [progressByList, setProgressByList] = useState<Record<string, { done: number; total: number }>>({});
   const [menuOpen, setMenuOpen] = useState(false);
   const [cardMenuOpenId, setCardMenuOpenId] = useState<string | null>(null);
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const lastHandledInviteTokenRef = useRef<string | null>(null);
   const newItemInputRef = useRef<HTMLTextAreaElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -194,6 +195,13 @@ export default function SharedListsPage() {
       toast.error(safeT("lists.itemsLoadError", "No se pudieron cargar los puntos."));
     });
   }, [loadItems, safeT]);
+
+  useEffect(() => {
+    setExpandedItemId((prev) => {
+      if (!prev) return null;
+      return items.some((item) => item.id === prev) ? prev : null;
+    });
+  }, [items, selectedListId]);
 
   const syncSharedState = useCallback(async () => {
     await loadLists();
@@ -528,6 +536,8 @@ export default function SharedListsPage() {
       assignedToOther && selected
         ? selected.member_profiles.find((member) => member.user_id === item.assigned_to_user_id) ?? null
         : null;
+    const isExpandable = item.text.trim().length > 38;
+    const isExpanded = expandedItemId === item.id;
     return (
       <div
         key={item.id}
@@ -547,9 +557,25 @@ export default function SharedListsPage() {
           {item.done ? <RotateCcw className="h-4 w-4" /> : <Check className="h-4 w-4 opacity-70" />}
         </button>
 
-        <p className={`min-w-0 flex-1 truncate px-1 text-sm ${item.done ? "text-slate-500 line-through" : "text-slate-800"}`}>
-          {item.text}
-        </p>
+        <div className="min-w-0 flex-1 px-1">
+          {isExpandable ? (
+            <button
+              type="button"
+              onClick={() => setExpandedItemId((prev) => (prev === item.id ? null : item.id))}
+              className={`block w-full text-left text-sm ${
+                item.done ? "text-slate-500 line-through" : "text-slate-800"
+              } ${isExpanded ? "whitespace-normal break-words" : "truncate"}`}
+              aria-expanded={isExpanded}
+              title={item.text}
+            >
+              {item.text}
+            </button>
+          ) : (
+            <p className={`truncate text-sm ${item.done ? "text-slate-500 line-through" : "text-slate-800"}`}>
+              {item.text}
+            </p>
+          )}
+        </div>
 
         {!item.done && (
           <div className="ml-auto flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap">
