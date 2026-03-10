@@ -1755,10 +1755,10 @@ const anyModalOpen =
         className="relative overflow-visible"
         style={{
           zIndex: anyModalOpen ? 20 : 60,
-          paddingTop: "calc(20px + env(safe-area-inset-top))",
+          paddingTop: "calc(16px + env(safe-area-inset-top))",
           paddingBottom: 10,
-          paddingLeft: "calc(16px + env(safe-area-inset-left))",
-          paddingRight: "calc(16px + env(safe-area-inset-right))",
+          paddingLeft: "calc(15px + env(safe-area-inset-left))",
+          paddingRight: "calc(15px + env(safe-area-inset-right))",
           background: "#ffffff",
           borderBottomLeftRadius: 22,
           borderBottomRightRadius: 22,
@@ -1766,12 +1766,12 @@ const anyModalOpen =
           boxShadow: "0 2px 8px rgba(15,23,42,0.04)",
         }}
       >
-        <div className="mx-auto w-full relative z-[1]" style={{ maxWidth: "min(96vw, 1440px)" }}>
+        <div className="mx-auto mt-0.5 w-full relative z-[1]" style={{ maxWidth: "min(96vw, 1440px)" }}>
         <div
-          className="rounded-[32px] bg-white px-3 py-3"
-          style={{ minHeight: 84 }}
+          className="bg-white py-1.5"
+          style={{ minHeight: 72 }}
         >
-          <div className="flex items-center gap-3 -translate-y-1">
+          <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1">
               <p
                 className="leading-tight font-semibold text-slate-900"
@@ -1780,7 +1780,7 @@ const anyModalOpen =
                 {safeT("today.greetingHello", "Hello,")} <span aria-hidden="true">👋</span> {displayName}!
               </p>
               <p
-                className="mt-1 text-slate-500"
+                className="mt-0.5 text-slate-500"
                 style={{ fontSize: "clamp(12px, 0.85vw, 15px)" }}
               >
                 {safeT("index.clearMind", "Mente despejada")}
@@ -1791,7 +1791,7 @@ const anyModalOpen =
               <button
                 type="button"
                 onClick={() => setProfileOpen((open) => !open)}
-                className="inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-violet-100 bg-white text-slate-700 shadow-[0_8px_18px_rgba(125,89,201,0.12)]"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-violet-100 bg-white text-slate-700 shadow-[0_8px_18px_rgba(125,89,201,0.12)]"
                 aria-label={safeT("today.menuProfile", "Perfil")}
                 title={safeT("today.menuProfile", "Perfil")}
               >
@@ -1806,7 +1806,7 @@ const anyModalOpen =
                 className="absolute -bottom-1 left-1/2 z-10 -translate-x-1/2 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none text-white"
                 style={{
                   background: "#7c3aed",
-                  minWidth: 28,
+                  minWidth: 26,
                   textAlign: "center",
                   boxShadow: "0 4px 10px rgba(124,58,237,0.2)",
                 }}
@@ -1880,7 +1880,7 @@ const anyModalOpen =
         </div>
       </div>
 
-      <div className="mx-auto mt-6 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
+      <div className="mx-auto mt-4 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
         <p className="leading-none font-extrabold text-slate-900" style={{ fontSize: "clamp(18px, 1.1vw, 24px)" }}>
           {safeT("today.captureSectionTitle", "Vacia tu mente")}
         </p>
