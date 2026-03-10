@@ -12,6 +12,15 @@ import {
 
 type UiLang = "es" | "en" | "de";
 type RecallSource = "brain_item" | "list";
+const MEMORY_SECTION_SEPARATOR = "__REMI_SECTION_SEPARATOR__";
+
+export type MemoryRecallItem = {
+  id: string;
+  text: string;
+  source: "list_item" | "brain_item";
+  done: boolean;
+  brainType?: BrainItem["type"];
+};
 
 export type MemoryRecallAnswer = {
   ok: boolean;
@@ -19,6 +28,9 @@ export type MemoryRecallAnswer = {
   source: RecallSource | null;
   matchedLabel: string | null;
   confidence: number;
+  introText?: string | null;
+  listItems?: MemoryRecallItem[];
+  relatedItems?: MemoryRecallItem[];
 };
 
 type BrainRecallCandidate = {
@@ -306,25 +318,66 @@ function computeListScore(
   return score;
 }
 
-function formatListAnswer(list: SharedList, items: SharedListItem[], lang: UiLang): string {
-  const pending = items.filter((item) => !item.done).map((item) => item.text.trim()).filter(Boolean);
-  const done = items.filter((item) => item.done).map((item) => item.text.trim()).filter(Boolean);
+function formatPreviewListLines(items: string[], prefix = "• "): string[] {
+  const cleaned = items.map((item) => item.trim()).filter(Boolean);
+  return cleaned.map((item) => `${prefix}${item}`);
+}
 
+function getListItemsForAnswer(items: SharedListItem[]): SharedListItem[] {
+  const pending = items.filter((item) => !item.done);
+  if (pending.length > 0) return pending;
+  return items.filter((item) => item.done);
+}
+
+function formatListAnswerIntro(listTitle: string, lang: UiLang, hasPending: boolean): string {
   if (lang === "en") {
-    if (pending.length === 0 && done.length === 0) return `The list "${list.title}" is empty.`;
-    if (pending.length === 0) return `In the list "${list.title}", everything is already done: ${done.join(", ")}.`;
-    return `In the list "${list.title}" you have: ${pending.join(", ")}.`;
+    return hasPending
+      ? `In the list "${listTitle}" you have:`
+      : `In the list "${listTitle}", everything is already done:`;
   }
 
   if (lang === "de") {
-    if (pending.length === 0 && done.length === 0) return `Die Liste "${list.title}" ist leer.`;
-    if (pending.length === 0) return `In der Liste "${list.title}" ist schon alles erledigt: ${done.join(", ")}.`;
-    return `In der Liste "${list.title}" steht: ${pending.join(", ")}.`;
+    return hasPending
+      ? `In der Liste "${listTitle}" steht:`
+      : `In der Liste "${listTitle}" ist schon alles erledigt:`;
   }
 
-  if (pending.length === 0 && done.length === 0) return `La lista "${list.title}" está vacía.`;
-  if (pending.length === 0) return `En la lista "${list.title}" ya está todo hecho: ${done.join(", ")}.`;
-  return `En la lista "${list.title}" tienes: ${pending.join(", ")}.`;
+  return hasPending
+    ? `En la lista "${listTitle}" tienes:`
+    : `En la lista "${listTitle}" ya está todo hecho:`;
+}
+
+function toMemoryRecallListItems(items: SharedListItem[]): MemoryRecallItem[] {
+  return items.map((item) => ({
+    id: item.id,
+    text: item.text.trim(),
+    source: "list_item",
+    done: item.done,
+  }));
+}
+
+function toMemoryRecallBrainItems(items: BrainItem[]): MemoryRecallItem[] {
+  return items.map((item) => ({
+    id: item.id,
+    text: item.title.trim(),
+    source: "brain_item",
+    done: item.status === "DONE",
+    brainType: item.type,
+  }));
+}
+
+function formatListAnswer(list: SharedList, items: SharedListItem[], lang: UiLang): string {
+  const visibleItems = getListItemsForAnswer(items);
+  const visibleLines = formatPreviewListLines(visibleItems.map((item) => item.text));
+  const hasPending = visibleItems.some((item) => !item.done);
+
+  if (visibleLines.length === 0) {
+    if (lang === "en") return `The list "${list.title}" is empty.`;
+    if (lang === "de") return `Die Liste "${list.title}" ist leer.`;
+    return `La lista "${list.title}" está vacía.`;
+  }
+
+  return `${formatListAnswerIntro(list.title, lang, hasPending)}\n\n${visibleLines.join("\n")}`;
 }
 
 function formatNoResult(lang: UiLang): string {
@@ -488,7 +541,7 @@ function formatListWithRelatedBrainItems(
   const listAnswer = formatListAnswer(list, listItems, lang);
   const relatedAnswer = formatMultipleBrainItems(relatedItems, lang);
   if (!relatedItems.length) return listAnswer;
-  return `${listAnswer}\n${relatedAnswer}`;
+  return `${listAnswer}\n\n${MEMORY_SECTION_SEPARATOR}\n\n${relatedAnswer}`;
 }
 
 export async function answerMemoryQuestion(
@@ -585,6 +638,9 @@ export async function answerMemoryQuestion(
       source: "brain_item",
       matchedLabel: best.item.type === "idea" ? "note" : "reminder",
       confidence: best.score,
+      relatedItems: toMemoryRecallBrainItems(
+        relatedBrainItems.length >= 1 ? relatedBrainItems : [best.item],
+      ),
     };
   }
 
@@ -599,6 +655,8 @@ export async function answerMemoryQuestion(
     Math.max(18, Math.min(topBrainScore, best.score - 24)),
     listReferenceTokens.size <= 2 ? 1 : 2,
   );
+  const visibleListItems = getListItemsForAnswer(best.items);
+  const hasPendingListItems = visibleListItems.some((item) => !item.done);
 
   return {
     ok: true,
@@ -606,5 +664,8 @@ export async function answerMemoryQuestion(
     source: "list",
     matchedLabel: best.list.title,
     confidence: best.score,
+    introText: formatListAnswerIntro(best.list.title, lang, hasPendingListItems),
+    listItems: toMemoryRecallListItems(visibleListItems),
+    relatedItems: toMemoryRecallBrainItems(relatedBrainItems),
   };
 }

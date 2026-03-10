@@ -1139,7 +1139,7 @@ export default function SharedListsPage() {
                   </p>
                 </div>
 
-                <div className="mt-3 border-t border-[#e3dfef] pt-4 max-h-[calc(100dvh-300px)] space-y-5 overflow-auto pb-[150px] pr-1">
+                <div className="mt-3 border-t border-[#e3dfef] pt-4 max-h-[calc(100dvh-260px)] space-y-5 overflow-auto pb-[124px] pr-1">
                   {items.length === 0 && (
                     <div className="rounded-2xl border border-[#dfdbea] bg-[#f4f2fa] px-3 py-3 text-sm text-slate-500">
                       {safeT("lists.itemsEmpty", "No hay puntos todavía.")}

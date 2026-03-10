@@ -26,7 +26,11 @@ import {
   fetchRemiStatusSummary,
   type RemiStatusSummary,
 } from "@/lib/brainItemsApi";
-import { answerMemoryQuestion, type MemoryRecallAnswer } from "@/lib/memoryRecallApi";
+import {
+  answerMemoryQuestion,
+  type MemoryRecallAnswer,
+  type MemoryRecallItem,
+} from "@/lib/memoryRecallApi";
 import { supabase } from "@/integrations/supabase/client";
 import { registerPushSubscription } from "@/lib/registerPush";
 import {
@@ -42,6 +46,7 @@ import {
   type SharedList,
   type SharedListMemberPreview,
   fetchSharedLists,
+  updateSharedListItem,
   updateSharedListIcon,
 } from "@/lib/sharedListsApi";
 import { useSnapTipDeck } from "@/hooks/useSnapTipDeck";
@@ -128,6 +133,143 @@ type TipCardItem = {
   border: string;
   onClick?: () => void;
 };
+
+function renderMemoryActionRow(
+  item: MemoryRecallItem,
+  kind: "list" | "related",
+  onMarkDone: (item: MemoryRecallItem) => void,
+): ReactNode {
+  return (
+    <div
+      key={`${kind}-${item.source}-${item.id}`}
+      className="flex items-start gap-3 rounded-2xl border border-white/80 bg-white/85 px-3 py-2.5"
+    >
+      {kind === "list" ? (
+        <span className="mt-[8px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#59a5c9]" />
+      ) : (
+        <span className="pt-[2px] text-[14px] font-semibold text-slate-500">-</span>
+      )}
+      <p className="min-w-0 flex-1 text-[14px] leading-6 text-slate-800">
+        {item.text}
+      </p>
+      <button
+        type="button"
+        onClick={() => onMarkDone(item)}
+        disabled={item.done}
+        className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border ${
+          item.done
+            ? "border-[#cfd8c7] bg-[#eef5e8] text-[#4f6b3d]"
+            : "border-[#cfc9e7] bg-[#f7f6fc] text-slate-500"
+        } disabled:cursor-default`}
+        aria-label="Hecha"
+        title="Hecha"
+      >
+        <Check className={`h-4 w-4 ${item.done ? "" : "opacity-70"}`} />
+      </button>
+    </div>
+  );
+}
+
+function renderMemoryAnswerContent(
+  memoryAnswer: MemoryRecallAnswer,
+  onMarkDone: (item: MemoryRecallItem) => void,
+): ReactNode {
+  const hasListItems = (memoryAnswer.listItems?.length ?? 0) > 0;
+  const hasRelatedItems = (memoryAnswer.relatedItems?.length ?? 0) > 0;
+
+  if (hasListItems || hasRelatedItems) {
+    return (
+      <div className="mt-2 space-y-2.5">
+        {memoryAnswer.introText ? (
+          <p className="text-[15px] font-medium leading-7 text-slate-800">
+            {memoryAnswer.introText}
+          </p>
+        ) : null}
+
+        {(memoryAnswer.listItems ?? []).map((item) =>
+          renderMemoryActionRow(item, "list", onMarkDone),
+        )}
+
+        {hasRelatedItems ? (
+          <>
+            {hasListItems ? (
+              <div className="mx-1 my-2 h-px rounded-full bg-slate-300/80" />
+            ) : null}
+            <div className="space-y-2.5">
+              {memoryAnswer.relatedItems?.map((item) =>
+                renderMemoryActionRow(item, "related", onMarkDone),
+              )}
+            </div>
+          </>
+        ) : null}
+      </div>
+    );
+  }
+
+  const lines = memoryAnswer.answer.split("\n");
+
+  return (
+    <div className="mt-2 space-y-2.5">
+      {lines.map((rawLine, index) => {
+        const line = rawLine.trim();
+
+        if (!line) return <div key={`memory-gap-${index}`} className="h-1" />;
+
+        if (line === "__REMI_SECTION_SEPARATOR__") {
+          return (
+            <div
+              key={`memory-separator-${index}`}
+              className="mx-1 my-2 h-px rounded-full bg-slate-300/80"
+            />
+          );
+        }
+
+        if (line === "...") {
+          return (
+            <p
+              key={`memory-ellipsis-${index}`}
+              className="pl-6 text-[12px] font-semibold tracking-[0.16em] text-slate-400"
+            >
+              ...
+            </p>
+          );
+        }
+
+        if (line.startsWith("• ") || line.startsWith(". ")) {
+          const text = line.slice(2).trim();
+          return (
+            <div
+              key={`memory-bullet-${index}`}
+              className="flex items-start gap-3 rounded-2xl border border-white/80 bg-white/75 px-3 py-2"
+            >
+              <span className="mt-[8px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#59a5c9]" />
+              <p className="text-[14px] leading-6 text-slate-800">{text}</p>
+            </div>
+          );
+        }
+
+        if (line.startsWith("- ")) {
+          return (
+            <div key={`memory-note-${index}`} className="flex items-start gap-2 px-1">
+              <span className="pt-[2px] text-[14px] font-semibold text-slate-500">-</span>
+              <p className="text-[14px] leading-6 text-slate-700">{line.slice(2).trim()}</p>
+            </div>
+          );
+        }
+
+        return (
+          <p
+            key={`memory-text-${index}`}
+            className="text-[15px] font-medium leading-7 text-slate-800"
+          >
+            {line}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 const TIP_EMOJI_BY_ID: Record<string, string> = {
   install: "📲",
   push: "🔔",
@@ -1081,6 +1223,41 @@ const anyModalOpen =
     }
   }, [dictationListening, lang, memoryLoading, memoryQuestion, stopDictation, user]);
 
+  const handleMemoryAnswerDone = useCallback(
+    async (item: MemoryRecallItem) => {
+      if (!user) return;
+
+      try {
+        if (item.source === "list_item") {
+          await updateSharedListItem(item.id, { done: true }, user.id);
+        } else {
+          await setTaskStatus(item.id, "DONE");
+          setTasks((prev) => prev.filter((task) => task.id !== item.id));
+          setIdeas((prev) => prev.filter((idea) => idea.id !== item.id));
+        }
+
+        setMemoryAnswer((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            listItems: prev.listItems?.filter((entry) => entry.id !== item.id) ?? [],
+            relatedItems: prev.relatedItems?.filter((entry) => entry.id !== item.id) ?? [],
+          };
+        });
+      } catch (error) {
+        console.error("Error marking memory answer item as done", error);
+        toast.error(
+          lang === "en"
+            ? "I couldn't mark it as done right now."
+            : lang === "de"
+              ? "Ich konnte es gerade nicht als erledigt markieren."
+              : "No pude marcarlo como hecho ahora mismo.",
+        );
+      }
+    },
+    [lang, user],
+  );
+
   useEffect(() => {
     if (!dictationListening) setMemoryInterim("");
   }, [dictationListening]);
@@ -1756,8 +1933,10 @@ const anyModalOpen =
       {memoryAnswer && (
         <div className="mx-auto mt-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
           <div
-            className={`relative rounded-[18px] border px-4 py-3 ${
-              memoryAnswer.ok ? "border-emerald-200 bg-emerald-50/70" : "border-slate-200 bg-slate-50"
+            className={`relative overflow-hidden rounded-[20px] border px-4 py-3.5 shadow-[0_10px_24px_rgba(15,23,42,0.05)] ${
+              memoryAnswer.ok
+                ? "border-emerald-200 bg-[linear-gradient(180deg,rgba(236,253,245,0.92),rgba(244,250,248,0.96))]"
+                : "border-slate-200 bg-slate-50"
             }`}
           >
             <button
@@ -1772,9 +1951,13 @@ const anyModalOpen =
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
               {safeT("today.memoryAskAnswerLabel", "Respuesta")}
             </p>
-            <p className="mt-1 whitespace-pre-wrap text-[14px] leading-6 text-slate-800">
-              {memoryAnswer.answer}
-            </p>
+            {memoryAnswer.ok ? (
+              renderMemoryAnswerContent(memoryAnswer, handleMemoryAnswerDone)
+            ) : (
+              <p className="mt-1 whitespace-pre-wrap text-[14px] leading-6 text-slate-800">
+                {memoryAnswer.answer}
+              </p>
+            )}
           </div>
         </div>
       )}
