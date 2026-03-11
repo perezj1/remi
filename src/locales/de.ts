@@ -201,7 +201,7 @@ export const de = {
     helperFallback:
       "Ich bin hier, um deine Aufgaben, Ideen und Erinnerungen zu speichern, damit dein Kopf nicht alles tragen muss.",
 
-    mindClearLabel: "Frag und erinnere dich",
+    mindClearLabel: "Dein externes Gedächtnis",
     mindClearDescription:
       "Alles, was du in Remi speicherst, ist eine Sache weniger, die dein Kopf tragen muss.",
     relaxMindButton: "Geist entspannen",

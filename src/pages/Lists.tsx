@@ -548,108 +548,149 @@ export default function SharedListsPage() {
         : null;
     const isExpandable = item.text.trim().length > 38;
     const isExpanded = expandedItemId === item.id;
-    return (
-      <div
-        key={item.id}
-        className={`flex min-w-0 flex-wrap items-center gap-2 px-3 py-2 ${
-          item.done ? "bg-[#f8f7fc]" : "bg-[#fcfcfe]"
-        }`}
-      >
-        <button
-          type="button"
-          onClick={() => void handleToggleDone(item)}
-          className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border ${
-            item.done
-              ? "border-[#cfd8c7] bg-[#eef5e8] text-[#4f6b3d]"
-              : "border-[#cfc9e7] bg-[#f7f6fc] text-slate-500"
+    const toggleExpandedCard = () => {
+      if (!isExpandable) return;
+      setExpandedItemId((prev) => (prev === item.id ? null : item.id));
+    };
+    const textClassName = `text-sm leading-relaxed ${
+      item.done ? "text-slate-500 line-through" : "text-slate-800"
+    } ${isExpanded ? "whitespace-normal break-words" : "truncate"}`;
+
+    if (item.done) {
+      return (
+        <div
+          key={item.id}
+          onClick={toggleExpandedCard}
+          onKeyDown={(e) => {
+            if (!isExpandable) return;
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              toggleExpandedCard();
+            }
+          }}
+          role={isExpandable ? "button" : undefined}
+          tabIndex={isExpandable ? 0 : undefined}
+          aria-expanded={isExpandable ? isExpanded : undefined}
+          className={`min-w-0 bg-[#f8f7fc] px-3 py-3 outline-none transition ${
+            isExpandable
+              ? "cursor-pointer focus-visible:ring-2 focus-visible:ring-[#59a5c9] focus-visible:ring-offset-2"
+              : ""
           }`}
         >
-          {item.done ? <RotateCcw className="h-4 w-4" /> : <Check className="h-4 w-4 opacity-70" />}
-        </button>
-
-        <div className="min-w-0 flex-1 px-1">
-          {isExpandable ? (
-            <button
-              type="button"
-              onClick={() => setExpandedItemId((prev) => (prev === item.id ? null : item.id))}
-              className={`block w-full text-left text-sm ${
-                item.done ? "text-slate-500 line-through" : "text-slate-800"
-              } ${isExpanded ? "whitespace-normal break-words" : "truncate"}`}
-              aria-expanded={isExpanded}
-              title={item.text}
-            >
-              {item.text}
-            </button>
-          ) : (
-            <p className={`truncate text-sm ${item.done ? "text-slate-500 line-through" : "text-slate-800"}`}>
-              {item.text}
-            </p>
-          )}
-        </div>
-
-        {!item.done && (
-          <div className="ml-auto flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap">
-            <button
-              type="button"
-              onClick={() => {
-                if (assignedToOther) return;
-                void handleAssignMe(item);
-              }}
-              disabled={assignedToOther}
-              className={`inline-flex h-8 max-w-full shrink-0 items-center gap-1 rounded-full border px-2 text-xs ${
-                mine
-                  ? "border-[#d4cdee] bg-[#f2eefc] text-[#5d4d8b]"
-                  : assignedToOther
-                    ? "border-[#d8d8e4] bg-[#f1f1f6] text-slate-500"
-                    : "border-[#d9d4eb] bg-white text-slate-600"
-              }`}
-            >
-              <UserRoundCheck className="h-3.5 w-3.5" />
-              {!assignedToOther && (
-                <span className="truncate">
-                  {mine ? safeT("lists.assignedMe", "Me encargo") : safeT("lists.assignMe", "Asignarme")}
-                </span>
-              )}
-              {assignedToOther && (
-                <span
-                  className="inline-flex h-5 w-5 items-center justify-center overflow-hidden rounded-full border border-white bg-[#ece9f6] text-[10px] font-semibold text-[#4f4a69]"
-                  title={assignedMember?.display_name ?? safeT("lists.assignedOther", "Asignado")}
-                >
-                  <RemiAvatar
-                    avatarUrl={assignedMember?.avatar_url}
-                    fallback={(
-                      assignedMember?.display_name?.trim()?.slice(0, 1) ??
-                      assignedMember?.user_id?.slice(0, 1) ??
-                      "U"
-                    ).toUpperCase()}
-                  />
-                </span>
-              )}
-            </button>
-
+          <div className="flex items-center gap-3">
             {canEdit && (
               <button
                 type="button"
-                onClick={() => void handleDeleteItem(item)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void handleDeleteItem(item);
+                }}
                 className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
             )}
-          </div>
-        )}
 
-        {item.done && canEdit && (
-          <div className="ml-auto flex items-center justify-end gap-2">
+            <div className="min-w-0 flex-1">
+              <p className={textClassName} title={item.text}>
+                {item.text}
+              </p>
+            </div>
+
             <button
               type="button"
-              onClick={() => void handleDeleteItem(item)}
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700"
+              onClick={(e) => {
+                e.stopPropagation();
+                void handleToggleDone(item);
+              }}
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#cfd8c7] bg-[#eef5e8] text-[#4f6b3d]"
             >
-              <Trash2 className="h-4 w-4" />
+              <RotateCcw className="h-4 w-4" />
             </button>
           </div>
-        )}
+        </div>
+      );
+    }
+
+    return (
+      <div
+        key={item.id}
+        onClick={toggleExpandedCard}
+        onKeyDown={(e) => {
+          if (!isExpandable) return;
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            toggleExpandedCard();
+          }
+        }}
+        role={isExpandable ? "button" : undefined}
+        tabIndex={isExpandable ? 0 : undefined}
+        aria-expanded={isExpandable ? isExpanded : undefined}
+        className={`min-w-0 bg-[#fcfcfe] px-3 py-3 outline-none transition ${
+          isExpandable
+            ? "cursor-pointer focus-visible:ring-2 focus-visible:ring-[#59a5c9] focus-visible:ring-offset-2"
+            : ""
+        }`}
+      >
+        <div className="flex items-start gap-3">
+          <div className="min-w-0 flex-1">
+            <p className={textClassName} title={item.text}>
+              {item.text}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              void handleToggleDone(item);
+            }}
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#cfc9e7] bg-[#f7f6fc] text-slate-500"
+          >
+            <Check className="h-4 w-4 opacity-70" />
+          </button>
+        </div>
+
+        <div className="mt-3 flex items-center justify-start">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (assignedToOther) return;
+              void handleAssignMe(item);
+            }}
+            disabled={assignedToOther}
+            className={`inline-flex h-8 max-w-full shrink-0 items-center gap-1 rounded-full border px-2 text-xs ${
+              mine
+                ? "border-[#d4cdee] bg-[#f2eefc] text-[#5d4d8b]"
+                : assignedToOther
+                  ? "border-[#d8d8e4] bg-[#f1f1f6] text-slate-500"
+                  : "border-[#d9d4eb] bg-white text-slate-600"
+            }`}
+          >
+            <UserRoundCheck className="h-3.5 w-3.5" />
+            {!assignedToOther && (
+              <span className="truncate">
+                {mine ? safeT("lists.assignedMe", "Me encargo") : safeT("lists.assignMe", "Asignarme")}
+              </span>
+            )}
+            {assignedToOther && (
+              <span
+                className="inline-flex h-5 w-5 items-center justify-center overflow-hidden rounded-full border border-white bg-[#ece9f6] text-[10px] font-semibold text-[#4f4a69]"
+                title={assignedMember?.display_name ?? safeT("lists.assignedOther", "Asignado")}
+              >
+                <RemiAvatar
+                  avatarUrl={assignedMember?.avatar_url}
+                  fallback={(
+                    assignedMember?.display_name?.trim()?.slice(0, 1) ??
+                    assignedMember?.user_id?.slice(0, 1) ??
+                    "U"
+                  ).toUpperCase()}
+                />
+              </span>
+            )}
+          </button>
+        </div>
       </div>
     );
   };

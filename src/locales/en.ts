@@ -198,7 +198,7 @@ export const en = {
     helperFallback:
       "I'm here to store your tasks, ideas, and reminders so your mind doesn't have to carry everything.",
 
-    mindClearLabel: "Ask and remember",
+    mindClearLabel: "Your external memory",
     mindClearDescription:
       "Every thing you save in Remi is one less thing your mind has to carry.",
     relaxMindButton: "Relax your mind",
