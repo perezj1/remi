@@ -26,6 +26,7 @@ import StatusPage from "@/pages/Status";
 import ScrollToTop from "@/components/ScrollToTop";
 import LandingPage from "@/pages/Landing";
 import ShareInvitePage from "@/pages/ShareInvitePage";
+import SharedListInvitePage from "@/pages/SharedListInvitePage";
 import LegalPage from "@/pages/Legal";
 import ResetPasswordPage from "@/pages/ResetPassword";
 
@@ -159,7 +160,10 @@ function AppRoutes() {
 
   // ✅ NUEVO: si la URL contiene "share" (en path o query), NO queremos modales globales
   // Esto cubre: /share/:token, /share-target, y cualquier ruta con ?share=...
-  const isShareUrl = pathname.includes("/share") || search.includes("share");
+  const isShareUrl =
+    pathname.includes("/share") ||
+    pathname.startsWith("/lists/invite") ||
+    search.includes("share");
 
   // Ocultar bottom nav en rutas públicas/“técnicas”
   const hideBottomNavRoute =
@@ -283,14 +287,7 @@ function AppRoutes() {
             </RequireAuth>
           }
         />
-        <Route
-          path="/lists/invite/:inviteToken"
-          element={
-            <RequireAuth>
-              <SharedListsPage />
-            </RequireAuth>
-          }
-        />
+        <Route path="/lists/invite/*" element={<SharedListInvitePage />} />
 
         {/* Perfil */}
         <Route

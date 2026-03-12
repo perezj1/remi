@@ -36,16 +36,16 @@ export default function ResetPassword() {
       return {
         title: "Neues Passwort festlegen",
         subtitle:
-          "Gib dein neues Passwort ein, um die Wiederherstellung abzuschliessen.",
+          "Gib dein neues Passwort ein, um die Wiederherstellung abzuschließen.",
         passwordLabel: "Neues Passwort",
-        confirmLabel: "Passwort bestaetigen",
+        confirmLabel: "Passwort bestätigen",
         confirmPlaceholder: "Passwort wiederholen",
         submit: "Passwort aktualisieren",
-        back: "Zurueck zur Anmeldung",
-        mismatch: "Die Passwoerter stimmen nicht ueberein.",
+        back: "Zurück zur Anmeldung",
+        mismatch: "Die Passwörter stimmen nicht überein.",
         success: "Passwort aktualisiert.",
         invalid:
-          "Der Wiederherstellungslink ist ungueltig oder abgelaufen. Bitte fordere einen neuen Link an.",
+          "Der Wiederherstellungslink ist ungültig oder abgelaufen. Bitte fordere einen neuen Link an.",
         hidePassword: "Passwort ausblenden",
         showPassword: "Passwort anzeigen",
       };

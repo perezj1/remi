@@ -21,6 +21,9 @@ export const es = {
 
     pageTitle: "Añadir a Remi",
     pageSubtitle: "Guarda este recordatorio en tu cuenta.",
+    pageSubtitleTask: "Guarda este recordatorio en tu cuenta.",
+    pageSubtitleIdea: "Guarda esta nota en tu cuenta.",
+    pageSubtitleGeneric: "Guarda este elemento en tu cuenta.",
     loading: "Cargando…",
     invalidLinkTitle: "Enlace no válido",
     goHome: "Volver al inicio",
@@ -29,6 +32,7 @@ export const es = {
     due: "Fecha",
     acceptCta: "Añadir a Remi",
     accepting: "Añadiendo…",
+    laterCta: "Ahora no",
     acceptError: "No se pudo añadir. Inténtalo de nuevo.",
     alreadyAccepted: "Este enlace ya se ha usado.",
     expired: "Este enlace ha caducado.",
@@ -40,6 +44,33 @@ export const es = {
       "Si no has iniciado sesión, te pediremos entrar o crear una cuenta para poder añadirlo.",
     sentIndicator: "Tarea compartida",
     messageLine1: "{{name}} quiere que recuerdes:",
+    messageLine1Task: "{{name}} quiere que recuerdes:",
+    messageLine1Idea: "{{name}} quiere que guardes esta nota:",
+    messageLine1Generic: "{{name}} quiere compartir esto contigo:",
+  },
+
+  sharedListInvite: {
+    pageTitle: "Añadir lista compartida",
+    pageSubtitle: "Revisa la lista y decide si quieres unirte.",
+    loading: "Cargando lista compartida…",
+    invalidLinkTitle: "Invitación no válida",
+    goHome: "Volver al inicio",
+    someone: "Alguien",
+    messageLine1: "{{name}} quiere compartir esta lista contigo:",
+    permissionLabel: "Permiso",
+    roleEditor: "Puede editar",
+    roleViewer: "Solo lectura",
+    previewTitle: "Vista previa",
+    emptyList: "Esta lista aún no tiene elementos.",
+    expiresAt: "Caduca",
+    acceptCta: "Unirme a la lista",
+    accepting: "Uniéndome…",
+    acceptError: "No se pudo unir a la lista. Inténtalo de nuevo.",
+    alreadyAccepted: "Esta invitación ya se ha usado.",
+    expired: "Esta invitación ha caducado.",
+    laterCta: "Ahora no",
+    loginHint:
+      "Si no has iniciado sesión, te pediremos entrar o crear una cuenta antes de unirte a la lista.",
   },
 
   mentalDump: {
@@ -55,19 +86,19 @@ export const es = {
 
     detectedReminder: {
       DAY_BEFORE_AND_DUE:
-        "Detecté \"{word}\" → lo marqué como: día antes + día límite.",
+        "Detecté \"{word}\" ? lo marqué como: día antes + día límite.",
       DAILY_UNTIL_DUE:
-        "Detecté \"{word}\" → lo marqué como: diario hasta la fecha límite.",
+        "Detecté \"{word}\" ? lo marqué como: diario hasta la fecha límite.",
       WEEK_BEFORE_AND_DUE:
-        "Detecté \"{word}\" → lo marqué como: 1 semana antes + día límite.",
+        "Detecté \"{word}\" ? lo marqué como: 1 semana antes + día límite.",
     },
 
     why: {
-      verbTask: "Detecté \"{word}\" → lo marqué como tarea.",
-      prefixIdea: "Detecté \"{word}\" → lo marqué como idea.",
-      projectIdea: "Suena a idea/proyecto → lo marqué como idea.",
-      defaultTask: "No vi una pista clara → lo marqué como tarea.",
-      defaultIdea: "No vi una pista clara → lo marqué como idea.",
+      verbTask: "Detecté \"{word}\" ? lo marqué como tarea.",
+      prefixIdea: "Detecté \"{word}\" ? lo marqué como idea.",
+      projectIdea: "Suena a idea/proyecto ? lo marqué como idea.",
+      defaultTask: "No vi una pista clara ? lo marqué como tarea.",
+      defaultIdea: "No vi una pista clara ? lo marqué como idea.",
       manualTask: "Lo marcaste como tarea.",
       manualIdea: "Lo marcaste como idea.",
     },
@@ -305,7 +336,7 @@ export const es = {
   },
 
   capture: {
-    // ✅ Keys necesarias para cubrir MODAL_I18N
+    // ? Keys necesarias para cubrir MODAL_I18N
     // Nota: ya existía placeholder con otro texto; aquí lo dejamos como está y añadimos modalPlaceholder
     // si tu modal usa "capture.placeholder" y necesitas el texto exacto, cambia placeholder directamente.
     modalPlaceholder: "Vacía tu mente aquí…",
@@ -406,7 +437,7 @@ export const es = {
       pasteError: "No pude acceder al portapapeles. Mantén pulsado y pega.",
       writeSomething: "Escribe algo primero.",
 
-      // ✅ NUEVA (del MODAL_I18N)
+      // ? NUEVA (del MODAL_I18N)
       pickDateFirst: "Elige una fecha primero.",
     },
 
@@ -430,13 +461,13 @@ export const es = {
 
     title: "Vacía tu mente",
     subtitle: "Habla, escribe o pega texto. Remi se encarga.",
-    inlineGuide: "❓ ¿Qué?  📅 ¿Cuándo?  🔔 ¿Recordatorio?",
+    inlineGuide: "? ¿Qué?  ?? ¿Cuándo?  ?? ¿Recordatorio?",
     inlineExample: "Ej: cumpleaños el 12 de junio a las 13:00. Recuérdamelo una semana antes.",
     examplesTitle: "Ejemplos:",
-    exampleVoice: "🎤 \"Llamar a mamá el domingo\"",
-    exampleVoiceIOS: "🎤 \"Usa el microfono del teclado para dictar\"",
-    examplePaste: "📋 \"Todos los martes a las 18 quedamos\"",
-    exampleIdea: "💡 Idea: viaje a Italia en primavera",
+    exampleVoice: "?? \"Llamar a mamá el domingo\"",
+    exampleVoiceIOS: "?? \"Usa el microfono del teclado para dictar\"",
+    examplePaste: "?? \"Todos los martes a las 18 quedamos\"",
+    exampleIdea: "?? Idea: viaje a Italia en primavera",
     holdToTalk: "Mantén pulsado para hablar",
     listening: "Escuchando…",
     iosKeyboardMicHint: "Usa el micrófono del teclado para hablar.",
@@ -477,7 +508,7 @@ export const es = {
     },
   },
 
-  // ✅ NUEVO: bloque "pill" (para cubrir MODAL_I18N)
+  // ? NUEVO: bloque "pill" (para cubrir MODAL_I18N)
   pill: {
     type: {
       label: "Tipo",
@@ -607,7 +638,7 @@ export const es = {
       step3: "La persona que lo recibe toca \"Añadir a Remi\".",
       examplesTitle: "Ejemplos que van genial",
       examplesBody:
-        "• \"Compra pan mañana\" → se lo envío a mi pareja\n• \"Médico el martes a las 14:00\" → se lo envío a mi madre\n• \"Traer cargador\" → se lo envío al compañero",
+        "• \"Compra pan mañana\" ? se lo envío a mi pareja\n• \"Médico el martes a las 14:00\" ? se lo envío a mi madre\n• \"Traer cargador\" ? se lo envío al compañero",
       footer: "Esto ayuda a otras personas a recordar cosas importantes para ellos y para tí.",
       ok: "Entendido",
       hideForever: "No volver a mostrar",
@@ -657,7 +688,7 @@ export const es = {
 
     // Share
     shareText:
-      "Uso Remi para sacar tareas e ideas de mi cabeza, y mi mente se siente mucho más clara y con menos estrés.\nDe verdad te lo recomiendo, ayuda mucho. Aquí tienes el enlace 🙂",
+      "Uso Remi para sacar tareas e ideas de mi cabeza, y mi mente se siente mucho más clara y con menos estrés.\nDe verdad te lo recomiendo, ayuda mucho. Aquí tienes el enlace ??",
     shareCopied: "Enlace copiado al portapapeles",
 
     // Push modal + toasts
@@ -682,7 +713,7 @@ export const es = {
         "Notificaciones por dispositivo: activa avisos solo en los que quieras (ej: móvil ON, PC OFF).",
       examplesTitle: "Ejemplos que funcionan",
       examplesBody:
-        "• Móvil ON → recordatorios cuando estás fuera\n• PC OFF → cero interrupciones trabajando\n• iPad ON → revisión tranquila al final del día",
+        "• Móvil ON ? recordatorios cuando estás fuera\n• PC OFF ? cero interrupciones trabajando\n• iPad ON ? revisión tranquila al final del día",
       footer:
         "Tú sueltas la carga mental en el momento. Remi se encarga de recordártelo cuando y donde sea necesario.",
       ok: "Entendido",
@@ -774,9 +805,9 @@ export const es = {
       shareToRemi: {
         title: "Guarda cosas con \"Compartir\"",
         body:
-          "Desde WhatsApp/Correo/Notas: Compartir → Remi. \nSe abre listo para ordenar.",
+          "Desde WhatsApp/Correo/Notas: Compartir ? Remi. \nSe abre listo para ordenar.",
         cta: "Probar",
-        toast: "Tip: en otra app pulsa \"Compartir\" → \"Remi\" para mandarlo directo 🙂",
+        toast: "Tip: en otra app pulsa \"Compartir\" ? \"Remi\" para mandarlo directo ??",
       },
 
       natural: {
@@ -813,7 +844,7 @@ export const es = {
       },
 
       cleanNoDate: {
-        title: "✅ Sin tareas sin fecha",
+        title: "? Sin tareas sin fecha",
         body: "Perfecto. Ahora es fácil priorizar.",
         cta: "Ver hoy",
       },
@@ -876,10 +907,10 @@ export const es = {
     iosDict: {
       helpTitle: "Activa Dictado en iPhone",
       helpBody:
-        "En iOS suele estar en: Ajustes → General → Teclado → Activar Dictado.",
+        "En iOS suele estar en: Ajustes ? General ? Teclado ? Activar Dictado.",
       helpStepsTitle: "Pasos rápidos",
       step1: "Abre Ajustes",
-      step2: "General → Teclado",
+      step2: "General ? Teclado",
       step3: "Activa \"Activar Dictado\"",
       ok: "Entendido",
       hideForever: "No volver mostrar",
@@ -976,7 +1007,7 @@ export const es = {
     devicePushNeedsRegisterLine: "Permiso OK, pero falta activar aquí.",
     devicePushPaused: "Pausadas",
     devicePushPausedLine: "Pausado en este dispositivo",
-    devicePushActiveLine: "Activo en este dispositivo ✅",
+    devicePushActiveLine: "Activo en este dispositivo ?",
     devicePushToggleAria:
       "Activar o pausar notificaciones en este dispositivo",
     pushDeviceEnabled: "Notificaciones activadas en este dispositivo",
@@ -997,9 +1028,9 @@ export const es = {
     passwordPlaceholder: "Déjalo vacío si no quieres cambiarla",
 
     languageLabel: "Idioma",
-    languageSpanish: "🇪🇸 Español",
-    languageEnglish: "🇬🇧 Inglés",
-    languageGerman: "🇩🇪 Alemán",
+    languageSpanish: "ES Español",
+    languageEnglish: "GB Inglés",
+    languageGerman: "DE Alemán",
 
     notificationsLabel: "Notificaciones",
     notificationsDescription: "Recordatorios para tareas importantes.",
@@ -1016,7 +1047,7 @@ export const es = {
     logoutButton: "Cerrar sesión",
 
     shareText:
-      "I'm using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\nI definitely recommend trying it, it really helps. Here's the link. 🙂",
+      "I'm using Remi to get tasks and ideas out of my head, and my mind feels so much clearer and less stressed.\nI definitely recommend trying it, it really helps. Here's the link. ??",
     shareCopied: "Enlace de REMI copiado al portapapeles",
     avatarSelectorOpen: "Elegir avatar",
     avatarUploadPick: "Elegir imagen",
@@ -1058,6 +1089,10 @@ export const es = {
     deleted: "Lista eliminada.",
     deleteError: "No se pudo eliminar la lista.",
     onlyOwnerDelete: "Solo el owner puede eliminar la lista.",
+    leave: "Salir",
+    left: "Has salido de la lista.",
+    leaveError: "No se pudo salir de la lista.",
+    confirmLeave: "Salir de esta lista?",
     share: "Compartir",
     linkCopied: "Enlace copiado.",
     shareError: "No se pudo crear el enlace.",
@@ -1122,6 +1157,46 @@ export const es = {
     dailyReminderBody: "Revisa tus tareas de hoy en REMI y descarga tu cabeza.",
     dueTodayTitle: "Tienes tareas para hoy",
     dueTodayBody: "Abre REMI para ver lo que tienes pendiente.",
+  },
+
+  sharedListNotifications: {
+    title: "Notificaciones",
+    subtitle: "Actividad reciente en listas, recordatorios y notas compartidas.",
+    open: "Notificaciones",
+    close: "Cerrar",
+    clear: "Borrar",
+    empty: "Aún no hay actividad compartida.",
+    now: "Ahora",
+    someone: "Alguien",
+    itemFallback: "este elemento",
+    listFallback: "esta lista",
+    sharedItemFallback: "este elemento",
+    sharedReminderLabel: "Recordatorio compartido",
+    sharedNoteLabel: "Nota compartida",
+    receivedReminderLabel: "Recordatorio recibido",
+    receivedNoteLabel: "Nota recibida",
+    itemAdded: "{{actor}} agregó \"{{item}}\" a la lista \"{{list}}\".",
+    itemDeleted: "{{actor}} eliminó \"{{item}}\" de la lista \"{{list}}\".",
+    itemDeletedUnknown: "{{actor}} eliminó un elemento de la lista \"{{list}}\".",
+    itemAssignedSelf: "{{actor}} se asignó \"{{item}}\" de la lista \"{{list}}\".",
+    itemAssignedOther: "{{actor}} asignó \"{{item}}\" a {{assignee}} en la lista \"{{list}}\".",
+    itemAssigned: "{{actor}} asignó \"{{item}}\" en la lista \"{{list}}\".",
+    itemUnassigned: "{{actor}} quitó la asignación de \"{{item}}\" en la lista \"{{list}}\".",
+    itemCompleted: "{{actor}} marcó \"{{item}}\" como hecho en la lista \"{{list}}\".",
+    itemReopened: "{{actor}} volvió a activar \"{{item}}\" en la lista \"{{list}}\".",
+    itemRenamed: "{{actor}} renombró \"{{previous}}\" a \"{{next}}\" en la lista \"{{list}}\".",
+    listRenamed: "{{actor}} renombró la lista \"{{previous}}\" a \"{{next}}\".",
+    memberJoined: "{{actor}} aceptó la lista \"{{list}}\".",
+    shareSentTask: "Compartiste el recordatorio \"{{item}}\".",
+    shareSentIdea: "Compartiste la nota \"{{item}}\".",
+    shareAcceptedTaskBy: "{{actor}} aceptó el recordatorio \"{{item}}\".",
+    shareAcceptedIdeaBy: "{{actor}} aceptó la nota \"{{item}}\".",
+    shareRejectedTaskBy: "{{actor}} rechazó el recordatorio compartido \"{{item}}\".",
+    shareRejectedIdeaBy: "{{actor}} rechazó la nota compartida \"{{item}}\".",
+    shareExpiredTask: "El recordatorio compartido \"{{item}}\" expiró.",
+    shareExpiredIdea: "La nota compartida \"{{item}}\" expiró.",
+    shareReceivedTask: "{{actor}} te compartió el recordatorio \"{{item}}\".",
+    shareReceivedIdea: "{{actor}} te compartió la nota \"{{item}}\".",
   },
 
   landing: {
@@ -1299,7 +1374,7 @@ export const es = {
       },
 
       interpret: {
-        title: "Texto → recordatorio automático",
+        title: "Texto ? recordatorio automático",
         text:
           "No necesitas configurar mil cosas. Remi entiende el lenguaje natural y lo convierte en un recordatorio útil.",
         chips: ["Fecha y hora", "Hábito / frecuencia", "Modo de recordatorio"],
@@ -1348,7 +1423,7 @@ export const es = {
         ],
         exampleLabel: "Ejemplo",
         example:
-          "\"Añadir a Remi: 'Mañana 18:00 llamar al seguro' → te llega como link y lo añades en un toque.\"",
+          "\"Añadir a Remi: 'Mañana 18:00 llamar al seguro' ? te llega como link y lo añades en un toque.\"",
         helperLine: "Ayuda rápida, sin explicación",
         ctaTry: "Probar Remi",
         tag: "Compartir",
@@ -1451,6 +1526,7 @@ export const es = {
     },
   },
 } as const;
+
 
 
 

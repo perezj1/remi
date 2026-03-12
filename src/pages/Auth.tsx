@@ -1,6 +1,6 @@
 // src/pages/Auth.tsx
 import { useState, useEffect, useRef, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +32,13 @@ function hasRecoveryHash(): boolean {
   );
 }
 
+function getSafeRedirect(raw: string | null): string | null {
+  const value = (raw ?? "").trim();
+  if (!value.startsWith("/")) return null;
+  if (value.startsWith("//")) return null;
+  return value;
+}
+
 const Auth = () => {
   const [authView, setAuthView] = useState<AuthView>(() =>
     hasRecoveryHash() ? "reset" : "login"
@@ -47,7 +54,9 @@ const Auth = () => {
   const { signUp, signIn, requestPasswordReset, updatePassword, user } = useAuth();
   const { t, lang } = useI18n();
   const navigate = useNavigate();
+  const location = useLocation();
   const sliderRef = useRef<HTMLDivElement | null>(null);
+  const redirectPath = getSafeRedirect(new URLSearchParams(location.search).get("redirect"));
   const isLogin = authView === "login";
   const isRegister = authView === "register";
   const isForgot = authView === "forgot";
@@ -55,22 +64,22 @@ const Auth = () => {
     lang === "de"
       ? {
           forgotCta: "Passwort vergessen?",
-          forgotTitle: "Passwort zuruecksetzen",
-          forgotHelp: "Wir senden dir einen Link per E-Mail, um dein Passwort zu aendern.",
+          forgotTitle: "Passwort zurücksetzen",
+          forgotHelp: "Wir senden dir einen Link per E-Mail, um dein Passwort zu ändern.",
           forgotSubmit: "Wiederherstellungslink senden",
           forgotSuccess:
             "Wenn diese E-Mail existiert, haben wir einen Wiederherstellungslink gesendet.",
           forgotError: "Wiederherstellungs-E-Mail konnte nicht gesendet werden.",
-          backToLogin: "Zurueck zur Anmeldung",
+          backToLogin: "Zurück zur Anmeldung",
           resetTitle: "Neues Passwort festlegen",
-          resetHelp: "Gib dein neues Passwort ein, um die Wiederherstellung abzuschliessen.",
+          resetHelp: "Gib dein neues Passwort ein, um die Wiederherstellung abzuschließen.",
           resetPasswordLabel: "Neues Passwort",
-          resetConfirmLabel: "Passwort bestaetigen",
+          resetConfirmLabel: "Passwort bestätigen",
           resetConfirmPlaceholder: "Passwort wiederholen",
           resetSubmit: "Passwort aktualisieren",
           resetSuccess: "Passwort aktualisiert. Du bist nun eingeloggt.",
           resetError: "Passwort konnte nicht aktualisiert werden.",
-          resetMismatch: "Die Passwoerter stimmen nicht ueberein.",
+          resetMismatch: "Die Passwörter stimmen nicht überein.",
           hidePassword: "Passwort ausblenden",
           showPassword: "Passwort anzeigen",
         }
@@ -121,7 +130,7 @@ const Auth = () => {
       ? [
           {
             title: "Das, was dein Kopf braucht",
-            subtitle: "Remi erinnert fuer dich",
+            subtitle: "Remi erinnert für dich",
             description:
               "Hol Aufgaben, Ideen und Erinnerungen aus dem Kopf und fokussiere dich auf das, was wirklich wichtig ist.",
             emoji: "🟣",
@@ -130,9 +139,9 @@ const Auth = () => {
           },
           {
             title: "Alles merken, ohne Stress",
-            subtitle: "Dein externes Gedaechtnis",
+            subtitle: "Dein externes Gedächtnis",
             description:
-              "Remi bringt dir genau das zurueck, was du brauchst, im richtigen Moment.",
+              "Remi bringt dir genau das zurück, was du brauchst, im richtigen Moment.",
             emoji: "🧠",
             accent: "#596dc9",
           },
@@ -148,7 +157,7 @@ const Auth = () => {
             title: "Geteilte Erinnerung",
             subtitle: "Teile Listen, Notizen und Erinnerungen",
             description:
-              "Hilf anderen, den Kopf frei zu machen und das gemeinsame Erinnern zu geniessen, ohne alles allein zu tragen.",
+              "Hilf anderen, den Kopf frei zu machen und das gemeinsame Erinnern zu genießen, ohne alles allein zu tragen.",
             emoji: "\uD83E\uDD1D",
             accent: "#c959a5",
           },
@@ -158,7 +167,7 @@ const Auth = () => {
             description:
               "Stell Remi eine Frage und du bekommst schnell eine Antwort aus dem, was du gespeichert hast.",
             examplesText:
-              'Z. B.: "Wo sind die Schluessel?" · "Was steht auf der Einkaufsliste?"...',
+              'Z. B.: "Wo sind die Schlüssel?" · "Was steht auf der Einkaufsliste?"...',
             emoji: "🔍",
             accent: "#59a5c9",
           },
@@ -257,9 +266,9 @@ const Auth = () => {
 
   useEffect(() => {
     if (user && !resetModalOpen) {
-      navigate("/");
+      navigate(redirectPath || "/", { replace: true });
     }
-  }, [user, navigate, resetModalOpen]);
+  }, [navigate, redirectPath, resetModalOpen, user]);
 
   useEffect(() => {
     const syncRecoveryState = () => {
@@ -323,7 +332,7 @@ const Auth = () => {
         if (isRegister) {
           toast.success(t("auth.signUpSuccess"));
         }
-        navigate("/");
+        navigate(redirectPath || "/", { replace: true });
       }
     } catch (_error) {
       toast.error(t("auth.errorGeneric"));

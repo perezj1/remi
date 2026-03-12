@@ -1609,7 +1609,15 @@ export default function MindDumpModal({
       .flatMap((chunk) => chunk.split(/\s+(?:y|e|u|and|und|oder)\s+/i))
       .map((item) =>
         item
-          .replace(/^\s*(?:dentro(?:\s+de)?|inside|mit|drin)\s+/i, "")
+          .replace(
+            /^\s*(?:dentro(?:\s+de)?|adentro(?:\s+de)?|inside|in|mit|drin|rein|hinein)\s+/i,
+            "",
+          )
+          .replace(
+            /^\s*(?:agrega(?:r|lo|la|le|los|las)?|añad(?:e|ir|elo|ela|ele|elos|elas)?|anad(?:e|ir|elo|ela|ele|elos|elas)?|mete(?:r|lo|la|le|los|las)?|pon(?:e|er|lo|la|le|los|las)?|echa(?:r|lo|la|le|los|las)?|anota(?:r|lo|la|le|los|las)?|apunta(?:r|lo|la|le|los|las)?|incluy(?:e|ir|elo|ela|ele|elos|elas)?|put|add|insert|include|write|mach(?:e|en|t)?|pack(?:e|en|t)?|leg(?:e|en|t)?|schreib(?:e|en|t)?|f(?:u|ue|ü)g(?:e|en|t)?)(?:\s+(?:inside|in|dentro|adentro|drin|rein|hinein|hinzu))?\s+/i,
+            "",
+          )
+          .replace(/\s+(?:hinzu|rein|hinein|inside|in|dentro|adentro)\s*$/i, "")
           .trim(),
       )
       .filter((item) => item.length > 0);
@@ -1617,16 +1625,17 @@ export default function MindDumpModal({
 
   const listWordRe = "(?:lista|list|liste|checklist|checkliste)";
   const listPrepRe = "(?:en|a|to|into|in|auf|zu|zur|zum)";
-  const listArticleRe = "(?:la\\s+|el\\s+|the\\s+|die\\s+|der\\s+|das\\s+|den\\s+|dem\\s+)?";
+  const listArticleRe =
+    "(?:la\\s+|el\\s+|the\\s+|a\\s+|an\\s+|die\\s+|der\\s+|das\\s+|den\\s+|dem\\s+|ein(?:e|en|em)?\\s+)?";
   const listConjRe = "(?:y|e|u|and|und|oder)";
   const listAddVerbRe =
-    "(?:agrega(?:r)?|añad(?:e|ir)|anad(?:e|ir)|mete(?:r)?|pon(?:er)?|escrib(?:e|ir)|echa(?:r)?|anota(?:r)?|apunta(?:r)?|incluy(?:e|ir)|add|put|insert|include|place|drop|write|f(?:u|ue|ü)g(?:e|en)|hinzu(?:f(?:u|ue|ü)gen)|pack(?:e|en)?|leg(?:e|en)?|schreib(?:e|en)?)";
+    "(?:agrega(?:r|lo|la|le|los|las)?|añad(?:e|ir|elo|ela|ele|elos|elas)?|anad(?:e|ir|elo|ela|ele|elos|elas)?|mete(?:r|lo|la|le|los|las)?|pon(?:e|er|lo|la|le|los|las)?|escrib(?:e|ir)|echa(?:r|lo|la|le|los|las)?|anota(?:r|lo|la|le|los|las)?|apunta(?:r|lo|la|le|los|las)?|incluy(?:e|ir|elo|ela|ele|elos|elas)?|add|put|insert|include|place|drop|write|f(?:u|ue|ü)g(?:e|en|t)|hinzu(?:f(?:u|ue|ü)g(?:en|t)?)|pack(?:e|en|t)?|leg(?:e|en|t)?|schreib(?:e|en|t)?)";
   const listCreateVerbRe =
-    "(?:crea(?:r)?|crea\\s*me|creame|cr(?:e|é)ame|haz|make|create|erstell(?:e|en)|mach(?:e|en)?)";
+    "(?:crea(?:r)?|crea\\s*me|creame|cr(?:e|é)ame|haz|hazme|make|create|creates?|creating|erstell(?:e|en|t)|mach(?:e|en|t)?)";
   const listCalledAsRe =
-    "(?:que\\s+se\\s+llam(?:e|a)|llamad[oa]\\s*|called\\s*|named\\s*|namens\\s*|hei(?:ss|ß)t\\s*)";
+    "(?:que\\s+se\\s+llam(?:e|a)|llamad[oa]\\s*|con\\s+(?:el\\s+)?nombre\\s*|con\\s+nombre\\s*|called\\s*|named\\s*|with\\s+(?:the\\s+)?name\\s*|mit\\s+(?:dem\\s+|den\\s+)?namen?\\s*|namens\\s*|hei(?:ss|ß)t\\s*)";
   const listWithItemsRe =
-    "(?:tenga|tener|con|incluya|incluye|include|includes|with|mit|enthalt(?:e|en)|inside)";
+    "(?:tenga|tener|con|incluya|incluye|incluye\\s+dentro|mete(?:r|lo|la|le|los|las)?(?:\\s+(?:dentro|adentro))?|pon(?:e|er|lo|la|le|los|las)?(?:\\s+(?:dentro|adentro))?|echa(?:r|lo|la|le|los|las)?(?:\\s+(?:dentro|adentro))?|anota(?:r)?(?:\\s+(?:dentro|adentro))?|apunta(?:r)?(?:\\s+(?:dentro|adentro))?|include|includes|with|has|have|contains?|containing|inside|put(?:\\s+(?:inside|in))?|add(?:\\s+(?:inside|in))?|insert(?:\\s+(?:inside|in))?|write(?:\\s+(?:inside|in))?|mit|drin|enthalt(?:e|en)|hat|habe|haben|mach(?:e|en|t)?(?:\\s+drin)?|pack(?:e|en)?(?:\\s+rein)?|leg(?:e|en)?(?:\\s+rein)?|schreib(?:e|en)?(?:\\s+rein)?|f(?:u|ue|ü)g(?:e|en|t)?(?:\\s+(?:hinzu|rein|hinein|drin))?)";
   const listOfRe = "(?:de\\s+|del\\s+|of\\s+|von\\s+)?";
 
   const cleanListTitle = (rawTitle: string): string => {
@@ -1634,6 +1643,19 @@ export default function MindDumpModal({
       .trim()
       .replace(/^(?:de|del|of|von)\s+/iu, "")
       .replace(/\s+/g, " ")
+      .trim();
+  };
+
+  const cleanListTitleTail = (rawTitle: string): string => {
+    return String(rawTitle ?? "")
+      .replace(
+        /\s+(?:y|e|u|and|und|oder)\s+(?:(?:agrega(?:r|lo|la|le|los|las)?|añad(?:e|ir|elo|ela|ele|elos|elas)?|anad(?:e|ir|elo|ela|ele|elos|elas)?|mete(?:r|lo|la|le|los|las)?|pon(?:e|er|lo|la|le|los|las)?|echa(?:r|lo|la|le|los|las)?|anota(?:r|lo|la|le|los|las)?|apunta(?:r|lo|la|le|los|las)?|incluy(?:e|ir|elo|ela|ele|elos|elas)?|put|add|insert|include|write|mach(?:e|en|t)?|pack(?:e|en)?|leg(?:e|en)?|schreib(?:e|en)?|f(?:u|ue|ü)g(?:e|en|t)?)(?:\s+(?:inside|in|dentro|adentro|drin|rein|hinein|hinzu))?)\b.*$/iu,
+        "",
+      )
+      .replace(
+        /\s+(?:que\s+)?(?:tenga|tener|con|incluya|incluye|mete(?:r)?|pon(?:er)?|echa(?:r)?|anota(?:r)?|apunta(?:r)?|include|includes|with|has|have|contains?|containing|inside|mit|drin|hat|habe|haben)\b.*$/iu,
+        "",
+      )
       .trim();
   };
 
@@ -1693,13 +1715,25 @@ export default function MindDumpModal({
 
     // "crea una lista nueva que se llame viaje y tenga dentro banador, crema"
     const createNamedWithItems = new RegExp(
-      `(?:^|\\b)${listCreateVerbRe}\\s+(?:una\\s+|un\\s+|a\\s+|eine\\s+)?${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+${listCalledAsRe}\\s*(.+?)\\s+${listConjRe}\\s+(?:que\\s+)?(?:dentro\\s+)?${listWithItemsRe}(?:\\s+dentro)?\\s+(.+?)(?:[.!?]|$)`,
+      `(?:^|\\b)${listCreateVerbRe}\\s+(?:una\\s+|un\\s+|a\\s+|an\\s+|ein(?:e|en|em)?\\s+)?${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+${listCalledAsRe}\\s*(.+?)\\s+${listConjRe}\\s+(?:que\\s+)?(?:dentro\\s+)?${listWithItemsRe}(?:\\s+dentro)?\\s+(.+?)(?:[.!?]|$)`,
       "iu",
     );
     const m5 = text.match(createNamedWithItems);
     if (m5) {
       const title = cleanListTitle(m5[1] ?? "");
       const items = splitNaturalListItems(m5[2]);
+      if (title && items.length > 0) return { title, items };
+    }
+
+    // "crea una lista llamada viaje con crema, cepillo"
+    const createNamedDirectWithItems = new RegExp(
+      `(?:^|\\b)${listCreateVerbRe}\\s+(?:una\\s+|un\\s+|a\\s+|an\\s+|ein(?:e|en|em)?\\s+)?${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+${listCalledAsRe}\\s*(.+?)\\s+(?:que\\s+)?(?:dentro\\s+)?${listWithItemsRe}(?:\\s+dentro)?\\s+(.+?)(?:[.!?]|$)`,
+      "iu",
+    );
+    const m5b = text.match(createNamedDirectWithItems);
+    if (m5b) {
+      const title = cleanListTitle(m5b[1] ?? "");
+      const items = splitNaturalListItems(m5b[2]);
       if (title && items.length > 0) return { title, items };
     }
 
@@ -1729,12 +1763,12 @@ export default function MindDumpModal({
 
     // "crea una lista que se llame test" / "create a list called test"
     const createNamedList = new RegExp(
-      `(?:^|\\b)${listCreateVerbRe}\\s+(?:una\\s+|un\\s+|a\\s+|eine\\s+)?${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+${listCalledAsRe}\\s*(.+?)(?:[.!?]|$)`,
+      `(?:^|\\b)${listCreateVerbRe}\\s+(?:una\\s+|un\\s+|a\\s+|an\\s+|ein(?:e|en|em)?\\s+)?${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+${listCalledAsRe}\\s*(.+?)(?:[.!?]|$)`,
       "iu",
     );
     const m8 = text.match(createNamedList);
     if (m8) {
-      const title = cleanListTitle(m8[1] ?? "");
+      const title = cleanListTitle(cleanListTitleTail(m8[1] ?? ""));
       if (title) return { title, items: [] };
     }
 
@@ -1745,7 +1779,7 @@ export default function MindDumpModal({
     );
     const m9 = text.match(createSimpleList);
     if (m9) {
-      const title = cleanListTitle(m9[1] ?? "");
+      const title = cleanListTitle(cleanListTitleTail(m9[1] ?? ""));
       if (title) return { title, items: [] };
     }
 
@@ -1774,11 +1808,13 @@ export default function MindDumpModal({
 
     const createNamed = text.match(
       new RegExp(
-        `(?:^|\\b)${listCreateVerbRe}\\s+(?:una\\s+|un\\s+|a\\s+|eine\\s+)?${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+${listCalledAsRe}\\s*(.+?)(?:[.!?]|$)`,
+        `(?:^|\\b)${listCreateVerbRe}\\s+(?:una\\s+|un\\s+|a\\s+|an\\s+|ein(?:e|en|em)?\\s+)?${listWordRe}(?:\\s+nueva|\\s+neu)?\\s+${listCalledAsRe}\\s*(.+?)(?:[.!?]|$)`,
         "iu",
       ),
     );
-    if (createNamed?.[1]?.trim()) return cleanListTitle(createNamed[1]);
+    if (createNamed?.[1]?.trim()) {
+      return cleanListTitle(cleanListTitleTail(createNamed[1]));
+    }
 
     const createWithItems = text.match(
       new RegExp(
@@ -1786,7 +1822,9 @@ export default function MindDumpModal({
         "iu",
       ),
     );
-    if (createWithItems?.[1]?.trim()) return cleanListTitle(createWithItems[1]);
+    if (createWithItems?.[1]?.trim()) {
+      return cleanListTitle(cleanListTitleTail(createWithItems[1]));
+    }
 
     const createSimple = text.match(
       new RegExp(
@@ -1794,7 +1832,9 @@ export default function MindDumpModal({
         "iu",
       ),
     );
-    if (createSimple?.[1]?.trim()) return cleanListTitle(createSimple[1]);
+    if (createSimple?.[1]?.trim()) {
+      return cleanListTitle(cleanListTitleTail(createSimple[1]));
+    }
 
     return null;
   };

@@ -35,16 +35,27 @@ import { supabase } from "@/integrations/supabase/client";
 import { registerPushSubscription } from "@/lib/registerPush";
 import {
   createShareInviteCached,
+  fetchReceivedShareNotifications,
+  fetchShareInviteNotifications,
   prefetchShareInvite,
   shareTextOrCopy,
+  subscribeToReceivedShareNotifications,
+  subscribeToShareInviteNotifications,
+  type ReceivedShareNotification,
+  type ShareInviteNotification,
 } from "@/lib/shareInvitesApi";
+import type { AppNotification } from "@/lib/notificationCenter";
 import {
   createSharedList,
   createSharedListInviteShare,
   createSharedListItem,
+  fetchSharedListNotifications,
   fetchSharedListItems,
+  markSharedListNotificationsSeen,
+  subscribeToSharedListNotifications,
   type SharedList,
   type SharedListMemberPreview,
+  type SharedListNotification,
   fetchSharedLists,
   updateSharedListItem,
   updateSharedListIcon,
@@ -91,6 +102,7 @@ import MindDumpModal from "@/components/MindDumpModal";
 import MindRelaxSurface from "@/components/MindRelaxSurface";
 import RemiAvatar from "@/components/RemiAvatar";
 import RemiShareLoader from "@/components/RemiShareLoader";
+import SharedListNotificationsPanel from "@/components/SharedListNotificationsPanel";
 
 const TIP_DISMISS_KEY = "remi_tip_dismissed_v1";
 
@@ -100,6 +112,43 @@ const SHARE_REMINDERS_TIP_KEY = "share-reminders";
 
 
 const MULTI_DEVICE_TIP_KEY = "multi-device";
+
+type NotificationCenterState = {
+  clearedAtMs: number;
+  shareActivitySeenAtMs: number;
+};
+
+const EMPTY_NOTIFICATION_CENTER_STATE: NotificationCenterState = {
+  clearedAtMs: 0,
+  shareActivitySeenAtMs: 0,
+};
+
+function getNotificationCenterStorageKey(userId: string) {
+  return `remi-notification-center:${userId}`;
+}
+
+function readNotificationCenterState(userId: string): NotificationCenterState {
+  if (typeof window === "undefined") return EMPTY_NOTIFICATION_CENTER_STATE;
+
+  try {
+    const raw = localStorage.getItem(getNotificationCenterStorageKey(userId));
+    if (!raw) return EMPTY_NOTIFICATION_CENTER_STATE;
+    const parsed = JSON.parse(raw) as Partial<NotificationCenterState>;
+    return {
+      clearedAtMs:
+        typeof parsed.clearedAtMs === "number" && Number.isFinite(parsed.clearedAtMs)
+          ? parsed.clearedAtMs
+          : 0,
+      shareActivitySeenAtMs:
+        typeof parsed.shareActivitySeenAtMs === "number" &&
+        Number.isFinite(parsed.shareActivitySeenAtMs)
+          ? parsed.shareActivitySeenAtMs
+          : 0,
+    };
+  } catch {
+    return EMPTY_NOTIFICATION_CENTER_STATE;
+  }
+}
 
 type DateGroup = {
   key: string;
@@ -360,6 +409,15 @@ export default function TodayPage() {
   const [loading, setLoading] = useState(true);
 
   const [profileOpen, setProfileOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [sharedListNotifications, setSharedListNotifications] = useState<SharedListNotification[]>([]);
+  const [shareInviteNotifications, setShareInviteNotifications] = useState<ShareInviteNotification[]>([]);
+  const [receivedShareNotifications, setReceivedShareNotifications] = useState<ReceivedShareNotification[]>([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [notificationListIds, setNotificationListIds] = useState<string[]>([]);
+  const [notificationCenterState, setNotificationCenterState] = useState<NotificationCenterState>(
+    EMPTY_NOTIFICATION_CENTER_STATE,
+  );
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [statusSummary, setStatusSummary] = useState<RemiStatusSummary | null>(
     null,
@@ -424,6 +482,7 @@ export default function TodayPage() {
   const dictationListening = dictationStatus === "listening";
 
 const anyModalOpen =
+    notificationsOpen ||
     showPushModal ||
   showShortcutsModal ||
   showIosDictationHelp ||
@@ -438,6 +497,110 @@ const anyModalOpen =
   }, [anyModalOpen, setModalOpen]);
 
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
+  const notificationListIdsSignature = useMemo(
+    () => notificationListIds.join("|"),
+    [notificationListIds],
+  );
+  const persistNotificationCenterState = useCallback(
+    (nextState: NotificationCenterState) => {
+      setNotificationCenterState(nextState);
+      if (!user || typeof window === "undefined") return;
+      try {
+        localStorage.setItem(
+          getNotificationCenterStorageKey(user.id),
+          JSON.stringify(nextState),
+        );
+      } catch {}
+    },
+    [user],
+  );
+
+  const appNotifications = useMemo<AppNotification[]>(() => {
+    const clearedAtMs = notificationCenterState.clearedAtMs;
+    const shareSeenAtMs = Math.max(
+      notificationCenterState.shareActivitySeenAtMs,
+      clearedAtMs,
+    );
+
+    const sharedListRows = sharedListNotifications
+      .filter((notification) => {
+        const createdAtMs = Date.parse(notification.created_at);
+        return !Number.isFinite(createdAtMs) || createdAtMs > clearedAtMs;
+      })
+      .map((notification) => ({
+        id: `shared-list-${notification.id}`,
+        source: "shared_list",
+        created_at: notification.created_at,
+        unread: notification.unread,
+        target: { kind: "list", listId: notification.list_id } as const,
+        notification,
+      }));
+
+    const shareInviteRows = shareInviteNotifications
+      .filter((notification) => notification.kind !== "share_sent")
+      .filter((notification) => {
+        const createdAtMs = Date.parse(notification.created_at);
+        return !Number.isFinite(createdAtMs) || createdAtMs > clearedAtMs;
+      })
+      .map((notification) => ({
+        id: `share-invite-${notification.id}`,
+        source: "share_invite",
+        created_at: notification.created_at,
+        unread: Date.parse(notification.created_at) > shareSeenAtMs,
+        target: { kind: "none" } as const,
+        notification,
+      }));
+
+    const receivedShareRows = receivedShareNotifications
+      .filter((notification) => {
+        const createdAtMs = Date.parse(notification.created_at);
+        return !Number.isFinite(createdAtMs) || createdAtMs > clearedAtMs;
+      })
+      .map((notification) => ({
+        id: notification.id,
+        source: "received_share",
+        created_at: notification.created_at,
+        unread: Date.parse(notification.created_at) > shareSeenAtMs,
+        target:
+          notification.item_type === "idea"
+            ? ({ kind: "route", href: "/ideas" } as const)
+            : notification.item_type === "task"
+              ? ({ kind: "route", href: "/tasks" } as const)
+              : ({ kind: "none" } as const),
+        notification,
+      }));
+
+    return [...sharedListRows, ...shareInviteRows, ...receivedShareRows].sort(
+      (a, b) => Date.parse(b.created_at) - Date.parse(a.created_at),
+    );
+  }, [
+    notificationCenterState.clearedAtMs,
+    notificationCenterState.shareActivitySeenAtMs,
+    receivedShareNotifications,
+    shareInviteNotifications,
+    sharedListNotifications,
+  ]);
+
+  const unreadNotificationsCount = useMemo(
+    () => appNotifications.filter((notification) => notification.unread).length,
+    [appNotifications],
+  );
+
+  const unreadSharedListNotificationsCount = useMemo(
+    () =>
+      appNotifications.filter(
+        (notification) => notification.source === "shared_list" && notification.unread,
+      ).length,
+    [appNotifications],
+  );
+
+  const unreadShareActivityCount = useMemo(
+    () =>
+      appNotifications.filter(
+        (notification) => notification.source !== "shared_list" && notification.unread,
+      ).length,
+    [appNotifications],
+  );
 
   
 
@@ -506,6 +669,65 @@ const anyModalOpen =
     );
   }, []);
 
+  const loadSharedListNotifications = useCallback(async () => {
+    if (!user) {
+      setSharedListNotifications([]);
+      return;
+    }
+    const next = await fetchSharedListNotifications(user.id, 40);
+    setSharedListNotifications(next);
+  }, [user]);
+
+  const loadShareInviteNotifications = useCallback(async () => {
+    if (!user) {
+      setShareInviteNotifications([]);
+      return;
+    }
+    const next = await fetchShareInviteNotifications(user.id, 40);
+    setShareInviteNotifications(next);
+  }, [user]);
+
+  const loadReceivedShareNotifications = useCallback(async () => {
+    if (!user) {
+      setReceivedShareNotifications([]);
+      return;
+    }
+    const next = await fetchReceivedShareNotifications(user.id, 40);
+    setReceivedShareNotifications(next);
+  }, [user]);
+
+  const loadNotifications = useCallback(
+    async (showLoader = false) => {
+      if (!user) {
+        setSharedListNotifications([]);
+        setShareInviteNotifications([]);
+        setReceivedShareNotifications([]);
+        setNotificationsLoading(false);
+        return;
+      }
+
+      if (showLoader) setNotificationsLoading(true);
+
+      try {
+        await Promise.all([
+          loadSharedListNotifications(),
+          loadShareInviteNotifications(),
+          loadReceivedShareNotifications(),
+        ]);
+      } catch (err) {
+        console.error("Error loading notifications", err);
+      } finally {
+        if (showLoader) setNotificationsLoading(false);
+      }
+    },
+    [
+      loadReceivedShareNotifications,
+      loadShareInviteNotifications,
+      loadSharedListNotifications,
+      user,
+    ],
+  );
+
   const loadData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
@@ -520,6 +742,7 @@ const anyModalOpen =
       setTasks(tks);
       setIdeas(ids);
       setStatusSummary(summaryData);
+      setNotificationListIds(sharedLists.map((list) => list.id));
       const listRows = await Promise.all(
         sharedLists.map(async (list) => {
           const listItems = await fetchSharedListItems(list.id);
@@ -560,11 +783,132 @@ const anyModalOpen =
   }, [loadData]);
 
   useEffect(() => {
+    if (!user) {
+      setNotificationCenterState(EMPTY_NOTIFICATION_CENTER_STATE);
+      return;
+    }
+    setNotificationCenterState(readNotificationCenterState(user.id));
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      setSharedListNotifications([]);
+      setShareInviteNotifications([]);
+      setReceivedShareNotifications([]);
+      setNotificationListIds([]);
+      setNotificationsLoading(false);
+      return;
+    }
+    void loadNotifications(true);
+  }, [loadNotifications, user]);
+
+  useEffect(() => {
     if (!user) return;
     const onChanged = () => void loadData();
     window.addEventListener("remi-items-changed", onChanged);
     return () => window.removeEventListener("remi-items-changed", onChanged);
   }, [loadData, user]);
+
+  useEffect(() => {
+    if (!user || notificationListIds.length === 0) return;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    const onRealtimeChange = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        timeoutId = null;
+        void loadSharedListNotifications().catch((err) => {
+          console.error("Error refreshing shared-list notifications", err);
+        });
+      }, 120);
+    };
+    const unsubscribe = subscribeToSharedListNotifications(
+      notificationListIds,
+      onRealtimeChange,
+    );
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      unsubscribe();
+    };
+  }, [loadSharedListNotifications, notificationListIds, notificationListIdsSignature, user]);
+
+  useEffect(() => {
+    if (notificationListIds.length > 0 || !user) return;
+    setSharedListNotifications([]);
+  }, [notificationListIds.length, user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const unsubscribe = subscribeToShareInviteNotifications(user.id, () => {
+      void loadShareInviteNotifications().catch((err) => {
+        console.error("Error refreshing share-invite notifications", err);
+      });
+    });
+    return unsubscribe;
+  }, [loadShareInviteNotifications, user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const unsubscribe = subscribeToReceivedShareNotifications(user.id, () => {
+      void loadReceivedShareNotifications().catch((err) => {
+        console.error("Error refreshing received-share notifications", err);
+      });
+    });
+    return unsubscribe;
+  }, [loadReceivedShareNotifications, user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const intervalId = window.setInterval(() => {
+      if (document.visibilityState === "hidden") return;
+      void Promise.all([
+        loadSharedListNotifications(),
+        loadShareInviteNotifications(),
+        loadReceivedShareNotifications(),
+      ]).catch((err) => {
+        console.error("Error polling notifications", err);
+      });
+    }, 4_000);
+    return () => window.clearInterval(intervalId);
+  }, [
+    loadReceivedShareNotifications,
+    loadShareInviteNotifications,
+    loadSharedListNotifications,
+    user,
+  ]);
+
+  useEffect(() => {
+    if (
+      !notificationsOpen ||
+      !user ||
+      notificationListIds.length === 0 ||
+      unreadSharedListNotificationsCount === 0
+    ) {
+      return;
+    }
+
+    setSharedListNotifications((prev) =>
+      prev.map((notification) => ({ ...notification, unread: false })),
+    );
+
+    void markSharedListNotificationsSeen(user.id, notificationListIds).catch((err) => {
+      console.error("Error marking shared list notifications as seen", err);
+    });
+  }, [notificationListIds, notificationsOpen, unreadSharedListNotificationsCount, user]);
+
+  useEffect(() => {
+    if (!notificationsOpen || !user || unreadShareActivityCount === 0) return;
+    const now = Date.now();
+    persistNotificationCenterState({
+      ...notificationCenterState,
+      shareActivitySeenAtMs: Math.max(notificationCenterState.shareActivitySeenAtMs, now),
+    });
+  }, [
+    notificationCenterState,
+    notificationsOpen,
+    persistNotificationCenterState,
+    unreadShareActivityCount,
+    user,
+  ]);
 
   useEffect(() => {
     if (memoryPlaceholderExamples.length === 0) return;
@@ -1086,6 +1430,34 @@ const anyModalOpen =
     navigate("/profile");
   };
 
+  const handleOpenNotifications = () => {
+    setProfileOpen(false);
+    setNotificationsOpen(true);
+  };
+
+  const handleCloseNotifications = () => {
+    setNotificationsOpen(false);
+  };
+
+  const handleClearNotifications = useCallback(() => {
+    if (!user) return;
+
+    const now = Date.now();
+    persistNotificationCenterState({
+      clearedAtMs: now,
+      shareActivitySeenAtMs: now,
+    });
+    setSharedListNotifications((prev) =>
+      prev.map((notification) => ({ ...notification, unread: false })),
+    );
+
+    if (notificationListIds.length > 0) {
+      void markSharedListNotificationsSeen(user.id, notificationListIds).catch((err) => {
+        console.error("Error clearing shared list notifications", err);
+      });
+    }
+  }, [notificationListIds, persistNotificationCenterState, user]);
+
   const handleOpenLists = () => {
     setProfileOpen(false);
     navigate("/lists");
@@ -1097,6 +1469,22 @@ const anyModalOpen =
       navigate(`/lists?list=${encodeURIComponent(listId)}`);
     },
     [navigate],
+  );
+
+  const handleOpenNotification = useCallback(
+    (notification: AppNotification) => {
+      setNotificationsOpen(false);
+
+      if (notification.target.kind === "list") {
+        handleOpenListById(notification.target.listId);
+        return;
+      }
+
+      if (notification.target.kind === "route") {
+        navigate(notification.target.href);
+      }
+    },
+    [handleOpenListById, navigate],
   );
 
   const handleShareListById = useCallback(
@@ -1812,6 +2200,14 @@ const anyModalOpen =
                   className="h-full w-full"
                 />
               </button>
+              {unreadNotificationsCount > 0 ? (
+                <span
+                  className="absolute -right-1 -top-1 z-20 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#ef4444] px-1 text-[10px] font-bold leading-none text-white"
+                  title={safeT("sharedListNotifications.open", "Notificaciones")}
+                >
+                  {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}
+                </span>
+              ) : null}
               <span
                 className="absolute -bottom-1 left-1/2 z-10 -translate-x-1/2 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none text-white"
                 style={{
@@ -1855,6 +2251,22 @@ const anyModalOpen =
                       { name: displayName },
                     )}
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={handleOpenNotifications}
+                    style={menuButtonStyle}
+                  >
+                    <Bell size={16} style={{ marginRight: 8 }} />
+                    <span className="flex-1">
+                      {safeT("sharedListNotifications.open", "Notificaciones")}
+                    </span>
+                    {unreadNotificationsCount > 0 ? (
+                      <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#ef4444] px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
+                        {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}
+                      </span>
+                    ) : null}
+                  </button>
 
                   <button
                     type="button"
@@ -2407,6 +2819,15 @@ const anyModalOpen =
 
       </div>
       </div>
+      <SharedListNotificationsPanel
+        open={notificationsOpen}
+        loading={notificationsLoading}
+        notifications={appNotifications}
+        unreadCount={unreadNotificationsCount}
+        onClose={handleCloseNotifications}
+        onClear={handleClearNotifications}
+        onOpenNotification={handleOpenNotification}
+      />
       <RemiShareLoader
         active={shareLoading}
         label={safeT("common.preparingLink", "Preparando enlace...")}

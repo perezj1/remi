@@ -154,7 +154,9 @@ self.addEventListener("push", (event) => {
   const title = data.title || "REMI";
   const options = {
     body: data.body || "Tienes tareas por completar 💪",
-    icon: "/icons/icon-192.png",
+    icon: data.icon || "/icons/icon-192.png",
+    badge: data.badge || "/icons/icon-192.png",
+    image: data.image || undefined,
     tag: data.tag || "Remi-reminder",
     renotify: false,
     data: { url: resolveUrl(data.url || "/") },

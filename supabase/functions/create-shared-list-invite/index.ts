@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
     const appUrl =
       (Deno.env.get("PUBLIC_APP_URL") || Deno.env.get("SITE_URL") || "").replace(/\/+$/, "");
     const shareBase = appUrl || new URL(req.url).origin;
-    const shareUrl = `${shareBase}/lists/invite/${invite.token}`;
+    const shareUrl = `${shareBase}/lists/invite/${encodeURIComponent(String(invite.token))}`;
     const listTitle = String(listRow?.title ?? "Shared list");
     const senderName =
       String(

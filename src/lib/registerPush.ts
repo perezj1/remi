@@ -19,6 +19,21 @@ function urlBase64ToUint8Array(base64String: string) {
   return outputArray;
 }
 
+async function keepSingleActiveSubscriptionPerDevice(userId: string, endpoint: string) {
+  const currentUserAgent = navigator.userAgent;
+  const { error } = await supabase
+    .from("remi_push_subscriptions")
+    .update({ status: "INACTIVE" })
+    .eq("user_id", userId)
+    .eq("status", "ACTIVE")
+    .eq("user_agent", currentUserAgent)
+    .neq("endpoint", endpoint);
+
+  if (error) {
+    console.error("Error cleaning stale device push subscriptions", error);
+  }
+}
+
 export async function registerPushSubscription(userId: string) {
   if (!userId) {
     console.warn("No hay userId para registrar la suscripción push");
@@ -92,6 +107,8 @@ export async function registerPushSubscription(userId: string) {
       console.error("Error saving push subscription", error);
       throw error;
     }
+
+    await keepSingleActiveSubscriptionPerDevice(userId, endpoint);
   } catch (err) {
     // Recuperación ante suscripción inválida/obsoleta: limpiar y reintentar 1 vez.
     try {
@@ -118,6 +135,7 @@ export async function registerPushSubscription(userId: string) {
         { onConflict: "user_id,endpoint" },
       );
       if (error) throw error;
+      await keepSingleActiveSubscriptionPerDevice(userId, retried.endpoint);
       return;
     } catch (retryErr) {
       console.error("Error registering push subscription", retryErr);

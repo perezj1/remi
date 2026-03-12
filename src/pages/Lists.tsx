@@ -1,6 +1,6 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Check, ChevronLeft, CirclePlus, ListPlus, Menu, MoreVertical, Pencil, RotateCcw, Share2, Trash2, UserRoundCheck, Users } from "lucide-react";
+import { Check, ChevronLeft, CirclePlus, ListPlus, LogOut, Menu, MoreVertical, Pencil, RotateCcw, Share2, Trash2, UserRoundCheck, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
@@ -436,7 +436,7 @@ export default function SharedListsPage() {
 
   const handleRenameListById = async (list: SharedList) => {
     const editable = list.my_role === "owner" || list.my_role === "editor";
-    if (!editable) return;
+    if (!editable || !user) return;
     const nextTitle = window.prompt(
       safeT("lists.renamePrompt", "Nuevo nombre de la lista:"),
       list.title,
@@ -445,7 +445,7 @@ export default function SharedListsPage() {
     const value = nextTitle.trim();
     if (!value || value === list.title) return;
     try {
-      await updateSharedListTitle(list.id, value);
+      await updateSharedListTitle(list.id, value, { actorUserId: user.id });
       await loadLists();
       if (selectedListId === list.id) await loadItems();
     } catch (err) {
@@ -514,7 +514,7 @@ export default function SharedListsPage() {
     if (!ok) return;
 
     try {
-      await deleteSharedListItem(item.id);
+      await deleteSharedListItem(item.id, { actorUserId: user?.id });
       await loadItems();
     } catch (err) {
       console.error(err);
@@ -712,6 +712,26 @@ export default function SharedListsPage() {
     }
   };
 
+  const handleLeaveListById = async (list: SharedList) => {
+    if (!user) return;
+    if (list.my_role === "owner") return;
+
+    const ok = window.confirm(safeT("lists.confirmLeave", "Salir de esta lista?"));
+    if (!ok) return;
+
+    try {
+      await leaveSharedList(list.id, user.id);
+      toast.success(safeT("lists.left", "Has salido de la lista."));
+      await loadLists();
+      if (selectedListId === list.id) {
+        setViewMode("cards");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(safeT("lists.leaveError", "No se pudo salir de la lista."));
+    }
+  };
+
   const handleReuseList = async (list: SharedList) => {
     if (!user) return;
     const canReuse = list.my_role === "owner" || list.my_role === "editor";
@@ -727,7 +747,9 @@ export default function SharedListsPage() {
         return;
       }
       await Promise.all(
-        doneRows.map((row) => updateSharedListItem(row.id, { done: false }, user.id)),
+        doneRows.map((row) =>
+          updateSharedListItem(row.id, { done: false }, user.id, { skipEventLog: true }),
+        ),
       );
       toast.success(safeT("lists.reused", "Lista reutilizada."));
       await loadLists();
@@ -760,7 +782,7 @@ export default function SharedListsPage() {
   };
 
   const handleRenameList = async () => {
-    if (!selected || !canEdit) return;
+    if (!selected || !canEdit || !user) return;
     const nextTitle = window.prompt(
       safeT("lists.renamePrompt", "Nuevo nombre de la lista:"),
       selected.title,
@@ -769,7 +791,7 @@ export default function SharedListsPage() {
     const value = nextTitle.trim();
     if (!value || value === selected.title) return;
     try {
-      await updateSharedListTitle(selected.id, value);
+      await updateSharedListTitle(selected.id, value, { actorUserId: user.id });
       await loadLists();
     } catch (err) {
       console.error(err);
@@ -1020,11 +1042,18 @@ export default function SharedListsPage() {
                                   type="button"
                                   onClick={() => {
                                     setCardMenuOpenId(null);
-                                    void handleDeleteListById(list);
+                                    void (list.my_role === "owner"
+                                      ? handleDeleteListById(list)
+                                      : handleLeaveListById(list));
                                   }}
                                   className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-rose-600 hover:bg-rose-50"
                                 >
-                                  <Trash2 className="h-4 w-4" /> {safeT("lists.delete", "Borrar")}
+                                  {list.my_role === "owner"
+                                    ? <Trash2 className="h-4 w-4" />
+                                    : <LogOut className="h-4 w-4" />}
+                                  {list.my_role === "owner"
+                                    ? safeT("lists.delete", "Borrar")
+                                    : safeT("lists.leave", "Salir")}
                                 </button>
                               </div>
                             )}
@@ -1146,11 +1175,18 @@ export default function SharedListsPage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => void handleDeleteListById(list)}
+                            onClick={() =>
+                              void (list.my_role === "owner"
+                                ? handleDeleteListById(list)
+                                : handleLeaveListById(list))}
                             className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700"
-                            title={safeT("lists.delete", "Eliminar")}
+                            title={list.my_role === "owner"
+                              ? safeT("lists.delete", "Eliminar")
+                              : safeT("lists.leave", "Salir")}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            {list.my_role === "owner"
+                              ? <Trash2 className="h-4 w-4" />
+                              : <LogOut className="h-4 w-4" />}
                           </button>
                         </div>
                       );
