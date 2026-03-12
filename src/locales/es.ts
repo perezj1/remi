@@ -13,6 +13,9 @@ export const es = {
     },
   },
 
+  achievements: "Logros",
+  rewards_unlocked: "Desbloqueados",
+
   shareInvite: {
     share: "Compartir",
     sharedOk: "Listo. Enlace copiado/compartido.",
@@ -69,6 +72,9 @@ export const es = {
     alreadyAccepted: "Esta invitación ya se ha usado.",
     expired: "Esta invitación ha caducado.",
     laterCta: "Ahora no",
+    signInCta: "Entrar para ver la lista",
+    previewUnavailable:
+      "No se pudo cargar la vista previa. Puedes unirte con este enlace igualmente.",
     loginHint:
       "Si no has iniciado sesión, te pediremos entrar o crear una cuenta antes de unirte a la lista.",
   },
@@ -179,6 +185,7 @@ export const es = {
     appName: "REMI",
     save: "Guardar",
     back: "Volver",
+    today: "Hoy",
     menu: "Menu",
     cancel: "Cancelar",
     delete: "Eliminar",
@@ -189,6 +196,7 @@ export const es = {
     preparingLink: "Preparando enlace...",
     speak: "Hablar",
     paste: "Pegar",
+    settings: "Ajustes",
   },
 
   index: {
@@ -228,6 +236,11 @@ export const es = {
     defaultDescription: "Añade Remi a tu lista de aplicaciones — ¡GRATIS!",
     buttonInstall: "Instalar",
     close: "Cerrar",
+  },
+
+  offline: {
+    savedLocally:
+      "Guardado sin conexion. Se sincronizara al volver la senal.",
   },
 
   status: {
@@ -274,16 +287,20 @@ export const es = {
     todayTasksLabel: "Completadas hoy",
     todayTasksDescription:
       "{{todayDone}}/{{todayTotal}} tareas con fecha de hoy completadas.",
+    todayProgressFallback: "{{done}} de {{total}} resueltas",
+    todayEmptyFallback: "Sin tareas marcadas hoy",
 
     streakSectionTitle: "Nuestra racha",
     streakValue: "{{streakDays}} días",
     streakDescription:
       "Llevamos {{streakDays}} días sin que tu mente tenga que recordarlo todo sola.",
+    streakFallback: "{{days}} dias seguidos usando Remi",
 
     memoryDelegatedTitle: "Memoria delegada",
     memoryDelegatedValue: "{{tasks}} tareas · {{ideas}} ideas",
     memoryDelegatedDescription:
       "Ahora mismo Remi está cuidando de {{tasks}} tareas y {{ideas}} ideas.",
+    memoryFallback: "Tareas y notas que ya no llevas en la cabeza",
 
     weekSectionTitle: "Nuestra semana",
     weekSectionSubtitle:
@@ -294,7 +311,9 @@ export const es = {
     mentalCapturedTooltip: "Capturado: {{count}}",
     mentalResolvedTooltip: "Resuelto: {{count}}",
     memoryCaptured: "Capturado",
+    capturedPeakFallback: "Sueles capturar mas entre {{range}}.",
     memoryResolved: "Resuelto",
+    resolvedPeakFallback: "Sueles cerrar mas cosas entre {{range}}.",
     memoryDistributionTitle: "Distribución de memoria",
     memoryDistributionSubtitle: "Qué tipo de carga estás delegando a Remi",
     memoryTasksLabel: "Recordatorios",
@@ -436,6 +455,7 @@ export const es = {
       clipboardEmpty: "No hay texto en el portapapeles.",
       pasteError: "No pude acceder al portapapeles. Mantén pulsado y pega.",
       writeSomething: "Escribe algo primero.",
+      saveError: "No se pudo guardar.",
 
       // ? NUEVA (del MODAL_I18N)
       pickDateFirst: "Elige una fecha primero.",
@@ -456,8 +476,15 @@ export const es = {
     dateTimeNoneShort: "Sin fecha ni hora",
     timeUnset: "Sin hora",
     placeholder: "Toca para escribir",
+    toastEmpty: "Escribe algo primero.",
     noteHint: "Guarda tus memorias para no perderlas",
     masterHint: "Dile a Remi lo que quieres hacer.",
+    detailsShow: "Ajustar detalles",
+    detailsHide: "Ocultar detalles",
+    detailsNoteHint:
+      "Guardala primero como nota. Luego podras convertirla en recordatorio si hace falta.",
+    detailsListHint:
+      "Escribe varios elementos y Remi intentara convertirlos en una lista clara y compartible.",
 
     title: "Vacía tu mente",
     subtitle: "Habla, escribe o pega texto. Remi se encarga.",
@@ -606,6 +633,7 @@ export const es = {
 
   today: {
     greetingHello: "Hola,",
+    clearMindBadge: "mente mas ligera",
     captureSectionTitle: "Vacia tu mente",
     memorySectionTitle: "Recuerda",
     memoryAskTitle: "Pregúntale a Remi",
@@ -1015,12 +1043,20 @@ export const es = {
     devicePushTitle: "Notificaciones en este dispositivo",
     devicePushUnsupportedHint:
       "Este navegador no admite notificaciones push. Prueba con Safari en iPhone o Chrome/Edge en Android/PC.",
+    devicePushUnsupportedToast:
+      "Este dispositivo/navegador no soporta push.",
     devicePushChecking: "Comprobando…",
     devicePushUnsupportedLine: "Este dispositivo/navegador no soporta push.",
     devicePushDeniedLine:
       "Permiso denegado en este dispositivo (Ajustes del navegador).",
+    devicePushDeniedHint:
+      "Si quieres activarlas: Ajustes del navegador -> Notificaciones -> permitir.",
+    devicePushDeniedToast:
+      "Permiso denegado en este dispositivo (Ajustes del navegador).",
     devicePushNeedsPermissionLine:
       "Aún no has concedido permiso en este dispositivo.",
+    devicePushNeedsPermissionHint:
+      "Concede permiso de notificaciones para poder activarlas.",
     devicePushNeedsRegisterLine: "Permiso OK, pero falta activar aquí.",
     devicePushPaused: "Pausadas",
     devicePushPausedLine: "Pausado en este dispositivo",
@@ -1028,6 +1064,10 @@ export const es = {
     devicePushToggleAria:
       "Activar o pausar notificaciones en este dispositivo",
     pushDeviceEnabled: "Notificaciones activadas en este dispositivo",
+    pushDeviceEnableError:
+      "No se pudieron activar notificaciones en este dispositivo",
+    devicePushPauseError:
+      "No se pudieron pausar las notificaciones en este dispositivo",
 
     back: "Perfil",
     memberSince: "Miembro desde {{date}}",
@@ -1093,10 +1133,13 @@ export const es = {
   lists: {
     title: "Listas",
     subtitle: "Crea listas y compartelas para coordinarte con los demas.",
+    activeOwnedTitle: "Activas",
+    sharedWithMeTitle: "Compartidas conmigo",
     loading: "Cargando listas...",
     empty: "Aún no tienes listas.",
     selectOne: "Selecciona una lista para ver sus puntos.",
     newPlaceholder: "Nueva lista (ej: Comprar)",
+    titlePlaceholder: "Titulo de la lista",
     create: "Crear",
     created: "Lista creada.",
     updated: "Lista actualizada.",

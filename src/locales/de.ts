@@ -13,6 +13,9 @@ export const de = {
     },
   },
 
+  achievements: "Erfolge",
+  rewards_unlocked: "Freigeschaltet",
+
   shareInvite: {
     share: "Teilen",
     sharedOk: "Fertig. Link kopiert/geteilt.",
@@ -69,6 +72,9 @@ export const de = {
     alreadyAccepted: "Diese Einladung wurde bereits verwendet.",
     expired: "Diese Einladung ist abgelaufen.",
     laterCta: "Jetzt nicht",
+    signInCta: "Anmelden, um die Liste zu sehen",
+    previewUnavailable:
+      "Die Vorschau konnte nicht geladen werden. Du kannst der Liste trotzdem mit diesem Link beitreten.",
     loginHint:
       "Wenn du nicht angemeldet bist, bitten wir dich, dich einzuloggen oder ein Konto zu erstellen, bevor du der Liste beitrittst.",
   },
@@ -171,6 +177,7 @@ export const de = {
     appName: "REMI",
     save: "Speichern",
     back: "Zurueck",
+    today: "Heute",
     menu: "Menue",
     cancel: "Abbrechen",
     delete: "Löschen",
@@ -180,6 +187,7 @@ export const de = {
     loading: "Wird geladen...",
     preparingLink: "Link wird vorbereitet...",
     speak: "Sprechen",
+    settings: "Einstellungen",
     paste: "Einfügen",
   },
 
@@ -220,6 +228,11 @@ export const de = {
     defaultDescription: "Füge Remi zu deinen Apps hinzu — GRATIS!",
     buttonInstall: "Installieren",
     close: "Schliessen",
+  },
+
+  offline: {
+    savedLocally:
+      "Offline gespeichert. Es wird synchronisiert, sobald die Verbindung wieder da ist.",
   },
 
   status: {
@@ -265,11 +278,14 @@ export const de = {
     todaySectionTitle: "Was du geschafft hast",
     todaySectionSubtitle: "Zusammenfassung, wie wir deinen Kopf entlasten.",
     todayTasksLabel: "Heute erledigt",
+    todayProgressFallback: "{{done}} von {{total}} erledigt",
+    todayEmptyFallback: "Heute nichts als erledigt markiert",
     todayTasksDescription:
       "{{todayDone}}/{{todayTotal}} heute fällige Aufgaben erledigt.",
 
     streakSectionTitle: "Unsere Serie",
     streakValue: "{{streakDays}} Tage",
+    streakFallback: "{{days}} Tage in Folge mit Remi",
     streakDescription:
       "Seit {{streakDays}} Tagen muss dein Kopf sich nicht mehr alles allein merken.",
 
@@ -277,6 +293,9 @@ export const de = {
     memoryDelegatedValue: "{{tasks}} Aufgaben · {{ideas}} Ideen",
     memoryDelegatedDescription:
       "Gerade kümmert sich Remi um {{tasks}} Aufgaben und {{ideas}} Ideen.",
+
+    memoryFallback:
+      "Aufgaben und Notizen, die du nicht mehr im Kopf tragen musst",
 
     weekSectionTitle: "Unsere Woche",
     weekSectionSubtitle:
@@ -291,6 +310,8 @@ export const de = {
     memoryDistributionTitle: "Gedächtnisverteilung",
     memoryDistributionSubtitle: "Welche Art von Last delegierst du an Remi",
     memoryTasksLabel: "Erinnerungen",
+    capturedPeakFallback: "Du erfasst meist mehr zwischen {{range}}.",
+    resolvedPeakFallback: "Du erledigst meist mehr zwischen {{range}}.",
     hourMapTitle: "Stundenkarte",
     hourMapSubtitle: "Wann du mehr mentale Last erfasst (letzte 30 Tage)",
     pieTitle: "Allgemeiner Status",
@@ -422,6 +443,7 @@ export const de = {
       pasteError:
         "Kein Zugriff auf die Zwischenablage. Gedrückt halten und einfügen.",
       writeSomething: "Schreib zuerst etwas.",
+      saveError: "Konnte nicht gespeichert werden.",
 
       pickDateFirst: "Wähle zuerst ein Datum.",
     },
@@ -441,8 +463,15 @@ export const de = {
     dateTimeNoneShort: "Ohne Datum/Uhrzeit",
     timeUnset: "Keine Uhrzeit",
     placeholder: "Tippen zum Schreiben",
+    toastEmpty: "Schreib zuerst etwas.",
     noteHint: "Bewahre deine Erinnerungen auf, damit sie nicht verloren gehen",
     masterHint: "Sag Remi, was du machen willst.",
+    detailsShow: "Details anpassen",
+    detailsHide: "Details ausblenden",
+    detailsNoteHint:
+      "Speichere es zuerst als Notiz. Falls notig, kannst du es spater in eine Erinnerung umwandeln.",
+    detailsListHint:
+      "Schreibe mehrere Punkte auf und Remi versucht, daraus eine klare, teilbare Liste zu machen.",
 
     title: "Kopf frei machen",
     subtitle: "Sprich, schreib oder füge Text ein. Remi kümmert sich.",
@@ -591,6 +620,7 @@ export const de = {
 
   today: {
     greetingHello: "Hallo,",
+    clearMindBadge: "leichterer Kopf",
     captureSectionTitle: "Leere deinen Kopf",
     memorySectionTitle: "Erinnere dich",
     memoryAskTitle: "Frag Remi",
@@ -1011,6 +1041,19 @@ export const de = {
       "Benachrichtigungen auf diesem Gerät aktivieren oder pausieren",
     pushDeviceEnabled: "Benachrichtigungen auf diesem Gerät aktiviert",
 
+    devicePushUnsupportedToast:
+      "Dieses Gerat/dieser Browser unterstutzt kein Push.",
+    devicePushDeniedHint:
+      "Wenn du sie aktivieren willst: Browser-Einstellungen -> Benachrichtigungen -> erlauben.",
+    devicePushDeniedToast:
+      "Berechtigung auf diesem Gerat verweigert (Browser-Einstellungen).",
+    devicePushNeedsPermissionHint:
+      "Erteile die Benachrichtigungsberechtigung, um sie zu aktivieren.",
+    pushDeviceEnableError:
+      "Benachrichtigungen konnten auf diesem Gerat nicht aktiviert werden",
+    devicePushPauseError:
+      "Benachrichtigungen konnten auf diesem Gerat nicht pausiert werden",
+
     back: "Profil",
     memberSince: "Mitglied seit {{date}}",
 
@@ -1075,10 +1118,13 @@ export const de = {
   lists: {
     title: "Listen",
     subtitle: "Erstelle Listen und teile sie, um dich mit anderen abzustimmen.",
+    activeOwnedTitle: "Aktiv",
+    sharedWithMeTitle: "Mit mir geteilt",
     loading: "Listen werden geladen...",
     empty: "Du hast noch keine Listen.",
     selectOne: "Wähle eine Liste, um Punkte zu sehen.",
     newPlaceholder: "Neue Liste (z. B. Kaufen)",
+    titlePlaceholder: "Listentitel",
     create: "Erstellen",
     created: "Liste erstellt.",
     updated: "Liste aktualisiert.",

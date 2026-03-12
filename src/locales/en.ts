@@ -12,6 +12,9 @@ export const en = {
     },
   },
 
+  achievements: "Achievements",
+  rewards_unlocked: "Unlocked",
+
   shareInvite: {
     share: "Share",
     sharedOk: "Done. Link copied/shared.",
@@ -68,6 +71,9 @@ export const en = {
     alreadyAccepted: "This invitation has already been used.",
     expired: "This invitation has expired.",
     laterCta: "Not now",
+    signInCta: "Sign in to view the list",
+    previewUnavailable:
+      "Couldn't load the preview. You can still join with this link.",
     loginHint:
       "If you're not signed in, we'll ask you to log in or create an account before joining the list.",
   },
@@ -169,6 +175,7 @@ export const en = {
     appName: "REMI",
     save: "Save",
     back: "Back",
+    today: "Today",
     menu: "Menu",
     cancel: "Cancel",
     delete: "Delete",
@@ -179,6 +186,7 @@ export const en = {
     preparingLink: "Preparing link...",
     speak: "Speak",
     paste: "Paste",
+    settings: "Settings",
   },
 
   index: {
@@ -218,6 +226,11 @@ export const en = {
     defaultDescription: "Add Remi to your list of apps — FREE!",
     buttonInstall: "Install",
     close: "Close",
+  },
+
+  offline: {
+    savedLocally:
+      "Saved offline. It will sync again when the connection returns.",
   },
 
   status: {
@@ -264,16 +277,20 @@ export const en = {
     todayTasksLabel: "Completed today",
     todayTasksDescription:
       "{{todayDone}}/{{todayTotal}} tasks due today completed.",
+    todayProgressFallback: "{{done}} of {{total}} done",
+    todayEmptyFallback: "Nothing marked done today",
 
     streakSectionTitle: "Our streak",
     streakValue: "{{streakDays}} days",
     streakDescription:
       "It's been {{streakDays}} days without your mind having to remember everything by itself.",
+    streakFallback: "{{days}} days in a row using Remi",
 
     memoryDelegatedTitle: "Delegated memory",
     memoryDelegatedValue: "{{tasks}} tasks · {{ideas}} ideas",
     memoryDelegatedDescription:
       "Right now Remi is taking care of {{tasks}} tasks and {{ideas}} ideas.",
+    memoryFallback: "Tasks and notes you no longer carry in your head",
 
     weekSectionTitle: "Our week",
     weekSectionSubtitle:
@@ -284,7 +301,9 @@ export const en = {
     mentalCapturedTooltip: "Captured: {{count}}",
     mentalResolvedTooltip: "Resolved: {{count}}",
     memoryCaptured: "Captured",
+    capturedPeakFallback: "You usually capture more between {{range}}.",
     memoryResolved: "Resolved",
+    resolvedPeakFallback: "You usually finish more things between {{range}}.",
     memoryDistributionTitle: "Memory distribution",
     memoryDistributionSubtitle: "What kind of load are you delegating to Remi",
     memoryTasksLabel: "Reminders",
@@ -423,6 +442,7 @@ export const en = {
       clipboardEmpty: "There's no text in the clipboard.",
       pasteError: "Couldn't access the clipboard. Press and hold to paste.",
       writeSomething: "Write something first.",
+      saveError: "Couldn't save.",
 
       pickDateFirst: "Pick a date first.",
     },
@@ -442,8 +462,15 @@ export const en = {
     dateTimeNoneShort: "No date or time",
     timeUnset: "No time",
     placeholder: "Tap to type",
+    toastEmpty: "Write something first.",
     noteHint: "Save your memories so you don't lose them",
     masterHint: "Tell Remi what you want to do.",
+    detailsShow: "Adjust details",
+    detailsHide: "Hide details",
+    detailsNoteHint:
+      "Save it as a note first. You can turn it into a reminder later if needed.",
+    detailsListHint:
+      "Write several items and Remi will try to turn them into a clear, shareable list.",
 
     title: "Clear your mind",
     subtitle: "Speak, type, or paste text. Remi takes care of it.",
@@ -591,6 +618,7 @@ export const en = {
 
   today: {
     greetingHello: "Hello,",
+    clearMindBadge: "lighter mind",
     captureSectionTitle: "Clear your mind",
     memorySectionTitle: "Remember",
     memoryAskTitle: "Ask Remi",
@@ -1002,12 +1030,20 @@ export const en = {
     devicePushTitle: "Notifications on this device",
     devicePushUnsupportedHint:
       "This browser doesn't support push notifications. Try Safari on iPhone or Chrome/Edge on Android/PC.",
+    devicePushUnsupportedToast:
+      "This device/browser does not support push.",
     devicePushChecking: "Checking…",
     devicePushUnsupportedLine: "This device/browser does not support push.",
     devicePushDeniedLine:
       "Permission denied on this device (browser settings).",
+    devicePushDeniedHint:
+      "If you want to enable them: browser settings -> Notifications -> allow.",
+    devicePushDeniedToast:
+      "Permission denied on this device (browser settings).",
     devicePushNeedsPermissionLine:
       "You haven't granted permission on this device yet.",
+    devicePushNeedsPermissionHint:
+      "Grant notification permission to enable them.",
     devicePushNeedsRegisterLine: "Permission OK, but you still need to enable it here.",
     devicePushPaused: "Paused",
     devicePushPausedLine: "Paused on this device",
@@ -1015,6 +1051,10 @@ export const en = {
     devicePushToggleAria:
       "Enable or pause notifications on this device",
     pushDeviceEnabled: "Notifications enabled on this device",
+    pushDeviceEnableError:
+      "Couldn't enable notifications on this device",
+    devicePushPauseError:
+      "Couldn't pause notifications on this device",
 
     back: "Profile",
     memberSince: "Member since {{date}}",
@@ -1080,10 +1120,13 @@ export const en = {
   lists: {
     title: "Lists",
     subtitle: "Create lists and share them to coordinate with others.",
+    activeOwnedTitle: "Active",
+    sharedWithMeTitle: "Shared with me",
     loading: "Loading lists...",
     empty: "You don't have any lists yet.",
     selectOne: "Select a list to see its items.",
     newPlaceholder: "New list (ex: Buy)",
+    titlePlaceholder: "List title",
     create: "Create",
     created: "List created.",
     updated: "List updated.",

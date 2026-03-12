@@ -1570,6 +1570,10 @@ export default function MindDumpModal({
   const reminderMenuRef = useRef<HTMLDivElement>(null);
   const repeatMenuRef = useRef<HTMLDivElement>(null);
   const [settingsPanelOpen, setSettingsPanelOpen] = useState(false);
+  const typeSelectorWrapRef = useRef<HTMLDivElement | null>(null);
+  const typeSelectorInnerRef = useRef<HTMLDivElement | null>(null);
+  const [typeSelectorScale, setTypeSelectorScale] = useState(1);
+  const [typeSelectorScaledHeight, setTypeSelectorScaledHeight] = useState<number | null>(null);
 
   const ios = useMemo(() => isIOS(), []);
   const android = useMemo(() => isAndroid(), []);
@@ -2854,6 +2858,60 @@ export default function MindDumpModal({
           return picked && picked.trim().length > 0 ? picked : null;
         })();
 
+  useEffect(() => {
+    if (!embedded || typeof window === "undefined") {
+      setTypeSelectorScale(1);
+      setTypeSelectorScaledHeight(null);
+      return;
+    }
+
+    const wrap = typeSelectorWrapRef.current;
+    const inner = typeSelectorInnerRef.current;
+    if (!wrap || !inner) return;
+
+    let rafId = 0;
+
+    const measure = () => {
+      rafId = 0;
+      const availableWidth = wrap.clientWidth;
+      const naturalWidth = inner.offsetWidth;
+      const naturalHeight = inner.offsetHeight;
+      if (!availableWidth || !naturalWidth || !naturalHeight) return;
+
+      const nextScale = Math.min(1, availableWidth / naturalWidth);
+      const nextHeight = naturalHeight * nextScale;
+
+      setTypeSelectorScale((prev) =>
+        Math.abs(prev - nextScale) < 0.001 ? prev : nextScale,
+      );
+      setTypeSelectorScaledHeight((prev) =>
+        prev !== null && Math.abs(prev - nextHeight) < 0.5 ? prev : nextHeight,
+      );
+    };
+
+    const queueMeasure = () => {
+      if (rafId) window.cancelAnimationFrame(rafId);
+      rafId = window.requestAnimationFrame(measure);
+    };
+
+    queueMeasure();
+
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(() => queueMeasure())
+        : null;
+
+    resizeObserver?.observe(wrap);
+    resizeObserver?.observe(inner);
+    window.addEventListener("resize", queueMeasure);
+
+    return () => {
+      if (rafId) window.cancelAnimationFrame(rafId);
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", queueMeasure);
+    };
+  }, [embedded]);
+
   return (
     <div
       className={embedded ? "relative w-full" : "fixed inset-0 z-[1000]"}
@@ -3047,180 +3105,198 @@ export default function MindDumpModal({
             }}
           >
             <div
+              ref={embedded ? typeSelectorWrapRef : undefined}
               style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 8,
                 width: "100%",
-                flexWrap: "wrap",
+                height: embedded && typeSelectorScaledHeight ? typeSelectorScaledHeight : undefined,
+                overflow: "visible",
               }}
             >
-              <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}
+              <div
+                ref={embedded ? typeSelectorInnerRef : undefined}
+                style={{
+                  width: embedded ? "max-content" : "100%",
+                  transform: embedded ? `scale(${typeSelectorScale})` : undefined,
+                  transformOrigin: "left top",
+                }}
               >
                 <div
                   style={{
-                    display: "inline-flex",
+                    display: "flex",
                     alignItems: "center",
-                    gap: 4,
-                    padding: 3,
-                    borderRadius: 999,
-                    border: "1px solid #cfc3f7",
-                    background: "#ffffff",
+                    justifyContent: "space-between",
+                    gap: 8,
+                    width: embedded ? "max-content" : "100%",
+                    flexWrap: embedded ? "nowrap" : "wrap",
                   }}
                 >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMasterMode(true);
-                      setTypeTouched(false);
-                      setTypeManuallySelected(false);
-                      setItemKind("task");
-                      setListTitle("");
-                      setListManualEmoji(null);
-                      setListTitleTouched(false);
-                    }}
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}
+                  >
+                    <div
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                        padding: 3,
+                        borderRadius: 999,
+                        border: "1px solid #cfc3f7",
+                        background: "#ffffff",
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMasterMode(true);
+                          setTypeTouched(false);
+                          setTypeManuallySelected(false);
+                          setItemKind("task");
+                          setListTitle("");
+                          setListManualEmoji(null);
+                          setListTitleTouched(false);
+                        }}
+                        style={{
+                          height: 30,
+                          minWidth: 0,
+                          padding: "0 10px",
+                          borderRadius: 999,
+                          border: "none",
+                          background: masterMode && itemKind === "task" ? "#6d46c4" : "transparent",
+                          color: masterMode && itemKind === "task" ? "#f8f7ff" : "#64748b",
+                          fontSize: 13,
+                          lineHeight: 1.1,
+                          fontWeight: 800,
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          whiteSpace: "nowrap",
+                        }}
+                        title={t("capture.type.master", "Remi")}
+                        aria-label={t("capture.type.master", "Remi")}
+                      >
+                        {t("capture.type.master", "Remi")}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div
                     style={{
-                      height: 30,
-                      minWidth: 0,
-                      padding: "0 10px",
-                      borderRadius: 999,
-                      border: "none",
-                      background: masterMode && itemKind === "task" ? "#6d46c4" : "transparent",
-                      color: masterMode && itemKind === "task" ? "#f8f7ff" : "#64748b",
-                      fontSize: 13,
-                      lineHeight: 1.1,
-                      fontWeight: 800,
-                      cursor: "pointer",
                       display: "inline-flex",
                       alignItems: "center",
-                      justifyContent: "center",
-                      whiteSpace: "nowrap",
+                      gap: 4,
+                      padding: 4,
+                      borderRadius: 999,
+                      border: "1px solid #cfc3f7",
+                      background: "#ffffff",
+                      width: "auto",
+                      minWidth: "fit-content",
+                      marginLeft: "auto",
                     }}
-                    title={t("capture.type.master", "Remi")}
-                    aria-label={t("capture.type.master", "Remi")}
                   >
-                    {t("capture.type.master", "Remi")}
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMasterMode(false);
+                        setTypeTouched(true);
+                        setTypeManuallySelected(true);
+                        setItemKind("task");
+                        setListTitle("");
+                        setListManualEmoji(null);
+                        setListTitleTouched(false);
+                      }}
+                      style={{
+                        height: "auto",
+                        minWidth: 0,
+                        flex: "0 1 auto",
+                        padding: "6px 16px",
+                        borderRadius: 999,
+                        border: "none",
+                        background: !masterMode && itemKind === "task" ? "#ede9fe" : "transparent",
+                        color: !masterMode && itemKind === "task" ? "#7c3aed" : "#64748b",
+                        fontSize: "clamp(13px, 0.9vw, 18px)",
+                        lineHeight: 1.1,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        whiteSpace: "nowrap",
+                      }}
+                      title={t("pill.type.task", "Recordatorio")}
+                      aria-label={t("pill.type.task", "Recordatorio")}
+                    >
+                      {t("pill.type.task", "Recordatorio")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMasterMode(false);
+                        setTypeTouched(true);
+                        setTypeManuallySelected(true);
+                        setItemKind("idea");
+                        setListTitle("");
+                        setListManualEmoji(null);
+                        setListTitleTouched(false);
+                        resetTaskOnlyFields();
+                      }}
+                      style={{
+                        height: "auto",
+                        minWidth: 0,
+                        flex: "0 1 auto",
+                        padding: "6px 16px",
+                        borderRadius: 999,
+                        border: "none",
+                        background: itemKind === "idea" ? "#fef3c7" : "transparent",
+                        color: itemKind === "idea" ? "#a16207" : "#64748b",
+                        fontSize: "clamp(13px, 0.9vw, 18px)",
+                        lineHeight: 1.1,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        whiteSpace: "nowrap",
+                      }}
+                      title={t("capture.type.note", "Nota")}
+                      aria-label={t("capture.type.note", "Nota")}
+                    >
+                      {t("capture.type.note", "Nota")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMasterMode(false);
+                        setTypeTouched(true);
+                        setTypeManuallySelected(true);
+                        setItemKind("list");
+                        setListTitleTouched(false);
+                        resetTaskOnlyFields();
+                      }}
+                      style={{
+                        height: "auto",
+                        minWidth: 0,
+                        flex: "0 1 auto",
+                        padding: "6px 16px",
+                        borderRadius: 999,
+                        border: "none",
+                        background: itemKind === "list" ? "#dbeafe" : "transparent",
+                        color: itemKind === "list" ? "#2563eb" : "#64748b",
+                        fontSize: "clamp(13px, 0.9vw, 18px)",
+                        lineHeight: 1.1,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        whiteSpace: "nowrap",
+                      }}
+                      title={t("capture.type.list", "Lista")}
+                      aria-label={t("capture.type.list", "Lista")}
+                    >
+                      {t("capture.type.list", "Lista")}
+                    </button>
+                  </div>
                 </div>
-              </div>
-
-              <div
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 4,
-                  padding: 4,
-                  borderRadius: 999,
-                  border: "1px solid #cfc3f7",
-                  background: "#ffffff",
-                  width: "auto",
-                  minWidth: "fit-content",
-                  marginLeft: "auto",
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMasterMode(false);
-                    setTypeTouched(true);
-                    setTypeManuallySelected(true);
-                    setItemKind("task");
-                    setListTitle("");
-                    setListManualEmoji(null);
-                    setListTitleTouched(false);
-                  }}
-                  style={{
-                    height: "auto",
-                    minWidth: 0,
-                    flex: "0 1 auto",
-                    padding: "6px 16px",
-                    borderRadius: 999,
-                    border: "none",
-                    background: !masterMode && itemKind === "task" ? "#ede9fe" : "transparent",
-                    color: !masterMode && itemKind === "task" ? "#7c3aed" : "#64748b",
-                    fontSize: "clamp(13px, 0.9vw, 18px)",
-                    lineHeight: 1.1,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    whiteSpace: "nowrap",
-                  }}
-                  title={t("pill.type.task", "Recordatorio")}
-                  aria-label={t("pill.type.task", "Recordatorio")}
-                >
-                  {t("pill.type.task", "Recordatorio")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMasterMode(false);
-                    setTypeTouched(true);
-                    setTypeManuallySelected(true);
-                    setItemKind("idea");
-                    setListTitle("");
-                    setListManualEmoji(null);
-                    setListTitleTouched(false);
-                    resetTaskOnlyFields();
-                  }}
-                  style={{
-                    height: "auto",
-                    minWidth: 0,
-                    flex: "0 1 auto",
-                    padding: "6px 16px",
-                    borderRadius: 999,
-                    border: "none",
-                    background: itemKind === "idea" ? "#fef3c7" : "transparent",
-                    color: itemKind === "idea" ? "#a16207" : "#64748b",
-                    fontSize: "clamp(13px, 0.9vw, 18px)",
-                    lineHeight: 1.1,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    whiteSpace: "nowrap",
-                  }}
-                  title={t("capture.type.note", "Nota")}
-                  aria-label={t("capture.type.note", "Nota")}
-                >
-                  {t("capture.type.note", "Nota")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMasterMode(false);
-                    setTypeTouched(true);
-                    setTypeManuallySelected(true);
-                    setItemKind("list");
-                    setListTitleTouched(false);
-                    resetTaskOnlyFields();
-                  }}
-                  style={{
-                    height: "auto",
-                    minWidth: 0,
-                    flex: "0 1 auto",
-                    padding: "6px 16px",
-                    borderRadius: 999,
-                    border: "none",
-                    background: itemKind === "list" ? "#dbeafe" : "transparent",
-                    color: itemKind === "list" ? "#2563eb" : "#64748b",
-                    fontSize: "clamp(13px, 0.9vw, 18px)",
-                    lineHeight: 1.1,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    whiteSpace: "nowrap",
-                  }}
-                  title={t("capture.type.list", "Lista")}
-                  aria-label={t("capture.type.list", "Lista")}
-                >
-                  {t("capture.type.list", "Lista")}
-                </button>
               </div>
             </div>
           </div>
