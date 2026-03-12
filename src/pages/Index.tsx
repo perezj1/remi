@@ -2346,7 +2346,7 @@ const anyModalOpen =
                   className="leading-tight font-extrabold text-slate-900"
                   style={{ fontSize: "clamp(20px, 1.5vw, 28px)" }}
                 >
-                  {safeT("today.greetingHello", "Hello,")} <span aria-hidden="true">👋</span> {displayName}!
+                  {safeT("today.greetingHello", "Hello")} {displayName}! <span aria-hidden="true">👋</span>
                 </p>
                 <span className="mt-2 inline-flex items-center rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-semibold text-violet-700">
                   {mindClearPercent}% {safeT("today.clearMindBadge", "mente más ligera")}
