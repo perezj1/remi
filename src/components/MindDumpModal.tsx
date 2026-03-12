@@ -12,7 +12,6 @@ import {
 import {
   CalendarClock,
   X,
-  ClipboardPaste,
   Mic,
   Check,
   SlidersHorizontal,
@@ -1968,36 +1967,6 @@ export default function MindDumpModal({
     setTalkPressed(false);
   };
 
-  const handlePaste = async () => {
-    blurTextarea();
-    try {
-      if (!navigator.clipboard?.readText) {
-        toast.error(
-          t("capture.toast.pasteUnavailable", "No puedo pegar aquí (portapapeles no disponible).")
-        );
-        return;
-      }
-      const clip = await navigator.clipboard.readText();
-      const normalizedClip = normalizeIncomingText(clip);
-      if (!normalizedClip) {
-        toast.message(t("capture.toast.clipboardEmpty", "No hay texto en el portapapeles."));
-        return;
-      }
-
-      // ✅ conserva saltos de línea; si ya hay texto, pega en nueva línea
-      setText((prev) => {
-        const p = String(prev ?? "");
-        if (!p.trim()) return normalizedClip;
-        if (p.endsWith("\n")) return p + normalizedClip;
-        return p + "\n" + normalizedClip;
-      });
-    } catch {
-      toast.error(
-        t("capture.toast.pasteError", "No pude acceder al portapapeles. Mantén pulsado y pega.")
-      );
-    }
-  };
-
   const resetTaskOnlyFields = useCallback(() => {
     setPickedDate("");
     setPickedTime("");
@@ -2785,6 +2754,60 @@ export default function MindDumpModal({
 
   const hasSomeDate = itemKind === "task" && !!(pickedDate || detectedDate);
 
+  useEffect(() => {
+    if (!open || typeof window === "undefined") {
+      setTypeSelectorScale(1);
+      setTypeSelectorScaledHeight(null);
+      return;
+    }
+
+    const wrap = typeSelectorWrapRef.current;
+    const inner = typeSelectorInnerRef.current;
+    if (!wrap || !inner) return;
+
+    let rafId = 0;
+
+    const measure = () => {
+      rafId = 0;
+      const availableWidth = wrap.clientWidth;
+      const naturalWidth = inner.offsetWidth;
+      const naturalHeight = inner.offsetHeight;
+      if (!availableWidth || !naturalWidth || !naturalHeight) return;
+
+      const nextScale = Math.min(1, availableWidth / naturalWidth);
+      const nextHeight = naturalHeight * nextScale;
+
+      setTypeSelectorScale((prev) =>
+        Math.abs(prev - nextScale) < 0.001 ? prev : nextScale,
+      );
+      setTypeSelectorScaledHeight((prev) =>
+        prev !== null && Math.abs(prev - nextHeight) < 0.5 ? prev : nextHeight,
+      );
+    };
+
+    const queueMeasure = () => {
+      if (rafId) window.cancelAnimationFrame(rafId);
+      rafId = window.requestAnimationFrame(measure);
+    };
+
+    queueMeasure();
+
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(() => queueMeasure())
+        : null;
+
+    resizeObserver?.observe(wrap);
+    resizeObserver?.observe(inner);
+    window.addEventListener("resize", queueMeasure);
+
+    return () => {
+      if (rafId) window.cancelAnimationFrame(rafId);
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", queueMeasure);
+    };
+  }, [open]);
+
   /* ───────────────────────────────
      Render gating (después de hooks)
   ──────────────────────────────── */
@@ -2857,60 +2880,6 @@ export default function MindDumpModal({
           const picked = suggestSharedListEmoji(listTitle ?? "");
           return picked && picked.trim().length > 0 ? picked : null;
         })();
-
-  useEffect(() => {
-    if (!embedded || typeof window === "undefined") {
-      setTypeSelectorScale(1);
-      setTypeSelectorScaledHeight(null);
-      return;
-    }
-
-    const wrap = typeSelectorWrapRef.current;
-    const inner = typeSelectorInnerRef.current;
-    if (!wrap || !inner) return;
-
-    let rafId = 0;
-
-    const measure = () => {
-      rafId = 0;
-      const availableWidth = wrap.clientWidth;
-      const naturalWidth = inner.offsetWidth;
-      const naturalHeight = inner.offsetHeight;
-      if (!availableWidth || !naturalWidth || !naturalHeight) return;
-
-      const nextScale = Math.min(1, availableWidth / naturalWidth);
-      const nextHeight = naturalHeight * nextScale;
-
-      setTypeSelectorScale((prev) =>
-        Math.abs(prev - nextScale) < 0.001 ? prev : nextScale,
-      );
-      setTypeSelectorScaledHeight((prev) =>
-        prev !== null && Math.abs(prev - nextHeight) < 0.5 ? prev : nextHeight,
-      );
-    };
-
-    const queueMeasure = () => {
-      if (rafId) window.cancelAnimationFrame(rafId);
-      rafId = window.requestAnimationFrame(measure);
-    };
-
-    queueMeasure();
-
-    const resizeObserver =
-      typeof ResizeObserver !== "undefined"
-        ? new ResizeObserver(() => queueMeasure())
-        : null;
-
-    resizeObserver?.observe(wrap);
-    resizeObserver?.observe(inner);
-    window.addEventListener("resize", queueMeasure);
-
-    return () => {
-      if (rafId) window.cancelAnimationFrame(rafId);
-      resizeObserver?.disconnect();
-      window.removeEventListener("resize", queueMeasure);
-    };
-  }, [embedded]);
 
   return (
     <div
@@ -3105,18 +3074,18 @@ export default function MindDumpModal({
             }}
           >
             <div
-              ref={embedded ? typeSelectorWrapRef : undefined}
+              ref={typeSelectorWrapRef}
               style={{
                 width: "100%",
-                height: embedded && typeSelectorScaledHeight ? typeSelectorScaledHeight : undefined,
+                height: typeSelectorScaledHeight ?? undefined,
                 overflow: "visible",
               }}
             >
               <div
-                ref={embedded ? typeSelectorInnerRef : undefined}
+                ref={typeSelectorInnerRef}
                 style={{
-                  width: embedded ? "max-content" : "100%",
-                  transform: embedded ? `scale(${typeSelectorScale})` : undefined,
+                  width: "max-content",
+                  transform: `scale(${typeSelectorScale})`,
                   transformOrigin: "left top",
                 }}
               >
@@ -3124,10 +3093,10 @@ export default function MindDumpModal({
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "space-between",
+                    justifyContent: "flex-start",
                     gap: 8,
-                    width: embedded ? "max-content" : "100%",
-                    flexWrap: embedded ? "nowrap" : "wrap",
+                    width: "max-content",
+                    flexWrap: "nowrap",
                   }}
                 >
                   <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}
@@ -3992,7 +3961,7 @@ export default function MindDumpModal({
                   className="mt-3"
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "1fr 1fr 1fr 1fr",
+                    gridTemplateColumns: "1fr 1fr 1fr",
                     alignItems: "center",
                   }}
                 >
@@ -4025,36 +3994,6 @@ export default function MindDumpModal({
                   </button>
                   <div style={{ fontSize: 11, fontWeight: 800, color: REMI_PURPLE }}>
                     {t("common.settings", "Ajustes")}
-                  </div>
-                </div>
-
-                {/* Pegar */}
-                <div className="flex flex-col items-center justify-center gap-1.5">
-                  <button
-                    data-no-focus
-                    type="button"
-                    onClick={handlePaste}
-                    onContextMenu={(e) => e.preventDefault()}
-                        style={{
-                          width: 52,
-                          height: 52,
-                          borderRadius: 999,
-                          border: "1px solid #c7b5f6",
-                          background: "#f3f4f6",
-                          color: REMI_PURPLE,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      userSelect: "none",
-                      WebkitTouchCallout: "none",
-                      WebkitUserSelect: "none",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <ClipboardPaste className="h-5 w-5" />
-                  </button>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: REMI_PURPLE }}>
-                    {t("common.paste", "Pegar")}
                   </div>
                 </div>
 
