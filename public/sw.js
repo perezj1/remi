@@ -19,7 +19,6 @@ self.addEventListener("install", (event) => {
           "/manifest.webmanifest",
           "/icons/icon-192.png",
           "/icons/icon-512.png",
-          "/icons/notification-badge.svg",
         ]);
       } catch {
         // si alguno no existe, no queremos romper install
@@ -156,7 +155,6 @@ self.addEventListener("push", (event) => {
   const options = {
     body: data.body || "Tienes tareas por completar 💪",
     icon: data.icon || "/icons/icon-192.png",
-    badge: data.badge || "/icons/notification-badge.svg",
     image: data.image || undefined,
     tag: data.tag || "Remi-reminder",
     renotify: false,

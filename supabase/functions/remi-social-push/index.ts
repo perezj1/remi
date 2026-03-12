@@ -1126,7 +1126,6 @@ async function processSharedListEvent(record: JsonRecord) {
       url: `${APP_ORIGIN}/lists?list=${encodeURIComponent(listId)}`,
       tag: `social-list-${eventId}-${userId}`,
       icon: actorAvatarUrl,
-      badge: `${APP_ORIGIN}/icons/notification-badge.svg`,
     });
     if (!delivered) {
       await releaseSocialPushReservation(userId, dedupeKey);
@@ -1224,7 +1223,6 @@ async function processShareInviteEvent(eventType: string, record: JsonRecord) {
     url: `${APP_ORIGIN}${route}`,
     tag: `social-share-${inviteId}-${kind}-${senderUserId}`,
     icon: actorAvatarUrl,
-    badge: `${APP_ORIGIN}/icons/notification-badge.svg`,
   });
   if (!delivered) {
     await releaseSocialPushReservation(senderUserId, dedupeKey);
