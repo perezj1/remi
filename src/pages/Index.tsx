@@ -110,6 +110,7 @@ const SHARE_REMINDERS_TIP_KEY = "share-reminders";
 
 const MULTI_DEVICE_TIP_KEY = "multi-device";
 const OPEN_NOTIFICATIONS_EVENT = "remi-open-notifications";
+const NOTIFICATION_CENTER_STATE_EVENT = "remi-notification-center-state";
 
 type NotificationCenterState = {
   clearedAtMs: number;
@@ -506,6 +507,11 @@ const anyModalOpen =
           JSON.stringify(nextState),
         );
       } catch {}
+      window.dispatchEvent(
+        new CustomEvent(NOTIFICATION_CENTER_STATE_EVENT, {
+          detail: nextState,
+        }),
+      );
     },
     [user],
   );
