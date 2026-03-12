@@ -73,6 +73,13 @@ function normSpaces(s: string) {
   return (s || "").replace(/\s+/g, " ").trim();
 }
 
+function foldComparable(s: string) {
+  return normSpaces(s)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase();
+}
+
 /**
  * Une textos finales evitando duplicados por solape:
  * - Si el acumulado ya termina con el segmento -> no añade nada
@@ -82,19 +89,21 @@ function normSpaces(s: string) {
 function appendWithOverlap(acc: string, seg: string) {
   const A = normSpaces(acc);
   const S = normSpaces(seg);
+  const foldedA = foldComparable(A);
+  const foldedS = foldComparable(S);
   if (!S) return A;
   if (!A) return S;
 
   // redundante
-  if (A.endsWith(S)) return A;
+  if (foldedA.endsWith(foldedS)) return A;
 
   // caso raro: el nuevo segmento contiene todo el anterior
-  if (S.startsWith(A)) return S;
+  if (foldedS.startsWith(foldedA)) return S;
 
   // solape sufijo/prefijo
-  const max = Math.min(A.length, S.length);
+  const max = Math.min(foldedA.length, foldedS.length);
   for (let k = max; k >= 3; k--) {
-    if (A.endsWith(S.slice(0, k))) {
+    if (foldedA.endsWith(foldedS.slice(0, k))) {
       const tail = S.slice(k);
       return normSpaces(A + " " + tail);
     }
@@ -113,23 +122,25 @@ function appendWithOverlap(acc: string, seg: string) {
 function deltaFromGrowing(prevFull: string, nextFull: string) {
   const prev = normSpaces(prevFull);
   const next = normSpaces(nextFull);
+  const foldedPrev = foldComparable(prev);
+  const foldedNext = foldComparable(next);
 
   if (!next) return "";
   if (!prev) return next;
-  if (next === prev) return "";
+  if (foldedNext === foldedPrev) return "";
 
-  if (next.startsWith(prev)) {
+  if (foldedNext.startsWith(foldedPrev)) {
     const tail = next.slice(prev.length).trim();
     return tail;
   }
 
   // retroceso
-  if (prev.startsWith(next)) return "";
+  if (foldedPrev.startsWith(foldedNext)) return "";
 
   // solape
-  const max = Math.min(prev.length, next.length);
+  const max = Math.min(foldedPrev.length, foldedNext.length);
   for (let k = max; k >= 3; k--) {
-    if (prev.endsWith(next.slice(0, k))) {
+    if (foldedPrev.endsWith(foldedNext.slice(0, k))) {
       const tail = next.slice(k).trim();
       return tail;
     }
