@@ -109,6 +109,7 @@ const SHARE_REMINDERS_TIP_KEY = "share-reminders";
 
 
 const MULTI_DEVICE_TIP_KEY = "multi-device";
+const OPEN_NOTIFICATIONS_EVENT = "remi-open-notifications";
 
 type NotificationCenterState = {
   clearedAtMs: number;
@@ -1382,6 +1383,23 @@ const anyModalOpen =
         ? user.email.split("@")[0]
         : safeT("today.defaultUserName", "Usuario")) ??
     safeT("today.defaultUserName", "Usuario");
+  const profileInitial = displayName.charAt(0).toUpperCase();
+  const profileAvatarUrl = useMemo(() => {
+    const profileAvatar = profile?.avatar_url ?? null;
+    if (profileAvatar) return profileAvatar;
+    const meta = (user as { user_metadata?: Record<string, unknown> } | null)?.user_metadata;
+    const metaAvatar =
+      typeof meta?.avatar_url === "string"
+        ? meta.avatar_url
+        : typeof meta?.picture === "string"
+          ? meta.picture
+          : null;
+    return metaAvatar;
+  }, [profile?.avatar_url, user]);
+
+  const handleOpenProfile = useCallback(() => {
+    navigate("/profile");
+  }, [navigate]);
 
   const handleOpenNotifications = () => {
     setNotificationsOpen(true);
@@ -1669,6 +1687,17 @@ const anyModalOpen =
     }
     toast.error(safeT("capture.toast.dictationError", "Error de dictado."));
   }, [dictationError, safeT]);
+
+  useEffect(() => {
+    const onOpenNotifications = () => {
+      setNotificationsOpen(true);
+    };
+
+    window.addEventListener(OPEN_NOTIFICATIONS_EVENT, onOpenNotifications);
+    return () => {
+      window.removeEventListener(OPEN_NOTIFICATIONS_EVENT, onOpenNotifications);
+    };
+  }, []);
 
   const handleMemoryMic = useCallback(() => {
     if (!dictationSupported) return;
@@ -2356,18 +2385,18 @@ const anyModalOpen =
               <div style={{ position: "relative" }}>
                 <button
                   type="button"
-                  onClick={handleOpenNotifications}
-                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.08)]"
-                  aria-label={safeT("sharedListNotifications.open", "Notificaciones")}
-                  title={safeT("sharedListNotifications.open", "Notificaciones")}
+                  onClick={handleOpenProfile}
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.08)]"
+                  aria-label={safeT("nav.profile", "Perfil")}
+                  title={safeT("nav.profile", "Perfil")}
                 >
-                  <Bell size={18} />
+                  <RemiAvatar
+                    avatarUrl={profileAvatarUrl}
+                    fallback={profileInitial}
+                    alt={safeT("nav.profile", "Perfil")}
+                    className="h-full w-full"
+                  />
                 </button>
-                {unreadNotificationsCount > 0 ? (
-                  <span className="absolute -right-1 -top-1 z-20 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#ef4444] px-1 text-[10px] font-bold leading-none text-white">
-                    {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}
-                  </span>
-                ) : null}
               </div>
             </div>
           </div>

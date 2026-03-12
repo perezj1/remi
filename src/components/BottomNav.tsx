@@ -6,14 +6,13 @@ import {
   CalendarClock,
   List,
   Plus,
+  Bell,
   type LucideIcon,
 } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
 import { toast } from "sonner";
 import { useSpeechDictation } from "@/hooks/useSpeechDictation";
 import { requestMicPermission } from "@/lib/micPermission";
-import { useAuth } from "@/contexts/AuthContext";
-import RemiAvatar from "@/components/RemiAvatar";
 
 // ✅ NUEVO: para ocultar cuando hay modales
 import { useModalUi } from "@/contexts/ModalUiContext";
@@ -28,6 +27,7 @@ const speechLangByUiLang: Record<UiLang, string> = {
 
 const CAPTURE_APPEND_EVENT = "remi-capture-append";
 const OPEN_CAPTURE_EVENT = "remi-open-capture";
+const OPEN_NOTIFICATIONS_EVENT = "remi-open-notifications";
 const OPEN_CAPTURE_SOURCE = "bottom-nav-plus";
 
 // ✅ evento global para indicar si el dictado está escuchando (por si vuelves a activarlo)
@@ -105,7 +105,6 @@ export default function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { t, lang } = useI18n();
-  const { user, profile } = useAuth();
 
   // ✅ NUEVO
   const { isAnyModalOpen } = useModalUi();
@@ -259,28 +258,21 @@ export default function BottomNav() {
     }
   };
 
+  const openNotificationsFromNav = () => {
+    if (pathname !== "/") {
+      navigate("/");
+      setTimeout(() => {
+        window.dispatchEvent(new Event(OPEN_NOTIFICATIONS_EVENT));
+      }, 120);
+      return;
+    }
+
+    window.dispatchEvent(new Event(OPEN_NOTIFICATIONS_EVENT));
+  };
+
   const isTasksActive = pathname === "/tasks" || pathname === "/ideas" || pathname === "/inbox";
   const isListsActive = pathname === "/lists";
-  const isProfileActive = pathname === "/profile";
-  const profileName =
-    (profile?.display_name && profile.display_name.trim() !== ""
-      ? profile.display_name
-      : user?.email
-        ? user.email.split("@")[0]
-        : t("nav.profile")) ?? t("nav.profile");
-  const profileInitial = profileName.charAt(0).toUpperCase();
-  const profileAvatarUrl = useMemo(() => {
-    const profileAvatar = profile?.avatar_url ?? null;
-    if (profileAvatar) return profileAvatar;
-    const meta = (user as { user_metadata?: Record<string, unknown> } | null)?.user_metadata;
-    const metaAvatar =
-      typeof meta?.avatar_url === "string"
-        ? meta.avatar_url
-        : typeof meta?.picture === "string"
-          ? meta.picture
-          : null;
-    return metaAvatar;
-  }, [profile?.avatar_url, user]);
+  const notificationsLabel = t("sharedListNotifications.open") || "Notifications";
 
   /* ─────────────────────────────────────────────
      ✅ OCULTAR NAVBAR CUANDO HAY TECLADO + CAMPO ENFOCADO (INDEX)
@@ -394,34 +386,21 @@ export default function BottomNav() {
         <button
           type="button"
           className="flex h-12 w-12 items-center justify-center rounded-full transition lg:h-14 lg:w-14 xl:h-16 xl:w-16"
-          onClick={() => navigate("/profile")}
+          onClick={openNotificationsFromNav}
           onContextMenu={prevent}
           onPointerDown={prevent}
           onMouseDown={prevent}
           draggable={false}
           onDragStart={prevent}
-          aria-label={t("nav.profile")}
-          title={t("nav.profile")}
+          aria-label={notificationsLabel}
+          title={notificationsLabel}
           style={{
             ...noSelectStyle,
             touchAction: "manipulation",
           }}
         >
-          <span
-            className={`inline-flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border ${
-              isProfileActive
-                ? "border-[#7d59c9] shadow-[0_0_0_2px_rgba(125,89,201,0.12)]"
-                : "border-slate-200"
-            } bg-white lg:h-9 lg:w-9 xl:h-10 xl:w-10`}
-          >
-            <RemiAvatar
-              avatarUrl={profileAvatarUrl}
-              fallback={profileInitial}
-              alt={t("nav.profile")}
-              className="h-full w-full"
-            />
-          </span>
-          <span className="sr-only">{t("nav.profile")}</span>
+          <Bell className="h-6 w-6 text-slate-700 lg:h-7 lg:w-7 xl:h-8 xl:w-8" />
+          <span className="sr-only">{notificationsLabel}</span>
         </button>
       </div>
 
