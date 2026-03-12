@@ -16,12 +16,9 @@ import {
   Mic,
   Check,
   SlidersHorizontal,
-  Sparkles,
   Calendar,
   Clock,
   Repeat,
-  List,
-  StickyNote,
   // ChevronDown, // ⛔️ (comentado) Solo necesario si reactivas la “píldora” de idioma
 } from "lucide-react";
 import { toast } from "sonner";
@@ -1576,7 +1573,7 @@ export default function MindDumpModal({
 
   const ios = useMemo(() => isIOS(), []);
   const android = useMemo(() => isAndroid(), []);
-  const showSettingsPanel = embedded ? settingsPanelOpen : true;
+  const showSettingsPanel = settingsPanelOpen;
 
   const withGap = (s: string) => `${String(s ?? "").trim()}${GAP}`;
 
@@ -2560,11 +2557,10 @@ export default function MindDumpModal({
   }, [open, masterMode, typeManuallySelected, itemKind, resetTaskOnlyFields, text]);
 
   useEffect(() => {
-    if (!embedded) return;
     if (itemKind === "task") return;
-    if (!settingsPanelOpen) return;
-    setSettingsPanelOpen(false);
-  }, [embedded, itemKind, settingsPanelOpen]);
+    setReminderMenuOpen(false);
+    setRepeatMenuOpen(false);
+  }, [itemKind]);
 
   useEffect(() => {
     if (!open || itemKind !== "list") return;
@@ -2841,6 +2837,9 @@ export default function MindDumpModal({
       : itemKind === "list"
         ? "rgba(37, 99, 235, 0.35)"
         : REMI_PURPLE_BORDER;
+  const settingsToggleLabel = showSettingsPanel
+    ? t("capture.detailsHide", "Ocultar detalles")
+    : t("capture.detailsShow", "Ajustar detalles");
   const showEmbeddedExamples =
     embedded && !masterMode && itemKind === "task" && text.trim().length === 0;
   const showEmbeddedRemiHint =
@@ -3037,13 +3036,12 @@ export default function MindDumpModal({
             )} 
           </div>}
 
-          {/* ✅ Smart chips bar (AUTO) */}
           <div
             style={{
               position: "relative",
               zIndex: 1,
               paddingTop: embedded ? 12 : 0,
-              paddingBottom: 14,
+              paddingBottom: 10,
               paddingLeft: embedded ? 0 : "calc(20px + env(safe-area-inset-left))",
               paddingRight: embedded ? 0 : "calc(20px + env(safe-area-inset-right))",
             }}
@@ -3053,11 +3051,13 @@ export default function MindDumpModal({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                gap: 14,
+                gap: 8,
                 width: "100%",
+                flexWrap: "wrap",
               }}
             >
-              <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}
+              >
                 <div
                   style={{
                     display: "inline-flex",
@@ -3105,127 +3105,122 @@ export default function MindDumpModal({
                 </div>
               </div>
 
-              <div style={{ display: "flex", gap: 8, alignItems: "center", flex: "1 1 auto", minWidth: 0 }}>
-                <div
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                  padding: 4,
+                  borderRadius: 999,
+                  border: "1px solid #cfc3f7",
+                  background: "#ffffff",
+                  width: "auto",
+                  minWidth: "fit-content",
+                  marginLeft: "auto",
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMasterMode(false);
+                    setTypeTouched(true);
+                    setTypeManuallySelected(true);
+                    setItemKind("task");
+                    setListTitle("");
+                    setListManualEmoji(null);
+                    setListTitleTouched(false);
+                  }}
                   style={{
+                    height: "auto",
+                    minWidth: 0,
+                    flex: "0 1 auto",
+                    padding: "6px 16px",
+                    borderRadius: 999,
+                    border: "none",
+                    background: !masterMode && itemKind === "task" ? "#ede9fe" : "transparent",
+                    color: !masterMode && itemKind === "task" ? "#7c3aed" : "#64748b",
+                    fontSize: "clamp(13px, 0.9vw, 18px)",
+                    lineHeight: 1.1,
+                    fontWeight: 600,
+                    cursor: "pointer",
                     display: "inline-flex",
                     alignItems: "center",
-                    gap: 4,
-                    padding: 4,
-                    borderRadius: 999,
-                    border: "1px solid #cfc3f7",
-                    background: "#ffffff",
-                    width: "auto",
-                    minWidth: "fit-content",
-                    marginLeft: "auto",
+                    justifyContent: "center",
+                    whiteSpace: "nowrap",
                   }}
+                  title={t("pill.type.task", "Recordatorio")}
+                  aria-label={t("pill.type.task", "Recordatorio")}
                 >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMasterMode(false);
-                      setTypeTouched(true);
-                      setTypeManuallySelected(true);
-                      setItemKind("task");
-                      setListTitle("");
-                      setListManualEmoji(null);
-                      setListTitleTouched(false);
-                    }}
-                    style={{
-                      height: "auto",
-                      minWidth: 0,
-                      flex: "0 1 auto",
-                      padding: "6px 16px",
-                      borderRadius: 999,
-                      border: "none",
-                      background: !masterMode && itemKind === "task" ? "#ede9fe" : "transparent",
-                      color: !masterMode && itemKind === "task" ? "#7c3aed" : "#64748b",
-                      fontSize: "clamp(13px, 0.9vw, 18px)",
-                      lineHeight: 1.1,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      whiteSpace: "nowrap",
-                    }}
-                    title={t("pill.type.task", "Recordatorio")}
-                    aria-label={t("pill.type.task", "Recordatorio")}
-                  >
-                    {t("pill.type.task", "Recordatorio")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMasterMode(false);
-                      setTypeTouched(true);
-                      setTypeManuallySelected(true);
-                      setItemKind("idea");
-                      setListTitle("");
-                      setListManualEmoji(null);
-                      setListTitleTouched(false);
-                      resetTaskOnlyFields();
-                      setSettingsPanelOpen(false);
-                    }}
-                    style={{
-                      height: "auto",
-                      minWidth: 0,
-                      flex: "0 1 auto",
-                      padding: "6px 16px",
-                      borderRadius: 999,
-                      border: "none",
-                      background: itemKind === "idea" ? "#fef3c7" : "transparent",
-                      color: itemKind === "idea" ? "#a16207" : "#64748b",
-                      fontSize: "clamp(13px, 0.9vw, 18px)",
-                      lineHeight: 1.1,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      whiteSpace: "nowrap",
-                    }}
-                    title={t("capture.type.note", "Nota")}
-                    aria-label={t("capture.type.note", "Nota")}
-                  >
-                    {t("capture.type.note", "Nota")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMasterMode(false);
-                      setTypeTouched(true);
-                      setTypeManuallySelected(true);
-                      setItemKind("list");
-                      setListTitleTouched(false);
-                      resetTaskOnlyFields();
-                      setSettingsPanelOpen(false);
-                    }}
-                    style={{
-                      height: "auto",
-                      minWidth: 0,
-                      flex: "0 1 auto",
-                      padding: "6px 16px",
-                      borderRadius: 999,
-                      border: "none",
-                      background: itemKind === "list" ? "#dbeafe" : "transparent",
-                      color: itemKind === "list" ? "#2563eb" : "#64748b",
-                      fontSize: "clamp(13px, 0.9vw, 18px)",
-                      lineHeight: 1.1,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      whiteSpace: "nowrap",
-                    }}
-                    title={t("capture.type.list", "Lista")}
-                    aria-label={t("capture.type.list", "Lista")}
-                  >
-                    {t("capture.type.list", "Lista")}
-                  </button>
-                </div>
-                
+                  {t("pill.type.task", "Recordatorio")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMasterMode(false);
+                    setTypeTouched(true);
+                    setTypeManuallySelected(true);
+                    setItemKind("idea");
+                    setListTitle("");
+                    setListManualEmoji(null);
+                    setListTitleTouched(false);
+                    resetTaskOnlyFields();
+                  }}
+                  style={{
+                    height: "auto",
+                    minWidth: 0,
+                    flex: "0 1 auto",
+                    padding: "6px 16px",
+                    borderRadius: 999,
+                    border: "none",
+                    background: itemKind === "idea" ? "#fef3c7" : "transparent",
+                    color: itemKind === "idea" ? "#a16207" : "#64748b",
+                    fontSize: "clamp(13px, 0.9vw, 18px)",
+                    lineHeight: 1.1,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    whiteSpace: "nowrap",
+                  }}
+                  title={t("capture.type.note", "Nota")}
+                  aria-label={t("capture.type.note", "Nota")}
+                >
+                  {t("capture.type.note", "Nota")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMasterMode(false);
+                    setTypeTouched(true);
+                    setTypeManuallySelected(true);
+                    setItemKind("list");
+                    setListTitleTouched(false);
+                    resetTaskOnlyFields();
+                  }}
+                  style={{
+                    height: "auto",
+                    minWidth: 0,
+                    flex: "0 1 auto",
+                    padding: "6px 16px",
+                    borderRadius: 999,
+                    border: "none",
+                    background: itemKind === "list" ? "#dbeafe" : "transparent",
+                    color: itemKind === "list" ? "#2563eb" : "#64748b",
+                    fontSize: "clamp(13px, 0.9vw, 18px)",
+                    lineHeight: 1.1,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    whiteSpace: "nowrap",
+                  }}
+                  title={t("capture.type.list", "Lista")}
+                  aria-label={t("capture.type.list", "Lista")}
+                >
+                  {t("capture.type.list", "Lista")}
+                </button>
               </div>
             </div>
           </div>
@@ -3696,222 +3691,222 @@ export default function MindDumpModal({
                   pointerEvents: showSettingsPanel ? "auto" : "none",
                 }}
               >
-                {/* ✅ NUEVO: 2x2 pills (Fecha / Hora / Recordatorio / Repetición) */}
-                <div className="grid grid-cols-2 gap-2">
-                  {/* Fecha */}
-                  <div className="relative">
-                    <SettingPill
-                      disabled={itemKind !== "task"}
-                      icon={<Calendar className="h-4 w-4" style={{ color: REMI_PURPLE }} />}
-                      text={dateLabel}
-                      right={<CaretSquare />}
-                      onClick={() => {
-                        if (itemKind !== "task") return;
-                        openNativePicker(dateInputRef);
-                      }}
-                    />
+                <div className="space-y-2.5">
+                  {itemKind === "task" ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="relative">
+                        <SettingPill
+                          disabled={false}
+                          icon={<Calendar className="h-4 w-4" style={{ color: REMI_PURPLE }} />}
+                          text={dateLabel}
+                          right={<CaretSquare />}
+                          onClick={() => {
+                            openNativePicker(dateInputRef);
+                          }}
+                        />
 
-                    <input
-                      ref={dateInputRef}
-                      type="date"
-                      value={pickedDate}
-                      disabled={itemKind !== "task"}
-                      onChange={(e) => {
-                        setDateTouched(true);
-                        setTypeTouched(true);
-                        setPickedDate(e.target.value);
-                      }}
-                      className="absolute inset-0 opacity-0"
-                      style={{
-                        cursor: itemKind !== "task" ? "not-allowed" : "pointer",
-                        // opcional, para que el click lo gestione siempre el pill:
-                        pointerEvents: "none",
-                      }}
-                    />
-                  </div>
+                        <input
+                          ref={dateInputRef}
+                          type="date"
+                          value={pickedDate}
+                          onChange={(e) => {
+                            setDateTouched(true);
+                            setTypeTouched(true);
+                            setPickedDate(e.target.value);
+                          }}
+                          className="absolute inset-0 opacity-0"
+                          style={{
+                            cursor: "pointer",
+                            pointerEvents: "none",
+                          }}
+                        />
+                      </div>
 
-                  {/* Hora */}
-                  <div className="relative">
-                    <SettingPill
-                      disabled={itemKind !== "task"}
-                      icon={<Clock className="h-4 w-4" style={{ color: REMI_PURPLE }} />}
-                      text={timeLabel}
-                      right={<CaretSquare />}
-                      onClick={() => {
-                        if (itemKind !== "task") return;
-                        openNativePicker(timeInputRef);
-                      }}
-                    />
+                      <div className="relative">
+                        <SettingPill
+                          disabled={false}
+                          icon={<Clock className="h-4 w-4" style={{ color: REMI_PURPLE }} />}
+                          text={timeLabel}
+                          right={<CaretSquare />}
+                          onClick={() => {
+                            openNativePicker(timeInputRef);
+                          }}
+                        />
 
-                    <input
-                      ref={timeInputRef}
-                      type="time"
-                      value={pickedTime}
-                      disabled={itemKind !== "task"}
-                      onChange={(e) => {
-                        setTimeTouched(true);
-                        setTypeTouched(true);
-                        setPickedTime(e.target.value);
-                      }}
-                      className="absolute inset-0 opacity-0"
-                      style={{
-                        cursor: itemKind !== "task" ? "not-allowed" : "pointer",
-                        pointerEvents: "none",
-                      }}
-                    />
-                  </div>
+                        <input
+                          ref={timeInputRef}
+                          type="time"
+                          value={pickedTime}
+                          onChange={(e) => {
+                            setTimeTouched(true);
+                            setTypeTouched(true);
+                            setPickedTime(e.target.value);
+                          }}
+                          className="absolute inset-0 opacity-0"
+                          style={{
+                            cursor: "pointer",
+                            pointerEvents: "none",
+                          }}
+                        />
+                      </div>
 
-                  {/* Recordatorio */}
-                  <div className="relative">
-                    <SettingPill
-                      disabled={itemKind !== "task"}
-                      icon={<CalendarClock className="h-4 w-4" style={{ color: REMI_PURPLE }} />}
-                      text={reminderLabel}
-                      right={<CaretSquare />}
-                      onClick={() => {
-                        if (itemKind !== "task") return;
-                        setRepeatMenuOpen(false);
-                        setReminderMenuOpen((v) => !v);
-                      }}
-                    />
+                      <div className="relative">
+                        <SettingPill
+                          disabled={false}
+                          icon={<CalendarClock className="h-4 w-4" style={{ color: REMI_PURPLE }} />}
+                          text={reminderLabel}
+                          right={<CaretSquare />}
+                          onClick={() => {
+                            setRepeatMenuOpen(false);
+                            setReminderMenuOpen((v) => !v);
+                          }}
+                        />
 
-                    <MenuPanel open={reminderMenuOpen} anchorRef={reminderMenuRef}>
-                      <MenuItem
-                        active={reminderMode === "NONE"}
-                        onClick={() => {
-                          setReminderTouched(true);
-                          setTypeTouched(true);
-                          setReminderMode("NONE");
-                          setReminderMenuOpen(false);
-                        }}
-                      >
-                        {t("pill.reminderNone", "Sin recordatorio")}
-                      </MenuItem>
+                        <MenuPanel open={reminderMenuOpen} anchorRef={reminderMenuRef}>
+                          <MenuItem
+                            active={reminderMode === "NONE"}
+                            onClick={() => {
+                              setReminderTouched(true);
+                              setTypeTouched(true);
+                              setReminderMode("NONE");
+                              setReminderMenuOpen(false);
+                            }}
+                          >
+                            {t("pill.reminderNone", "Sin recordatorio")}
+                          </MenuItem>
 
-                      <MenuItem
-                        active={reminderMode === "DAILY_UNTIL_DUE"}
-                        onClick={() => {
-                          setReminderTouched(true);
-                          setTypeTouched(true);
-                          setReminderMode("DAILY_UNTIL_DUE");
-                          setReminderMenuOpen(false);
-                        }}
-                      >
-                        {t("pill.remDaily", "Diaria")}
-                      </MenuItem>
+                          <MenuItem
+                            active={reminderMode === "DAILY_UNTIL_DUE"}
+                            onClick={() => {
+                              setReminderTouched(true);
+                              setTypeTouched(true);
+                              setReminderMode("DAILY_UNTIL_DUE");
+                              setReminderMenuOpen(false);
+                            }}
+                          >
+                            {t("pill.remDaily", "Diaria")}
+                          </MenuItem>
 
-                      <MenuItem
-                        active={reminderMode === "DAY_BEFORE_AND_DUE"}
-                        disabled={!hasSomeDate}
-                        onClick={() => {
-                          if (!hasSomeDate) {
-                            toast.message(t("capture.toast.pickDateFirst", "Elige una fecha primero."));
-                            return;
-                          }
-                          setReminderTouched(true);
-                          setTypeTouched(true);
-                          setReminderMode("DAY_BEFORE_AND_DUE");
-                          setReminderMenuOpen(false);
-                        }}
-                      >
-                        {t("pill.remDayBefore", "1 día antes")}
-                      </MenuItem>
+                          <MenuItem
+                            active={reminderMode === "DAY_BEFORE_AND_DUE"}
+                            disabled={!hasSomeDate}
+                            onClick={() => {
+                              if (!hasSomeDate) {
+                                toast.message(t("capture.toast.pickDateFirst", "Elige una fecha primero."));
+                                return;
+                              }
+                              setReminderTouched(true);
+                              setTypeTouched(true);
+                              setReminderMode("DAY_BEFORE_AND_DUE");
+                              setReminderMenuOpen(false);
+                            }}
+                          >
+                            {t("pill.remDayBefore", "1 día antes")}
+                          </MenuItem>
 
-                      <MenuItem
-                        active={reminderMode === "WEEK_BEFORE_AND_DUE"}
-                        disabled={!hasSomeDate}
-                        onClick={() => {
-                          if (!hasSomeDate) {
-                            toast.message(t("capture.toast.pickDateFirst", "Elige una fecha primero."));
-                            return;
-                          }
-                          setReminderTouched(true);
-                          setTypeTouched(true);
-                          setReminderMode("WEEK_BEFORE_AND_DUE");
-                          setReminderMenuOpen(false);
-                        }}
-                      >
-                        {t("pill.remWeekBefore", "1 semana antes")}
-                      </MenuItem>
-                    </MenuPanel>
-                  </div>
+                          <MenuItem
+                            active={reminderMode === "WEEK_BEFORE_AND_DUE"}
+                            disabled={!hasSomeDate}
+                            onClick={() => {
+                              if (!hasSomeDate) {
+                                toast.message(t("capture.toast.pickDateFirst", "Elige una fecha primero."));
+                                return;
+                              }
+                              setReminderTouched(true);
+                              setTypeTouched(true);
+                              setReminderMode("WEEK_BEFORE_AND_DUE");
+                              setReminderMenuOpen(false);
+                            }}
+                          >
+                            {t("pill.remWeekBefore", "1 semana antes")}
+                          </MenuItem>
+                        </MenuPanel>
+                      </div>
 
-                  {/* Repetición */}
-                  <div className="relative">
-                    <SettingPill
-                      disabled={itemKind !== "task"}
-                      icon={<Repeat className="h-4 w-4" style={{ color: REMI_PURPLE }} />}
-                      text={repeatLabel}
-                      right={<CaretSquare />}
-                      onClick={() => {
-                        if (itemKind !== "task") return;
-                        setReminderMenuOpen(false);
-                        setRepeatMenuOpen((v) => !v);
-                      }}
-                    />
+                      <div className="relative">
+                        <SettingPill
+                          disabled={false}
+                          icon={<Repeat className="h-4 w-4" style={{ color: REMI_PURPLE }} />}
+                          text={repeatLabel}
+                          right={<CaretSquare />}
+                          onClick={() => {
+                            setReminderMenuOpen(false);
+                            setRepeatMenuOpen((v) => !v);
+                          }}
+                        />
 
-                    <MenuPanel open={repeatMenuOpen} anchorRef={repeatMenuRef}>
-                      <MenuItem
-                        active={habitRepeat === "none"}
-                        onClick={() => {
-                          setHabitTouched(true);
-                          setTypeTouched(true);
-                          setHabitRepeat("none");
-                          setRepeatMenuOpen(false);
-                        }}
-                      >
-                        {t("pill.repeatNone", "Sin repetición")}
-                      </MenuItem>
+                        <MenuPanel open={repeatMenuOpen} anchorRef={repeatMenuRef}>
+                          <MenuItem
+                            active={habitRepeat === "none"}
+                            onClick={() => {
+                              setHabitTouched(true);
+                              setTypeTouched(true);
+                              setHabitRepeat("none");
+                              setRepeatMenuOpen(false);
+                            }}
+                          >
+                            {t("pill.repeatNone", "Sin repetición")}
+                          </MenuItem>
 
-                      <MenuItem
-                        active={habitRepeat === "daily"}
-                        onClick={() => {
-                          setHabitTouched(true);
-                          setTypeTouched(true);
-                          setHabitRepeat("daily");
-                          setRepeatMenuOpen(false);
-                        }}
-                      >
-                        {t("pill.habitDaily", "Diaria")}
-                      </MenuItem>
+                          <MenuItem
+                            active={habitRepeat === "daily"}
+                            onClick={() => {
+                              setHabitTouched(true);
+                              setTypeTouched(true);
+                              setHabitRepeat("daily");
+                              setRepeatMenuOpen(false);
+                            }}
+                          >
+                            {t("pill.habitDaily", "Diaria")}
+                          </MenuItem>
 
-                      <MenuItem
-                        active={habitRepeat === "weekly"}
-                        onClick={() => {
-                          setHabitTouched(true);
-                          setTypeTouched(true);
-                          setHabitRepeat("weekly");
-                          setRepeatMenuOpen(false);
-                        }}
-                      >
-                        {t("pill.habitWeekly", "Semanal")}
-                      </MenuItem>
+                          <MenuItem
+                            active={habitRepeat === "weekly"}
+                            onClick={() => {
+                              setHabitTouched(true);
+                              setTypeTouched(true);
+                              setHabitRepeat("weekly");
+                              setRepeatMenuOpen(false);
+                            }}
+                          >
+                            {t("pill.habitWeekly", "Semanal")}
+                          </MenuItem>
 
-                      <MenuItem
-                        active={habitRepeat === "monthly"}
-                        onClick={() => {
-                          setHabitTouched(true);
-                          setTypeTouched(true);
-                          setHabitRepeat("monthly");
-                          setRepeatMenuOpen(false);
-                        }}
-                      >
-                        {t("pill.habitMonthly", "Mensual")}
-                      </MenuItem>
+                          <MenuItem
+                            active={habitRepeat === "monthly"}
+                            onClick={() => {
+                              setHabitTouched(true);
+                              setTypeTouched(true);
+                              setHabitRepeat("monthly");
+                              setRepeatMenuOpen(false);
+                            }}
+                          >
+                            {t("pill.habitMonthly", "Mensual")}
+                          </MenuItem>
 
-                      <MenuItem
-                        active={habitRepeat === "yearly"}
-                        onClick={() => {
-                          setHabitTouched(true);
-                          setTypeTouched(true);
-                          setHabitRepeat("yearly");
-                          setRepeatMenuOpen(false);
-                        }}
-                      >
-                        {t("pill.habitYearly", "Anual")}
-                      </MenuItem>
-                    </MenuPanel>
-                  </div>
+                          <MenuItem
+                            active={habitRepeat === "yearly"}
+                            onClick={() => {
+                              setHabitTouched(true);
+                              setTypeTouched(true);
+                              setHabitRepeat("yearly");
+                              setRepeatMenuOpen(false);
+                            }}
+                          >
+                            {t("pill.habitYearly", "Anual")}
+                          </MenuItem>
+                        </MenuPanel>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-medium text-slate-600"
+                    >
+                      {itemKind === "idea"
+                        ? t("capture.detailsNoteHint", "Guárdala primero como nota. Luego podrás convertirla en recordatorio si hace falta.")
+                        : t("capture.detailsListHint", "Escribe varios elementos y Remi intentará convertirlos en una lista clara y compartible.")}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -3921,10 +3916,42 @@ export default function MindDumpModal({
                   className="mt-3"
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "1fr 1fr 1fr",
+                    gridTemplateColumns: "1fr 1fr 1fr 1fr",
                     alignItems: "center",
                   }}
                 >
+                <div className="flex flex-col items-center justify-center gap-1.5">
+                  <button
+                    data-no-focus
+                    type="button"
+                    onClick={() => setSettingsPanelOpen((value) => !value)}
+                    onContextMenu={(e) => e.preventDefault()}
+                    style={{
+                      width: 52,
+                      height: 52,
+                      borderRadius: 999,
+                      border: "1px solid #c7b5f6",
+                      background: showSettingsPanel ? "#e9e5f3" : "#f3f4f6",
+                      color: REMI_PURPLE,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      userSelect: "none",
+                      WebkitTouchCallout: "none",
+                      WebkitUserSelect: "none",
+                      cursor: "pointer",
+                    }}
+                    aria-pressed={showSettingsPanel}
+                    title={settingsToggleLabel}
+                    aria-label={settingsToggleLabel}
+                  >
+                    <SlidersHorizontal className="h-5 w-5" />
+                  </button>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: REMI_PURPLE }}>
+                    {t("common.settings", "Ajustes")}
+                  </div>
+                </div>
+
                 {/* Pegar */}
                 <div className="flex flex-col items-center justify-center gap-1.5">
                   <button
@@ -4047,36 +4074,6 @@ export default function MindDumpModal({
           </div>
         </div>
       )}
-
-        {/* FAB Guardar encima del teclado */}
-        {false && isFocused && kbdOffset > 80 && (
-          <button
-            data-no-focus
-            type="button"
-            onClick={handleSave}
-            onContextMenu={(e) => e.preventDefault()}
-            aria-label={t("common.save", "Guardar")}
-            style={{
-              position: "fixed",
-              right: 16,
-              bottom: `calc(env(safe-area-inset-bottom) + ${Math.max(14, kbdOffset + 14)}px)`,
-              width: 56,
-              height: 56,
-              borderRadius: 999,
-              border: "1px solid rgba(125,89,201,0.35)",
-              background: REMI_PURPLE,
-              color: "#fff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 18px 45px rgba(35,18,90,0.30)",
-              zIndex: 2000,
-              cursor: "pointer",
-            }}
-          >
-            <Check className="h-6 w-6" />
-          </button>
-        )}
       </div>
     </div>
   );

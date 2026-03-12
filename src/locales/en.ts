@@ -928,6 +928,23 @@ export const en = {
     sectionNoDate: "No date",
   },
 
+  recordatorios: {
+    title: "Reminders",
+    subtitle: "Your reminders, clear and organized in one place.",
+    notesTitle: "Notes",
+    notesSubtitle: "Your notes, clear and organized in one place.",
+    notesTab: "Notes",
+    searchTasks: "Search reminders",
+    searchNotes: "Search notes",
+    doneSection: "Completed",
+    taskSingular: "Reminder",
+    noteSingular: "Note",
+    emptyTasksTitle: "You don't have pending reminders",
+    emptyTasksSubtitle: "Use New to capture the next thing you don't want to forget.",
+    emptyNotesTitle: "You don't have saved notes",
+    emptyNotesSubtitle: "Use New to save a quick note without losing it.",
+  },
+
   ideas: {
     title: "Ideas",
     emptyState: "Write down your ideas here to clear your mind.",
@@ -1029,6 +1046,7 @@ export const en = {
     sectionAccountDescription:
       "Share REMI or sign out on this device.",
 
+    statusButton: "View Remi status",
     feedbackButton: "Leave feedback",
     shareButton: "Share app",
     logoutButton: "Sign out",

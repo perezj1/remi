@@ -941,6 +941,23 @@ export const es = {
     sectionNoDate: "Sin fecha",
   },
 
+  recordatorios: {
+    title: "Recordatorios",
+    subtitle: "Tus recordatorios, claros y ordenados en un solo sitio.",
+    notesTitle: "Notas",
+    notesSubtitle: "Tus notas, claras y ordenadas en un solo sitio.",
+    notesTab: "Notas",
+    searchTasks: "Buscar recordatorio",
+    searchNotes: "Buscar nota",
+    doneSection: "Completado",
+    taskSingular: "Recordatorio",
+    noteSingular: "Nota",
+    emptyTasksTitle: "No tienes recordatorios pendientes",
+    emptyTasksSubtitle: "Usa Nuevo para capturar lo próximo que no quieres olvidar.",
+    emptyNotesTitle: "No tienes notas guardadas",
+    emptyNotesSubtitle: "Usa Nuevo para guardar una nota rápida sin perderla.",
+  },
+
   ideas: {
     title: "Ideas",
     emptyState: "Apunta aquí tus ideas para despejar la mente.",
@@ -1042,6 +1059,7 @@ export const es = {
     sectionAccountDescription:
       "Comparte REMI o cierra sesión en este dispositivo.",
 
+    statusButton: "Ver estado de Remi",
     feedbackButton: "Dejar opinión",
     shareButton: "Compartir app",
     logoutButton: "Cerrar sesión",

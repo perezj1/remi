@@ -3,10 +3,8 @@ import React, { useMemo, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
-  Brain,
-  Inbox,
+  CalendarClock,
   List,
-  Mic,
   Plus,
   type LucideIcon,
 } from "lucide-react";
@@ -14,6 +12,8 @@ import { useI18n } from "@/contexts/I18nContext";
 import { toast } from "sonner";
 import { useSpeechDictation } from "@/hooks/useSpeechDictation";
 import { requestMicPermission } from "@/lib/micPermission";
+import { useAuth } from "@/contexts/AuthContext";
+import RemiAvatar from "@/components/RemiAvatar";
 
 // ✅ NUEVO: para ocultar cuando hay modales
 import { useModalUi } from "@/contexts/ModalUiContext";
@@ -105,6 +105,7 @@ export default function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { t, lang } = useI18n();
+  const { user, profile } = useAuth();
 
   // ✅ NUEVO
   const { isAnyModalOpen } = useModalUi();
@@ -258,8 +259,28 @@ export default function BottomNav() {
     }
   };
 
-  const isTasksActive = pathname === "/tasks";
+  const isTasksActive = pathname === "/tasks" || pathname === "/ideas" || pathname === "/inbox";
   const isListsActive = pathname === "/lists";
+  const isProfileActive = pathname === "/profile";
+  const profileName =
+    (profile?.display_name && profile.display_name.trim() !== ""
+      ? profile.display_name
+      : user?.email
+        ? user.email.split("@")[0]
+        : t("nav.profile")) ?? t("nav.profile");
+  const profileInitial = profileName.charAt(0).toUpperCase();
+  const profileAvatarUrl = useMemo(() => {
+    const profileAvatar = profile?.avatar_url ?? null;
+    if (profileAvatar) return profileAvatar;
+    const meta = (user as { user_metadata?: Record<string, unknown> } | null)?.user_metadata;
+    const metaAvatar =
+      typeof meta?.avatar_url === "string"
+        ? meta.avatar_url
+        : typeof meta?.picture === "string"
+          ? meta.picture
+          : null;
+    return metaAvatar;
+  }, [profile?.avatar_url, user]);
 
   /* ─────────────────────────────────────────────
      ✅ OCULTAR NAVBAR CUANDO HAY TECLADO + CAMPO ENFOCADO (INDEX)
@@ -326,10 +347,10 @@ export default function BottomNav() {
         />
 
         <NavItem
-          to="/status"
-          label={t("bottomNav.status")}
-          icon={Brain}
-          active={pathname === "/status"}
+          to="/tasks"
+          label={t("bottomNav.tasks")}
+          icon={CalendarClock}
+          active={isTasksActive}
         />
 
         {/* ✅ Botón central */}
@@ -364,18 +385,44 @@ export default function BottomNav() {
         </div>
 
         <NavItem
-          to="/tasks"
-          label={t("bottomNav.inbox")}
-          icon={Inbox}
-          active={isTasksActive}
-        />
-
-        <NavItem
           to="/lists"
           label={t("bottomNav.lists")}
           icon={List}
           active={isListsActive}
         />
+
+        <button
+          type="button"
+          className="flex h-12 w-12 items-center justify-center rounded-full transition lg:h-14 lg:w-14 xl:h-16 xl:w-16"
+          onClick={() => navigate("/profile")}
+          onContextMenu={prevent}
+          onPointerDown={prevent}
+          onMouseDown={prevent}
+          draggable={false}
+          onDragStart={prevent}
+          aria-label={t("nav.profile")}
+          title={t("nav.profile")}
+          style={{
+            ...noSelectStyle,
+            touchAction: "manipulation",
+          }}
+        >
+          <span
+            className={`inline-flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border ${
+              isProfileActive
+                ? "border-[#7d59c9] shadow-[0_0_0_2px_rgba(125,89,201,0.12)]"
+                : "border-slate-200"
+            } bg-white lg:h-9 lg:w-9 xl:h-10 xl:w-10`}
+          >
+            <RemiAvatar
+              avatarUrl={profileAvatarUrl}
+              fallback={profileInitial}
+              alt={t("nav.profile")}
+              className="h-full w-full"
+            />
+          </span>
+          <span className="sr-only">{t("nav.profile")}</span>
+        </button>
       </div>
 
       <style>

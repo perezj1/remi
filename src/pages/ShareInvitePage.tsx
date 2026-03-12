@@ -157,7 +157,7 @@ export default function ShareInvitePage() {
         inviteType: nextInviteType,
       });
 
-      navigate(nextInviteType === "idea" ? "/ideas" : nextInviteType === "task" ? "/tasks" : "/", {
+      navigate(nextInviteType === "idea" ? "/tasks?tab=notes" : nextInviteType === "task" ? "/tasks" : "/", {
         replace: true,
       });
     } catch (error) {

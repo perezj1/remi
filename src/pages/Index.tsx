@@ -76,7 +76,6 @@ import {
   CalendarClock,
   Bell,
   Check,
-  User,
   Users,
   Share2,
   Smartphone,
@@ -85,8 +84,6 @@ import {
   ClipboardPaste,
   CalendarDays,
   HeartPulse,
-  Flame,
-  LayoutGrid,
   ChevronDown,
   Keyboard,
   Download,
@@ -408,7 +405,6 @@ export default function TodayPage() {
   const [ideas, setIdeas] = useState<BrainItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [sharedListNotifications, setSharedListNotifications] = useState<SharedListNotification[]>([]);
   const [shareInviteNotifications, setShareInviteNotifications] = useState<ShareInviteNotification[]>([]);
@@ -418,7 +414,6 @@ export default function TodayPage() {
   const [notificationCenterState, setNotificationCenterState] = useState<NotificationCenterState>(
     EMPTY_NOTIFICATION_CENTER_STATE,
   );
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [statusSummary, setStatusSummary] = useState<RemiStatusSummary | null>(
     null,
   );
@@ -496,7 +491,6 @@ const anyModalOpen =
     setModalOpen(anyModalOpen);
   }, [anyModalOpen, setModalOpen]);
 
-  const profileMenuRef = useRef<HTMLDivElement | null>(null);
   const notificationListIdsSignature = useMemo(
     () => notificationListIds.join("|"),
     [notificationListIds],
@@ -1028,40 +1022,6 @@ const anyModalOpen =
     void checkThisDeviceSubscription();
   }, [user?.id]);
 
-  useEffect(() => {
-    if (!user) {
-      setAvatarUrl(null);
-      return;
-    }
-
-    let finalUrl: string | null = profile?.avatar_url ?? null;
-
-    if (!finalUrl) {
-      const meta = (user as any)?.user_metadata;
-      finalUrl = meta?.avatar_url ?? meta?.picture ?? null;
-    }
-
-    setAvatarUrl(finalUrl ?? null);
-  }, [user, profile]);
-
-  useEffect(() => {
-    if (!profileOpen) return;
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        profileMenuRef.current &&
-        !profileMenuRef.current.contains(event.target as Node)
-      ) {
-        setProfileOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [profileOpen]);
-
   const {
     dateGroups,
     noDateTasks,
@@ -1423,15 +1383,7 @@ const anyModalOpen =
         : safeT("today.defaultUserName", "Usuario")) ??
     safeT("today.defaultUserName", "Usuario");
 
-  const initial = displayName.charAt(0).toUpperCase();
-
-  const handleOpenProfile = () => {
-    setProfileOpen(false);
-    navigate("/profile");
-  };
-
   const handleOpenNotifications = () => {
-    setProfileOpen(false);
     setNotificationsOpen(true);
   };
 
@@ -1459,13 +1411,11 @@ const anyModalOpen =
   }, [notificationListIds, persistNotificationCenterState, user]);
 
   const handleOpenLists = () => {
-    setProfileOpen(false);
     navigate("/lists");
   };
 
   const handleOpenListById = useCallback(
     (listId: string) => {
-      setProfileOpen(false);
       navigate(`/lists?list=${encodeURIComponent(listId)}`);
     },
     [navigate],
@@ -1526,7 +1476,6 @@ const anyModalOpen =
   }, []);
 
   const handleShareApp = async () => {
-    setProfileOpen(false);
     const url = `${window.location.origin}/landing`;
     const text = safeT("today.shareText", "Prueba REMI");
 
@@ -1545,7 +1494,6 @@ const anyModalOpen =
   };
 
   const handleInstallApp = () => {
-    setProfileOpen(false);
     if (typeof window === "undefined") return;
     window.dispatchEvent(new Event("remi-open-install"));
   };
@@ -2126,6 +2074,232 @@ const anyModalOpen =
   const tipsThumbLeftPct = tipsHasOverflow
     ? tipsScrollMetrics.progress * (100 - tipsThumbWidthPct)
     : 38;
+  const memorySection = (
+    <div className="mx-auto mt-5 mb-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
+      <div>
+        <p className="font-extrabold text-slate-900" style={{ fontSize: "clamp(16px, 1vw, 22px)" }}>
+          {safeT("today.memorySectionTitle", "Recuerda")}
+        </p>
+      </div>
+      <div className="mt-2 px-1">
+        <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500">
+            <Search size={18} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <input
+              value={memoryQuestion}
+              onChange={(e) => setMemoryQuestion(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  void handleMemoryQuestionSubmit();
+                }
+              }}
+              placeholder={memoryPlaceholder}
+              className="h-8 w-full bg-transparent text-[14px] text-slate-900 outline-none placeholder:text-slate-400"
+            />
+            {memoryInterim ? (
+              <p className="truncate text-[11px] text-slate-400">{memoryInterim}</p>
+            ) : null}
+          </div>
+
+          {isAndroid && memoryQuestion.trim().length === 0 ? (
+            <button
+              type="button"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!dictationListening) handleMemoryMic();
+              }}
+              onPointerUp={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                stopDictation();
+              }}
+              onPointerCancel={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                stopDictation();
+              }}
+              onPointerLeave={(e) => {
+                if (!dictationListening) return;
+                e.preventDefault();
+                e.stopPropagation();
+                stopDictation();
+              }}
+              disabled={!dictationSupported}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-700 transition-colors hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label={dictationListening ? safeT("bottomNav.listening", "Escuchando…") : safeT("common.speak", "Hablar")}
+              title={dictationListening ? safeT("bottomNav.listening", "Escuchando…") : safeT("common.speak", "Hablar")}
+            >
+              <Mic size={17} className={dictationListening ? "text-violet-600" : ""} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => void handleMemoryQuestionSubmit()}
+              disabled={memoryLoading || memoryQuestion.trim().length === 0}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-700 transition-colors hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+              aria-label={safeT("today.memoryAskButton", "Preguntar")}
+              title={safeT("today.memoryAskButton", "Preguntar")}
+            >
+              {memoryLoading ? (
+                safeT("today.memoryAskLoading", "Buscando...")
+              ) : (
+                <SendHorizontal size={15} />
+              )}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {memoryAnswer && (
+        <div className="mt-2 px-1">
+          <div
+            className={`relative overflow-hidden rounded-[20px] border px-4 py-3.5 shadow-[0_10px_24px_rgba(15,23,42,0.05)] ${
+              memoryAnswer.ok
+                ? "border-emerald-200 bg-[linear-gradient(180deg,rgba(236,253,245,0.92),rgba(244,250,248,0.96))]"
+                : "border-slate-200 bg-slate-50"
+            }`}
+          >
+            <button
+              type="button"
+              onClick={() => setMemoryAnswer(null)}
+              className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full text-slate-400 hover:bg-white/70 hover:text-slate-600"
+              aria-label={safeT("common.close", "Cerrar")}
+              title={safeT("common.close", "Cerrar")}
+            >
+              <X size={14} />
+            </button>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+              {safeT("today.memoryAskAnswerLabel", "Respuesta")}
+            </p>
+            {memoryAnswer.ok ? (
+              renderMemoryAnswerContent(memoryAnswer, handleMemoryAnswerDone)
+            ) : (
+              <p className="mt-1 whitespace-pre-wrap text-[14px] leading-6 text-slate-800">
+                {memoryAnswer.answer}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+  const listsSection = (
+    <div className="mx-auto mt-5 mb-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
+      <div>
+        <p className="font-extrabold text-slate-900" style={{ fontSize: "clamp(16px, 1vw, 22px)" }}>
+          {safeT("today.listsTitle", "Listas")}
+        </p>
+      </div>
+      <div className="mt-2 remi-scroll flex gap-2.5 overflow-x-auto pb-1 px-1">
+        {recentLists.length === 0 ? (
+          <button
+            type="button"
+            onClick={handleOpenLists}
+            className="relative w-full shrink-0 overflow-hidden rounded-[20px] border border-[#59a5c9] bg-white p-3 text-left transition hover:border-[#4b95b8]"
+            aria-label={safeT("today.listsEmptyTitle", "Crea tu primera lista")}
+          >
+            <div className="flex items-center gap-3">
+              <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-2xl leading-none">
+                <span role="img" aria-label="lista">
+                  📋
+                </span>
+              </div>
+              <p className="text-base font-semibold text-[#2f3240]">
+                {safeT("today.listsEmptyTitle", "Crea tu primera lista")}
+              </p>
+            </div>
+          </button>
+        ) : (
+          recentLists.map((list) => (
+            (() => {
+              const stats = recentListsProgress[list.id] ?? { done: 0, total: 0 };
+              const percent = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
+              return (
+                <div
+                  key={list.id}
+                  onClick={() => handleOpenListById(list.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleOpenListById(list.id);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  className="group relative shrink-0 overflow-hidden rounded-[20px] border border-[#59a5c9] bg-white p-3 text-left transition hover:border-[#4b95b8]"
+                  style={{
+                    width: "clamp(280px, 36vw, 360px)",
+                  }}
+                  title={list.title}
+                  aria-label={list.title}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-sm font-semibold uppercase text-[#3f7f99]">
+                      {list.icon_emoji ? (
+                        <span className="text-2xl leading-none">{list.icon_emoji}</span>
+                      ) : (
+                        list.title.slice(0, 1)
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className="line-clamp-2 break-words text-base font-semibold leading-tight text-[#2f3240]"
+                        style={{ minHeight: "2.2em" }}
+                      >
+                        {list.title}
+                      </p>
+                      <p className="mt-0.5 text-xs font-medium text-[#8b8fa6]">
+                        {list.my_role === "owner"
+                          ? safeT("lists.roleOwner", "Owner")
+                          : list.my_role === "editor"
+                            ? safeT("lists.roleEditor", "Editor")
+                            : safeT("lists.roleViewer", "Viewer")}
+                      </p>
+                      <div className="mt-1 flex items-center gap-2">
+                        <div className="flex -space-x-2">
+                          {(list.member_previews ?? []).slice(0, 3).map((member) => renderMemberAvatar(member))}
+                        </div>
+                        <p className="inline-flex items-center gap-1 text-xs text-[#8b8fa6]">
+                          <Users className="h-3.5 w-3.5" />
+                          {list.members_count}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex items-baseline justify-between gap-2">
+                    <p className="text-sm font-medium text-[#5c6073]">
+                      {safeT("lists.learnedTo", "Completado")} <span className="text-[#59a5c9]">{percent}%</span>
+                    </p>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void handleShareListById(list);
+                      }}
+                      className="inline-flex shrink-0 items-center gap-1 self-baseline rounded-full border border-[#d9d4eb] bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-[#f6f4fc]"
+                    >
+                      <Share2 className="h-3.5 w-3.5" />
+                      {safeT("lists.share", "Compartir")}
+                    </button>
+                  </div>
+                  <div className="mt-1.5 h-1.5 w-full rounded-full bg-[#dbeef6]">
+                    <div
+                      className="h-1.5 rounded-full transition-all"
+                      style={{ width: `${percent}%`, background: "#59a5c9" }}
+                    />
+                  </div>
+                </div>
+              );
+            })()
+          ))
+        )}
+      </div>
+    </div>
+  );
   return (
     <div
       className="remi-page"
@@ -2165,140 +2339,38 @@ const anyModalOpen =
         }}
       >
         <div className="mx-auto mt-0.5 w-full relative z-[1]" style={{ maxWidth: "min(96vw, 1440px)" }}>
-        <div
-          className="bg-white py-1.5"
-          style={{ minHeight: 72 }}
-        >
-          <div className="flex items-center gap-3">
-            <div className="min-w-0 flex-1">
-              <p
-                className="leading-tight font-semibold text-slate-900"
-                style={{ fontSize: "clamp(15px, 1.15vw, 20px)" }}
-              >
-                {safeT("today.greetingHello", "Hello,")} <span aria-hidden="true">👋</span> {displayName}!
-              </p>
-              <p
-                className="mt-0.5 text-slate-500"
-                style={{ fontSize: "clamp(12px, 0.85vw, 15px)" }}
-              >
-                {safeT("index.clearMind", "Mente despejada")}
-              </p>
-            </div>
+          <div className="bg-white py-1.5" style={{ minHeight: 72 }}>
+            <div className="flex items-start gap-3">
+              <div className="min-w-0 flex-1">
+                <p
+                  className="leading-tight font-extrabold text-slate-900"
+                  style={{ fontSize: "clamp(20px, 1.5vw, 28px)" }}
+                >
+                  {safeT("today.greetingHello", "Hello,")} <span aria-hidden="true">👋</span> {displayName}!
+                </p>
+                <span className="mt-2 inline-flex items-center rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-semibold text-violet-700">
+                  {mindClearPercent}% {safeT("today.clearMindBadge", "mente más ligera")}
+                </span>
+              </div>
 
-            <div style={{ position: "relative" }} ref={profileMenuRef}>
-              <button
-                type="button"
-                onClick={() => setProfileOpen((open) => !open)}
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-violet-100 bg-white text-slate-700 shadow-[0_8px_18px_rgba(125,89,201,0.12)]"
-                aria-label={safeT("today.menuProfile", "Perfil")}
-                title={safeT("today.menuProfile", "Perfil")}
-              >
-                <RemiAvatar
-                  avatarUrl={avatarUrl}
-                  fallback={initial}
-                  alt={safeT("today.menuProfile", "Perfil")}
-                  className="h-full w-full"
-                />
-              </button>
-              {unreadNotificationsCount > 0 ? (
-                <span
-                  className="absolute -right-1 -top-1 z-20 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#ef4444] px-1 text-[10px] font-bold leading-none text-white"
+              <div style={{ position: "relative" }}>
+                <button
+                  type="button"
+                  onClick={handleOpenNotifications}
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.08)]"
+                  aria-label={safeT("sharedListNotifications.open", "Notificaciones")}
                   title={safeT("sharedListNotifications.open", "Notificaciones")}
                 >
-                  {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}
-                </span>
-              ) : null}
-              <span
-                className="absolute -bottom-1 left-1/2 z-10 -translate-x-1/2 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none text-white"
-                style={{
-                  background: "#7c3aed",
-                  minWidth: 26,
-                  textAlign: "center",
-                  boxShadow: "0 4px 10px rgba(124,58,237,0.2)",
-                }}
-              >
-                {mindClearPercent}%
-              </span>
-
-              {profileOpen && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 48,
-                    right: 0,
-                    background: "#ffffff",
-                    color: "#1e293b",
-                    borderRadius: 16,
-                    boxShadow: "0 18px 40px rgba(15,23,42,0.2)",
-                    padding: "8px 10px",
-                    minWidth: 170,
-                    maxWidth: "min(280px, calc(100vw - 24px))",
-                    zIndex: 5000,
-                  }}
-                >
-                  <div
-                    style={{
-                      padding: "6px 8px 8px",
-                      borderBottom: "1px solid rgba(226,232,240,0.9)",
-                      marginBottom: 4,
-                      fontSize: 11,
-                      color: "#64748b",
-                    }}
-                  >
-                    {safeT(
-                      "today.profileLoggedInAs",
-                      `Conectado como ${displayName}`,
-                      { name: displayName },
-                    )}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleOpenNotifications}
-                    style={menuButtonStyle}
-                  >
-                    <Bell size={16} style={{ marginRight: 8 }} />
-                    <span className="flex-1">
-                      {safeT("sharedListNotifications.open", "Notificaciones")}
-                    </span>
-                    {unreadNotificationsCount > 0 ? (
-                      <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#ef4444] px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
-                        {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}
-                      </span>
-                    ) : null}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleOpenProfile}
-                    style={menuButtonStyle}
-                  >
-                    <User size={16} style={{ marginRight: 8 }} />
-                    <span>{safeT("today.menuProfile", "Perfil")}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleShareApp}
-                    style={menuButtonStyle}
-                  >
-                    <Share2 size={16} style={{ marginRight: 8 }} />
-                    <span>{safeT("today.menuShareApp", "Compartir app")}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleInstallApp}
-                    style={menuButtonStyle}
-                  >
-                    <Smartphone size={16} style={{ marginRight: 8 }} />
-                    <span>{safeT("today.menuInstallApp", "Instalar app")}</span>
-                  </button>
-                </div>
-              )}
+                  <Bell size={18} />
+                </button>
+                {unreadNotificationsCount > 0 ? (
+                  <span className="absolute -right-1 -top-1 z-20 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#ef4444] px-1 text-[10px] font-bold leading-none text-white">
+                    {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}
+                  </span>
+                ) : null}
+              </div>
             </div>
           </div>
-        </div>
         </div>
       </div>
 
@@ -2323,289 +2395,9 @@ const anyModalOpen =
         </div>
       </div>
 
-      <div className="mx-auto mt-5 mb-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
-        <div>
-          <p className="font-extrabold text-slate-900" style={{ fontSize: "clamp(16px, 1vw, 22px)" }}>
-            {safeT("today.memorySectionTitle", "Recuerda")}
-          </p>
-        </div>
-        <div className="mt-2 px-1">
-          <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500">
-              <Search size={18} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <input
-                value={memoryQuestion}
-                onChange={(e) => setMemoryQuestion(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    void handleMemoryQuestionSubmit();
-                  }
-                }}
-                placeholder={memoryPlaceholder}
-                className="h-8 w-full bg-transparent text-[14px] text-slate-900 outline-none placeholder:text-slate-400"
-              />
-              {memoryInterim ? (
-                <p className="truncate text-[11px] text-slate-400">{memoryInterim}</p>
-              ) : null}
-            </div>
+      {memorySection}
 
-            {isAndroid && memoryQuestion.trim().length === 0 ? (
-              <button
-                type="button"
-                onPointerDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (!dictationListening) handleMemoryMic();
-                }}
-                onPointerUp={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  stopDictation();
-                }}
-                onPointerCancel={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  stopDictation();
-                }}
-                onPointerLeave={(e) => {
-                  if (!dictationListening) return;
-                  e.preventDefault();
-                  e.stopPropagation();
-                  stopDictation();
-                }}
-                disabled={!dictationSupported}
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-700 transition-colors hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
-                aria-label={dictationListening ? safeT("bottomNav.listening", "Escuchando…") : safeT("common.speak", "Hablar")}
-                title={dictationListening ? safeT("bottomNav.listening", "Escuchando…") : safeT("common.speak", "Hablar")}
-              >
-                <Mic size={17} className={dictationListening ? "text-violet-600" : ""} />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => void handleMemoryQuestionSubmit()}
-                disabled={memoryLoading || memoryQuestion.trim().length === 0}
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-700 transition-colors hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
-                aria-label={safeT("today.memoryAskButton", "Preguntar")}
-                title={safeT("today.memoryAskButton", "Preguntar")}
-              >
-                {memoryLoading ? (
-                  safeT("today.memoryAskLoading", "Buscando...")
-                ) : (
-                  <SendHorizontal size={15} />
-                )}
-              </button>
-            )}
-          </div>
-        </div>
-
-        {memoryAnswer && (
-          <div className="mt-2 px-1">
-            <div
-              className={`relative overflow-hidden rounded-[20px] border px-4 py-3.5 shadow-[0_10px_24px_rgba(15,23,42,0.05)] ${
-                memoryAnswer.ok
-                  ? "border-emerald-200 bg-[linear-gradient(180deg,rgba(236,253,245,0.92),rgba(244,250,248,0.96))]"
-                  : "border-slate-200 bg-slate-50"
-              }`}
-            >
-              <button
-                type="button"
-                onClick={() => setMemoryAnswer(null)}
-                className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full text-slate-400 hover:bg-white/70 hover:text-slate-600"
-                aria-label={safeT("common.close", "Cerrar")}
-                title={safeT("common.close", "Cerrar")}
-              >
-                <X size={14} />
-              </button>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                {safeT("today.memoryAskAnswerLabel", "Respuesta")}
-              </p>
-              {memoryAnswer.ok ? (
-                renderMemoryAnswerContent(memoryAnswer, handleMemoryAnswerDone)
-              ) : (
-                <p className="mt-1 whitespace-pre-wrap text-[14px] leading-6 text-slate-800">
-                  {memoryAnswer.answer}
-                </p>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="mx-auto mt-5 mb-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
-        <div>
-          <p className="font-extrabold text-slate-900" style={{ fontSize: "clamp(16px, 1vw, 22px)" }}>
-            {safeT("today.listsTitle", "Listas")}
-          </p>
-        </div>
-        <div className="mt-2 remi-scroll flex gap-2.5 overflow-x-auto pb-1 px-1">
-          {recentLists.length === 0 ? (
-            <button
-              type="button"
-              onClick={handleOpenLists}
-              className="relative w-full shrink-0 overflow-hidden rounded-[20px] border border-[#59a5c9] bg-white p-3 text-left transition hover:border-[#4b95b8]"
-              aria-label={safeT("today.listsEmptyTitle", "Crea tu primera lista")}
-            >
-              <div className="flex items-center gap-3">
-                <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-2xl leading-none">
-                  <span role="img" aria-label="lista">
-                    📋
-                  </span>
-                </div>
-                <p className="text-base font-semibold text-[#2f3240]">
-                  {safeT("today.listsEmptyTitle", "Crea tu primera lista")}
-                </p>
-              </div>
-            </button>
-          ) : (
-            recentLists.map((list) => (
-              (() => {
-                const stats = recentListsProgress[list.id] ?? { done: 0, total: 0 };
-                const percent = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
-                return (
-              <div
-                key={list.id}
-                onClick={() => handleOpenListById(list.id)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    handleOpenListById(list.id);
-                  }
-                }}
-                role="button"
-                tabIndex={0}
-                className="group relative shrink-0 overflow-hidden rounded-[20px] border border-[#59a5c9] bg-white p-3 text-left transition hover:border-[#4b95b8]"
-                style={{
-                  width: "clamp(280px, 36vw, 360px)",
-                }}
-                title={list.title}
-                aria-label={list.title}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-sm font-semibold uppercase text-[#3f7f99]">
-                    {list.icon_emoji ? (
-                      <span className="text-2xl leading-none">{list.icon_emoji}</span>
-                    ) : (
-                      list.title.slice(0, 1)
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className="line-clamp-2 break-words text-base font-semibold leading-tight text-[#2f3240]"
-                      style={{ minHeight: "2.2em" }}
-                    >
-                      {list.title}
-                    </p>
-                    <p className="mt-0.5 text-xs font-medium text-[#8b8fa6]">
-                      {list.my_role === "owner"
-                        ? safeT("lists.roleOwner", "Owner")
-                        : list.my_role === "editor"
-                          ? safeT("lists.roleEditor", "Editor")
-                          : safeT("lists.roleViewer", "Viewer")}
-                    </p>
-                    <div className="mt-1 flex items-center gap-2">
-                      <div className="flex -space-x-2">
-                        {(list.member_previews ?? []).slice(0, 3).map((member) => renderMemberAvatar(member))}
-                      </div>
-                      <p className="inline-flex items-center gap-1 text-xs text-[#8b8fa6]">
-                        <Users className="h-3.5 w-3.5" />
-                        {list.members_count}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-2 flex items-baseline justify-between gap-2">
-                  <p className="text-sm font-medium text-[#5c6073]">
-                    {safeT("lists.learnedTo", "Completado")} <span className="text-[#59a5c9]">{percent}%</span>
-                  </p>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      void handleShareListById(list);
-                    }}
-                    className="inline-flex shrink-0 items-center gap-1 self-baseline rounded-full border border-[#d9d4eb] bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-[#f6f4fc]"
-                  >
-                    <Share2 className="h-3.5 w-3.5" />
-                    {safeT("lists.share", "Compartir")}
-                  </button>
-                </div>
-                <div className="mt-1.5 h-1.5 w-full rounded-full bg-[#dbeef6]">
-                  <div
-                    className="h-1.5 rounded-full transition-all"
-                    style={{ width: `${percent}%`, background: "#59a5c9" }}
-                  />
-                </div>
-              </div>
-                );
-              })()
-            ))
-          )}
-        </div>
-      </div>
-
-      {tipCards.length > 0 && (
-        <div className="mx-auto mt-7 mb-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
-          <div>
-            <p className="font-extrabold text-slate-900" style={{ fontSize: "clamp(16px, 1vw, 22px)" }}>
-              {safeT("today.tipsTitle", "Acciones")}
-            </p>
-          </div>
-          <div
-            ref={tipsScrollRef}
-            onScroll={updateTipsScrollMetrics}
-            className="mt-2 remi-scroll flex gap-2.5 overflow-x-auto pb-1 px-1"
-          >
-            {tipCards.map((tip) => (
-              <button
-                key={tip.id}
-                type="button"
-                onClick={tip.onClick}
-                className="shrink-0 rounded-2xl border border-slate-200 bg-white shadow-[0_6px_14px_rgba(15,23,42,0.05)] hover:bg-slate-50 flex flex-col items-center"
-                style={{
-                  width: "clamp(98px, 22vw, 132px)",
-                  padding: "10px 8px 9px",
-                  minHeight: "110px",
-                }}
-                title={tip.title}
-                aria-label={tip.title}
-              >
-                <div
-                  className="mx-auto rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center"
-                  style={{ width: 38, height: 38 }}
-                >
-                  <span className="leading-none" style={{ fontSize: "clamp(20px, 1.2vw, 28px)" }}>
-                    {TIP_EMOJI_BY_ID[tip.id] ?? "✨"}
-                  </span>
-                </div>
-                <p
-                  className="mt-2 leading-snug font-medium text-slate-800 line-clamp-2 text-center"
-                  style={{
-                    fontSize: "clamp(11px, 0.72vw, 13px)",
-                    minHeight: "2.55em",
-                  }}
-                >
-                  {tip.title}
-                </p>
-              </button>
-            ))}
-          </div>
-          <div className="mt-2.5 px-1">
-            <div className="relative h-1.5 w-full rounded-full bg-slate-200/90 overflow-hidden">
-              <span
-                className="absolute top-0 h-full rounded-full bg-violet-500 transition-all duration-150"
-                style={{
-                  width: `${tipsThumbWidthPct}%`,
-                  left: `${tipsThumbLeftPct}%`,
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      {listsSection}
 
       <div className="mx-auto mt-7 mb-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
         <div className="mt-2">
@@ -2818,6 +2610,65 @@ const anyModalOpen =
         </div>
 
       </div>
+      {tipCards.length > 0 && (
+        <div className="mx-auto mt-7 mb-2 w-full" style={{ maxWidth: "min(96vw, 1440px)", padding: "0 16px" }}>
+          <div>
+            <p className="font-extrabold text-slate-900" style={{ fontSize: "clamp(16px, 1vw, 22px)" }}>
+              {safeT("today.tipsTitle", "Acciones")}
+            </p>
+          </div>
+          <div
+            ref={tipsScrollRef}
+            onScroll={updateTipsScrollMetrics}
+            className="mt-2 remi-scroll flex gap-2.5 overflow-x-auto pb-1 px-1"
+          >
+            {tipCards.map((tip) => (
+              <button
+                key={tip.id}
+                type="button"
+                onClick={tip.onClick}
+                className="shrink-0 rounded-2xl border border-slate-200 bg-white shadow-[0_6px_14px_rgba(15,23,42,0.05)] hover:bg-slate-50 flex flex-col items-center"
+                style={{
+                  width: "clamp(98px, 22vw, 132px)",
+                  padding: "10px 8px 9px",
+                  minHeight: "110px",
+                }}
+                title={tip.title}
+                aria-label={tip.title}
+              >
+                <div
+                  className="mx-auto rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center"
+                  style={{ width: 38, height: 38 }}
+                >
+                  <span className="leading-none" style={{ fontSize: "clamp(20px, 1.2vw, 28px)" }}>
+                    {TIP_EMOJI_BY_ID[tip.id] ?? "✨"}
+                  </span>
+                </div>
+                <p
+                  className="mt-2 leading-snug font-medium text-slate-800 line-clamp-2 text-center"
+                  style={{
+                    fontSize: "clamp(11px, 0.72vw, 13px)",
+                    minHeight: "2.55em",
+                  }}
+                >
+                  {tip.title}
+                </p>
+              </button>
+            ))}
+          </div>
+          <div className="mt-2.5 px-1">
+            <div className="relative h-1.5 w-full rounded-full bg-slate-200/90 overflow-hidden">
+              <span
+                className="absolute top-0 h-full rounded-full bg-violet-500 transition-all duration-150"
+                style={{
+                  width: `${tipsThumbWidthPct}%`,
+                  left: `${tipsThumbLeftPct}%`,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
       </div>
       <SharedListNotificationsPanel
         open={notificationsOpen}
@@ -3435,22 +3286,5 @@ function TaskRowCard({
     </div>
   );
 }
-
-const menuButtonStyle: CSSProperties = {
-  width: "100%",
-  textAlign: "left",
-  border: "none",
-  background: "transparent",
-  padding: "7px 9px",
-  fontSize: 13,
-  cursor: "pointer",
-  borderRadius: 12,
-  display: "flex",
-  alignItems: "center",
-  color: "#0f172a",
-};
-
-
-
 
 

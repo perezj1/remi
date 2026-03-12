@@ -1,6 +1,6 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Check, ChevronLeft, CirclePlus, ListPlus, LogOut, Menu, MoreVertical, Pencil, RotateCcw, Share2, Trash2, UserRoundCheck, Users } from "lucide-react";
+import { Check, ChevronDown, ChevronLeft, ChevronUp, CirclePlus, ListPlus, LogOut, Menu, MoreVertical, Pencil, RotateCcw, Share2, Trash2, UserRoundCheck, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
@@ -59,6 +59,7 @@ export default function SharedListsPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [cardMenuOpenId, setCardMenuOpenId] = useState<string | null>(null);
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+  const [showCompletedLists, setShowCompletedLists] = useState(false);
   const lastHandledInviteTokenRef = useRef<string | null>(null);
   const newItemInputRef = useRef<HTMLTextAreaElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -538,6 +539,164 @@ export default function SharedListsPage() {
     const percent = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
     return percent === 100;
   });
+  const activeOwnedLists = pendingLists.filter((list) => list.my_role === "owner");
+  const sharedActiveLists = pendingLists.filter((list) => list.my_role !== "owner");
+
+  const renderListCard = (list: SharedList) => {
+    const stats = progressByList[list.id] ?? { done: 0, total: 0 };
+    const percent = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
+
+    return (
+      <div
+        key={list.id}
+        onClick={() => openListDetail(list.id)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openListDetail(list.id);
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        className="group relative cursor-pointer overflow-visible rounded-[20px] border border-[#59a5c9] bg-white p-3 text-left transition hover:border-[#4b95b8]"
+      >
+        <div
+          data-list-card-menu-root="true"
+          className="absolute right-2 top-2 z-10"
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={() => setCardMenuOpenId((prev) => (prev === list.id ? null : list.id))}
+            className="inline-flex h-7 w-7 items-center justify-center text-slate-600 hover:text-slate-900"
+            aria-expanded={cardMenuOpenId === list.id}
+            aria-label={safeT("common.menu", "Menu")}
+          >
+            <MoreVertical className="h-4 w-4" />
+          </button>
+          {cardMenuOpenId === list.id && (
+            <div className="absolute right-0 z-50 mt-1 min-w-40 rounded-xl border border-[#d7d2e8] bg-white p-1.5 shadow-[0_10px_24px_rgba(32,24,61,0.12)]">
+              <button
+                type="button"
+                onClick={() => {
+                  setCardMenuOpenId(null);
+                  void handleRenameListById(list);
+                }}
+                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-slate-700 hover:bg-[#f4f2fa]"
+              >
+                <Pencil className="h-4 w-4" /> {safeT("common.edit", "Editar")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCardMenuOpenId(null);
+                  void handleShareListById(list);
+                }}
+                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-slate-700 hover:bg-[#f4f2fa]"
+              >
+                <Share2 className="h-4 w-4" /> {safeT("lists.share", "Compartir")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCardMenuOpenId(null);
+                  void (list.my_role === "owner"
+                    ? handleDeleteListById(list)
+                    : handleLeaveListById(list));
+                }}
+                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-rose-600 hover:bg-rose-50"
+              >
+                {list.my_role === "owner" ? <Trash2 className="h-4 w-4" /> : <LogOut className="h-4 w-4" />}
+                {list.my_role === "owner"
+                  ? safeT("lists.delete", "Borrar")
+                  : safeT("lists.leave", "Salir")}
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-start gap-3">
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              void handleSetListIcon(list);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.stopPropagation();
+                void handleSetListIcon(list);
+              }
+            }}
+            role="button"
+            tabIndex={0}
+            className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-sm font-semibold uppercase text-[#3f7f99]"
+            title={safeT("lists.iconAction", "Cambiar icono")}
+          >
+            {list.icon_emoji ? (
+              <span className="text-2xl leading-none">{list.icon_emoji}</span>
+            ) : (
+              list.title.slice(0, 1)
+            )}
+          </div>
+
+          <div className="min-w-0 flex-1 pr-8">
+            <p
+              className="line-clamp-2 break-words text-base font-semibold leading-tight text-[#2f3240]"
+              style={{ minHeight: "2.2em" }}
+            >
+              {list.title}
+            </p>
+            <p className="mt-0.5 text-xs font-medium text-[#8b8fa6]">
+              {list.my_role === "owner"
+                ? safeT("lists.roleOwner", "Owner")
+                : list.my_role === "editor"
+                  ? safeT("lists.roleEditor", "Editor")
+                  : safeT("lists.roleViewer", "Viewer")}
+            </p>
+            <div className="mt-1 flex items-center gap-2">
+              <div className="flex -space-x-2">
+                {list.member_previews.slice(0, 4).map((member) => (
+                  <div
+                    key={`${list.id}-${member.user_id}`}
+                    className="inline-flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border border-white bg-[#ece9f6] text-[10px] font-semibold text-[#4f4a69]"
+                  >
+                    <RemiAvatar
+                      avatarUrl={member.avatar_url}
+                      fallback={(
+                        member.display_name?.trim()?.slice(0, 1) ||
+                        member.user_id?.slice(0, 1) ||
+                        "U"
+                      ).toUpperCase()}
+                    />
+                  </div>
+                ))}
+                {list.members_count > 4 && (
+                  <div className="inline-flex h-6 min-w-6 items-center justify-center rounded-full border border-white bg-[#e7e3f4] px-1 text-[10px] font-semibold text-[#4f4a69]">
+                    +{list.members_count - 4}
+                  </div>
+                )}
+              </div>
+              <p className="inline-flex items-center gap-1 text-xs text-[#8b8fa6]">
+                <Users className="h-3.5 w-3.5" />
+                {list.members_count}
+              </p>
+            </div>
+            <p className="mt-2 text-sm font-medium text-[#5c6073]">
+              {safeT("lists.learnedTo", "Completado")} <span className="text-[#59a5c9]">{percent}%</span>
+            </p>
+            <div className="mt-1.5 h-1.5 w-full rounded-full bg-[#dbeef6]">
+              <div
+                className="h-1.5 rounded-full bg-[#59a5c9] transition-all"
+                style={{ width: `${percent}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderItemRow = (item: SharedListItem) => {
     const mine = item.assigned_to_user_id === user?.id;
@@ -978,220 +1137,91 @@ export default function SharedListsPage() {
                   {safeT("lists.empty", "Aun no tienes listas.")}
                 </div>
               )}
-              {!loading && pendingLists.length > 0 && (
+              {!loading && activeOwnedLists.length > 0 && (
                 <div>
                   <p className="mb-2 px-1 text-sm font-semibold text-[#5a5f74]">
-                    {safeT("lists.opened", "Pendientes")} ({pendingLists.length})
+                    {safeT("lists.activeOwnedTitle", "Activas")} ({activeOwnedLists.length})
                   </p>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {pendingLists.map((list) => {
-                      const stats = progressByList[list.id] ?? { done: 0, total: 0 };
-                      const percent = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
-                      return (
-                        <div
-                          key={list.id}
-                          onClick={() => openListDetail(list.id)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              openListDetail(list.id);
-                            }
-                          }}
-                          role="button"
-                          tabIndex={0}
-                          className="group relative cursor-pointer overflow-visible rounded-[20px] border border-[#59a5c9] bg-white p-3 text-left transition hover:border-[#4b95b8]"
-                        >
-                          <div
-                            data-list-card-menu-root="true"
-                            className="absolute right-2 top-2 z-10"
-                            onClick={(e) => e.stopPropagation()}
-                            onKeyDown={(e) => e.stopPropagation()}
-                          >
-                            <button
-                              type="button"
-                              onClick={() => setCardMenuOpenId((prev) => (prev === list.id ? null : list.id))}
-                              className="inline-flex h-7 w-7 items-center justify-center text-slate-600 hover:text-slate-900"
-                              aria-expanded={cardMenuOpenId === list.id}
-                              aria-label={safeT("common.menu", "Menu")}
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                            </button>
-                            {cardMenuOpenId === list.id && (
-                              <div className="absolute right-0 z-50 mt-1 min-w-40 rounded-xl border border-[#d7d2e8] bg-white p-1.5 shadow-[0_10px_24px_rgba(32,24,61,0.12)]">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setCardMenuOpenId(null);
-                                    void handleRenameListById(list);
-                                  }}
-                                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-slate-700 hover:bg-[#f4f2fa]"
-                                >
-                                  <Pencil className="h-4 w-4" /> {safeT("common.edit", "Editar")}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setCardMenuOpenId(null);
-                                    void handleShareListById(list);
-                                  }}
-                                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-slate-700 hover:bg-[#f4f2fa]"
-                                >
-                                  <Share2 className="h-4 w-4" /> {safeT("lists.share", "Compartir")}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setCardMenuOpenId(null);
-                                    void (list.my_role === "owner"
-                                      ? handleDeleteListById(list)
-                                      : handleLeaveListById(list));
-                                  }}
-                                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-rose-600 hover:bg-rose-50"
-                                >
-                                  {list.my_role === "owner"
-                                    ? <Trash2 className="h-4 w-4" />
-                                    : <LogOut className="h-4 w-4" />}
-                                  {list.my_role === "owner"
-                                    ? safeT("lists.delete", "Borrar")
-                                    : safeT("lists.leave", "Salir")}
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex items-start gap-3">
-                            <div
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                void handleSetListIcon(list);
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter" || e.key === " ") {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  void handleSetListIcon(list);
-                                }
-                              }}
-                              role="button"
-                              tabIndex={0}
-                              className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-sm font-semibold uppercase text-[#3f7f99]"
-                              title={safeT("lists.iconAction", "Cambiar icono")}
-                            >
-                              {list.icon_emoji ? (
-                                <span className="text-2xl leading-none">{list.icon_emoji}</span>
-                              ) : (
-                                list.title.slice(0, 1)
-                              )}
-                            </div>
+                    {activeOwnedLists.map((list) => renderListCard(list))}
+                  </div>
+                </div>
+              )}
 
-                            <div className="min-w-0 flex-1 pr-8">
-                              <p
-                                className="line-clamp-2 break-words text-base font-semibold leading-tight text-[#2f3240]"
-                                style={{ minHeight: "2.2em" }}
-                              >
-                                {list.title}
-                              </p>
-                              <p className="mt-0.5 text-xs font-medium text-[#8b8fa6]">
-                                {list.my_role === "owner"
-                                  ? safeT("lists.roleOwner", "Owner")
-                                  : list.my_role === "editor"
-                                    ? safeT("lists.roleEditor", "Editor")
-                                    : safeT("lists.roleViewer", "Viewer")}
-                              </p>
-                              <div className="mt-1 flex items-center gap-2">
-                                <div className="flex -space-x-2">
-                                  {list.member_previews.slice(0, 4).map((member) => (
-                                    <div
-                                      key={`${list.id}-${member.user_id}`}
-                                      className="inline-flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border border-white bg-[#ece9f6] text-[10px] font-semibold text-[#4f4a69]"
-                                    >
-                                      <RemiAvatar
-                                        avatarUrl={member.avatar_url}
-                                        fallback={(
-                                          member.display_name?.trim()?.slice(0, 1) ||
-                                          member.user_id?.slice(0, 1) ||
-                                          "U"
-                                        ).toUpperCase()}
-                                      />
-                                    </div>
-                                  ))}
-                                  {list.members_count > 4 && (
-                                    <div className="inline-flex h-6 min-w-6 items-center justify-center rounded-full border border-white bg-[#e7e3f4] px-1 text-[10px] font-semibold text-[#4f4a69]">
-                                      +{list.members_count - 4}
-                                    </div>
-                                  )}
-                                </div>
-                                <p className="inline-flex items-center gap-1 text-xs text-[#8b8fa6]">
-                                  <Users className="h-3.5 w-3.5" />
-                                  {list.members_count}
-                                </p>
-                              </div>
-                              <p className="mt-2 text-sm font-medium text-[#5c6073]">
-                                {safeT("lists.learnedTo", "Completado")} <span className="text-[#59a5c9]">{percent}%</span>
-                              </p>
-                              <div className="mt-1.5 h-1.5 w-full rounded-full bg-[#dbeef6]">
-                                <div
-                                  className="h-1.5 rounded-full bg-[#59a5c9] transition-all"
-                                  style={{ width: `${percent}%` }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+              {!loading && sharedActiveLists.length > 0 && (
+                <div>
+                  <p className="mb-2 px-1 text-sm font-semibold text-[#5a5f74]">
+                    {safeT("lists.sharedWithMeTitle", "Compartidas conmigo")} ({sharedActiveLists.length})
+                  </p>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {sharedActiveLists.map((list) => renderListCard(list))}
                   </div>
                 </div>
               )}
 
               {!loading && completedLists.length > 0 && (
                 <div>
-                  <p className="mb-2 px-1 text-sm font-semibold text-[#5a5f74]">
-                    {safeT("lists.completed", "Completado")} ({completedLists.length})
-                  </p>
-                  <div className="overflow-hidden rounded-2xl border border-[#ddd9ee] divide-y divide-[#e6e3ef] bg-white">
-                    {completedLists.map((list) => {
-                      const canReuse = list.my_role === "owner" || list.my_role === "editor";
-                      return (
-                        <div
-                          key={list.id}
-                          className="flex items-center gap-2 px-2 py-2"
-                        >
-                          <button
-                            type="button"
-                            onClick={() => openListDetail(list.id)}
-                            className="min-w-0 flex-1 px-1 text-left text-sm text-slate-500 line-through"
-                            title={list.title}
+                  <button
+                    type="button"
+                    onClick={() => setShowCompletedLists((value) => !value)}
+                    className="mb-2 flex w-full items-center justify-between rounded-2xl border border-[#ddd9ee] bg-white px-4 py-3 text-left"
+                  >
+                    <span className="text-sm font-semibold text-[#5a5f74]">
+                      {safeT("lists.completed", "Completado")} ({completedLists.length})
+                    </span>
+                    {showCompletedLists ? (
+                      <ChevronUp className="h-4 w-4 text-slate-500" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-slate-500" />
+                    )}
+                  </button>
+
+                  {showCompletedLists && (
+                    <div className="overflow-hidden rounded-2xl border border-[#ddd9ee] divide-y divide-[#e6e3ef] bg-white">
+                      {completedLists.map((list) => {
+                        const canReuse = list.my_role === "owner" || list.my_role === "editor";
+                        return (
+                          <div
+                            key={list.id}
+                            className="flex items-center gap-2 px-2 py-2"
                           >
-                            <span className="block truncate">{list.title}</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void handleReuseList(list)}
-                            disabled={!canReuse}
-                            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#cfd8c7] bg-[#eef5e8] text-[#4f6b3d] disabled:opacity-45"
-                            title={safeT("lists.reuse", "Reutilizar")}
-                          >
-                            <RotateCcw className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              void (list.my_role === "owner"
-                                ? handleDeleteListById(list)
-                                : handleLeaveListById(list))}
-                            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700"
-                            title={list.my_role === "owner"
-                              ? safeT("lists.delete", "Eliminar")
-                              : safeT("lists.leave", "Salir")}
-                          >
-                            {list.my_role === "owner"
-                              ? <Trash2 className="h-4 w-4" />
-                              : <LogOut className="h-4 w-4" />}
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
+                            <button
+                              type="button"
+                              onClick={() => openListDetail(list.id)}
+                              className="min-w-0 flex-1 px-1 text-left text-sm text-slate-500 line-through"
+                              title={list.title}
+                            >
+                              <span className="block truncate">{list.title}</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void handleReuseList(list)}
+                              disabled={!canReuse}
+                              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#cfd8c7] bg-[#eef5e8] text-[#4f6b3d] disabled:opacity-45"
+                              title={safeT("lists.reuse", "Reutilizar")}
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                void (list.my_role === "owner"
+                                  ? handleDeleteListById(list)
+                                  : handleLeaveListById(list))}
+                              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700"
+                              title={list.my_role === "owner"
+                                ? safeT("lists.delete", "Eliminar")
+                                : safeT("lists.leave", "Salir")}
+                            >
+                              {list.my_role === "owner"
+                                ? <Trash2 className="h-4 w-4" />
+                                : <LogOut className="h-4 w-4" />}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -9,6 +9,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
+  ArrowDownToLine,
   Share2,
   LogOut,
   Mail,
@@ -16,6 +17,7 @@ import {
   Lock,
   Globe2,
   Bell,
+  Brain,
   MessageSquare,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -477,6 +479,11 @@ export default function ProfilePage() {
     } catch (e) {
       console.error(e);
     }
+  };
+
+  const handleInstallApp = () => {
+    if (typeof window === "undefined") return;
+    window.dispatchEvent(new Event("remi-open-install"));
   };
 
   const handleLogout = async () => {
@@ -1025,6 +1032,15 @@ export default function ProfilePage() {
 
             <button
               type="button"
+              onClick={() => navigate("/status")}
+              className="w-full flex items-center justify-center gap-2 rounded-full border border-violet-200 text-violet-600 text-xs py-2.5 mb-2 shadow-sm hover:bg-violet-50 transition md:py-3 md:text-sm"
+            >
+              <Brain size={14} />
+              <span>{safeT("profile.statusButton", "Ver estado de Remi")}</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setShowFeedbackSurvey(true)}
               className="w-full flex items-center justify-center gap-2 rounded-full border border-violet-200 text-violet-600 text-xs py-2.5 mb-2 shadow-sm hover:bg-violet-50 transition md:py-3 md:text-sm"
             >
@@ -1032,6 +1048,15 @@ export default function ProfilePage() {
               <span>
                 {safeT("profile.feedbackButton", "Dejar opinión")}
               </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleInstallApp}
+              className="w-full flex items-center justify-center gap-2 rounded-full border border-slate-200 text-slate-700 text-xs py-2.5 mb-2 shadow-sm hover:bg-slate-50 transition md:py-3 md:text-sm"
+            >
+              <ArrowDownToLine size={14} />
+              <span>{safeT("today.menuInstallApp", "Instalar app")}</span>
             </button>
 
             <button
@@ -1046,7 +1071,7 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 rounded-full bg-red-500 text-white text-xs py-2.5 shadow-md hover:bg-red-600 transition active:translate-y-[1px] md:py-3 md:text-sm"
+              className="mt-3 w-full flex items-center justify-center gap-2 rounded-full bg-red-500 text-white text-xs py-2.5 shadow-md hover:bg-red-600 transition active:translate-y-[1px] md:py-3 md:text-sm"
             >
               <LogOut size={14} />
               <span>{t("profile.logoutButton")}</span>

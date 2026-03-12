@@ -13,9 +13,7 @@ import { I18nProvider, useI18n } from "@/contexts/I18nContext";
 import type { RemiLocale } from "@/locales";
 
 import TodayPage from "@/pages/Index";
-import InboxPage from "@/pages/Inbox";
 import TasksPage from "@/pages/Tasks";
-import IdeasPage from "@/pages/Ideas";
 import SharedListsPage from "@/pages/Lists";
 import ProfilePage from "@/pages/Profile";
 import AuthPage from "@/pages/Auth";
@@ -248,17 +246,17 @@ function AppRoutes() {
           }
         />
 
-        {/* Bandeja */}
+        {/* Bandeja antigua -> Recordatorios */}
         <Route
           path="/inbox"
           element={
             <RequireAuth>
-              <InboxPage />
+              <Navigate to="/tasks" replace />
             </RequireAuth>
           }
         />
 
-        {/* Tareas */}
+        {/* Recordatorios */}
         <Route
           path="/tasks"
           element={
@@ -268,12 +266,12 @@ function AppRoutes() {
           }
         />
 
-        {/* Ideas */}
+        {/* Ideas antiguas -> Recordatorios / Notas */}
         <Route
           path="/ideas"
           element={
             <RequireAuth>
-              <IdeasPage />
+              <Navigate to="/tasks?tab=notes" replace />
             </RequireAuth>
           }
         />
