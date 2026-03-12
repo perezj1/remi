@@ -539,8 +539,6 @@ export default function SharedListsPage() {
     const percent = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
     return percent === 100;
   });
-  const activeOwnedLists = pendingLists.filter((list) => list.my_role === "owner");
-  const sharedActiveLists = pendingLists.filter((list) => list.my_role !== "owner");
 
   const renderListCard = (list: SharedList) => {
     const stats = progressByList[list.id] ?? { done: 0, total: 0 };
@@ -1137,24 +1135,13 @@ export default function SharedListsPage() {
                   {safeT("lists.empty", "Aun no tienes listas.")}
                 </div>
               )}
-              {!loading && activeOwnedLists.length > 0 && (
+              {!loading && pendingLists.length > 0 && (
                 <div>
                   <p className="mb-2 px-1 text-sm font-semibold text-[#5a5f74]">
-                    {safeT("lists.activeOwnedTitle", "Activas")} ({activeOwnedLists.length})
+                    {safeT("lists.activeOwnedTitle", "Activas")} ({pendingLists.length})
                   </p>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {activeOwnedLists.map((list) => renderListCard(list))}
-                  </div>
-                </div>
-              )}
-
-              {!loading && sharedActiveLists.length > 0 && (
-                <div>
-                  <p className="mb-2 px-1 text-sm font-semibold text-[#5a5f74]">
-                    {safeT("lists.sharedWithMeTitle", "Compartidas conmigo")} ({sharedActiveLists.length})
-                  </p>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {sharedActiveLists.map((list) => renderListCard(list))}
+                    {pendingLists.map((list) => renderListCard(list))}
                   </div>
                 </div>
               )}
