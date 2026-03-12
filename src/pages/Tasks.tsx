@@ -3,7 +3,10 @@ import {
   useDeferredValue,
   useEffect,
   useMemo,
+  useRef,
   useState,
+  type PointerEvent,
+  type TouchEvent,
 } from "react";
 import { useSearchParams } from "react-router-dom";
 
@@ -54,6 +57,17 @@ type IdeaBodyFields = {
   content?: string | null;
   text?: string | null;
 };
+
+const TAB_SWIPE_THRESHOLD_PX = 56;
+
+function isInteractiveSwipeTarget(target: EventTarget | null) {
+  if (!(target instanceof Element)) return false;
+  return Boolean(
+    target.closest(
+      "button, input, textarea, select, option, label, a, [role='button']",
+    ),
+  );
+}
 
 function isSameDay(a: Date, b: Date): boolean {
   return (
@@ -207,6 +221,11 @@ export default function TasksPage() {
 
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [doneSectionCollapsed, setDoneSectionCollapsed] = useState(true);
+  const swipeStartRef = useRef<{
+    clientX: number;
+    clientY: number;
+    interactive: boolean;
+  } | null>(null);
 
   const [activeTab, setActiveTab] = useState<FilterTab>(() => {
     return searchParams.get("tab") === "notes" ? "notes" : "tasks";
@@ -237,6 +256,68 @@ export default function TasksPage() {
       setSearchParams(nextParams, { replace: true });
     },
     [searchParams, setSearchParams],
+  );
+
+  const handleTouchStart = useCallback((event: TouchEvent<HTMLElement>) => {
+    const touch = event.touches[0];
+    if (!touch) return;
+    swipeStartRef.current = {
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+      interactive: isInteractiveSwipeTarget(event.target),
+    };
+  }, []);
+
+  const handleSwipeEnd = useCallback(
+    (clientX: number, clientY: number) => {
+      const start = swipeStartRef.current;
+      swipeStartRef.current = null;
+      if (!start || start.interactive) return;
+
+      const deltaX = clientX - start.clientX;
+      const deltaY = clientY - start.clientY;
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
+
+      if (absX < TAB_SWIPE_THRESHOLD_PX) return;
+      if (absX <= absY * 1.2) return;
+
+      if (deltaX < 0 && activeTab === "tasks") {
+        updateTab("notes");
+        return;
+      }
+
+      if (deltaX > 0 && activeTab === "notes") {
+        updateTab("tasks");
+      }
+    },
+    [activeTab, updateTab],
+  );
+
+  const handleTouchEnd = useCallback(
+    (event: TouchEvent<HTMLElement>) => {
+      const touch = event.changedTouches[0];
+      if (!touch) return;
+      handleSwipeEnd(touch.clientX, touch.clientY);
+    },
+    [handleSwipeEnd],
+  );
+
+  const handlePointerDown = useCallback((event: PointerEvent<HTMLElement>) => {
+    if (event.pointerType !== "touch" && event.pointerType !== "mouse") return;
+    swipeStartRef.current = {
+      clientX: event.clientX,
+      clientY: event.clientY,
+      interactive: isInteractiveSwipeTarget(event.target),
+    };
+  }, []);
+
+  const handlePointerUp = useCallback(
+    (event: PointerEvent<HTMLElement>) => {
+      if (event.pointerType !== "touch" && event.pointerType !== "mouse") return;
+      handleSwipeEnd(event.clientX, event.clientY);
+    },
+    [handleSwipeEnd],
   );
 
   useEffect(() => {
@@ -443,6 +524,16 @@ export default function TasksPage() {
 
       <main
         className="remi-scroll"
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={() => {
+          swipeStartRef.current = null;
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={() => {
+          swipeStartRef.current = null;
+        }}
         style={{
           padding: "0 16px",
           marginTop: 14,
@@ -450,6 +541,7 @@ export default function TasksPage() {
           marginLeft: "auto",
           marginRight: "auto",
           maxWidth: "min(96vw, 1440px)",
+          touchAction: "pan-y",
         }}
       >
         <div className="space-y-3">
