@@ -92,19 +92,19 @@ export const es = {
 
     detectedReminder: {
       DAY_BEFORE_AND_DUE:
-        "Detecté \"{word}\" ? lo marqué como: día antes + día límite.",
+        "Detecté \"{word}\" -> lo marqué como: día antes + día límite.",
       DAILY_UNTIL_DUE:
-        "Detecté \"{word}\" ? lo marqué como: diario hasta la fecha límite.",
+        "Detecté \"{word}\" -> lo marqué como: diario hasta la fecha límite.",
       WEEK_BEFORE_AND_DUE:
-        "Detecté \"{word}\" ? lo marqué como: 1 semana antes + día límite.",
+        "Detecté \"{word}\" -> lo marqué como: 1 semana antes + día límite.",
     },
 
     why: {
-      verbTask: "Detecté \"{word}\" ? lo marqué como tarea.",
-      prefixIdea: "Detecté \"{word}\" ? lo marqué como idea.",
-      projectIdea: "Suena a idea/proyecto ? lo marqué como idea.",
-      defaultTask: "No vi una pista clara ? lo marqué como tarea.",
-      defaultIdea: "No vi una pista clara ? lo marqué como idea.",
+      verbTask: "Detecté \"{word}\" -> lo marqué como tarea.",
+      prefixIdea: "Detecté \"{word}\" -> lo marqué como idea.",
+      projectIdea: "Suena a idea/proyecto -> lo marqué como idea.",
+      defaultTask: "No vi una pista clara -> lo marqué como tarea.",
+      defaultIdea: "No vi una pista clara -> lo marqué como idea.",
       manualTask: "Lo marcaste como tarea.",
       manualIdea: "Lo marcaste como idea.",
     },
@@ -666,7 +666,7 @@ export const es = {
       step3: "La persona que lo recibe toca \"Añadir a Remi\".",
       examplesTitle: "Ejemplos que van genial",
       examplesBody:
-        "• \"Compra pan mañana\" ? se lo envío a mi pareja\n• \"Médico el martes a las 14:00\" ? se lo envío a mi madre\n• \"Traer cargador\" ? se lo envío al compañero",
+        "• \"Compra pan mañana\" -> se lo envío a mi pareja\n• \"Médico el martes a las 14:00\" -> se lo envío a mi madre\n• \"Traer cargador\" -> se lo envío al compañero",
       footer: "Esto ayuda a otras personas a recordar cosas importantes para ellos y para tí.",
       ok: "Entendido",
       hideForever: "No volver a mostrar",
@@ -741,7 +741,7 @@ export const es = {
         "Notificaciones por dispositivo: activa avisos solo en los que quieras (ej: móvil ON, PC OFF).",
       examplesTitle: "Ejemplos que funcionan",
       examplesBody:
-        "• Móvil ON ? recordatorios cuando estás fuera\n• PC OFF ? cero interrupciones trabajando\n• iPad ON ? revisión tranquila al final del día",
+        "• Móvil ON -> recordatorios cuando estás fuera\n• PC OFF -> cero interrupciones trabajando\n• iPad ON -> revisión tranquila al final del día",
       footer:
         "Tú sueltas la carga mental en el momento. Remi se encarga de recordártelo cuando y donde sea necesario.",
       ok: "Entendido",
@@ -833,9 +833,9 @@ export const es = {
       shareToRemi: {
         title: "Guarda cosas con \"Compartir\"",
         body:
-          "Desde WhatsApp/Correo/Notas: Compartir ? Remi. \nSe abre listo para ordenar.",
+          "Desde WhatsApp/Correo/Notas: Compartir -> Remi. \nSe abre listo para ordenar.",
         cta: "Probar",
-        toast: "Tip: en otra app pulsa \"Compartir\" ? \"Remi\" para mandarlo directo ??",
+        toast: "Tip: en otra app pulsa \"Compartir\" -> \"Remi\" para mandarlo directo.",
       },
 
       natural: {
@@ -935,10 +935,10 @@ export const es = {
     iosDict: {
       helpTitle: "Activa Dictado en iPhone",
       helpBody:
-        "En iOS suele estar en: Ajustes ? General ? Teclado ? Activar Dictado.",
+        "En iOS suele estar en: Ajustes -> General -> Teclado -> Activar Dictado.",
       helpStepsTitle: "Pasos rápidos",
       step1: "Abre Ajustes",
-      step2: "General ? Teclado",
+      step2: "General -> Teclado",
       step3: "Activa \"Activar Dictado\"",
       ok: "Entendido",
       hideForever: "No volver mostrar",
@@ -1435,7 +1435,7 @@ export const es = {
       },
 
       interpret: {
-        title: "Texto ? recordatorio automático",
+        title: "Texto -> recordatorio automático",
         text:
           "No necesitas configurar mil cosas. Remi entiende el lenguaje natural y lo convierte en un recordatorio útil.",
         chips: ["Fecha y hora", "Hábito / frecuencia", "Modo de recordatorio"],
@@ -1484,7 +1484,7 @@ export const es = {
         ],
         exampleLabel: "Ejemplo",
         example:
-          "\"Añadir a Remi: 'Mañana 18:00 llamar al seguro' ? te llega como link y lo añades en un toque.\"",
+          "\"Añadir a Remi: 'Mañana 18:00 llamar al seguro' -> te llega como link y lo añades en un toque.\"",
         helperLine: "Ayuda rápida, sin explicación",
         ctaTry: "Probar Remi",
         tag: "Compartir",

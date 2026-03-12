@@ -651,9 +651,9 @@ export const en = {
       step3: 'The recipient taps "Add to Remi".',
       examplesTitle: "Examples that work great",
       examplesBody:
-        "• \"Buy bread tomorrow\" → I send it to my partner\n• \"Doctor on Tuesday at 14:00\" → I send it to my mom\n• \"Bring charger\" → I send it to my coworker",
+        "- \"Buy bread tomorrow\" -> I send it to my partner\n- \"Doctor on Tuesday at 14:00\" -> I send it to my mom\n- \"Bring charger\" -> I send it to my coworker",
       footer:
-        "This helps other people remember things that matter to them—and to you.",
+        "This helps other people remember things that matter to them and to you.",
       ok: "Got it",
       hideForever: "Don't show again",
     },

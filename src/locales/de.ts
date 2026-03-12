@@ -646,16 +646,16 @@ export const de = {
     shareRemindersModal: {
       title: "Erinnerungen mit anderen teilen",
       body:
-        "Sende eine Erinnerung oder Idee als Link, damit eine andere Person sie mit einem Tipp zu Remi hinzufügen kann.",
+        "Sende eine Erinnerung oder Idee als Link, damit eine andere Person sie mit einem Tipp zu Remi hinzufuegen kann.",
       stepsTitle: "So funktioniert's (kurz)",
       step1: "Tippe bei einer Aufgabe/Idee auf das Teilen-Icon.",
       step2: "Sende den Link per WhatsApp, Mail usw.",
-      step3: "Die Person tippt auf \"Zu Remi hinzufügen\".",
+      step3: "Die Person tippt auf \"Zu Remi hinzufuegen\".",
       examplesTitle: "Beispiele, die super passen",
       examplesBody:
-        "• \"Morgen Brot kaufen\" → an meinen Partner\n• \"Arzt am Dienstag um 14:00\" → an meine Mutter\n• \"Ladegerät mitbringen\" → an den Kollegen",
+        "- \"Morgen Brot kaufen\" -> an meinen Partner\n- \"Arzt am Dienstag um 14:00\" -> an meine Mutter\n- \"Ladegeraet mitbringen\" -> an den Kollegen",
       footer:
-        "Das hilft anderen, wichtige Dinge für sie (und für dich) nicht zu vergessen.",
+        "Das hilft anderen, wichtige Dinge fuer sie und fuer dich nicht zu vergessen.",
       ok: "Verstanden",
       hideForever: "Nicht mehr anzeigen",
     },
