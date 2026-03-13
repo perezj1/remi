@@ -17,19 +17,20 @@ function hasRecoverySignal(): boolean {
     hashParams.get("type") === "recovery" ||
     searchParams.get("type") === "recovery" ||
     hashParams.has("access_token") ||
-    searchParams.has("token_hash")
+    searchParams.has("token_hash") ||
+    searchParams.has("code")
   );
 }
 
 export default function ResetPassword() {
   const navigate = useNavigate();
   const { lang, t } = useI18n();
-  const { updatePassword } = useAuth();
+  const { updatePassword, session } = useAuth();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [ready, setReady] = useState<boolean>(() => hasRecoverySignal());
+  const [ready, setReady] = useState<boolean>(() => hasRecoverySignal() || Boolean(session));
 
   const copy = useMemo(() => {
     if (lang === "de") {
@@ -88,7 +89,7 @@ export default function ResetPassword() {
 
   useEffect(() => {
     const sync = () => {
-      if (hasRecoverySignal()) {
+      if (hasRecoverySignal() || session) {
         setReady(true);
       }
     };
@@ -107,7 +108,7 @@ export default function ResetPassword() {
       subscription.unsubscribe();
       window.removeEventListener("hashchange", sync);
     };
-  }, []);
+  }, [session]);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();

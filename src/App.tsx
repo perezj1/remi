@@ -174,8 +174,10 @@ function AppRoutes() {
   const isAuthRecoveryRoute =
     isAuthRoute &&
     (hash.includes("type=recovery") ||
+      hash.includes("access_token=") ||
       search.includes("type=recovery") ||
-      search.includes("token_hash="));
+      search.includes("token_hash=") ||
+      search.includes("code="));
   const isLandingRoute = pathname.startsWith("/landing");
   const isLegalRoute = pathname.startsWith("/legal");
   const isResetPasswordRoute = pathname.startsWith("/reset-password");

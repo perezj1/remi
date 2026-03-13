@@ -27,8 +27,10 @@ function hasRecoveryHash(): boolean {
   const searchParams = new URLSearchParams(window.location.search);
   return (
     hashParams.get("type") === "recovery" ||
+    hashParams.has("access_token") ||
     searchParams.get("type") === "recovery" ||
-    searchParams.has("token_hash")
+    searchParams.has("token_hash") ||
+    searchParams.has("code")
   );
 }
 
