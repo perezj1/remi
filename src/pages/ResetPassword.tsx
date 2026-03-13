@@ -142,6 +142,7 @@ export default function ResetPassword() {
     <div className="flex min-h-[100dvh] items-center justify-center bg-[#eef2f9] p-4 text-slate-900">
       <form
         onSubmit={onSubmit}
+        autoComplete="on"
         className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_24px_56px_rgba(15,23,42,0.16)]"
       >
         <h1 className="text-[22px] font-bold text-slate-900">{copy.title}</h1>
@@ -161,10 +162,13 @@ export default function ResetPassword() {
             <Lock className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
             <Input
               id="new-password"
+              name="new-password"
               type={showPassword ? "text" : "password"}
               placeholder={t("auth.passwordPlaceholder")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
+              spellCheck={false}
               required
               minLength={6}
               className="h-11 rounded-2xl border-slate-200 bg-[#fbfbfe] pl-10 pr-10 text-[15px]"
@@ -188,10 +192,13 @@ export default function ResetPassword() {
             <Lock className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
             <Input
               id="confirm-password"
+              name="confirm-password"
               type={showPassword ? "text" : "password"}
               placeholder={copy.confirmPlaceholder}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete="new-password"
+              spellCheck={false}
               required
               minLength={6}
               className="h-11 rounded-2xl border-slate-200 bg-[#fbfbfe] pl-10 text-[15px]"
