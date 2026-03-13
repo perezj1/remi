@@ -46,31 +46,58 @@ const Auth = () => {
   const [sheetOpen, setSheetOpen] = useState<boolean>(() => hasRecoveryHash());
   const [activeSlide, setActiveSlide] = useState(0);
   const [email, setEmail] = useState("");
+  const [forgotEmail, setForgotEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [forgotModalOpen, setForgotModalOpen] = useState(false);
   const [resetModalOpen, setResetModalOpen] = useState<boolean>(() => hasRecoveryHash());
   const { signUp, signIn, requestPasswordReset, updatePassword, user } = useAuth();
   const { t, lang } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
   const sliderRef = useRef<HTMLDivElement | null>(null);
+  const forgotEmailInputRef = useRef<HTMLInputElement | null>(null);
   const redirectPath = getSafeRedirect(new URLSearchParams(location.search).get("redirect"));
   const isLogin = authView === "login";
   const isRegister = authView === "register";
-  const isForgot = authView === "forgot";
-  const authCopy =
+  const authCopy: {
+    forgotCta: string;
+    forgotTitle: string;
+    forgotHelp: string;
+    forgotSubmit: string;
+    forgotSubmitShort: string;
+    forgotSuccess: string;
+    forgotError: string;
+    forgotMissingEmail?: string;
+    backToLogin: string;
+    backShort: string;
+    resetTitle: string;
+    resetHelp: string;
+    resetPasswordLabel: string;
+    resetConfirmLabel: string;
+    resetConfirmPlaceholder: string;
+    resetSubmit: string;
+    resetSuccess: string;
+    resetError: string;
+    resetMismatch: string;
+    hidePassword: string;
+    showPassword: string;
+  } =
     lang === "de"
       ? {
           forgotCta: "Passwort vergessen?",
           forgotTitle: "Passwort zurücksetzen",
           forgotHelp: "Wir senden dir einen Link per E-Mail, um dein Passwort zu ändern.",
           forgotSubmit: "Wiederherstellungslink senden",
+          forgotSubmitShort: "Senden",
           forgotSuccess:
             "Wenn diese E-Mail existiert, haben wir einen Wiederherstellungslink gesendet.",
           forgotError: "Wiederherstellungs-E-Mail konnte nicht gesendet werden.",
+          forgotMissingEmail: "Gib zuerst deine E-Mail ein.",
           backToLogin: "Zurück zur Anmeldung",
+          backShort: "Zurück",
           resetTitle: "Neues Passwort festlegen",
           resetHelp: "Gib dein neues Passwort ein, um die Wiederherstellung abzuschließen.",
           resetPasswordLabel: "Neues Passwort",
@@ -89,9 +116,12 @@ const Auth = () => {
             forgotTitle: "Reset password",
             forgotHelp: "We'll send you an email with a link to change your password.",
             forgotSubmit: "Send reset link",
+            forgotSubmitShort: "Send",
             forgotSuccess: "If that email exists, we sent a reset link.",
             forgotError: "Couldn't send the reset email.",
+            forgotMissingEmail: "Enter your email first.",
             backToLogin: "Back to sign in",
+            backShort: "Back",
             resetTitle: "Set a new password",
             resetHelp: "Enter your new password to finish recovery.",
             resetPasswordLabel: "New password",
@@ -109,9 +139,11 @@ const Auth = () => {
             forgotTitle: "Recuperar contraseña",
             forgotHelp: "Te enviaremos un enlace por email para cambiar tu contraseña.",
             forgotSubmit: "Enviar enlace de recuperación",
+            forgotSubmitShort: "Enviar",
             forgotSuccess: "Si el email existe, enviamos el enlace de recuperación.",
             forgotError: "No se pudo enviar el email de recuperación.",
             backToLogin: "Volver a iniciar sesión",
+            backShort: "Atrás",
             resetTitle: "Define tu nueva contraseña",
             resetHelp: "Introduce la nueva contraseña para completar la recuperación.",
             resetPasswordLabel: "Nueva contraseña",
@@ -302,22 +334,60 @@ const Auth = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (!forgotModalOpen) return;
+    const frame = window.requestAnimationFrame(() => {
+      forgotEmailInputRef.current?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [forgotModalOpen]);
+
+  const sendPasswordResetEmail = async (rawEmail: string) => {
+    const nextEmail = rawEmail.trim();
+    if (!nextEmail) {
+      toast.error(
+        authCopy.forgotMissingEmail ||
+          (lang === "de"
+            ? "Gib zuerst deine E-Mail ein."
+            : lang === "en"
+              ? "Enter your email first."
+              : "Introduce primero tu email.")
+      );
+      forgotEmailInputRef.current?.focus();
+      return false;
+    }
+
+    setForgotEmail(nextEmail);
+    setEmail(nextEmail);
+    const { error } = await requestPasswordReset(nextEmail);
+    if (error) {
+      toast.error(error.message || authCopy.forgotError);
+      return false;
+    }
+
+    setForgotModalOpen(false);
+    setPassword("");
+    setConfirmPassword("");
+    toast.success(authCopy.forgotSuccess);
+    return true;
+  };
+
+  const handleForgotSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      await sendPasswordResetEmail(forgotEmail);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      if (isForgot) {
-        const { error } = await requestPasswordReset(email);
-        if (error) {
-          toast.error(error.message || authCopy.forgotError);
-        } else {
-          toast.success(authCopy.forgotSuccess);
-          setAuthView("login");
-        }
-        return;
-      }
-
       const { error } = isLogin ? await signIn(email, password) : await signUp(email, password);
 
       if (error) {
@@ -383,8 +453,8 @@ const Auth = () => {
           <div className="absolute left-[-26px] top-[62%] h-36 w-36 rounded-full" style={{ background: "#7d59c91f" }} />
           <div className="absolute right-[-22px] top-[42%] h-28 w-28 rounded-full" style={{ background: "#59a5c924" }} />
           <div className="absolute left-[14%] top-[18%] h-2 w-2 rounded-full" style={{ background: "#7d59c9" }} />
-          <div className="absolute left-[76%] top-[16%] h-2.5 w-2.5 rounded-full" style={{ background: "#59c9b5" }} />
-          <div className="absolute left-[86%] top-[28%] h-1.5 w-1.5 rounded-full" style={{ background: "#c959a5" }} />
+          <div className="absolute left-[76%] top-[16%] h-2.5 w-2.5 rounded-full" style={{ background: "#e7db58" }} />
+          <div className="absolute left-[86%] top-[28%] h-1.5 w-1.5 rounded-full" style={{ background: "#59a5c9" }} />
 
           <div
             ref={sliderRef}
@@ -510,16 +580,7 @@ const Auth = () => {
           </div>
 
           {sheetOpen && (
-            <form onSubmit={handleSubmit} className="mt-4 space-y-3 overflow-y-auto px-1 pb-1">
-              {isForgot && (
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] leading-relaxed text-slate-600">
-                  <p className="font-semibold text-slate-700">
-                    {authCopy.forgotTitle}
-                  </p>
-                  <p>{authCopy.forgotHelp}</p>
-                </div>
-              )}
-
+            <form onSubmit={handleSubmit} autoComplete="on" className="mt-4 space-y-3 overflow-y-auto px-1 pb-1">
               <div className="space-y-1.5">
                 <Label htmlFor="email" className="text-[13px] font-semibold text-slate-700">
                   {t("auth.emailLabel")}
@@ -528,44 +589,49 @@ const Auth = () => {
                   <Mail className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
                   <Input
                     id="email"
+                    name="email"
                     type="email"
                     placeholder={t("auth.emailPlaceholder")}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    autoComplete={isLogin ? "username" : "email"}
+                    autoCapitalize="none"
+                    spellCheck={false}
                     required
                     className="h-11 rounded-2xl border-slate-200 bg-[#fbfbfe] pl-10 text-[15px]"
                   />
                 </div>
               </div>
 
-              {!isForgot && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="password" className="text-[13px] font-semibold text-slate-700">
-                    {t("auth.passwordLabel")}
-                  </Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder={t("auth.passwordPlaceholder")}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      minLength={6}
-                      className="h-11 rounded-2xl border-slate-200 bg-[#fbfbfe] pl-10 pr-10 text-[15px]"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((v) => !v)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-slate-400"
-                      aria-label={showPassword ? authCopy.hidePassword : authCopy.showPassword}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="password" className="text-[13px] font-semibold text-slate-700">
+                  {t("auth.passwordLabel")}
+                </Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
+                  <Input
+                    id="password"
+                    name={isLogin ? "password" : "new-password"}
+                    type={showPassword ? "text" : "password"}
+                    placeholder={t("auth.passwordPlaceholder")}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete={isLogin ? "current-password" : "new-password"}
+                    spellCheck={false}
+                    required
+                    minLength={6}
+                    className="h-11 rounded-2xl border-slate-200 bg-[#fbfbfe] pl-10 pr-10 text-[15px]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-slate-400"
+                    aria-label={showPassword ? authCopy.hidePassword : authCopy.showPassword}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
-              )}
+              </div>
 
               {isRegister && (
                 <p className="text-[11px] leading-snug text-slate-500">
@@ -584,24 +650,13 @@ const Auth = () => {
               {isLogin && (
                 <button
                   type="button"
-                  onClick={() => setAuthView("forgot")}
+                  onClick={() => {
+                    setForgotEmail(email.trim());
+                    setForgotModalOpen(true);
+                  }}
                   className="w-full text-left text-[12px] font-medium text-violet-700 underline underline-offset-2"
                 >
                   {authCopy.forgotCta}
-                </button>
-              )}
-
-              {isForgot && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthView("login");
-                    setPassword("");
-                    setConfirmPassword("");
-                  }}
-                  className="w-full text-left text-[12px] font-medium text-slate-600 underline underline-offset-2"
-                >
-                  {authCopy.backToLogin}
                 </button>
               )}
 
@@ -611,23 +666,71 @@ const Auth = () => {
                 style={{ background: "#7d59c9", boxShadow: "none", WebkitTapHighlightColor: "transparent" }}
                 disabled={loading}
               >
-                {loading
-                  ? t("common.loading")
-                  : isForgot
-                    ? authCopy.forgotSubmit
-                    : isLogin
-                    ? t("auth.submitLogin")
-                    : t("auth.submitRegister")}
+                {loading ? t("common.loading") : isLogin ? t("auth.submitLogin") : t("auth.submitRegister")}
               </button>
             </form>
           )}
         </section>
       </div>
 
+      {forgotModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
+          <form
+            onSubmit={handleForgotSubmit}
+            autoComplete="on"
+            className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_24px_56px_rgba(15,23,42,0.28)]"
+          >
+            <h2 className="text-[20px] font-bold text-slate-900">{authCopy.forgotTitle}</h2>
+            <p className="mt-1 text-[13px] leading-relaxed text-slate-600">{authCopy.forgotHelp}</p>
+
+            <div className="mt-4 space-y-1.5">
+              <Label htmlFor="forgot-email" className="text-[13px] font-semibold text-slate-700">
+                {t("auth.emailLabel")}
+              </Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
+                <Input
+                  id="forgot-email"
+                  ref={forgotEmailInputRef}
+                  name="recovery-email"
+                  type="email"
+                  placeholder={t("auth.emailPlaceholder")}
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  className="h-11 rounded-2xl border-slate-200 bg-[#fbfbfe] pl-10 text-[15px]"
+                />
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => setForgotModalOpen(false)}
+                className="h-11 flex-1 rounded-full bg-slate-100 text-[14px] font-semibold text-slate-700"
+              >
+                {authCopy.backShort}
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="h-11 flex-1 rounded-full bg-[#7d59c9] text-[14px] font-semibold text-white"
+              >
+                {loading ? t("common.loading") : authCopy.forgotSubmitShort}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {resetModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
           <form
             onSubmit={handleResetSubmit}
+            autoComplete="on"
             className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_24px_56px_rgba(15,23,42,0.28)]"
           >
             <h2 className="text-[20px] font-bold text-slate-900">{authCopy.resetTitle}</h2>
@@ -641,10 +744,13 @@ const Auth = () => {
                 <Lock className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
                 <Input
                   id="reset-password"
+                  name="new-password"
                   type={showPassword ? "text" : "password"}
                   placeholder={t("auth.passwordPlaceholder")}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
+                  spellCheck={false}
                   required
                   minLength={6}
                   className="h-11 rounded-2xl border-slate-200 bg-[#fbfbfe] pl-10 pr-10 text-[15px]"
@@ -668,10 +774,13 @@ const Auth = () => {
                 <Lock className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
                 <Input
                   id="confirm-password"
+                  name="confirm-password"
                   type={showPassword ? "text" : "password"}
                   placeholder={authCopy.resetConfirmPlaceholder}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
+                  spellCheck={false}
                   required
                   minLength={6}
                   className="h-11 rounded-2xl border-slate-200 bg-[#fbfbfe] pl-10 text-[15px]"
