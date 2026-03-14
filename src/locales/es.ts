@@ -1060,7 +1060,7 @@ export const es = {
     devicePushNeedsRegisterLine: "Permiso OK, pero falta activar aquí.",
     devicePushPaused: "Pausadas",
     devicePushPausedLine: "Pausado en este dispositivo",
-    devicePushActiveLine: "Activo en este dispositivo ?",
+    devicePushActiveLine: "Activo en este dispositivo ✅",
     devicePushToggleAria:
       "Activar o pausar notificaciones en este dispositivo",
     pushDeviceEnabled: "Notificaciones activadas en este dispositivo",
