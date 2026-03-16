@@ -592,11 +592,11 @@ export default function MentalDumpModal({
 
     let reminderMode: ReminderMode = "NONE";
     if (dueDate) {
-  if (reminderHint === "DAY_BEFORE_AND_DUE") reminderMode = "DAY_BEFORE_AND_DUE";
-  else if (reminderHint === "WEEK_BEFORE_AND_DUE") reminderMode = "WEEK_BEFORE_AND_DUE";
-  else if (reminderHint === "DAILY_UNTIL_DUE") reminderMode = "DAILY_UNTIL_DUE";
-  else reminderMode = "DAILY_UNTIL_DUE";
-}
+      if (reminderHint === "DAY_BEFORE_AND_DUE") reminderMode = "DAY_BEFORE_AND_DUE";
+      else if (reminderHint === "WEEK_BEFORE_AND_DUE") reminderMode = "WEEK_BEFORE_AND_DUE";
+      else if (reminderHint === "DAILY_UNTIL_DUE") reminderMode = "DAILY_UNTIL_DUE";
+      else reminderMode = "ON_DUE_DATE";
+    }
 
 
     const detectedDateText = detectDateSignal(cleanedText);

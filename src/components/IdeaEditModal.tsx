@@ -225,6 +225,14 @@ export default function IdeaEditModal({
       setRepeatEnabled(false);
       setRepeatType("none");
       setReminderMode(reminderHint as ReminderMode);
+    } else if (dueDateISO) {
+      setRepeatEnabled(false);
+      setRepeatType("none");
+      setReminderMode("ON_DUE_DATE");
+    } else {
+      setRepeatEnabled(false);
+      setRepeatType("none");
+      setReminderMode("NONE");
     }
   }, [showTaskOptions, title, lang, applyDateTime]);
 
