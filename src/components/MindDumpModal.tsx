@@ -1603,10 +1603,15 @@ export default function MindDumpModal({
       .trim();
     if (!cleaned) return [];
 
+    const listItemLeadNoiseRe =
+      "(?:esto|esta|este|estos|estas|eso|esa|ese|esos|esas|lo\\s+siguiente|la\\s+siguiente|los\\s+siguientes|las\\s+siguientes|this|that|these|those|the\\s+following|following|dies(?:e(?:r|n|m|s)?)?|das|folgend(?:e(?:r|n|m|s)?|es))";
+
     // Comma is the main separator; also support y/and/und for trailing items.
+    // We intentionally avoid splitting on "or/oder" because it often belongs
+    // to the item text itself ("press banca o máquina", "Hack squat oder ...").
     return cleaned
       .split(",")
-      .flatMap((chunk) => chunk.split(/\s+(?:y|e|u|and|und|oder)\s+/i))
+      .flatMap((chunk) => chunk.split(/\s+(?:y|e|u|and|und)\s+/i))
       .map((item) =>
         item
           .replace(
@@ -1617,6 +1622,7 @@ export default function MindDumpModal({
             /^\s*(?:agrega(?:r|lo|la|le|los|las)?|añad(?:e|ir|elo|ela|ele|elos|elas)?|anad(?:e|ir|elo|ela|ele|elos|elas)?|mete(?:r|lo|la|le|los|las)?|pon(?:e|er|lo|la|le|los|las)?|echa(?:r|lo|la|le|los|las)?|anota(?:r|lo|la|le|los|las)?|apunta(?:r|lo|la|le|los|las)?|incluy(?:e|ir|elo|ela|ele|elos|elas)?|put|add|insert|include|write|mach(?:e|en|t)?|pack(?:e|en|t)?|leg(?:e|en|t)?|schreib(?:e|en|t)?|f(?:u|ue|ü)g(?:e|en|t)?)(?:\s+(?:inside|in|dentro|adentro|drin|rein|hinein|hinzu))?\s+/i,
             "",
           )
+          .replace(new RegExp(`^\\s*${listItemLeadNoiseRe}(?:\\s*[:,-]\\s*|\\s+)`, "iu"), "")
           .replace(/\s+(?:hinzu|rein|hinein|inside|in|dentro|adentro)\s*$/i, "")
           .trim(),
       )
@@ -1839,6 +1845,57 @@ export default function MindDumpModal({
     return null;
   };
 
+  const mergeListItems = (...groups: string[][]): string[] => {
+    return groups
+      .flat()
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
+  };
+
+  const parseListDraftFromText = (
+    raw: string,
+  ): { title: string; items: string[] } | null => {
+    const text = String(raw ?? "").trim();
+    if (!text) return null;
+
+    const nonEmptyLines = text
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+    if (nonEmptyLines.length === 0) return null;
+
+    const firstLine = nonEmptyLines[0] ?? "";
+    const trailingText = nonEmptyLines.slice(1).join("\n");
+
+    const firstLineNatural = parseListCommandFromText(firstLine);
+    if (firstLineNatural) {
+      return {
+        title: firstLineNatural.title,
+        items: mergeListItems(firstLineNatural.items, parseListItemsFromText(trailingText)),
+      };
+    }
+
+    if (nonEmptyLines.length === 1) {
+      const fullNatural = parseListCommandFromText(text);
+      if (fullNatural) return fullNatural;
+    }
+
+    const firstLineTitle = parseListTitleFromText(firstLine);
+    if (firstLineTitle) {
+      return {
+        title: firstLineTitle,
+        items: parseListItemsFromText(trailingText),
+      };
+    }
+
+    if (nonEmptyLines.length === 1) {
+      const fullTitle = parseListTitleFromText(text);
+      if (fullTitle) return { title: fullTitle, items: [] };
+    }
+
+    return null;
+  };
+
   const blurTextarea = () => {
     try {
       textareaRef.current?.blur();
@@ -1993,7 +2050,7 @@ export default function MindDumpModal({
 
     const naturalListCommand =
       !typeManuallySelected && onCreateList && trimmed.length > 0
-        ? parseListCommandFromText(trimmed)
+        ? parseListDraftFromText(trimmed)
         : null;
     if (naturalListCommand) {
       onClose();
@@ -2011,15 +2068,20 @@ export default function MindDumpModal({
 
     if (itemKind === "list") {
       const parsedLines = parseListItemsFromText(text);
+      const parsedDraft = parseListDraftFromText(text);
       const typedTitle = listTitle.trim();
-      const inferredTitle = typedTitle || parsedLines[0] || "";
+      const inferredTitle = typedTitle || parsedDraft?.title || parsedLines[0] || "";
       const cleanTitle = inferredTitle.trim();
       if (!cleanTitle) {
         toast.message(t("lists.titlePlaceholder", "Título de la lista"));
         return;
       }
 
-      const listItems = typedTitle ? parsedLines : parsedLines.slice(1);
+      const listItems = parsedDraft
+        ? parsedDraft.items
+        : typedTitle
+          ? parsedLines
+          : parsedLines.slice(1);
       onClose();
       setTimeout(() => {
         void (async () => {
@@ -2501,7 +2563,7 @@ export default function MindDumpModal({
   useEffect(() => {
     if (!open) return;
 
-    const listCommand = parseListCommandFromText(text);
+    const listCommand = parseListDraftFromText(text);
     const hasIdeaSignal = !!detectIdeaSignal(text);
     const hasListSignal = !!detectListSignal(text);
     const hasListCommand = !!listCommand;
@@ -2540,7 +2602,7 @@ export default function MindDumpModal({
     const lines = String(text ?? "").split("\n");
     const firstLine = (lines[0] ?? "").trim();
     // 1) Natural command detection ("crea una lista que se llame test", etc.)
-    const natural = parseListCommandFromText(text);
+    const natural = parseListDraftFromText(text);
     const naturalTitle = natural?.title?.trim() ?? "";
     if (naturalTitle) {
       if (naturalTitle !== listTitle.trim()) setListTitle(naturalTitle);
