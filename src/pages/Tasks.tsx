@@ -8,6 +8,7 @@ import {
   type PointerEvent,
   type TouchEvent,
 } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,6 +38,11 @@ import {
   prefetchShareInvite,
   shareTextOrCopy,
 } from "@/lib/shareInvitesApi";
+import {
+  applyBrainItemToQueryCaches,
+  removeBrainItemFromQueryCaches,
+} from "@/lib/brainItemsQueryCache";
+import { queryKeys } from "@/lib/queryKeys";
 
 type FilterTab = "tasks" | "notes";
 
@@ -192,6 +198,7 @@ function buildDateGroups(
 export default function TasksPage() {
   const { user } = useAuth();
   const { t, lang } = useI18n();
+  const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const safeT = useCallback(
@@ -209,8 +216,20 @@ export default function TasksPage() {
     return "es-ES";
   }, [lang]);
 
-  const [items, setItems] = useState<BrainItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const inboxItemsQuery = useQuery({
+    queryKey: user ? queryKeys.inboxItems(user.id) : ["brain", "inbox", "anonymous"],
+    queryFn: () => fetchInboxItems(user!.id),
+    enabled: !!user,
+    staleTime: 60_000,
+  });
+
+  const [items, setItems] = useState<BrainItem[]>(
+    () =>
+      (user
+        ? queryClient.getQueryData<BrainItem[]>(queryKeys.inboxItems(user.id))
+        : undefined) ?? [],
+  );
+  const loading = !!user && inboxItemsQuery.isLoading;
   const [shareLoading, setShareLoading] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
@@ -321,21 +340,18 @@ export default function TasksPage() {
   );
 
   useEffect(() => {
-    if (!user) return;
-    setLoading(true);
+    if (!user) {
+      setItems([]);
+      return;
+    }
+    setItems(inboxItemsQuery.data ?? []);
+  }, [inboxItemsQuery.data, user]);
 
-    (async () => {
-      try {
-        const data = await fetchInboxItems(user.id);
-        setItems(data);
-      } catch (error) {
-        console.error(error);
-        alert(safeT("inbox.errorLoading", "Error cargando recordatorios"));
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [safeT, user]);
+  useEffect(() => {
+    if (!inboxItemsQuery.error) return;
+    console.error(inboxItemsQuery.error);
+    alert(safeT("inbox.errorLoading", "Error cargando recordatorios"));
+  }, [inboxItemsQuery.error, safeT]);
 
   const shouldShowSentIndicator = useCallback((item: BrainItem) => {
     const meta = item as BrainItem & SharedItemMeta;
@@ -416,14 +432,20 @@ export default function TasksPage() {
   }, [deferredSearch]);
 
   const handlePrimaryAction = async (item: BrainItem) => {
+    if (!user) return;
     try {
       if (item.status !== "DONE") {
         const updated = await setTaskStatus(item.id, "DONE");
         setItems((prev) => prev.map((entry) => (entry.id === updated.id ? updated : entry)));
+        applyBrainItemToQueryCaches(queryClient, user.id, updated);
       } else {
         await deleteBrainItem(item.id);
         setItems((prev) => prev.filter((entry) => entry.id !== item.id));
+        removeBrainItemFromQueryCaches(queryClient, user.id, item.id);
       }
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.statusSummary(user.id),
+      });
     } catch (error) {
       console.error(error);
       alert(safeT("inbox.errorUpdating", "Error actualizando recordatorios"));
@@ -747,6 +769,12 @@ export default function TasksPage() {
         onClose={() => setEditOpen(false)}
         onUpdated={(updated) => {
           setItems((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+          if (user) {
+            applyBrainItemToQueryCaches(queryClient, user.id, updated);
+            void queryClient.invalidateQueries({
+              queryKey: queryKeys.statusSummary(user.id),
+            });
+          }
         }}
       />
 
@@ -756,11 +784,23 @@ export default function TasksPage() {
         onClose={() => setEditIdeaOpen(false)}
         onUpdated={(updated) => {
           setItems((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+          if (user) {
+            applyBrainItemToQueryCaches(queryClient, user.id, updated);
+            void queryClient.invalidateQueries({
+              queryKey: queryKeys.statusSummary(user.id),
+            });
+          }
         }}
         onConverted={(convertedTask) => {
           setItems((prev) =>
             prev.map((item) => (item.id === convertedTask.id ? convertedTask : item)),
           );
+          if (user) {
+            applyBrainItemToQueryCaches(queryClient, user.id, convertedTask);
+            void queryClient.invalidateQueries({
+              queryKey: queryKeys.statusSummary(user.id),
+            });
+          }
           updateTab("tasks");
         }}
       />

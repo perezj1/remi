@@ -1,5 +1,6 @@
 // src/App.tsx
-import React from "react";
+import React, { Suspense, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   BrowserRouter,
   Routes,
@@ -10,36 +11,39 @@ import {
 
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { I18nProvider, useI18n } from "@/contexts/I18nContext";
+import { NotificationsCenterProvider } from "@/contexts/NotificationsCenterContext";
 import type { RemiLocale } from "@/locales";
 
-import TodayPage from "@/pages/Index";
-import TasksPage from "@/pages/Tasks";
-import SharedListsPage from "@/pages/Lists";
-import ProfilePage from "@/pages/Profile";
-import AuthPage from "@/pages/Auth";
-import NotFound from "@/pages/NotFound";
-import BottomNav from "@/components/BottomNav";
 import InstallPrompt from "@/components/InstallPrompt";
-import StatusPage from "@/pages/Status";
 import ScrollToTop from "@/components/ScrollToTop";
-import LandingPage from "@/pages/Landing";
-import ShareInvitePage from "@/pages/ShareInvitePage";
-import SharedListInvitePage from "@/pages/SharedListInvitePage";
-import LegalPage from "@/pages/Legal";
-import ResetPasswordPage from "@/pages/ResetPassword";
 
 // ✅ Provider + hook para ocultar BottomNav cuando hay modales abiertos
 import { ModalUiProvider, useModalUi } from "@/contexts/ModalUiContext";
 
 // ✅ Share Target (pública)
-import ShareTargetPage from "@/pages/ShareTarget";
 
 // ✅ OFFLINE SYNC
 import { syncOfflineQueue } from "@/lib/syncOfflineQueue";
+import { invalidateBrainItemQueries } from "@/lib/brainItemsQueryCache";
+import { invalidateSharedListQueries } from "@/lib/sharedListQueryCache";
 import { toast } from "sonner";
 
 // ✅ Host global de captura (modales globales)
-import RemiCaptureHost from "@/components/RemiCaptureHost";
+const TodayPage = React.lazy(() => import("@/pages/Index"));
+const TasksPage = React.lazy(() => import("@/pages/Tasks"));
+const SharedListsPage = React.lazy(() => import("@/pages/Lists"));
+const ProfilePage = React.lazy(() => import("@/pages/Profile"));
+const AuthPage = React.lazy(() => import("@/pages/Auth"));
+const NotFound = React.lazy(() => import("@/pages/NotFound"));
+const BottomNav = React.lazy(() => import("@/components/BottomNav"));
+const StatusPage = React.lazy(() => import("@/pages/Status"));
+const LandingPage = React.lazy(() => import("@/pages/Landing"));
+const ShareInvitePage = React.lazy(() => import("@/pages/ShareInvitePage"));
+const SharedListInvitePage = React.lazy(() => import("@/pages/SharedListInvitePage"));
+const LegalPage = React.lazy(() => import("@/pages/Legal"));
+const ResetPasswordPage = React.lazy(() => import("@/pages/ResetPassword"));
+const ShareTargetPage = React.lazy(() => import("@/pages/ShareTarget"));
+const RemiCaptureHost = React.lazy(() => import("@/components/RemiCaptureHost"));
 
 // ✅ Supabase client (ruta correcta)
 import { supabase } from "@/integrations/supabase/client";
@@ -84,6 +88,33 @@ async function touchLastActive(userId: string) {
   } catch (e) {
     console.error("[App] touchLastActive error:", e);
   }
+}
+
+function RouteFallback() {
+  return <div className="min-h-[100dvh] bg-[#fafafe]" />;
+}
+
+function AppDataRefreshBridge() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!user) return;
+
+    const onChanged = () => {
+      void Promise.all([
+        invalidateBrainItemQueries(queryClient, user.id),
+        invalidateSharedListQueries(queryClient, user.id),
+      ]).catch((error) => {
+        console.error("[App] cache refresh failed:", error);
+      });
+    };
+
+    window.addEventListener("remi-items-changed", onChanged);
+    return () => window.removeEventListener("remi-items-changed", onChanged);
+  }, [queryClient, user]);
+
+  return null;
 }
 
 function AppRoutes() {
@@ -225,6 +256,7 @@ function AppRoutes() {
     >
       <ScrollToTop />
 
+      <Suspense fallback={<RouteFallback />}>
       <Routes>
         {/* Share Target (pública) */}
         <Route path="/share-target" element={<ShareTargetPage />} />
@@ -322,14 +354,23 @@ function AppRoutes() {
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
+      </Suspense>
 
       {/* ✅ Host global (fuera de Routes) */}
       {/* ✅ NUEVO: nunca montar en URLs de share */}
-      {shouldMountCaptureHost && <RemiCaptureHost />}
+      {shouldMountCaptureHost && (
+        <Suspense fallback={null}>
+          <RemiCaptureHost />
+        </Suspense>
+      )}
 
       {/* Bottom nav solo si hay usuario y no está oculto por ruta o modal */}
       {/* ✅ NUEVO: también ocultar en URLs de share */}
-      {user && !hideBottomNav && <BottomNav />}
+      {user && !hideBottomNav && (
+        <Suspense fallback={null}>
+          <BottomNav />
+        </Suspense>
+      )}
 
       {!isLandingRoute && !isLegalRoute && !isAuthRoute && !isResetPasswordRoute && <InstallPrompt />}
     </div>
@@ -347,7 +388,10 @@ export default function App() {
       <AuthProvider>
         <I18nProvider>
           <ModalUiProvider>
-            <AppRoutes />
+            <NotificationsCenterProvider>
+              <AppDataRefreshBridge />
+              <AppRoutes />
+            </NotificationsCenterProvider>
           </ModalUiProvider>
         </I18nProvider>
       </AuthProvider>

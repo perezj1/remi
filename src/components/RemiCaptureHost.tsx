@@ -1,5 +1,6 @@
 // src/components/RemiCaptureHost.tsx
 import { useCallback, useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,6 +27,12 @@ import {
   fetchSharedLists,
   updateSharedListIcon,
 } from "@/lib/sharedListsApi";
+import {
+  applyBrainItemToQueryCaches,
+  setStatusSummaryCache,
+} from "@/lib/brainItemsQueryCache";
+import { queryKeys } from "@/lib/queryKeys";
+import { invalidateSharedListQueries } from "@/lib/sharedListQueryCache";
 
 import { SHARE_DRAFT_KEY } from "@/pages/ShareTarget";
 
@@ -124,6 +131,7 @@ export default function RemiCaptureHost() {
 
   const location = useLocation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   // ✅ modal inicial (MindDumpModal)
   const [mindDumpOpen, setMindDumpOpen] = useState(false);
@@ -299,14 +307,6 @@ export default function RemiCaptureHost() {
   }, [openCapture]);
 
   // ✅ Crear (global) y avisar a las páginas que recarguen
-  const emitItemsChanged = useCallback(() => {
-    try {
-      window.dispatchEvent(new Event("remi-items-changed"));
-    } catch {
-      // ignore
-    }
-  }, []);
-
   const handleCreateTask = useCallback(
     async (
       title: string,
@@ -315,29 +315,41 @@ export default function RemiCaptureHost() {
       repeatType: RepeatType
     ) => {
       if (!user) return;
-      const beforeSummary = await fetchRemiStatusSummary(user.id);
+      const beforeSummary =
+        queryClient.getQueryData(queryKeys.statusSummary(user.id)) ??
+        (await queryClient.fetchQuery({
+          queryKey: queryKeys.statusSummary(user.id),
+          queryFn: () => fetchRemiStatusSummary(user.id),
+        }));
       const before = computeMindClearPercent(beforeSummary);
-      await createTask(user.id, title, dueDate, reminderMode, repeatType);
+      const created = await createTask(user.id, title, dueDate, reminderMode, repeatType);
+      applyBrainItemToQueryCaches(queryClient, user.id, created);
       const afterSummary = await fetchRemiStatusSummary(user.id);
+      setStatusSummaryCache(queryClient, user.id, afterSummary);
       const after = computeMindClearPercent(afterSummary);
       celebrateCreation(after - before);
-      emitItemsChanged();
     },
-    [emitItemsChanged, user]
+    [queryClient, user]
   );
 
   const handleCreateIdea = useCallback(
     async (title: string) => {
       if (!user) return;
-      const beforeSummary = await fetchRemiStatusSummary(user.id);
+      const beforeSummary =
+        queryClient.getQueryData(queryKeys.statusSummary(user.id)) ??
+        (await queryClient.fetchQuery({
+          queryKey: queryKeys.statusSummary(user.id),
+          queryFn: () => fetchRemiStatusSummary(user.id),
+        }));
       const before = computeMindClearPercent(beforeSummary);
-      await createIdea(user.id, title);
+      const created = await createIdea(user.id, title);
+      applyBrainItemToQueryCaches(queryClient, user.id, created);
       const afterSummary = await fetchRemiStatusSummary(user.id);
+      setStatusSummaryCache(queryClient, user.id, afterSummary);
       const after = computeMindClearPercent(afterSummary);
       celebrateCreation(after - before);
-      emitItemsChanged();
     },
-    [emitItemsChanged, user]
+    [queryClient, user]
   );
 
   const handleCreateList = useCallback(
@@ -353,13 +365,21 @@ export default function RemiCaptureHost() {
           .replace(/\s+/g, " ")
           .trim();
 
-      const lists = await fetchSharedLists(user.id);
+      const lists = await queryClient.fetchQuery({
+        queryKey: queryKeys.sharedLists(user.id),
+        queryFn: () => fetchSharedLists(user.id),
+      });
       const existing = lists.find(
         (list) => list.title.trim().toLocaleLowerCase() === cleanTitle.toLocaleLowerCase(),
       );
       const targetList = existing ?? (await createSharedList(user.id, cleanTitle));
       const listWasCreated = !existing;
-      const existingItems = existing ? await fetchSharedListItems(existing.id) : [];
+      const existingItems = existing
+        ? await queryClient.fetchQuery({
+            queryKey: queryKeys.sharedListItems(existing.id),
+            queryFn: () => fetchSharedListItems(existing.id),
+          })
+        : [];
       const existingCount = existingItems.length;
       const existingKeys = new Set(existingItems.map((item) => normalizeItemKey(item.text)));
       let addedCount = 0;
@@ -403,13 +423,13 @@ export default function RemiCaptureHost() {
 
       const didChange = listWasCreated || addedCount > 0 || iconChanged;
       if (didChange) {
+        await invalidateSharedListQueries(queryClient, user.id);
         toast.success(
           existing ? t("lists.updated", "Lista actualizada.") : t("lists.created", "Lista creada."),
         );
-        emitItemsChanged();
       }
     },
-    [emitItemsChanged, t, user],
+    [queryClient, t, user],
   );
 
   // ✅ Cierre: siempre cerrar y dejar INDEX limpio (sin modal, sin _mh)
