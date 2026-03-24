@@ -1,4 +1,5 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Check, ChevronDown, ChevronLeft, ChevronUp, CirclePlus, ListPlus, LogOut, Menu, MoreVertical, Pencil, RotateCcw, Share2, Trash2, UserRoundCheck, Users } from "lucide-react";
 import { toast } from "sonner";
@@ -15,6 +16,7 @@ import {
   createSharedListItem,
   deleteSharedList,
   deleteSharedListItem,
+  fetchSharedListItemStats,
   fetchSharedListItems,
   fetchSharedLists,
   leaveSharedList,
@@ -25,6 +27,9 @@ import {
   type SharedList,
   type SharedListItem,
 } from "@/lib/sharedListsApi";
+import { queryKeys } from "@/lib/queryKeys";
+import { buildSharedListSummaries } from "@/lib/sharedListSummary";
+import { invalidateSharedListQueries } from "@/lib/sharedListQueryCache";
 import { shareTextOrCopy } from "@/lib/shareInvitesApi";
 
 export default function SharedListsPage() {
@@ -32,6 +37,7 @@ export default function SharedListsPage() {
   const { t, lang } = useI18n();
   const { inviteToken } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [params, setParams] = useSearchParams();
   const { setModalOpen } = useModalUi();
 
@@ -44,10 +50,7 @@ export default function SharedListsPage() {
     [t],
   );
 
-  const [loading, setLoading] = useState(true);
-  const [lists, setLists] = useState<SharedList[]>([]);
   const [selectedListId, setSelectedListId] = useState<string | null>(null);
-  const [items, setItems] = useState<SharedListItem[]>([]);
 
   const [newListTitle, setNewListTitle] = useState("");
   const [newListManualEmoji, setNewListManualEmoji] = useState<string | null>(null);
@@ -55,7 +58,6 @@ export default function SharedListsPage() {
   const [saving, setSaving] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
   const [viewMode, setViewMode] = useState<"cards" | "detail">("cards");
-  const [progressByList, setProgressByList] = useState<Record<string, { done: number; total: number }>>({});
   const [menuOpen, setMenuOpen] = useState(false);
   const [cardMenuOpenId, setCardMenuOpenId] = useState<string | null>(null);
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
@@ -64,66 +66,18 @@ export default function SharedListsPage() {
   const newItemInputRef = useRef<HTMLTextAreaElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  const toMs = useCallback((value?: string | null) => {
-    if (!value) return 0;
-    const ms = Date.parse(value);
-    return Number.isFinite(ms) ? ms : 0;
-  }, []);
+  const sharedListsQuery = useQuery({
+    queryKey: user ? queryKeys.sharedLists(user.id) : ["shared", "lists", "anonymous"],
+    queryFn: () => fetchSharedLists(user!.id),
+    enabled: !!user,
+    staleTime: 60_000,
+  });
 
-  const getListActivityMs = useCallback(
-    (list: SharedList, listItems?: SharedListItem[]) => {
-      const listMs = Math.max(toMs(list.created_at), toMs(list.updated_at));
-      if (!listItems || listItems.length === 0) return listMs;
-      const itemsMs = listItems.reduce(
-        (max, item) => Math.max(max, toMs(item.created_at), toMs(item.updated_at)),
-        0,
-      );
-      return Math.max(listMs, itemsMs);
-    },
-    [toMs],
+  const listIds = useMemo(
+    () => (sharedListsQuery.data ?? []).map((list) => list.id),
+    [sharedListsQuery.data],
   );
-
-  const sortListsByRecentActivity = useCallback(
-    (source: SharedList[], activityByList?: Record<string, number>) =>
-      [...source].sort((a, b) => {
-        const aMs = activityByList?.[a.id] ?? getListActivityMs(a);
-        const bMs = activityByList?.[b.id] ?? getListActivityMs(b);
-        return bMs - aMs;
-      }),
-    [getListActivityMs],
-  );
-
-  const toProgress = useCallback((listItems: SharedListItem[]) => {
-    const total = listItems.length;
-    const done = listItems.reduce((acc, row) => acc + (row.done ? 1 : 0), 0);
-    return { done, total };
-  }, []);
-
-  const loadProgressForLists = useCallback(
-    async (nextLists: SharedList[]) => {
-      if (nextLists.length === 0) {
-        setProgressByList({});
-        return;
-      }
-      const listRows = await Promise.all(
-        nextLists.map(async (list) => {
-          const listItems = await fetchSharedListItems(list.id);
-          return [list.id, listItems] as const;
-        }),
-      );
-      const progressRows = listRows.map(([listId, listItems]) => [listId, toProgress(listItems)] as const);
-      const activityByList = Object.fromEntries(
-        listRows.map(([listId, listItems]) => {
-          const list = nextLists.find((row) => row.id === listId);
-          const activityMs = list ? getListActivityMs(list, listItems) : 0;
-          return [listId, activityMs] as const;
-        }),
-      );
-      setProgressByList(Object.fromEntries(progressRows));
-      setLists(sortListsByRecentActivity(nextLists, activityByList));
-    },
-    [getListActivityMs, sortListsByRecentActivity, toProgress],
-  );
+  const listIdsSignature = useMemo(() => listIds.join("|"), [listIds]);
 
   const openListDetail = useCallback((listId: string, pushHistory = true) => {
     setSelectedListId(listId);
@@ -133,8 +87,33 @@ export default function SharedListsPage() {
     }
   }, []);
 
+  const sharedListItemStatsQuery = useQuery({
+    queryKey: user
+      ? queryKeys.sharedListItemStats(user.id, listIds)
+      : ["shared", "list-item-stats", "anonymous"],
+    queryFn: () => fetchSharedListItemStats(listIds),
+    enabled: !!user && listIds.length > 0,
+    staleTime: 60_000,
+  });
+
+  const listSummaries = useMemo(
+    () =>
+      buildSharedListSummaries(
+        sharedListsQuery.data ?? [],
+        sharedListItemStatsQuery.data ?? {},
+      ),
+    [sharedListItemStatsQuery.data, sharedListsQuery.data],
+  );
+  const lists = useMemo(() => listSummaries.map((row) => row.list), [listSummaries]);
+  const progressByList = useMemo(
+    () =>
+      Object.fromEntries(
+        listSummaries.map((row) => [row.list.id, row.progress] as const),
+      ),
+    [listSummaries],
+  );
   const selected = useMemo(
-    () => lists.find((l) => l.id === selectedListId) ?? null,
+    () => lists.find((list) => list.id === selectedListId) ?? null,
     [lists, selectedListId],
   );
   const liveSuggestedListEmoji = useMemo(
@@ -142,48 +121,54 @@ export default function SharedListsPage() {
     [newListTitle],
   );
   const newListEmojiPreview = newListManualEmoji ?? liveSuggestedListEmoji;
-  const listIdsSignature = useMemo(() => lists.map((list) => list.id).join("|"), [lists]);
+  const selectedListItemsQuery = useQuery({
+    queryKey: selectedListId
+      ? queryKeys.sharedListItems(selectedListId)
+      : ["shared", "list-items", "none"],
+    queryFn: () => fetchSharedListItems(selectedListId!),
+    enabled: !!selectedListId && viewMode === "detail",
+    staleTime: 30_000,
+  });
+  const items = selectedListItemsQuery.data ?? [];
+  const loading =
+    !!user &&
+    (sharedListsQuery.isLoading ||
+      (listIds.length > 0 && sharedListItemStatsQuery.isLoading) ||
+      (viewMode === "detail" && !!selectedListId && selectedListItemsQuery.isLoading));
 
   const loadLists = useCallback(async () => {
     if (!user) return;
-    const next = await fetchSharedLists(user.id);
-    const sorted = sortListsByRecentActivity(next);
-    setLists(sorted);
-    void loadProgressForLists(next).catch((err) => {
-      console.error(err);
-    });
-    setSelectedListId((prev) => {
-      if (prev && sorted.some((l) => l.id === prev)) return prev;
-      return sorted[0]?.id ?? null;
-    });
-    if (next.length === 0) {
-      setViewMode("cards");
-    }
-  }, [loadProgressForLists, sortListsByRecentActivity, user]);
+    await invalidateSharedListQueries(queryClient, user.id);
+  }, [queryClient, user]);
 
   const loadItems = useCallback(async () => {
-    if (!selectedListId) {
-      setItems([]);
-      return;
-    }
-    const next = await fetchSharedListItems(selectedListId);
-    setItems(next);
-    setProgressByList((prev) => ({
-      ...prev,
-      [selectedListId]: toProgress(next),
-    }));
-  }, [selectedListId, toProgress]);
+    if (!selectedListId) return;
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.sharedListItems(selectedListId),
+    });
+  }, [queryClient, selectedListId]);
 
   useEffect(() => {
-    if (!user) return;
-    setLoading(true);
-    void loadLists()
-      .catch((err) => {
-        console.error(err);
-        toast.error(safeT("lists.loadError", "No se pudieron cargar las listas."));
-      })
-      .finally(() => setLoading(false));
-  }, [loadLists, safeT, user]);
+    if (!sharedListsQuery.error) return;
+    console.error(sharedListsQuery.error);
+    toast.error(safeT("lists.loadError", "No se pudieron cargar las listas."));
+  }, [safeT, sharedListsQuery.error]);
+
+  useEffect(() => {
+    if (!selectedListItemsQuery.error) return;
+    console.error(selectedListItemsQuery.error);
+    toast.error(safeT("lists.itemsLoadError", "No se pudieron cargar los puntos."));
+  }, [safeT, selectedListItemsQuery.error]);
+
+  useEffect(() => {
+    setSelectedListId((prev) => {
+      if (prev && lists.some((list) => list.id === prev)) return prev;
+      return lists[0]?.id ?? null;
+    });
+    if (lists.length === 0) {
+      setViewMode("cards");
+    }
+  }, [lists]);
 
   useEffect(() => {
     const listFromQuery = (params.get("list") ?? "").trim();
@@ -193,13 +178,6 @@ export default function SharedListsPage() {
   }, [lists, openListDetail, params]);
 
   useEffect(() => {
-    void loadItems().catch((err) => {
-      console.error(err);
-      toast.error(safeT("lists.itemsLoadError", "No se pudieron cargar los puntos."));
-    });
-  }, [loadItems, safeT]);
-
-  useEffect(() => {
     setExpandedItemId((prev) => {
       if (!prev) return null;
       return items.some((item) => item.id === prev) ? prev : null;
@@ -207,11 +185,12 @@ export default function SharedListsPage() {
   }, [items, selectedListId]);
 
   const syncSharedState = useCallback(async () => {
+    if (!user) return;
     await loadLists();
     if (viewMode === "detail" && selectedListId) {
       await loadItems();
     }
-  }, [loadItems, loadLists, selectedListId, viewMode]);
+  }, [loadItems, loadLists, selectedListId, user, viewMode]);
 
   useEffect(() => {
     if (!user || lists.length === 0) return;
@@ -337,6 +316,9 @@ export default function SharedListsPage() {
       setNewListTitle("");
       setNewListManualEmoji(null);
       await loadLists();
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.sharedListItems(created.id),
+      });
       openListDetail(created.id);
       toast.success(safeT("lists.created", "Lista creada."));
     } catch (err) {
@@ -448,7 +430,6 @@ export default function SharedListsPage() {
     try {
       await updateSharedListTitle(list.id, value, { actorUserId: user.id });
       await loadLists();
-      if (selectedListId === list.id) await loadItems();
     } catch (err) {
       console.error(err);
       toast.error(safeT("lists.renameError", "No se pudo cambiar el título."));
@@ -480,7 +461,7 @@ export default function SharedListsPage() {
     try {
       await createSharedListItem(selected.id, text, user.id, items.length);
       setNewItemText("");
-      await loadItems();
+      await syncSharedState();
     } catch (err) {
       console.error(err);
       toast.error(safeT("lists.itemCreateError", "No se pudo crear el punto."));
@@ -491,7 +472,7 @@ export default function SharedListsPage() {
     if (!user) return;
     try {
       await updateSharedListItem(item.id, { done: !item.done }, user.id);
-      await loadItems();
+      await syncSharedState();
     } catch (err) {
       console.error(err);
       toast.error(safeT("lists.itemUpdateError", "No se pudo actualizar el punto."));
@@ -503,7 +484,7 @@ export default function SharedListsPage() {
     const next = item.assigned_to_user_id === user.id ? null : user.id;
     try {
       await updateSharedListItem(item.id, { assigned_to_user_id: next }, user.id);
-      await loadItems();
+      await syncSharedState();
     } catch (err) {
       console.error(err);
       toast.error(safeT("lists.assignError", "No se pudo actualizar asignación."));
@@ -516,7 +497,7 @@ export default function SharedListsPage() {
 
     try {
       await deleteSharedListItem(item.id, { actorUserId: user?.id });
-      await loadItems();
+      await syncSharedState();
     } catch (err) {
       console.error(err);
       toast.error(safeT("lists.itemDeleteError", "No se pudo eliminar el punto."));
@@ -909,10 +890,7 @@ export default function SharedListsPage() {
         ),
       );
       toast.success(safeT("lists.reused", "Lista reutilizada."));
-      await loadLists();
-      if (selectedListId === list.id) {
-        await loadItems();
-      }
+      await syncSharedState();
     } catch (err) {
       console.error(err);
       toast.error(safeT("lists.reuseError", "No se pudo reutilizar la lista."));

@@ -36,6 +36,12 @@ export type SharedListItem = {
   updated_at: string;
 };
 
+export type SharedListItemStats = {
+  done: number;
+  total: number;
+  itemsActivityMs: number;
+};
+
 export type SharedListEventType =
   | "item_created"
   | "item_deleted"
@@ -622,6 +628,54 @@ export async function fetchSharedListItems(listId: string): Promise<SharedListIt
 
   if (error) throw error;
   return (data ?? []) as SharedListItem[];
+}
+
+export async function fetchSharedListItemStats(
+  listIds: string[],
+): Promise<Record<string, SharedListItemStats>> {
+  const uniqueListIds = [...new Set(listIds.map((value) => value.trim()).filter(Boolean))];
+  if (uniqueListIds.length === 0) return {};
+
+  const { data, error } = await supabase
+    .from("shared_list_items")
+    .select("list_id, done, created_at, updated_at")
+    .in("list_id", uniqueListIds);
+
+  if (error) throw error;
+
+  const stats = Object.fromEntries(
+    uniqueListIds.map((listId) => [
+      listId,
+      {
+        done: 0,
+        total: 0,
+        itemsActivityMs: 0,
+      } satisfies SharedListItemStats,
+    ]),
+  ) as Record<string, SharedListItemStats>;
+
+  for (const row of (data ?? []) as Array<{
+    list_id: string;
+    done: boolean;
+    created_at: string | null;
+    updated_at: string | null;
+  }>) {
+    const current = stats[row.list_id];
+    if (!current) continue;
+
+    current.total += 1;
+    if (row.done) current.done += 1;
+
+    const createdMs = row.created_at ? Date.parse(row.created_at) : 0;
+    const updatedMs = row.updated_at ? Date.parse(row.updated_at) : 0;
+    current.itemsActivityMs = Math.max(
+      current.itemsActivityMs,
+      Number.isFinite(createdMs) ? createdMs : 0,
+      Number.isFinite(updatedMs) ? updatedMs : 0,
+    );
+  }
+
+  return stats;
 }
 
 export async function createSharedListItem(

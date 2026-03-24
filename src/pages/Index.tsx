@@ -7,12 +7,14 @@
   type CSSProperties,
   type ReactNode,
 } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { celebrateCreation } from "@/lib/creationCelebration";
 import { computeMindClearPercent } from "@/lib/mindClear";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
+import { useNotificationsCenter } from "@/contexts/NotificationsCenterContext";
 import {
   BrainItem,
   ReminderMode,
@@ -35,31 +37,29 @@ import { supabase } from "@/integrations/supabase/client";
 import { registerPushSubscription } from "@/lib/registerPush";
 import {
   createShareInviteCached,
-  fetchReceivedShareNotifications,
-  fetchShareInviteNotifications,
   prefetchShareInvite,
   shareTextOrCopy,
-  subscribeToReceivedShareNotifications,
-  subscribeToShareInviteNotifications,
-  type ReceivedShareNotification,
-  type ShareInviteNotification,
 } from "@/lib/shareInvitesApi";
 import type { AppNotification } from "@/lib/notificationCenter";
 import {
   createSharedList,
   createSharedListInviteShare,
   createSharedListItem,
-  fetchSharedListNotifications,
+  fetchSharedListItemStats,
   fetchSharedListItems,
-  markSharedListNotificationsSeen,
-  subscribeToSharedListNotifications,
   type SharedList,
   type SharedListMemberPreview,
-  type SharedListNotification,
   fetchSharedLists,
   updateSharedListItem,
   updateSharedListIcon,
 } from "@/lib/sharedListsApi";
+import {
+  applyBrainItemToQueryCaches,
+  setStatusSummaryCache,
+} from "@/lib/brainItemsQueryCache";
+import { queryKeys } from "@/lib/queryKeys";
+import { buildSharedListSummaries } from "@/lib/sharedListSummary";
+import { invalidateSharedListQueries } from "@/lib/sharedListQueryCache";
 import { useSnapTipDeck } from "@/hooks/useSnapTipDeck";
 import { useSpeechDictation } from "@/hooks/useSpeechDictation";
 import FeedbackSurveyModal from "@/components/FeedbackSurveyModal";
@@ -110,44 +110,6 @@ const SHARE_REMINDERS_TIP_KEY = "share-reminders";
 
 const MULTI_DEVICE_TIP_KEY = "multi-device";
 const OPEN_NOTIFICATIONS_EVENT = "remi-open-notifications";
-const NOTIFICATION_CENTER_STATE_EVENT = "remi-notification-center-state";
-
-type NotificationCenterState = {
-  clearedAtMs: number;
-  shareActivitySeenAtMs: number;
-};
-
-const EMPTY_NOTIFICATION_CENTER_STATE: NotificationCenterState = {
-  clearedAtMs: 0,
-  shareActivitySeenAtMs: 0,
-};
-
-function getNotificationCenterStorageKey(userId: string) {
-  return `remi-notification-center:${userId}`;
-}
-
-function readNotificationCenterState(userId: string): NotificationCenterState {
-  if (typeof window === "undefined") return EMPTY_NOTIFICATION_CENTER_STATE;
-
-  try {
-    const raw = localStorage.getItem(getNotificationCenterStorageKey(userId));
-    if (!raw) return EMPTY_NOTIFICATION_CENTER_STATE;
-    const parsed = JSON.parse(raw) as Partial<NotificationCenterState>;
-    return {
-      clearedAtMs:
-        typeof parsed.clearedAtMs === "number" && Number.isFinite(parsed.clearedAtMs)
-          ? parsed.clearedAtMs
-          : 0,
-      shareActivitySeenAtMs:
-        typeof parsed.shareActivitySeenAtMs === "number" &&
-        Number.isFinite(parsed.shareActivitySeenAtMs)
-          ? parsed.shareActivitySeenAtMs
-          : 0,
-    };
-  } catch {
-    return EMPTY_NOTIFICATION_CENTER_STATE;
-  }
-}
 
 type DateGroup = {
   key: string;
@@ -386,6 +348,19 @@ export default function TodayPage() {
   }, []);
 
   const { setModalOpen } = useModalUi();
+  const queryClient = useQueryClient();
+  const {
+    appNotifications,
+    loading: notificationsLoading,
+    notificationListIds,
+    notificationCenterState,
+    unreadNotificationsCount,
+    unreadSharedListNotificationsCount,
+    unreadShareActivityCount,
+    clearNotifications,
+    closeShareActivityGap,
+    markSharedListNotificationsAsSeen,
+  } = useNotificationsCenter();
 
   const safeT = useCallback(
     (key: string, fallback: string, vars?: Record<string, any>) => {
@@ -396,6 +371,45 @@ export default function TodayPage() {
     [t],
   );
 
+  const activeTasksQuery = useQuery({
+    queryKey: user ? queryKeys.activeTasks(user.id) : ["brain", "tasks", "anonymous"],
+    queryFn: () => fetchActiveTasks(user!.id),
+    enabled: !!user,
+  });
+
+  const activeIdeasQuery = useQuery({
+    queryKey: user ? queryKeys.activeIdeas(user.id) : ["brain", "ideas", "anonymous"],
+    queryFn: () => fetchActiveIdeas(user!.id),
+    enabled: !!user,
+  });
+
+  const statusSummaryQuery = useQuery({
+    queryKey: user ? queryKeys.statusSummary(user.id) : ["brain", "status-summary", "anonymous"],
+    queryFn: () => fetchRemiStatusSummary(user!.id),
+    enabled: !!user,
+  });
+
+  const sharedListsQuery = useQuery({
+    queryKey: user ? queryKeys.sharedLists(user.id) : ["shared", "lists", "anonymous"],
+    queryFn: () => fetchSharedLists(user!.id),
+    enabled: !!user,
+    staleTime: 60_000,
+  });
+
+  const sharedListIds = useMemo(
+    () => (sharedListsQuery.data ?? []).map((list) => list.id),
+    [sharedListsQuery.data],
+  );
+
+  const sharedListItemStatsQuery = useQuery({
+    queryKey: user
+      ? queryKeys.sharedListItemStats(user.id, sharedListIds)
+      : ["shared", "list-item-stats", "anonymous"],
+    queryFn: () => fetchSharedListItemStats(sharedListIds),
+    enabled: !!user && sharedListIds.length > 0,
+    staleTime: 60_000,
+  });
+
   const shouldShowSentIndicator = useCallback((task: BrainItem) => {
   const sharedCount = (task as any)?.shared_count ?? 0;
   const receivedFromShare = !!(task as any)?.received_from_share;
@@ -403,22 +417,47 @@ export default function TodayPage() {
   return !receivedFromShare && Number(sharedCount) > 0;
 }, []);
 
-  const [tasks, setTasks] = useState<BrainItem[]>([]);
-  const [ideas, setIdeas] = useState<BrainItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [tasks, setTasks] = useState<BrainItem[]>(
+    () =>
+      (user
+        ? queryClient.getQueryData<BrainItem[]>(queryKeys.activeTasks(user.id))
+        : undefined) ?? [],
+  );
+  const [ideas, setIdeas] = useState<BrainItem[]>(
+    () =>
+      (user
+        ? queryClient.getQueryData<BrainItem[]>(queryKeys.activeIdeas(user.id))
+        : undefined) ?? [],
+  );
 
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [sharedListNotifications, setSharedListNotifications] = useState<SharedListNotification[]>([]);
-  const [shareInviteNotifications, setShareInviteNotifications] = useState<ShareInviteNotification[]>([]);
-  const [receivedShareNotifications, setReceivedShareNotifications] = useState<ReceivedShareNotification[]>([]);
-  const [notificationsLoading, setNotificationsLoading] = useState(false);
-  const [notificationListIds, setNotificationListIds] = useState<string[]>([]);
-  const [notificationCenterState, setNotificationCenterState] = useState<NotificationCenterState>(
-    EMPTY_NOTIFICATION_CENTER_STATE,
+  const statusSummary = statusSummaryQuery.data ?? null;
+  const recentListSummaries = useMemo(
+    () =>
+      buildSharedListSummaries(
+        sharedListsQuery.data ?? [],
+        sharedListItemStatsQuery.data ?? {},
+      ).slice(0, 5),
+    [sharedListItemStatsQuery.data, sharedListsQuery.data],
   );
-  const [statusSummary, setStatusSummary] = useState<RemiStatusSummary | null>(
-    null,
+  const recentLists = useMemo(
+    () => recentListSummaries.map((row) => row.list),
+    [recentListSummaries],
   );
+  const recentListsProgress = useMemo(
+    () =>
+      Object.fromEntries(
+        recentListSummaries.map((row) => [row.list.id, row.progress] as const),
+      ),
+    [recentListSummaries],
+  );
+  const loading =
+    !!user &&
+    (activeTasksQuery.isLoading ||
+      activeIdeasQuery.isLoading ||
+      statusSummaryQuery.isLoading ||
+      sharedListsQuery.isLoading ||
+      (sharedListIds.length > 0 && sharedListItemStatsQuery.isLoading));
 
   const [showPushModal, setShowPushModal] = useState(false);
   const [registeringPush, setRegisteringPush] = useState(false);
@@ -448,8 +487,6 @@ export default function TodayPage() {
   const [savingFeedback, setSavingFeedback] = useState(false);
   const [mindDumpResetNonce, setMindDumpResetNonce] = useState(0);
   const [relaxOpen, setRelaxOpen] = useState(false);
-  const [recentLists, setRecentLists] = useState<SharedList[]>([]);
-  const [recentListsProgress, setRecentListsProgress] = useState<Record<string, { done: number; total: number }>>({});
   const [memoryQuestion, setMemoryQuestion] = useState("");
   const memoryPlaceholderExamples = useMemo(
     () => [
@@ -478,6 +515,22 @@ export default function TodayPage() {
     });
   const dictationListening = dictationStatus === "listening";
 
+  useEffect(() => {
+    if (!user) {
+      setTasks([]);
+      return;
+    }
+    setTasks(activeTasksQuery.data ?? []);
+  }, [activeTasksQuery.data, user]);
+
+  useEffect(() => {
+    if (!user) {
+      setIdeas([]);
+      return;
+    }
+    setIdeas(activeIdeasQuery.data ?? []);
+  }, [activeIdeasQuery.data, user]);
+
 const anyModalOpen =
     notificationsOpen ||
     showPushModal ||
@@ -492,118 +545,6 @@ const anyModalOpen =
  useEffect(() => {
     setModalOpen(anyModalOpen);
   }, [anyModalOpen, setModalOpen]);
-
-  const notificationListIdsSignature = useMemo(
-    () => notificationListIds.join("|"),
-    [notificationListIds],
-  );
-  const persistNotificationCenterState = useCallback(
-    (nextState: NotificationCenterState) => {
-      setNotificationCenterState(nextState);
-      if (!user || typeof window === "undefined") return;
-      try {
-        localStorage.setItem(
-          getNotificationCenterStorageKey(user.id),
-          JSON.stringify(nextState),
-        );
-      } catch {}
-      window.dispatchEvent(
-        new CustomEvent(NOTIFICATION_CENTER_STATE_EVENT, {
-          detail: nextState,
-        }),
-      );
-    },
-    [user],
-  );
-
-  const appNotifications = useMemo<AppNotification[]>(() => {
-    const clearedAtMs = notificationCenterState.clearedAtMs;
-    const shareSeenAtMs = Math.max(
-      notificationCenterState.shareActivitySeenAtMs,
-      clearedAtMs,
-    );
-
-    const sharedListRows = sharedListNotifications
-      .filter((notification) => {
-        const createdAtMs = Date.parse(notification.created_at);
-        return !Number.isFinite(createdAtMs) || createdAtMs > clearedAtMs;
-      })
-      .map((notification) => ({
-        id: `shared-list-${notification.id}`,
-        source: "shared_list",
-        created_at: notification.created_at,
-        unread: notification.unread,
-        target: { kind: "list", listId: notification.list_id } as const,
-        notification,
-      }));
-
-    const shareInviteRows = shareInviteNotifications
-      .filter((notification) => notification.kind !== "share_sent")
-      .filter((notification) => {
-        const createdAtMs = Date.parse(notification.created_at);
-        return !Number.isFinite(createdAtMs) || createdAtMs > clearedAtMs;
-      })
-      .map((notification) => ({
-        id: `share-invite-${notification.id}`,
-        source: "share_invite",
-        created_at: notification.created_at,
-        unread: Date.parse(notification.created_at) > shareSeenAtMs,
-        target: { kind: "none" } as const,
-        notification,
-      }));
-
-    const receivedShareRows = receivedShareNotifications
-      .filter((notification) => {
-        const createdAtMs = Date.parse(notification.created_at);
-        return !Number.isFinite(createdAtMs) || createdAtMs > clearedAtMs;
-      })
-      .map((notification) => ({
-        id: notification.id,
-        source: "received_share",
-        created_at: notification.created_at,
-        unread: Date.parse(notification.created_at) > shareSeenAtMs,
-        target:
-          notification.item_type === "idea"
-            ? ({ kind: "route", href: "/ideas" } as const)
-            : notification.item_type === "task"
-              ? ({ kind: "route", href: "/tasks" } as const)
-              : ({ kind: "none" } as const),
-        notification,
-      }));
-
-    return [...sharedListRows, ...shareInviteRows, ...receivedShareRows].sort(
-      (a, b) => Date.parse(b.created_at) - Date.parse(a.created_at),
-    );
-  }, [
-    notificationCenterState.clearedAtMs,
-    notificationCenterState.shareActivitySeenAtMs,
-    receivedShareNotifications,
-    shareInviteNotifications,
-    sharedListNotifications,
-  ]);
-
-  const unreadNotificationsCount = useMemo(
-    () => appNotifications.filter((notification) => notification.unread).length,
-    [appNotifications],
-  );
-
-  const unreadSharedListNotificationsCount = useMemo(
-    () =>
-      appNotifications.filter(
-        (notification) => notification.source === "shared_list" && notification.unread,
-      ).length,
-    [appNotifications],
-  );
-
-  const unreadShareActivityCount = useMemo(
-    () =>
-      appNotifications.filter(
-        (notification) => notification.source !== "shared_list" && notification.unread,
-      ).length,
-    [appNotifications],
-  );
-
-  
 
   const [filter, setFilter] = useState<FilterMode>("TODAY");
 
@@ -670,246 +611,27 @@ const anyModalOpen =
     );
   }, []);
 
-  const loadSharedListNotifications = useCallback(async () => {
-    if (!user) {
-      setSharedListNotifications([]);
-      return;
-    }
-    const next = await fetchSharedListNotifications(user.id, 40);
-    setSharedListNotifications(next);
-  }, [user]);
-
-  const loadShareInviteNotifications = useCallback(async () => {
-    if (!user) {
-      setShareInviteNotifications([]);
-      return;
-    }
-    const next = await fetchShareInviteNotifications(user.id, 40);
-    setShareInviteNotifications(next);
-  }, [user]);
-
-  const loadReceivedShareNotifications = useCallback(async () => {
-    if (!user) {
-      setReceivedShareNotifications([]);
-      return;
-    }
-    const next = await fetchReceivedShareNotifications(user.id, 40);
-    setReceivedShareNotifications(next);
-  }, [user]);
-
-  const loadNotifications = useCallback(
-    async (showLoader = false) => {
-      if (!user) {
-        setSharedListNotifications([]);
-        setShareInviteNotifications([]);
-        setReceivedShareNotifications([]);
-        setNotificationsLoading(false);
-        return;
-      }
-
-      if (showLoader) setNotificationsLoading(true);
-
-      try {
-        await Promise.all([
-          loadSharedListNotifications(),
-          loadShareInviteNotifications(),
-          loadReceivedShareNotifications(),
-        ]);
-      } catch (err) {
-        console.error("Error loading notifications", err);
-      } finally {
-        if (showLoader) setNotificationsLoading(false);
-      }
-    },
-    [
-      loadReceivedShareNotifications,
-      loadShareInviteNotifications,
-      loadSharedListNotifications,
-      user,
-    ],
-  );
-
-  const loadData = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-
-    try {
-      const [tks, ids, summaryData, sharedLists] = await Promise.all([
-        fetchActiveTasks(user.id),
-        fetchActiveIdeas(user.id),
-        fetchRemiStatusSummary(user.id),
-        fetchSharedLists(user.id),
-      ]);
-      setTasks(tks);
-      setIdeas(ids);
-      setStatusSummary(summaryData);
-      setNotificationListIds(sharedLists.map((list) => list.id));
-      const listRows = await Promise.all(
-        sharedLists.map(async (list) => {
-          const listItems = await fetchSharedListItems(list.id);
-          const total = listItems.length;
-          const done = listItems.reduce((acc, item) => acc + (item.done ? 1 : 0), 0);
-          const listMs = Math.max(
-            Number.isFinite(Date.parse(list.updated_at || "")) ? Date.parse(list.updated_at || "") : 0,
-            Number.isFinite(Date.parse(list.created_at || "")) ? Date.parse(list.created_at || "") : 0,
-          );
-          const itemsMs = listItems.reduce((max, item) => {
-            const created = Number.isFinite(Date.parse(item.created_at || "")) ? Date.parse(item.created_at || "") : 0;
-            const updated = Number.isFinite(Date.parse(item.updated_at || "")) ? Date.parse(item.updated_at || "") : 0;
-            return Math.max(max, created, updated);
-          }, 0);
-          const activityMs = Math.max(listMs, itemsMs);
-          return { list, progress: { done, total }, activityMs };
-        }),
-      );
-
-      const latestRows = listRows
-        .sort((a, b) => b.activityMs - a.activityMs)
-        .slice(0, 5);
-
-      setRecentLists(latestRows.map((row) => row.list));
-      setRecentListsProgress(
-        Object.fromEntries(latestRows.map((row) => [row.list.id, row.progress] as const)),
-      );
-    } catch (err) {
-      console.error(err);
-      alert(safeT("today.errorLoadingTasks", "Error cargando tareas"));
-    } finally {
-      setLoading(false);
-    }
-  }, [safeT, user]);
-
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
-
-  useEffect(() => {
-    if (!user) {
-      setNotificationCenterState(EMPTY_NOTIFICATION_CENTER_STATE);
-      return;
-    }
-    setNotificationCenterState(readNotificationCenterState(user.id));
-  }, [user]);
-
-  useEffect(() => {
-    if (!user) {
-      setSharedListNotifications([]);
-      setShareInviteNotifications([]);
-      setReceivedShareNotifications([]);
-      setNotificationListIds([]);
-      setNotificationsLoading(false);
-      return;
-    }
-    void loadNotifications(true);
-  }, [loadNotifications, user]);
-
-  useEffect(() => {
-    if (!user) return;
-    const onChanged = () => void loadData();
-    window.addEventListener("remi-items-changed", onChanged);
-    return () => window.removeEventListener("remi-items-changed", onChanged);
-  }, [loadData, user]);
-
-  useEffect(() => {
-    if (!user || notificationListIds.length === 0) return;
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-    const onRealtimeChange = () => {
-      if (timeoutId) clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        timeoutId = null;
-        void loadSharedListNotifications().catch((err) => {
-          console.error("Error refreshing shared-list notifications", err);
-        });
-      }, 120);
-    };
-    const unsubscribe = subscribeToSharedListNotifications(
-      notificationListIds,
-      onRealtimeChange,
-    );
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-      unsubscribe();
-    };
-  }, [loadSharedListNotifications, notificationListIds, notificationListIdsSignature, user]);
-
-  useEffect(() => {
-    if (notificationListIds.length > 0 || !user) return;
-    setSharedListNotifications([]);
-  }, [notificationListIds.length, user]);
-
-  useEffect(() => {
-    if (!user) return;
-    const unsubscribe = subscribeToShareInviteNotifications(user.id, () => {
-      void loadShareInviteNotifications().catch((err) => {
-        console.error("Error refreshing share-invite notifications", err);
-      });
-    });
-    return unsubscribe;
-  }, [loadShareInviteNotifications, user]);
-
-  useEffect(() => {
-    if (!user) return;
-    const unsubscribe = subscribeToReceivedShareNotifications(user.id, () => {
-      void loadReceivedShareNotifications().catch((err) => {
-        console.error("Error refreshing received-share notifications", err);
-      });
-    });
-    return unsubscribe;
-  }, [loadReceivedShareNotifications, user]);
-
-  useEffect(() => {
-    if (!user) return;
-    const intervalId = window.setInterval(() => {
-      if (document.visibilityState === "hidden") return;
-      void Promise.all([
-        loadSharedListNotifications(),
-        loadShareInviteNotifications(),
-        loadReceivedShareNotifications(),
-      ]).catch((err) => {
-        console.error("Error polling notifications", err);
-      });
-    }, 4_000);
-    return () => window.clearInterval(intervalId);
-  }, [
-    loadReceivedShareNotifications,
-    loadShareInviteNotifications,
-    loadSharedListNotifications,
-    user,
-  ]);
-
   useEffect(() => {
     if (
       !notificationsOpen ||
-      !user ||
       notificationListIds.length === 0 ||
       unreadSharedListNotificationsCount === 0
     ) {
       return;
     }
 
-    setSharedListNotifications((prev) =>
-      prev.map((notification) => ({ ...notification, unread: false })),
-    );
-
-    void markSharedListNotificationsSeen(user.id, notificationListIds).catch((err) => {
-      console.error("Error marking shared list notifications as seen", err);
-    });
-  }, [notificationListIds, notificationsOpen, unreadSharedListNotificationsCount, user]);
+    markSharedListNotificationsAsSeen();
+  }, [
+    markSharedListNotificationsAsSeen,
+    notificationListIds.length,
+    notificationsOpen,
+    unreadSharedListNotificationsCount,
+  ]);
 
   useEffect(() => {
-    if (!notificationsOpen || !user || unreadShareActivityCount === 0) return;
-    const now = Date.now();
-    persistNotificationCenterState({
-      ...notificationCenterState,
-      shareActivitySeenAtMs: Math.max(notificationCenterState.shareActivitySeenAtMs, now),
-    });
-  }, [
-    notificationCenterState,
-    notificationsOpen,
-    persistNotificationCenterState,
-    unreadShareActivityCount,
-    user,
-  ]);
+    if (!notificationsOpen || unreadShareActivityCount === 0) return;
+    closeShareActivityGap();
+  }, [closeShareActivityGap, notificationsOpen, unreadShareActivityCount]);
 
   useEffect(() => {
     if (memoryPlaceholderExamples.length === 0) return;
@@ -1239,26 +961,28 @@ const anyModalOpen =
     ) => {
       if (!user) return;
       const before = computeMindClearPercent(statusSummary);
-      await createTask(user.id, title, dueDateISO, reminderMode, repeatType);
+      const created = await createTask(user.id, title, dueDateISO, reminderMode, repeatType);
+      applyBrainItemToQueryCaches(queryClient, user.id, created);
       const updatedSummary = await fetchRemiStatusSummary(user.id);
+      setStatusSummaryCache(queryClient, user.id, updatedSummary);
       const after = computeMindClearPercent(updatedSummary);
       celebrateCreation(after - before);
-      await loadData();
     },
-    [loadData, statusSummary, user],
+    [queryClient, statusSummary, user],
   );
 
   const handleCreateIdeaFromMindDump = useCallback(
     async (title: string) => {
       if (!user) return;
       const before = computeMindClearPercent(statusSummary);
-      await createIdea(user.id, title);
+      const created = await createIdea(user.id, title);
+      applyBrainItemToQueryCaches(queryClient, user.id, created);
       const updatedSummary = await fetchRemiStatusSummary(user.id);
+      setStatusSummaryCache(queryClient, user.id, updatedSummary);
       const after = computeMindClearPercent(updatedSummary);
       celebrateCreation(after - before);
-      await loadData();
     },
-    [loadData, statusSummary, user],
+    [queryClient, statusSummary, user],
   );
 
   const handleCreateListFromMindDump = useCallback(
@@ -1274,14 +998,24 @@ const anyModalOpen =
           .replace(/\s+/g, " ")
           .trim();
 
-      const lists = await fetchSharedLists(user.id);
+      const lists = await queryClient.fetchQuery({
+        queryKey: queryKeys.sharedLists(user.id),
+        queryFn: () => fetchSharedLists(user.id),
+        staleTime: 60_000,
+      });
       const existing = lists.find(
         (list) => list.title.trim().toLocaleLowerCase() === cleanTitle.toLocaleLowerCase(),
       );
       const targetList = existing ?? (await createSharedList(user.id, cleanTitle));
       const listWasCreated = !existing;
 
-      const existingItems = existing ? await fetchSharedListItems(existing.id) : [];
+      const existingItems = existing
+        ? await queryClient.fetchQuery({
+            queryKey: queryKeys.sharedListItems(existing.id),
+            queryFn: () => fetchSharedListItems(existing.id),
+            staleTime: 60_000,
+          })
+        : [];
       const existingCount = existingItems.length;
       const existingKeys = new Set(existingItems.map((item) => normalizeItemKey(item.text)));
       let addedCount = 0;
@@ -1324,9 +1058,10 @@ const anyModalOpen =
         toast.success(
           existing ? safeT("lists.updated", "Lista actualizada.") : safeT("lists.created", "Lista creada."),
         );
+        await invalidateSharedListQueries(queryClient, user.id);
       }
     },
-    [safeT, user],
+    [queryClient, safeT, user],
   );
 
   const handleSubmitFeedbackSurvey = useCallback(
@@ -1417,22 +1152,8 @@ const anyModalOpen =
 
   const handleClearNotifications = useCallback(() => {
     if (!user) return;
-
-    const now = Date.now();
-    persistNotificationCenterState({
-      clearedAtMs: now,
-      shareActivitySeenAtMs: now,
-    });
-    setSharedListNotifications((prev) =>
-      prev.map((notification) => ({ ...notification, unread: false })),
-    );
-
-    if (notificationListIds.length > 0) {
-      void markSharedListNotificationsSeen(user.id, notificationListIds).catch((err) => {
-        console.error("Error clearing shared list notifications", err);
-      });
-    }
-  }, [notificationListIds, persistNotificationCenterState, user]);
+    clearNotifications();
+  }, [clearNotifications, user]);
 
   const handleOpenLists = () => {
     navigate("/lists");

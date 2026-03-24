@@ -10,24 +10,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
-import { toast } from "sonner";
-import { useSpeechDictation } from "@/hooks/useSpeechDictation";
-import { requestMicPermission } from "@/lib/micPermission";
-import { useAuth } from "@/contexts/AuthContext";
-import {
-  fetchSharedListNotifications,
-  fetchSharedLists,
-  subscribeToSharedListNotifications,
-  type SharedListNotification,
-} from "@/lib/sharedListsApi";
-import {
-  fetchReceivedShareNotifications,
-  fetchShareInviteNotifications,
-  subscribeToReceivedShareNotifications,
-  subscribeToShareInviteNotifications,
-  type ReceivedShareNotification,
-  type ShareInviteNotification,
-} from "@/lib/shareInvitesApi";
+import { useNotificationsCenter } from "@/contexts/NotificationsCenterContext";
 
 // ✅ NUEVO: para ocultar cuando hay modales
 import { useModalUi } from "@/contexts/ModalUiContext";
@@ -43,7 +26,6 @@ const speechLangByUiLang: Record<UiLang, string> = {
 const CAPTURE_APPEND_EVENT = "remi-capture-append";
 const OPEN_CAPTURE_EVENT = "remi-open-capture";
 const OPEN_NOTIFICATIONS_EVENT = "remi-open-notifications";
-const NOTIFICATION_CENTER_STATE_EVENT = "remi-notification-center-state";
 const OPEN_CAPTURE_SOURCE = "bottom-nav-plus";
 
 // ✅ evento global para indicar si el dictado está escuchando (por si vuelves a activarlo)
@@ -51,43 +33,6 @@ export const DICTATION_STATE_EVENT = "remi-dictation-state";
 
 // ✅ texto pendiente cuando dictas desde otras páginas (por si vuelves a activarlo)
 const NAV_DICTATION_KEY = "remi_nav_dictation_pending_v1";
-
-type NotificationCenterState = {
-  clearedAtMs: number;
-  shareActivitySeenAtMs: number;
-};
-
-const EMPTY_NOTIFICATION_CENTER_STATE: NotificationCenterState = {
-  clearedAtMs: 0,
-  shareActivitySeenAtMs: 0,
-};
-
-function getNotificationCenterStorageKey(userId: string) {
-  return `remi-notification-center:${userId}`;
-}
-
-function readNotificationCenterState(userId: string): NotificationCenterState {
-  if (typeof window === "undefined") return EMPTY_NOTIFICATION_CENTER_STATE;
-
-  try {
-    const raw = localStorage.getItem(getNotificationCenterStorageKey(userId));
-    if (!raw) return EMPTY_NOTIFICATION_CENTER_STATE;
-    const parsed = JSON.parse(raw) as Partial<NotificationCenterState>;
-    return {
-      clearedAtMs:
-        typeof parsed.clearedAtMs === "number" && Number.isFinite(parsed.clearedAtMs)
-          ? parsed.clearedAtMs
-          : 0,
-      shareActivitySeenAtMs:
-        typeof parsed.shareActivitySeenAtMs === "number" &&
-        Number.isFinite(parsed.shareActivitySeenAtMs)
-          ? parsed.shareActivitySeenAtMs
-          : 0,
-    };
-  } catch {
-    return EMPTY_NOTIFICATION_CENTER_STATE;
-  }
-}
 
 function detectIOS() {
   // iPhone/iPad/iPod + iPadOS (que a veces reporta MacIntel)
@@ -158,10 +103,10 @@ export default function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { t, lang } = useI18n();
-  const { user } = useAuth();
 
   // ✅ NUEVO
   const { isAnyModalOpen } = useModalUi();
+  const { unreadNotificationsCount } = useNotificationsCenter();
 
   const { pathname } = location;
 
@@ -327,174 +272,6 @@ export default function BottomNav() {
   const isTasksActive = pathname === "/tasks" || pathname === "/ideas" || pathname === "/inbox";
   const isListsActive = pathname === "/lists";
   const notificationsLabel = t("sharedListNotifications.open") || "Notifications";
-  const [notificationCenterState, setNotificationCenterState] = useState<NotificationCenterState>(
-    EMPTY_NOTIFICATION_CENTER_STATE,
-  );
-  const [notificationListIds, setNotificationListIds] = useState<string[]>([]);
-  const [sharedListNotifications, setSharedListNotifications] = useState<SharedListNotification[]>([]);
-  const [shareInviteNotifications, setShareInviteNotifications] = useState<ShareInviteNotification[]>([]);
-  const [receivedShareNotifications, setReceivedShareNotifications] = useState<ReceivedShareNotification[]>([]);
-  const notificationListIdsSignature = useMemo(
-    () => notificationListIds.join("|"),
-    [notificationListIds],
-  );
-  const unreadNotificationsCount = useMemo(() => {
-    const clearedAtMs = notificationCenterState.clearedAtMs;
-    const shareSeenAtMs = Math.max(
-      notificationCenterState.shareActivitySeenAtMs,
-      clearedAtMs,
-    );
-
-    const unreadSharedListCount = sharedListNotifications.filter((notification) => {
-      const createdAtMs = Date.parse(notification.created_at);
-      return (
-        notification.unread &&
-        (!Number.isFinite(createdAtMs) || createdAtMs > clearedAtMs)
-      );
-    }).length;
-
-    const unreadShareInviteCount = shareInviteNotifications.filter((notification) => {
-      if (notification.kind === "share_sent") return false;
-      const createdAtMs = Date.parse(notification.created_at);
-      return !Number.isFinite(createdAtMs) || createdAtMs > shareSeenAtMs;
-    }).length;
-
-    const unreadReceivedShareCount = receivedShareNotifications.filter((notification) => {
-      const createdAtMs = Date.parse(notification.created_at);
-      return !Number.isFinite(createdAtMs) || createdAtMs > shareSeenAtMs;
-    }).length;
-
-    return unreadSharedListCount + unreadShareInviteCount + unreadReceivedShareCount;
-  }, [
-    notificationCenterState.clearedAtMs,
-    notificationCenterState.shareActivitySeenAtMs,
-    receivedShareNotifications,
-    shareInviteNotifications,
-    sharedListNotifications,
-  ]);
-
-  useEffect(() => {
-    if (!user) {
-      setNotificationCenterState(EMPTY_NOTIFICATION_CENTER_STATE);
-      setNotificationListIds([]);
-      setSharedListNotifications([]);
-      setShareInviteNotifications([]);
-      setReceivedShareNotifications([]);
-      return;
-    }
-
-    let cancelled = false;
-
-    const loadNotificationSources = async () => {
-      try {
-        const [lists, nextSharedListNotifications, nextShareInviteNotifications, nextReceivedShareNotifications] =
-          await Promise.all([
-            fetchSharedLists(user.id),
-            fetchSharedListNotifications(user.id, 40),
-            fetchShareInviteNotifications(user.id, 40),
-            fetchReceivedShareNotifications(user.id, 40),
-          ]);
-
-        if (cancelled) return;
-
-        setNotificationCenterState(readNotificationCenterState(user.id));
-        setNotificationListIds(lists.map((list) => list.id));
-        setSharedListNotifications(nextSharedListNotifications);
-        setShareInviteNotifications(nextShareInviteNotifications);
-        setReceivedShareNotifications(nextReceivedShareNotifications);
-      } catch (error) {
-        console.error("Error loading bottom-nav notifications", error);
-      }
-    };
-
-    void loadNotificationSources();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user]);
-
-  useEffect(() => {
-    if (!user) return;
-
-    const syncNotificationCenterState = () => {
-      setNotificationCenterState(readNotificationCenterState(user.id));
-    };
-
-    const onStorage = (event: StorageEvent) => {
-      if (event.key !== getNotificationCenterStorageKey(user.id)) return;
-      syncNotificationCenterState();
-    };
-
-    window.addEventListener("storage", onStorage);
-    window.addEventListener(
-      NOTIFICATION_CENTER_STATE_EVENT,
-      syncNotificationCenterState as EventListener,
-    );
-
-    return () => {
-      window.removeEventListener("storage", onStorage);
-      window.removeEventListener(
-        NOTIFICATION_CENTER_STATE_EVENT,
-        syncNotificationCenterState as EventListener,
-      );
-    };
-  }, [user]);
-
-  useEffect(() => {
-    if (!user || notificationListIds.length === 0) return;
-
-    const refreshSharedListNotifications = () => {
-      void fetchSharedListNotifications(user.id, 40)
-        .then((next) => setSharedListNotifications(next))
-        .catch((error) => {
-          console.error("Error refreshing shared-list notifications in bottom nav", error);
-        });
-    };
-
-    const unsubscribe = subscribeToSharedListNotifications(
-      notificationListIds,
-      refreshSharedListNotifications,
-    );
-
-    return () => {
-      unsubscribe();
-    };
-  }, [notificationListIds, notificationListIdsSignature, user]);
-
-  useEffect(() => {
-    if (!user) return;
-
-    const refreshShareInviteNotifications = () => {
-      void fetchShareInviteNotifications(user.id, 40)
-        .then((next) => setShareInviteNotifications(next))
-        .catch((error) => {
-          console.error("Error refreshing share-invite notifications in bottom nav", error);
-        });
-    };
-
-    const refreshReceivedShareNotifications = () => {
-      void fetchReceivedShareNotifications(user.id, 40)
-        .then((next) => setReceivedShareNotifications(next))
-        .catch((error) => {
-          console.error("Error refreshing received-share notifications in bottom nav", error);
-        });
-    };
-
-    const unsubscribeInviteNotifications = subscribeToShareInviteNotifications(
-      user.id,
-      refreshShareInviteNotifications,
-    );
-    const unsubscribeReceivedShareNotifications = subscribeToReceivedShareNotifications(
-      user.id,
-      refreshReceivedShareNotifications,
-    );
-
-    return () => {
-      unsubscribeInviteNotifications();
-      unsubscribeReceivedShareNotifications();
-    };
-  }, [user]);
 
   /* ─────────────────────────────────────────────
      ✅ OCULTAR NAVBAR CUANDO HAY TECLADO + CAMPO ENFOCADO (INDEX)
